@@ -1,18 +1,11 @@
 name: RM3 MoorDyn visualization parity
 
 on:
-  push:
-    paths:
-      - '.github/workflows/rm3-moordyn-viz-parity.yml'
-      - 'tests/matlab/rm3_moordyn_viz_baseline.m'
-      - 'tests/test_rm3_moordyn_viz_source.py'
-      - 'wecsim/api.py'
-      - 'wecsim/caseDynamics.py'
-      - 'wecsim/irregularWave.py'
   pull_request:
     paths:
       - '.github/workflows/rm3-moordyn-viz-parity.yml'
       - 'tests/matlab/rm3_moordyn_viz_baseline.m'
+      - 'tests/matlab/rm3_moordyn_viz_dense_diagnostic.m'
       - 'tests/test_rm3_moordyn_viz_source.py'
       - 'wecsim/api.py'
       - 'wecsim/caseDynamics.py'
@@ -63,6 +56,9 @@ jobs:
       - uses: matlab-actions/run-command@v3
         with:
           command: addpath('tests/matlab'); rm3_moordyn_viz_baseline
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); rm3_moordyn_viz_dense_diagnostic
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'

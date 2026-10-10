@@ -75,6 +75,36 @@ def test_published_traditional_sea_and_body_excitation():
                body[:, 19:25], 1e-4, f"body{number} excitation")
 
 
+def test_saved_source_pose_through_pinned_moordyn(tmp_path):
+    """Diagnose whether source poses recreate source mooring forces directly."""
+    source = _read("dense_mooring.csv")
+    assert source.shape == (1001, 19)
+    np.testing.assert_allclose(source[:, 0], np.arange(1001) * 0.01,
+                               rtol=0, atol=1e-8)
+    lines_source = (Path(APPLICATIONS) /
+                    "Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt")
+    for mode in ("at_step_end", "at_step_start"):
+        run_dir = tmp_path / mode
+        run_dir.mkdir()
+        lines = run_dir / "lines.txt"
+        shutil.copyfile(lines_source, lines)
+        actual = np.zeros((len(source), 6))
+        with MoorDyn(LIBRARY, lines).start(source[0, 1:7], source[0, 7:13]) as moordyn:
+            for index in range(1, len(source)):
+                pose_index = index if mode == "at_step_end" else index - 1
+                actual[index] = moordyn.step(
+                    source[pose_index, 1:7], source[pose_index, 7:13],
+                    source[index - 1, 0], 0.01,
+                )
+        assert np.isfinite(actual).all()
+        error = actual[1:] - source[1:, 13:19]
+        for axis, label in ((0, "surge force"), (2, "heave force"),
+                            (4, "pitch moment")):
+            print(f"source-pose MoorDyn {mode} {label}: "
+                  f"maximum {np.max(np.abs(error[:, axis])):.8g}, "
+                  f"RMS {np.sqrt(np.mean(error[:, axis] ** 2)):.8g}")
+
+
 def test_public_floating_joint_tracks_published_moordyn_viz(tmp_path):
     apps = Path(APPLICATIONS)
     reference = Path(REFERENCE)
