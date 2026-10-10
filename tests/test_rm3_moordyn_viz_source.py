@@ -108,6 +108,36 @@ def test_saved_source_pose_through_pinned_moordyn(tmp_path):
                    "MoorDyn on saved source connection poses")
 
 
+def test_source_output_interval_sensitivity():
+    """Compare the same seeded source sea at 0.01 and 0.1 s output steps."""
+    _bound(_read("dense_phase.csv"), _read("coarse_phase.csv"),
+           1e-12, "source phase at both output steps")
+    dense_wave = _read("dense_wave.csv")
+    coarse_wave = _read("coarse_wave.csv")
+    assert dense_wave.shape == (1001, 2)
+    assert coarse_wave.shape == (101, 2)
+    _bound(dense_wave[::10], coarse_wave, 1e-10,
+           "source wave at both output steps")
+    for number, name in ((1, "float"), (2, "spar")):
+        dense = _read(f"dense_body{number}.csv")[::10]
+        coarse = _read(f"coarse_body{number}.csv")
+        assert dense.shape == coarse.shape == (101, 25)
+        for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
+            error = dense[:, 1 + axis] - coarse[:, 1 + axis]
+            print(f"source output-step {name} {label}: "
+                  f"maximum {np.max(np.abs(error)):.8g}, "
+                  f"at 1 s {error[10]:.8g}, at 10 s {error[-1]:.8g}")
+    dense_mooring = _read("dense_mooring.csv")[::10]
+    coarse_mooring = _read("coarse_mooring.csv")
+    assert dense_mooring.shape == coarse_mooring.shape == (101, 19)
+    for axis, label in ((0, "surge force"), (2, "heave force"),
+                        (4, "pitch moment")):
+        error = dense_mooring[:, 13 + axis] - coarse_mooring[:, 13 + axis]
+        print(f"source output-step mooring {label}: "
+              f"maximum {np.max(np.abs(error)):.8g}, "
+              f"at 1 s {error[10]:.8g}, at 10 s {error[-1]:.8g}")
+
+
 def test_saved_source_mooring_load_through_python_body_solver():
     """Separate body integration from MoorDyn state feedback over ten seconds."""
     source_mooring = _read("dense_mooring.csv")

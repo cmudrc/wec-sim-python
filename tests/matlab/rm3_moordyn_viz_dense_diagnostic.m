@@ -5,7 +5,7 @@ addpath(genpath(fullfile(repoRoot, 'matlab-ref', 'source')));
 caseDir = fullfile(repoRoot, 'applications', 'Paraview_Visualization', ...
     'RM3_MoorDyn_Viz');
 denseDir = fullfile(fileparts(caseDir), 'RM3_MoorDyn_Viz_dense');
-copyfile(caseDir, denseDir);
+copyCaseInputs(caseDir, denseDir);
 inputFile = fullfile(denseDir, 'wecSimInputFile.m');
 contents = fileread(inputFile);
 changes = {
@@ -52,4 +52,66 @@ for iBody = 1:2
     writematrix(bodyValues, fullfile(outDir, ...
         sprintf('dense_body%d.csv', iBody)));
 end
+
+% Keep the same short seeded sea and physical settings, but restore the
+% published 0.1 s output interval to test source output-step sensitivity.
+coarseDir = fullfile(fileparts(caseDir), 'RM3_MoorDyn_Viz_coarse');
+copyCaseInputs(caseDir, coarseDir);
+coarseFile = fullfile(coarseDir, 'wecSimInputFile.m');
+coarseInput = fileread(coarseFile);
+coarseChanges = {
+    'simu.endTime = 80;', 'simu.endTime = 10;';
+    'simu.paraview.option = 1;', 'simu.paraview.option = 0;';
+    'waves.period = 8;', sprintf('waves.period = 8;\nwaves.phaseSeed = 1;')
+};
+for i = 1:size(coarseChanges, 1)
+    assert(contains(coarseInput, coarseChanges{i, 1}), ...
+        'The pinned RM3 MoorDyn visualization input changed');
+    coarseInput = strrep(coarseInput, coarseChanges{i, 1}, ...
+        coarseChanges{i, 2});
+end
+
+fid = fopen(coarseFile, 'w');
+assert(fid > 0);
+cleanup = onCleanup(@() fclose(fid));
+fwrite(fid, coarseInput);
+clear cleanup;
+cd(coarseDir);
+wecSim;
+assert(simu.dt == 0.01 && simu.dtOut == 0.1 && ...
+    simu.endTime == 10 && strcmp(simu.solver, 'ode45') && ...
+    waves.phaseSeed == 1 && mooring(1).moorDyn == 1, ...
+    'The coarse coupling diagnostic settings changed');
+writematrix(waves.phase(:), fullfile(outDir, 'coarse_phase.csv'));
+writematrix([output.wave.time(:), output.wave.elevation(:)], ...
+    fullfile(outDir, 'coarse_wave.csv'));
+record = output.mooring(1);
+values = [record.time(:), record.position, record.velocity, ...
+    record.forceMooring];
+assert(size(values, 1) == 101 && size(values, 2) == 19 && ...
+    all(isfinite(values), 'all'), ...
+    'The coarse source mooring record is incomplete');
+writematrix(values, fullfile(outDir, 'coarse_mooring.csv'));
+for iBody = 1:2
+    bodyRecord = output.bodies(iBody);
+    bodyValues = [bodyRecord.time(:), bodyRecord.position, ...
+        bodyRecord.velocity, bodyRecord.forceTotal, ...
+        bodyRecord.forceExcitation];
+    assert(size(bodyValues, 1) == 101 && ...
+        size(bodyValues, 2) == 25 && all(isfinite(bodyValues), 'all'), ...
+        'The coarse source body record is incomplete');
+    writematrix(bodyValues, fullfile(outDir, ...
+        sprintf('coarse_body%d.csv', iBody)));
+end
+end
+
+function copyCaseInputs(caseDir, targetDir)
+mkdir(targetDir);
+for name = {'wecSimInputFile.m', 'RM3MoorDyn.slx', ...
+        'userDefinedFunctions.m'}
+    copyfile(fullfile(caseDir, name{1}), fullfile(targetDir, name{1}));
+end
+mkdir(fullfile(targetDir, 'Mooring'));
+copyfile(fullfile(caseDir, 'Mooring', 'lines.txt'), ...
+    fullfile(targetDir, 'Mooring', 'lines.txt'));
 end
