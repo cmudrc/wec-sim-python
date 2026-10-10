@@ -183,7 +183,7 @@ class ParaviewClass:
                 or not isinstance(mooring_index, (int, np.integer))
                 or mooring_index < 1):
             raise ValueError("mooring VTP needs ordered in-range times and a positive index")
-        if not lines or len(lines) != len(tensions):
+        if len(lines) == 0 or len(lines) != len(tensions):
             raise ValueError("mooring VTP needs node and tension data for each line")
 
         interpolated = []
