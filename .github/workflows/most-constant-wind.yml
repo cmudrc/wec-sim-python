@@ -36,6 +36,12 @@ jobs:
   source:
     runs-on: ubuntu-latest
     timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {wind_speed: 12, end_time: 10, label: ramp}
+          - {wind_speed: 16, end_time: 30, label: sustained-pitch}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/checkout@v7
@@ -64,7 +70,7 @@ jobs:
           command: cd('applications/MOST/mostData/windTurbine/turbine_properties'); WTproperties_IEA15MW; BladeData_IEA15MW; cd('../control'); Steady_States_IEA15MW; Controller_IEA15MW; cd('../../../../..')
       - uses: matlab-actions/run-command@v3
         with:
-          command: addpath(genpath(fullfile(pwd,'matlab-ref','source'))); addpath(fullfile(pwd,'tests','matlab')); most_wind_advection_baseline; most_constant_wind_source_baseline
+          command: addpath(genpath(fullfile(pwd,'matlab-ref','source'))); addpath(fullfile(pwd,'tests','matlab')); most_wind_advection_baseline; most_constant_wind_source_baseline(${{ matrix.wind_speed }}, ${{ matrix.end_time }})
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -78,10 +84,12 @@ jobs:
           WEC_SIM_MOST_BLADE_DIR: applications/MOST/mostData/windTurbine/turbine_properties/BladeData/IEA-15MW
           WEC_SIM_MOST_CONTROL: applications/MOST/mostData/windTurbine/control/Control_IEA15MW.mat
           WEC_SIM_MOST_STEADY_STATES: applications/MOST/mostData/windTurbine/control/SteadyStates_IEA15MW.mat
+          WEC_SIM_MOST_CONSTANT_WIND_SPEED: ${{ matrix.wind_speed }}
+          WEC_SIM_MOST_CONSTANT_END_TIME: ${{ matrix.end_time }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: matlab-most-constant-wind
+          name: matlab-most-constant-wind-${{ matrix.label }}
           path: |
             matlab-most-constant-wind.mat
             applications/MOST/hydroData/VolturnUS.h5
