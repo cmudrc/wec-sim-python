@@ -145,3 +145,25 @@ def test_published_oswec_nonlinear_visualization_forces():
     radiation = source["velocity"] @ np.asarray(body.hydroForce["fDamping"]).T
     np.testing.assert_allclose(source["forceRadiationDamping"], radiation,
                                rtol=0, atol=1e-8)
+
+    # The source moves a rigid mass shift out of its applied added-mass
+    # matrix, then feeds that remainder through a 1e-7 s Transport Delay.
+    added_mass = np.asarray(body.hydroForce["fAddedMass"])
+    mass_shift = np.zeros((6, 6))
+    mass_shift[:3, :3] = 2 * np.trace(added_mass[:3, :3]) * np.eye(3)
+    mass_shift[3:, 3:] = added_mass[3:, 3:]
+    applied_matrix = added_mass - mass_shift
+    reported_shift = np.zeros((6, 6))
+    reported_shift[3:, 3:] = added_mass[3:, 3:]
+    acceleration = source["acceleration"]
+    applied_force = (source["forceAddedMass"]
+                     - acceleration @ reported_shift.T)
+    delay_fraction = 1 - 1e-7 / 0.1
+    delayed_acceleration = (acceleration[1:-1]
+                            + delay_fraction * (
+                                acceleration[1:-1] - acceleration[:-2]
+                            ))
+    np.testing.assert_allclose(
+        applied_force[2:], delayed_acceleration @ applied_matrix.T,
+        rtol=0, atol=0.01,
+    )

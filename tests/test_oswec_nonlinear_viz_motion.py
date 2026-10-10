@@ -22,7 +22,9 @@ def test_published_nonlinear_oswec_hinge_against_refined_matlab():
     coarse = loadmat(reference / "dt-0.1.mat")
     medium = loadmat(reference / "dt-0.05.mat")
     fine = loadmat(reference / "dt-0.025.mat")
-    for source, dt in ((coarse, 0.1), (medium, 0.05), (fine, 0.025)):
+    finest = loadmat(reference / "dt-0.0125.mat")
+    for source, dt in ((coarse, 0.1), (medium, 0.05),
+                       (fine, 0.025), (finest, 0.0125)):
         assert float(source["dt"].item()) == dt
         assert float(source["nonlinearDt"].item()) == dt
         assert str(source["solver"].item()) == "ode4"
@@ -31,14 +33,20 @@ def test_published_nonlinear_oswec_hinge_against_refined_matlab():
                                medium["time"].ravel()[::2], rtol=0, atol=1e-12)
     np.testing.assert_allclose(medium["time"].ravel(),
                                fine["time"].ravel()[::2], rtol=0, atol=1e-12)
+    np.testing.assert_allclose(fine["time"].ravel(),
+                               finest["time"].ravel()[::2], rtol=0, atol=1e-12)
     coarse_change = np.max(np.abs(
         coarse["pose"][:, 4] - medium["pose"][::2, 4]
     ))
     refined_change = np.max(np.abs(
         medium["pose"][:, 4] - fine["pose"][::2, 4]
     ))
+    finest_change = np.max(np.abs(
+        fine["pose"][:, 4] - finest["pose"][::2, 4]
+    ))
     assert 0.005 < coarse_change < 0.006
     assert refined_change < 0.3 * coarse_change
+    assert finest_change < 0.3 * refined_change
 
     wec = WEC("Published nonlinear OSWEC")
     flap = wec.body(
@@ -58,16 +66,16 @@ def test_published_nonlinear_oswec_hinge_against_refined_matlab():
     result = wec.run(
         RegularWave(2.5, 8), dt=0.1, end_time=120, ramp_time=40,
     )
-    np.testing.assert_allclose(result.time, fine["time"].ravel()[::4],
+    np.testing.assert_allclose(result.time, finest["time"].ravel()[::8],
                                rtol=0, atol=1e-12)
     position = result.bodies["flap"].position
     velocity = result.bodies["flap"].velocity
-    source_position = fine["pose"][::4]
-    source_velocity = fine["velocity"][::4]
-    assert np.max(np.abs(position[:, 4] - source_position[:, 4])) < 5e-4
-    assert np.max(np.abs(velocity[:, 4] - source_velocity[:, 4])) < 4e-4
-    assert np.max(np.abs(position[:, 0] - source_position[:, 0])) < 2.5e-3
-    assert np.max(np.abs(position[:, 2] - source_position[:, 2])) < 1e-3
-    assert np.max(np.abs(velocity[:, 0] - source_velocity[:, 0])) < 2e-3
-    assert np.max(np.abs(velocity[:, 2] - source_velocity[:, 2])) < 1e-3
+    source_position = finest["pose"][::8]
+    source_velocity = finest["velocity"][::8]
+    assert np.max(np.abs(position[:, 4] - source_position[:, 4])) < 2e-4
+    assert np.max(np.abs(velocity[:, 4] - source_velocity[:, 4])) < 1.5e-4
+    assert np.max(np.abs(position[:, 0] - source_position[:, 0])) < 1e-3
+    assert np.max(np.abs(position[:, 2] - source_position[:, 2])) < 4e-4
+    assert np.max(np.abs(velocity[:, 0] - source_velocity[:, 0])) < 8e-4
+    assert np.max(np.abs(velocity[:, 2] - source_velocity[:, 2])) < 3.5e-4
     np.testing.assert_allclose(result.ptos["hinge"].force, 0, rtol=0, atol=0)
