@@ -150,11 +150,15 @@ def test_dense_source_wave_and_force_components(prefix):
              "_Common_Input_Files/RM3/hydroData/rm3.h5")
     phase = _read(f"{prefix}_phase.csv")
     assert phase.shape == (1000, 1)
+    seed = 1 if prefix == "dense" else 2
     components = jonswap_equal_energy_components(
         hydro, significant_height=2, peak_period=8,
-        directions=[0], spreading=[1], phase=phase,
+        directions=[0], spreading=[1], seed=seed,
+        phase_generator="matlab",
         discretization="traditional",
     )
+    _bound(components.phase, phase, 1e-12,
+           f"{prefix} independently generated MATLAB phase")
     wave = _read(f"{prefix}_wave.csv")
     incident = tuple(synthesize_irregular_response(
         hydro, components, dt=0.01, end_time=10, ramp_time=0,
