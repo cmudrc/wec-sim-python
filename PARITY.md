@@ -372,6 +372,19 @@ all output channels or isolate which internal wave, solver, or MoorDyn
 substep causes the sensitivity. They also do not explain the remaining
 `32.7` mm; the independent
 coupled-motion gate stays red, and Python's physical default is unchanged.
+The [refined-force gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38089549994)
+also saves all six force components on both finer source runs. Their logged
+force sums and adjusted-mass four-coordinate balances close to within
+`1.2e-6` N or N m, and Python independently regenerates the source phases,
+wave, and excitation. Against the `0.0025` s MATLAB trajectory, the physical
+Python path differs by `32.7` mm float and `30.4` mm spar surge at 10 s.
+Applying the **source-derived** delayed-mass residual to Python for only the
+first `0.1` s reduces those final differences to `3.61` and `3.41` mm;
+applying it throughout 10 s gives `4.22` and `3.97` mm. The refined case's
+remaining difference is therefore also dominated by the source's initial
+mass-feedback transient. This correction uses MATLAB's saved acceleration
+and force, so it remains an attribution diagnostic, not an independently
+generated parity trajectory or a reason to change the physical default.
 
 The [pinned MoorDyn ParaView writer gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38080388695)
 interpolates two lines with three and four nodes to two intermediate frames.
