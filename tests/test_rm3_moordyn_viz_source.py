@@ -151,11 +151,69 @@ def test_saved_source_mooring_load_through_python_body_solver():
     for number, name in ((1, "float"), (2, "spar")):
         saved = _read(f"dense_body{number}.csv")
         assert saved.shape == (1001, 25)
+        np.savetxt(Path(REFERENCE) / f"python_saved_force_body{number}.csv",
+                   np.column_stack((result.time,
+                                    result.bodies[name].position,
+                                    result.bodies[name].velocity)),
+                   delimiter=",")
         for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
             error = result.bodies[name].position[:, axis] - saved[:, 1 + axis]
             print(f"saved-force {name} {label}: "
                   f"maximum {np.max(np.abs(error)):.8g}, "
-                  f"at 1 s {error[100]:.8g}, at 10 s {error[-1]:.8g}")
+                  f"at 0.1 s {error[10]:.8g}, "
+                  f"1 s {error[100]:.8g}, at 10 s {error[-1]:.8g}")
+
+
+def test_live_moordyn_on_same_dense_source_sea(tmp_path):
+    """Keep source sea and output grid fixed while restoring mooring feedback."""
+    apps = Path(APPLICATIONS)
+    source_mooring = _read("dense_mooring.csv")
+    hydro = apps / "_Common_Input_Files/RM3/hydroData/rm3.h5"
+    input_dir = tmp_path / "Mooring"
+    input_dir.mkdir()
+    lines = input_dir / "lines.txt"
+    shutil.copyfile(apps / "Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt",
+                    lines)
+    wec = WEC("RM3 dense source sea with live MoorDyn")
+    float_body = wec.body("float", hydro, inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", hydro, inertia=(0, 94_407_091.24, 0))
+    wec.floating_joint(
+        float_body, spar, damping=1_200_000,
+        moordyn=MoorDyn(LIBRARY, lines),
+        moordyn_point=spar.at(0, 0, 21.5),
+    )
+    result = wec.run(
+        JONSWAPWave(2, 8, phase_file=Path(REFERENCE) / "dense_phase.csv",
+                    discretization="traditional"),
+        dt=0.01, end_time=10, ramp_time=0, radiation_memory=60,
+        initial_coordinate={"spar_heave": -0.21},
+    )
+    assert result.time.shape == (1001,)
+    _bound(result.wave_elevation, _read("dense_wave.csv")[:, 1],
+           1e-10, "live dense-sea wave elevation")
+    for number, name in ((1, "float"), (2, "spar")):
+        saved = _read(f"dense_body{number}.csv")
+        np.savetxt(Path(REFERENCE) / f"python_live_dense_body{number}.csv",
+                   np.column_stack((result.time,
+                                    result.bodies[name].position,
+                                    result.bodies[name].velocity)),
+                   delimiter=",")
+        for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
+            error = result.bodies[name].position[:, axis] - saved[:, 1 + axis]
+            print(f"live dense-sea {name} {label}: "
+                  f"maximum {np.max(np.abs(error)):.8g}, "
+                  f"at 0.1 s {error[10]:.8g}, "
+                  f"1 s {error[100]:.8g}, at 10 s {error[-1]:.8g}")
+    force = dict(result.raw.extra_outputs)["moordyn_connection_force"]
+    np.savetxt(Path(REFERENCE) / "python_live_dense_mooring_force.csv",
+               np.column_stack((result.time, force)), delimiter=",")
+    for axis, label in ((0, "surge force"), (2, "heave force"),
+                        (4, "pitch moment")):
+        error = force[:, axis] - source_mooring[:, 13 + axis]
+        print(f"live dense-sea mooring {label}: "
+              f"maximum {np.max(np.abs(error)):.8g}, "
+              f"at 0.1 s {error[10]:.8g}, "
+              f"1 s {error[100]:.8g}, at 10 s {error[-1]:.8g}")
 
 
 def test_public_floating_joint_tracks_published_moordyn_viz(tmp_path):
