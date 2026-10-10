@@ -103,6 +103,59 @@ def test_saved_source_pose_through_pinned_moordyn(tmp_path):
             print(f"source-pose MoorDyn {mode} {label}: "
                   f"maximum {np.max(np.abs(error[:, axis])):.8g}, "
                   f"RMS {np.sqrt(np.mean(error[:, axis] ** 2)):.8g}")
+        if mode == "at_step_end":
+            _bound(actual[1:], source[1:, 13:19], 0.01,
+                   "MoorDyn on saved source connection poses")
+
+
+def test_saved_source_mooring_load_through_python_body_solver():
+    """Separate body integration from MoorDyn state feedback over ten seconds."""
+    source_mooring = _read("dense_mooring.csv")
+
+    class PrescribedMoorDyn(MoorDyn):
+        def __init__(self, force):
+            self.force = force
+            self._started = False
+
+        def start(self, position, velocity):
+            self._started = True
+            return self
+
+        def step(self, position, velocity, time, dt):
+            index = round((time + dt) / 0.01)
+            return self.force[index].copy()
+
+        def close(self):
+            self._started = False
+
+    hydro = (Path(APPLICATIONS) /
+             "_Common_Input_Files/RM3/hydroData/rm3.h5")
+    wec = WEC("RM3 with saved source mooring load")
+    float_body = wec.body("float", hydro, inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", hydro, inertia=(0, 94_407_091.24, 0))
+    wec.floating_joint(
+        float_body, spar, damping=1_200_000,
+        moordyn=PrescribedMoorDyn(source_mooring[:, 13:19]),
+        moordyn_point=spar.at(0, 0, 21.5),
+    )
+    result = wec.run(
+        JONSWAPWave(2, 8, phase_file=Path(REFERENCE) / "dense_phase.csv",
+                    discretization="traditional"),
+        dt=0.01, end_time=10, ramp_time=0, radiation_memory=60,
+        initial_coordinate={"spar_heave": -0.21},
+    )
+    assert result.time.shape == (1001,)
+    source_wave = _read("dense_wave.csv")
+    _bound(result.wave_elevation, source_wave[:, 1], 1e-10,
+           "dense diagnostic wave elevation")
+    for number, name in ((1, "float"), (2, "spar")):
+        saved = _read(f"dense_body{number}.csv")
+        assert saved.shape == (1001, 25)
+        for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
+            error = result.bodies[name].position[:, axis] - saved[:, 1 + axis]
+            print(f"saved-force {name} {label}: "
+                  f"maximum {np.max(np.abs(error)):.8g}, "
+                  f"at 1 s {error[100]:.8g}, at 10 s {error[-1]:.8g}")
 
 
 def test_public_floating_joint_tracks_published_moordyn_viz(tmp_path):
