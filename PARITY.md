@@ -565,6 +565,23 @@ control, but rotor speed subsequently falls and pitch returns to zero. It
 covers ten seconds of the 20 s wave ramp, not sustained above-rated operation
 or a different published turbulent-wind case.
 
+A [derived 16 m/s, 30 s constant-wind pair](https://github.com/cmudrc/wec-sim-python/pull/164)
+keeps the same 4 m, seed-1 JONSWAP sea, platform, and IEA 15 MW turbine while
+changing only the wind speed and duration. MATLAB blade pitch remains above
+`0.193` rad from 20–30 s, after the wave ramp. On all 3,001 samples, the
+independent causal Python solve differs by at most `2.17` mm in platform
+position, `0.765` mm/s in platform speed, `0.00255` rpm in rotor speed,
+`0.00394` rad in azimuth, `0.601` N m in generator torque, and `0.000607` rad
+in blade pitch. The worst blade-root component differs by `0.433%` of its
+source peak. Replaying the controller on MATLAB's output-sampled rotor speed
+differs in pitch by at most `0.000205` rad, within the `0.0003` rad replay
+gate. The longer coupled trajectory has separate explicit per-axis and turbine
+gates in `tests/test_most_constant_wind_source.py`; the 10 s gates remain
+unchanged. MATLAB's platform travels `17.92` m in surge by 30 s, so this is a
+numerical comparison and does not establish physical validity of the source's
+small-motion hydrodynamics at that displacement. Turbulent above-rated wind
+remains unpaired.
+
 The WaveStar NMPC solver-step audit in
 `tools/wavestar_nmpc_step_audit.py` compares the first 30 s of the pinned
 published `ode8`/0.05 s source run with independent Python closed loops at

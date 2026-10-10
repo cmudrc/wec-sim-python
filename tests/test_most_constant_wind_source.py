@@ -105,8 +105,10 @@ def test_most_above_rated_constant_wind_against_pinned_source():
     np.testing.assert_allclose(replay_torque,
                                source["generator_torque"].ravel(),
                                rtol=0, atol=10)
-    np.testing.assert_allclose(replay_pitch, source_pitch,
-                               rtol=0, atol=1e-6)
+    # The sustained case's logged pitch differs slightly from a replay on
+    # output-sampled rotor speed during active feedback after 24 s.
+    np.testing.assert_allclose(replay_pitch, source_pitch, rtol=0,
+                               atol=3e-4 if END_TIME > 20 else 1e-6)
 
     if result is not None:
         assert result.iterations <= 12
@@ -120,17 +122,27 @@ def test_most_above_rated_constant_wind_against_pinned_source():
     assert causal.position_residual <= 1e-6
     assert causal.velocity_residual <= 1e-4
 
-    # Both coupling methods must meet the same source trajectory gates. The
-    # causal method exercises nonzero blade pitch without a full-history pass.
-    for coupled in ((result, causal) if result is not None else (causal,)):
-        for axis, position_gate, velocity_gate in (
+    # The longer case has explicit full-duration gates, separate from the
+    # 10 s ramp gates. Both use the same-run generated controller inputs.
+    position_and_speed_gates = (
+        (
+            (0, 2e-3, 4.5e-4),
+            (1, 3.5e-3, 1.2e-3),
+            (2, 4.5e-4, 1.1e-4),
+            (3, 4e-4, 1.2e-4),
+            (4, 1.2e-4, 1.2e-5),
+            (5, 5e-4, 6e-5),
+        ) if END_TIME > 20 else (
             (0, 2e-4, 5e-5),
             (1, 5e-4, 2e-4),
             (2, 1.5e-4, 7e-5),
             (3, 5e-5, 2e-5),
             (4, 5e-6, 2e-6),
             (5, 1.5e-4, 3e-6),
-        ):
+        )
+    )
+    for coupled in ((result, causal) if result is not None else (causal,)):
+        for axis, position_gate, velocity_gate in position_and_speed_gates:
             np.testing.assert_allclose(
                 coupled.platform.position[:, axis],
                 source["body_position"][:, axis],
@@ -143,18 +155,21 @@ def test_most_above_rated_constant_wind_against_pinned_source():
             )
         np.testing.assert_allclose(
             coupled.rotor.rotor_speed*60/(2*np.pi),
-            source["rotor_speed"].ravel(), rtol=0, atol=.001,
+            source["rotor_speed"].ravel(), rtol=0,
+            atol=.004 if END_TIME > 20 else .001,
         )
         np.testing.assert_allclose(
             coupled.rotor.azimuth, source["azimuth"].ravel(),
-            rtol=0, atol=.0003,
+            rtol=0, atol=.006 if END_TIME > 20 else .0003,
         )
         np.testing.assert_allclose(
             coupled.rotor.generator_torque,
-            source["generator_torque"].ravel(), rtol=0, atol=3000,
+            source["generator_torque"].ravel(), rtol=0,
+            atol=100 if END_TIME > 20 else 3000,
         )
         np.testing.assert_allclose(
-            coupled.rotor.blade_pitch, source_pitch, rtol=0, atol=2e-5,
+            coupled.rotor.blade_pitch, source_pitch, rtol=0,
+            atol=.001 if END_TIME > 20 else 2e-5,
         )
         expected_load = source["blade_aero_load"]
         assert coupled.rotor.blade_root_load.shape == expected_load.shape == (
@@ -164,6 +179,8 @@ def test_most_above_rated_constant_wind_against_pinned_source():
         component_error = np.max(
             np.abs(coupled.rotor.blade_root_load - expected_load), axis=(0, 2),
         )
-        assert np.all(component_error < .002 * component_peak), (
+        assert np.all(component_error < (
+            .006 if END_TIME > 20 else .002
+        ) * component_peak), (
             component_error, component_peak,
         )

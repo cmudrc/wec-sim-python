@@ -176,7 +176,8 @@ all six platform coordinates until the two trajectories agree within the
 reported `position_residual` and `velocity_residual`. Pass
 `full_six_dof=False` for the earlier surge/heave/pitch reduction. The paired
 six-coordinate gates cover two pinned 10 s MOST seas, 30 and 60 s developed
-seas, and a derived 10 s constant-wind case at 12 m/s.
+seas, a derived 10 s constant-wind case at 12 m/s, and a 30 s constant-wind
+case at 16 m/s that retains active blade pitch after the wave ramp.
 
 For longer histories, `coupled.simulate_causal(time, wave.excitation_force,
 wind_field)` advances the turbine and platform once per 0.01 s step using a
