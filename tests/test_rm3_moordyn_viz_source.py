@@ -122,6 +122,8 @@ def test_source_output_interval_sensitivity():
         dense = _read(f"dense_body{number}.csv")[::10]
         coarse = _read(f"coarse_body{number}.csv")
         assert dense.shape == coarse.shape == (101, 25)
+        _bound(dense[:, 1:13], coarse[:, 1:13], 1e-9,
+               f"source {name} motion at both output steps")
         for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
             error = dense[:, 1 + axis] - coarse[:, 1 + axis]
             print(f"source output-step {name} {label}: "
@@ -130,6 +132,8 @@ def test_source_output_interval_sensitivity():
     dense_mooring = _read("dense_mooring.csv")[::10]
     coarse_mooring = _read("coarse_mooring.csv")
     assert dense_mooring.shape == coarse_mooring.shape == (101, 19)
+    _bound(dense_mooring[:, 13:19], coarse_mooring[:, 13:19], 1e-6,
+           "source MoorDyn loads at both output steps")
     for axis, label in ((0, "surge force"), (2, "heave force"),
                         (4, "pitch moment")):
         error = dense_mooring[:, 13 + axis] - coarse_mooring[:, 13 + axis]
