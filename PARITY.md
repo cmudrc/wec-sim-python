@@ -316,8 +316,20 @@ surge component is `+2.257 MN`, while original `A_inf * acceleration` is
 body mass and uses delayed acceleration feedback. Comparing the logged
 hydrodynamic-force column directly with Python's physical added-mass term
 would therefore misidentify a reporting convention as a dynamics defect.
-The coupled RM3 trajectory gate remains red; this decomposition does not yet
-identify its cause.
+After undoing the source's rotational-force postprocessing, the adjusted
+rigid inertia projected onto the RM3 joint agrees with the logged
+hydrodynamic, PTO, and MoorDyn generalized forces across all 1,001 samples:
+maximum residual is `1.37e-6` N or N m. At startup the source's shifted mass
+and zero delayed-feedback state give float/spar surge accelerations of
+`-0.183/-0.00725` m/s². With the original HDF5 added mass implicit, those
+same initial applied forces predict `-0.526/-0.200` m/s², close to Python's
+first-step mean `-0.523/-0.199` m/s². This establishes the initial source
+mass-feedback transient; it does not establish that the transient causes the
+entire trajectory gap. On the same 10 s sea, the opt-in output-step
+`simulink_delay` approximation has `0.198` m float-surge error versus `0.191`
+m for the physical implicit solver. The coupled RM3 trajectory gate remains
+red; matching the source's variable-step delayed feedback requires further
+evidence before changing Python's physical default.
 
 The [pinned MoorDyn ParaView writer gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38080388695)
 interpolates two lines with three and four nodes to two intermediate frames.

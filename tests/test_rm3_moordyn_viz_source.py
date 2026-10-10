@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import shutil
 
+import h5py
 import numpy as np
 import pytest
 
@@ -152,6 +153,71 @@ def test_dense_source_force_components_reconstruct_total():
                         for start in (13, 19, 25, 31, 37))
         _bound(excitation - resisting, terms[:, 43:49], 1e-6,
                f"source body{number} reported force sum")
+
+
+def test_dense_source_adjusted_mass_and_joint_force_balance():
+    """Reconstruct source inertia from its body, PTO, and MoorDyn logs."""
+    records = [_read(f"dense_body{number}.csv") for number in (1, 2)]
+    terms = [_read(f"dense_forces_body{number}.csv") for number in (1, 2)]
+    mooring = _read("dense_mooring.csv")
+    hydro = (Path(APPLICATIONS) /
+             "_Common_Input_Files/RM3/hydroData/rm3.h5")
+    matrices = []
+    with h5py.File(hydro) as h5:
+        for number, pitch_inertia in ((1, 21_306_090.66),
+                                      (2, 94_407_091.24)):
+            group = h5[f"body{number}"]
+            full_added = 1000 * np.asarray(
+                group["hydro_coeffs/added_mass/inf_freq"])
+            added = full_added[:, 6 * (number - 1):6 * number]
+            mass = 1000 * float(np.asarray(group["properties/disp_vol"])[0, 0])
+            center_z = float(np.asarray(group["properties/cg"]).ravel()[2])
+            shift = 2 * np.trace(added[:3, :3])
+            adjusted = np.diag([mass + shift] * 3 +
+                               [0, pitch_inertia + added[4, 4], 0])
+            matrices.append((adjusted, added[4, 4], center_z))
+
+    residuals = np.zeros((1001, 4))
+    for index in range(1001):
+        angle = records[0][index, 5]
+        rate = records[0][index, 11]
+        sine, cosine = np.sin(angle), np.cos(angle)
+        inertia = np.zeros(4)
+        applied = np.zeros(4)
+        slider_speed = []
+        jacobians = []
+        for body_index in (0, 1):
+            adjusted, pitch_added, center_z = matrices[body_index]
+            pose = records[body_index][index, 1:7]
+            velocity = records[body_index][index, 7:13]
+            acceleration = terms[body_index][index, 1:7]
+            slide = ((pose[2] - center_z
+                      - center_z * (cosine - 1)) / cosine)
+            radius = center_z + slide
+            slider_speed.append((velocity[2] + radius * sine * rate) / cosine)
+            jacobian = np.zeros((6, 4))
+            jacobian[0, 0] = 1
+            jacobian[0, body_index + 1] = sine
+            jacobian[0, 3] = radius * cosine
+            jacobian[2, body_index + 1] = cosine
+            jacobian[2, 3] = -radius * sine
+            jacobian[4, 3] = 1
+            jacobians.append(jacobian)
+            # The source restores rotational, but not translational, mass
+            # in its reported forceTotal during postprocessing.
+            hydro_force = terms[body_index][index, 43:49].copy()
+            hydro_force[4] += pitch_added * acceleration[4]
+            inertia += jacobian.T @ adjusted @ acceleration
+            applied += jacobian.T @ hydro_force
+        pto_force = -1_200_000 * (slider_speed[0] - slider_speed[1])
+        applied[1] += pto_force
+        applied[2] -= pto_force
+        mooring_jacobian = jacobians[1].copy()
+        mooring_jacobian[:3, 3] += [21.5 * cosine, 0, -21.5 * sine]
+        applied += mooring_jacobian.T @ mooring[index, 13:19]
+        residuals[index] = inertia - applied
+    _bound(residuals, np.zeros_like(residuals), 1e-3,
+           "source adjusted-mass four-coordinate force balance")
 
 
 def test_saved_source_mooring_load_through_python_body_solver():
