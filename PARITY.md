@@ -354,6 +354,25 @@ The separate seed supports startup mass-feedback attribution without
 providing an independent replacement for MATLAB's delayed feedback or
 closing the published coupled-motion gate.
 
+A [source maximum-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38088631075)
+holds the seed-1 sea, `ode45`, `dtOut=0.01` s, hydrodynamics, PTO, and native
+MoorDyn input fixed while changing only MATLAB `simu.dt`, which sets
+Simulink's `MaxStep`. At `0.01`, `0.005`, and `0.0025` s, all 1,000 random
+phases and all 1,001 saved wave samples are identical. MATLAB's 10 s float
+surge is `0.860672`, `1.083537`, and `1.084102` m; spar surge is
+`1.348353`, `1.548801`, and `1.549752` m. Thus the published-step to half-step
+change is `223` mm float and `200` mm spar, while the next halving changes
+them by only `0.565` and `0.951` mm. Python's physical implicit-mass path at
+`0.01` s has float surge `1.051404` m: its difference from the `0.0025` s
+MATLAB run is `32.7` mm, versus `190.7` mm from the original `0.01` s MATLAB
+run. The physical Python `0.01` to `0.005` s step change was below `0.35` mm
+on this sea. The coarse MATLAB source trajectory is therefore strongly
+maximum-step-sensitive. These two refinements do not prove convergence of
+all output channels or isolate which internal wave, solver, or MoorDyn
+substep causes the sensitivity. They also do not explain the remaining
+`32.7` mm; the independent
+coupled-motion gate stays red, and Python's physical default is unchanged.
+
 The [pinned MoorDyn ParaView writer gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38080388695)
 interpolates two lines with three and four nodes to two intermediate frames.
 Python's public `ParaviewClass.write_paraview_vtp_mooring` matches all source
