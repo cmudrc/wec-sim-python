@@ -82,6 +82,12 @@ jobs:
             applications/Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt \
             matlab-ref/source/functions/moorDyn/libmoordyn.so \
             rm3-moordyn-viz-feedback-seed2
+          python tools/analyze_rm3_moordyn_feedback.py --prefix step0025 \
+            matlab-rm3-moordyn-viz \
+            applications/_Common_Input_Files/RM3/hydroData/rm3.h5 \
+            applications/Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt \
+            matlab-ref/source/functions/moorDyn/libmoordyn.so \
+            rm3-moordyn-viz-feedback-step0025
       - run: python -m pytest -q -s tests/test_rm3_moordyn_viz_source.py
         env:
           WEC_SIM_APPLICATIONS_DIR: applications
@@ -95,4 +101,5 @@ jobs:
             matlab-rm3-moordyn-viz/
             rm3-moordyn-viz-feedback/
             rm3-moordyn-viz-feedback-seed2/
+            rm3-moordyn-viz-feedback-step0025/
             applications/_Common_Input_Files/RM3/hydroData/rm3.h5

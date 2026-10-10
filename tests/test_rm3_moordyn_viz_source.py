@@ -167,14 +167,15 @@ def test_source_maximum_step_refinement_preserves_sea(prefix):
            1e-9, f"{prefix} source MoorDyn time")
 
 
-@pytest.mark.parametrize("prefix", ["dense", "seed2_dense"])
+@pytest.mark.parametrize("prefix", ["dense", "seed2_dense",
+                                    "step005", "step0025"])
 def test_dense_source_wave_and_force_components(prefix):
     """Check the signed WEC-Sim logging convention before using its forces."""
     hydro = (Path(APPLICATIONS) /
              "_Common_Input_Files/RM3/hydroData/rm3.h5")
     phase = _read(f"{prefix}_phase.csv")
     assert phase.shape == (1000, 1)
-    seed = 1 if prefix == "dense" else 2
+    seed = 2 if prefix == "seed2_dense" else 1
     components = jonswap_equal_energy_components(
         hydro, significant_height=2, peak_period=8,
         directions=[0], spreading=[1], seed=seed,
@@ -202,7 +203,8 @@ def test_dense_source_wave_and_force_components(prefix):
                f"{prefix} source body{number} reported force sum")
 
 
-@pytest.mark.parametrize("prefix", ["dense", "seed2_dense"])
+@pytest.mark.parametrize("prefix", ["dense", "seed2_dense",
+                                    "step005", "step0025"])
 def test_dense_source_adjusted_mass_and_joint_force_balance(prefix):
     """Reconstruct source inertia from its body, PTO, and MoorDyn logs."""
     records = [_read(f"{prefix}_body{number}.csv") for number in (1, 2)]
