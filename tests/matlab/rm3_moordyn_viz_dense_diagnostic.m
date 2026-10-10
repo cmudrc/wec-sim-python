@@ -52,6 +52,7 @@ for iBody = 1:2
     writematrix(bodyValues, fullfile(outDir, ...
         sprintf('dense_body%d.csv', iBody)));
 end
+close_system('RM3MoorDyn', 0);
 
 % Keep the same short seeded sea and physical settings, but restore the
 % published 0.1 s output interval to test source output-step sensitivity.
