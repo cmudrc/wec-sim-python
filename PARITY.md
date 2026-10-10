@@ -330,7 +330,9 @@ entire trajectory gap. On the same 10 s sea, the opt-in output-step
 m for the physical implicit solver. The coupled RM3 trajectory gate remains
 red; matching the source's variable-step delayed feedback requires further
 evidence before changing Python's physical default.
-An additional source-driven counterfactual projects the difference between
+The reproducible
+[source-driven counterfactual](tools/analyze_rm3_moordyn_feedback.py)
+projects the difference between
 the logged delayed added-mass force and the force from current acceleration
 through the four-coordinate joint, then applies that prescribed residual to
 Python's physical solver with live MoorDyn. On this seeded 10 s sea, its

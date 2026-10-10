@@ -7,6 +7,7 @@ on:
       - 'tests/matlab/rm3_moordyn_viz_baseline.m'
       - 'tests/matlab/rm3_moordyn_viz_dense_diagnostic.m'
       - 'tests/test_rm3_moordyn_viz_source.py'
+      - 'tools/analyze_rm3_moordyn_feedback.py'
       - 'wecsim/api.py'
       - 'wecsim/caseDynamics.py'
       - 'wecsim/irregularWave.py'
@@ -63,6 +64,14 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e . pytest
+      - name: Diagnose source added-mass feedback
+        run: |
+          python tools/analyze_rm3_moordyn_feedback.py \
+            matlab-rm3-moordyn-viz \
+            applications/_Common_Input_Files/RM3/hydroData/rm3.h5 \
+            applications/Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt \
+            matlab-ref/source/functions/moorDyn/libmoordyn.so \
+            rm3-moordyn-viz-feedback
       - run: python -m pytest -q -s tests/test_rm3_moordyn_viz_source.py
         env:
           WEC_SIM_APPLICATIONS_DIR: applications
@@ -74,4 +83,5 @@ jobs:
           name: rm3-moordyn-viz-source
           path: |
             matlab-rm3-moordyn-viz/
+            rm3-moordyn-viz-feedback/
             applications/_Common_Input_Files/RM3/hydroData/rm3.h5
