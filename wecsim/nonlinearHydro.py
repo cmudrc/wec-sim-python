@@ -1,9 +1,9 @@
-"""Instantaneous free-surface forces on a triangulated heaving body.
+"""Instantaneous free-surface pressures and forces on triangulated bodies.
 
-This implements WEC-Sim's nonlinearHydro=2 regular-wave force construction
-for a body constrained to heave, with constant or convolution radiation.
-Mesh triangles are in body coordinates about
-the center of gravity, as required by WEC-Sim's geometry import.
+The mesh pressure and wrench functions accept six-component body poses.
+The coupled nonlinearHydro=2 solver below is currently limited to heave.
+Mesh triangles are in body coordinates about the center of gravity, as
+required by WEC-Sim's geometry import.
 """
 
 from dataclasses import dataclass
@@ -21,6 +21,25 @@ class MeshPressures:
     hydrostatic: np.ndarray
     nonlinear_wave: np.ndarray
     linear_wave: np.ndarray
+
+
+@dataclass(frozen=True)
+class MeshPressureWrenches:
+    """Physical pressure force and moment about the body's CG, per time."""
+
+    hydrostatic: np.ndarray
+    nonlinear_wave: np.ndarray
+    linear_wave: np.ndarray
+
+
+def _xyz_rotation(roll, pitch, yaw):
+    cx, sx = np.cos(roll), np.sin(roll)
+    cy, sy = np.cos(pitch), np.sin(pitch)
+    cz, sz = np.cos(yaw), np.sin(yaw)
+    rx = np.array([[1, 0, 0], [0, cx, -sx], [0, sx, cx]])
+    ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
+    rz = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
+    return rz @ ry @ rx
 
 
 def regular_wave_mesh_pressures(
@@ -81,14 +100,7 @@ def regular_wave_mesh_pressures(
         return np.where(stretched > 0, 0.0, pressure)
 
     for i, (pose, at_time) in enumerate(zip(poses, times)):
-        roll, pitch, yaw = pose[3:]
-        cx, sx = np.cos(roll), np.sin(roll)
-        cy, sy = np.cos(pitch), np.sin(pitch)
-        cz, sz = np.cos(yaw), np.sin(yaw)
-        rx = np.array([[1, 0, 0], [0, cx, -sx], [0, sx, cx]])
-        ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
-        rz = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
-        moved = centers @ (rz @ ry @ rx).T + pose[:3]
+        moved = centers @ _xyz_rotation(*pose[3:]).T + pose[:3]
         moved_z = moved[:, 2]
         ramp = (1 if ramp_time == 0 or at_time >= ramp_time
                 else (1 - np.cos(np.pi * at_time / ramp_time)) / 2)
@@ -108,6 +120,54 @@ def regular_wave_mesh_pressures(
                          / np.cosh(wave_number * water_depth))
         linear[i, mean_z > 0] = 0.0
     return MeshPressures(hydrostatic, nonlinear, linear)
+
+
+def mesh_pressure_wrenches(vertices, faces, poses, pressures: MeshPressures):
+    """Integrate facet pressures into physical six-component body wrenches.
+
+    The hydrostatic and nonlinear pressures act on the moved surface; the
+    linear wave pressure acts on the mean surface. Moments are about the CG.
+    Weight and the post-processor's resisting-force sign are not included.
+    """
+    vertices = np.asarray(vertices, dtype=float)
+    faces = np.asarray(faces)
+    poses = np.asarray(poses, dtype=float)
+    if (vertices.ndim != 2 or vertices.shape[1] != 3
+            or faces.ndim != 2 or faces.shape[1] != 3
+            or not np.issubdtype(faces.dtype, np.integer)
+            or not len(faces) or np.any(faces < 0)
+            or np.any(faces >= len(vertices))
+            or poses.ndim != 2 or poses.shape[1] != 6
+            or not np.isfinite(vertices).all() or not np.isfinite(poses).all()):
+        raise ValueError("pressure wrenches need finite triangles and poses")
+    shape = (len(poses), len(faces))
+    for field in (pressures.hydrostatic, pressures.nonlinear_wave,
+                  pressures.linear_wave):
+        if np.shape(field) != shape or not np.isfinite(field).all():
+            raise ValueError("each pressure field must match the poses and faces")
+    triangles = vertices[faces]
+    centers = triangles.mean(axis=1)
+    area_vectors = np.cross(triangles[:, 1] - triangles[:, 0],
+                            triangles[:, 2] - triangles[:, 0]) / 2
+
+    def integrate(pressure, center, area):
+        facet_force = -pressure[:, None] * area
+        return np.r_[facet_force.sum(axis=0),
+                     np.cross(center, facet_force).sum(axis=0)]
+
+    linear = np.array([
+        integrate(pressure, centers, area_vectors)
+        for pressure in pressures.linear_wave
+    ]).reshape(len(poses), 6)
+    hydrostatic = np.empty((len(poses), 6))
+    nonlinear = np.empty_like(hydrostatic)
+    for i, pose in enumerate(poses):
+        rotation = _xyz_rotation(*pose[3:])
+        center = centers @ rotation.T
+        area = area_vectors @ rotation.T
+        hydrostatic[i] = integrate(pressures.hydrostatic[i], center, area)
+        nonlinear[i] = integrate(pressures.nonlinear_wave[i], center, area)
+    return MeshPressureWrenches(hydrostatic, nonlinear, linear)
 
 
 @dataclass(frozen=True)

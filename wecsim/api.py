@@ -1250,14 +1250,19 @@ class WEC:
                 or not np.isfinite(flap.inertia).all()
                 or flap.inertia[1] <= 0
                 or flap.passive_yaw or flap.yaw_heading_bank is not None
-                or flap.variable_hydro is not None or flap.nonlinear_hydro is not None
+                or flap.variable_hydro is not None
+                or flap.nonlinear_hydro not in (None, "instantaneous")
+                or (flap.geometry_file is None) != (flap.nonlinear_hydro is None)
                 or flap.mean_drift != "none" or flap.drag_coefficient
                 or flap.drag_area):
-            raise ValueError("fixed_hinge needs a positive flap mass and pitch inertia without extra force models")
+            raise ValueError("fixed_hinge needs positive flap mass and pitch inertia with supported mesh hydro settings")
         bodies = [{"name": flap.name, "hydro_file": str(flap.hydro_file),
                    "hydro_body": flap.hydro_body or 1,
                    "mass": float(flap.mass),
                    "pitch_inertia": float(flap.inertia[1])}]
+        if flap.nonlinear_hydro is not None:
+            bodies[0]["nonlinear_hydro"] = flap.nonlinear_hydro
+            bodies[0]["geometry_file"] = str(flap.geometry_file)
         if base_case is not None:
             bodies.append(base_case)
         simulation["added_mass_scheme"] = hinge.added_mass_scheme

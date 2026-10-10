@@ -24,7 +24,9 @@ from .gbmFloating import (
 )
 from .hardStops import LinearHardStops
 from .hingePitch import (
-    solve_hinged_pitch_from_excitation, solve_hinged_pitch_regular,
+    solve_hinged_pitch_from_excitation,
+    solve_hinged_pitch_nonlinear_regular,
+    solve_hinged_pitch_regular,
 )
 from .irregularWave import (
     imported_full_directional_components, imported_spectrum_components,
@@ -583,8 +585,15 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         elif len(bodies) == 2:
             fixed_center = np.asarray(bodies[1]["center_gravity"], dtype=float)
         _body_number(bodies[0], 1)
-        if set(bodies[0]) - {"hydro_file", "hydro_body", "mass", "pitch_inertia", "name"}:
-            raise ValueError("fixed-hinge pitch uses mass and pitch_inertia")
+        if set(bodies[0]) - {"hydro_file", "hydro_body", "mass", "pitch_inertia",
+                              "name", "nonlinear_hydro", "geometry_file"}:
+            raise ValueError("fixed-hinge pitch uses mass, pitch inertia, and optional mesh hydro")
+        nonlinear = bodies[0].get("nonlinear_hydro")
+        geometry = bodies[0].get("geometry_file")
+        if nonlinear not in (None, "instantaneous") or (geometry is None) != (nonlinear is None):
+            raise ValueError("nonlinear fixed hinge needs instantaneous hydro and a mesh")
+        if nonlinear is not None and (not isinstance(geometry, str) or not geometry):
+            raise ValueError("fixed-hinge geometry_file must be a nonempty file path")
         mass = _number(bodies[0].get("mass"), "body.mass", positive=True)
         inertia = _number(bodies[0].get("pitch_inertia"),
                           "body.pitch_inertia", positive=True)
@@ -611,8 +620,15 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 raise ValueError("fixed-hinge regular dynamics currently support 0-degree waves")
             if "radiation_memory" in sim:
                 raise ValueError("regular fixed-hinge dynamics use constant-frequency radiation")
-            solved = solve_hinged_pitch_regular(
-                hydro[0], wave_height=height, wave_period=period,
+            solver = (solve_hinged_pitch_nonlinear_regular if nonlinear is not None
+                      else solve_hinged_pitch_regular)
+            if nonlinear is not None:
+                geometry_path = (base / geometry).resolve(strict=True)
+            else:
+                geometry_path = None
+            solved = solver(
+                hydro[0], *([geometry_path] if geometry_path is not None else []),
+                wave_height=height, wave_period=period,
                 hinge_z=hinge[2], body_mass=mass, pitch_inertia=inertia,
                 pto_damping=damping, pto_stiffness=stiffness,
                 pto_equilibrium=equilibrium, dt=dt, end_time=end_time,
@@ -637,6 +653,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 pto_force=solved.pto_torque, pto_label="pto_pitch_torque",
                 wave_elevation=elevation,
             )
+        if nonlinear is not None:
+            raise ValueError("nonlinear fixed hinge currently needs a regular wave")
         if wave["type"] == "spectrumImportFullDir":
             if (set(wave) - {"type", "file", "phase_file", "seed", "phase_generator",
                              "excitation_interpolation", "force_quadrature"}
