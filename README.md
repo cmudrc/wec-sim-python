@@ -1707,8 +1707,13 @@ source XYZ rotation order. `write_paraview_vtp_mooring(...)` accepts one
 `(time, node, xyz)` position history and one `(time, segment)` tension history
 per MoorDyn line; it interpolates both to the requested frames and writes
 numbered line VTP files. Wave, body, and mooring serialization have focused
-MATLAB source gates. The published OSWEC and RM3 visualization cases still
-need direct output gates for their actual meshes, pressures, and mooring lines.
+MATLAB source gates. For a regular-wave body with logged world-CG poses,
+`wecsim.nonlinearHydro.regular_wave_mesh_pressures(...)` calculates the three
+face-pressure arrays from its STL mesh, wave settings, and output times; pass
+its `hydrostatic`, `nonlinear_wave`, and `linear_wave` fields to the body VTP
+writer. The actual published OSWEC nonlinear visualization flap pressures
+have a full-duration MATLAB gate. Independent nonlinear flap motion, the full
+published VTP scene, and actual RM3 MoorDyn line histories remain unpaired.
 
 To run a supported case without writing Python code:
 
@@ -1733,4 +1738,5 @@ The Python dynamics engine uses independent coordinates for each supported
 constraint layout, avoiding numerical joint drift. New layouts and force
 models need explicit MATLAB comparisons before they are called supported.
 Wave, body, and mooring VTP serialization now have pinned MATLAB source gates;
-full application visualization and BEMIO conversion remain future work.
+the published OSWEC nonlinear flap pressure fields have a separate paired
+gate. Full application visualization and BEMIO conversion remain future work.
