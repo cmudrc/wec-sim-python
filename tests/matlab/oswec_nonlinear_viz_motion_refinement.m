@@ -18,7 +18,7 @@ assert(contains(original, 'simu.dt = 0.1;') && ...
     'Pinned nonlinear OSWEC input changed');
 outDir = fullfile(repoRoot, 'matlab-oswec-nonlinear-viz-refinement');
 mkdir(outDir);
-steps = [0.1, 0.05, 0.025];
+steps = [0.1, 0.05, 0.025, 0.0125];
 for i = 1:numel(steps)
     runOneStep(caseDir, inputFile, original, outDir, steps(i));
 end
