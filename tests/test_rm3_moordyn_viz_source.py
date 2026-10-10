@@ -159,4 +159,56 @@ def test_public_floating_joint_tracks_published_moordyn_viz(tmp_path):
                actual_tension[:, :4], delimiter=",")
     record(actual_tension[:, 1:4], source_tension[:, 1:4],
            4_000, "three fairlead tensions")
+
+    # Source Simscape applies added mass through delayed acceleration. Keep
+    # this as a diagnostic so the default implicit-mass gate stays physical.
+    delay_dir = tmp_path / "MooringDelay"
+    delay_dir.mkdir()
+    delay_lines = delay_dir / "lines.txt"
+    shutil.copyfile(
+        apps / "Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt",
+        delay_lines,
+    )
+    delayed_wec = WEC("RM3 source added-mass diagnostic")
+    delayed_float = delayed_wec.body(
+        "float", hydro, inertia=(0, 21_306_090.66, 0),
+    )
+    delayed_spar = delayed_wec.body(
+        "spar", hydro, inertia=(0, 94_407_091.24, 0),
+    )
+    delayed_wec.floating_joint(
+        delayed_float, delayed_spar, damping=1_200_000,
+        moordyn=MoorDyn(LIBRARY, delay_lines),
+        moordyn_point=delayed_spar.at(0, 0, 21.5),
+        added_mass_scheme="simulink_delay",
+    )
+    try:
+        delayed = delayed_wec.run(
+            JONSWAPWave(2, 8, phase_file=reference / "phase.csv",
+                        discretization="traditional"),
+            dt=0.01, end_time=80, ramp_time=0, radiation_memory=60,
+            initial_coordinate={"spar_heave": -0.21},
+        )
+    except (RuntimeError, ValueError) as exc:
+        print(f"delayed added-mass diagnostic failed: {exc}")
+    else:
+        for number, name in ((1, "float"), (2, "spar")):
+            saved = _read(f"body{number}.csv")
+            indices = _indices(saved[:, 0])
+            np.savetxt(reference / f"python_delay_body{number}.csv",
+                       np.column_stack((saved[:, 0],
+                                        delayed.bodies[name].position[indices],
+                                        delayed.bodies[name].velocity[indices])),
+                       delimiter=",")
+            error = np.max(np.abs(
+                delayed.bodies[name].position[indices, 0] - saved[:, 1],
+            ))
+            print(f"{name} delayed-mass surge position: {error:.8g} m")
+        delayed_mooring = dict(delayed.raw.extra_outputs)[
+            "moordyn_connection_force"][_indices(source_mooring[:, 0])]
+        for axis, label in ((0, "surge force"), (4, "pitch moment")):
+            error = np.max(np.abs(
+                delayed_mooring[:, axis] - source_mooring[:, 13 + axis],
+            ))
+            print(f"delayed-mass mooring {label}: {error:.8g}")
     assert not violations, "; ".join(violations)
