@@ -21,19 +21,25 @@ assert(contains(original, 'simu.dt = 0.01;') && ...
     'Pinned passive-yaw case input changed');
 outDir = fullfile(repoRoot, 'matlab-oswec-passive-yaw-refinement');
 mkdir(outDir);
-for dt = [0.01, 0.005]
+steps = [0.01, 0.005, 0.0025];
+for dt = steps
     runOneStep(caseDir, inputFile, original, outDir, phaseSeed, dt);
 end
-coarse = load(fullfile(outDir, sprintf('seed-%d-dt-0.01.mat', phaseSeed)));
-fine = load(fullfile(outDir, sprintf('seed-%d-dt-0.005.mat', phaseSeed)));
-assert(max(abs(coarse.time - fine.time(1:2:end))) < 1e-10, ...
-    'Refined time grid does not align with the published grid');
-waveError = max(abs(coarse.wave(:, 2) - fine.wave(1:2:end, 2)));
-assert(waveError < 1e-12, ...
-    'Refining the step changed incident wave elevation');
-yawDifference = max(abs(coarse.yaw - fine.yaw(1:2:end)));
-fprintf('Seed %d: wave %.6g m; yaw %.6g rad; PTO work %.6f / %.6f J\n', ...
-    phaseSeed, waveError, yawDifference, coarse.work, fine.work);
+for pair = 1:(numel(steps) - 1)
+    coarse = load(fullfile(outDir, ...
+        sprintf('seed-%d-dt-%g.mat', phaseSeed, steps(pair))));
+    fine = load(fullfile(outDir, ...
+        sprintf('seed-%d-dt-%g.mat', phaseSeed, steps(pair + 1))));
+    assert(max(abs(coarse.time - fine.time(1:2:end))) < 1e-10, ...
+        'Refined time grid does not align with the coarser grid');
+    waveError = max(abs(coarse.wave(:, 2) - fine.wave(1:2:end, 2)));
+    assert(waveError < 1e-12, ...
+        'Refining the step changed incident wave elevation');
+    yawDifference = max(abs(coarse.yaw - fine.yaw(1:2:end)));
+    fprintf('Seed %d, steps %g / %g s: wave %.6g m; yaw %.6g rad; PTO work %.6f / %.6f J\n', ...
+        phaseSeed, steps(pair), steps(pair + 1), waveError, ...
+        yawDifference, coarse.work, fine.work);
+end
 end
 
 function runOneStep(caseDir, inputFile, original, outDir, phaseSeed, dt)
