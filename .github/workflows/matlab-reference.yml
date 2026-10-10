@@ -7,6 +7,7 @@ on:
       - 'tests/matlab/regular_wave_reference.m'
       - 'tests/test_live_matlab_parity.py'
       - 'wecsim/waveClass.py'
+      - 'wecsim/irregularWave.py'
   workflow_dispatch:
 
 jobs:

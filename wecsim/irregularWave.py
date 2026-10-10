@@ -193,13 +193,14 @@ def pm_equal_energy_components(
     peak_period: float,
     directions: np.ndarray,
     spreading: np.ndarray,
-    count: int = 500,
+    count: int | None = None,
     seed: int | None = None,
     phase_generator: str = "numpy",
     phase: np.ndarray | None = None,
     frequency_range: Sequence[float] | None = None,
+    discretization: str = "equal_energy",
 ) -> IrregularComponents:
-    """Build current WEC-Sim PM equal-energy bins from a frequency range.
+    """Build current WEC-Sim PM bins from a frequency range.
 
     ``phase`` overrides random generation for replay. The default seed uses
     NumPy; ``phase_generator="matlab"`` uses the pinned WEC-Sim Threefry
@@ -212,6 +213,7 @@ def pm_equal_energy_components(
         count=count, seed=seed, phase=phase, gamma=None,
         phase_generator=phase_generator,
         frequency_range=frequency_range,
+        discretization=discretization,
     )
 
 
@@ -222,14 +224,15 @@ def jonswap_equal_energy_components(
     peak_period: float,
     directions: np.ndarray,
     spreading: np.ndarray,
-    count: int = 500,
+    count: int | None = None,
     seed: int | None = None,
     phase_generator: str = "numpy",
     phase: np.ndarray | None = None,
     gamma: float | None = None,
     frequency_range: Sequence[float] | None = None,
+    discretization: str = "equal_energy",
 ) -> IrregularComponents:
-    """Build WEC-Sim's IEC JONSWAP equal-energy bins.
+    """Build WEC-Sim's IEC JONSWAP bins.
 
     ``gamma=None`` uses WEC-Sim's height/period-dependent peak factor.
     Supplied phases replay a MATLAB sea realization.
@@ -249,16 +252,25 @@ def jonswap_equal_energy_components(
         count=count, seed=seed, phase=phase, gamma=gamma,
         phase_generator=phase_generator,
         frequency_range=frequency_range,
+        discretization=discretization,
     )
 
 
 def _equal_energy_components(
     h5_file: str | Path | None, *, significant_height: float, peak_period: float,
-    directions: np.ndarray, spreading: np.ndarray, count: int,
+    directions: np.ndarray, spreading: np.ndarray, count: int | None,
     seed: int | None, phase: np.ndarray | None, gamma: float | None,
     phase_generator: str = "numpy",
     frequency_range: Sequence[float] | None = None,
+    discretization: str = "equal_energy",
 ) -> IrregularComponents:
+    if not isinstance(discretization, str):
+        raise ValueError("discretization must be 'equal_energy' or 'traditional'")
+    scheme = discretization.lower().replace("_", "")
+    if scheme not in ("equalenergy", "traditional"):
+        raise ValueError("discretization must be 'equal_energy' or 'traditional'")
+    if count is None:
+        count = 1000 if scheme == "traditional" else 500
     if (not np.isfinite([significant_height, peak_period]).all()
             or significant_height <= 0 or peak_period <= 0):
         raise ValueError("significant_height and peak_period must be positive and finite")
@@ -295,9 +307,11 @@ def _equal_energy_components(
                 omega_max = bem_max
             if omega_max <= omega_min:
                 raise ValueError("frequency_range has no interval inside the BEM range")
-    # Current MATLAB EqualEnergy uses 500,000 equal-width intervals before
-    # locating the closest cumulative-energy boundary for each bin.
-    dense_omega = np.linspace(omega_min, omega_max, 500_001)
+    # Traditional uses a uniform grid; EqualEnergy integrates on 500,000
+    # intervals before locating each cumulative-energy boundary.
+    dense_omega = np.linspace(
+        omega_min, omega_max, count if scheme == "traditional" else 500_001,
+    )
     frequency = dense_omega / (2 * np.pi)
     b_pm = 1.25 * (1 / peak_period)**4
     a_pm = b_pm * (significant_height / 2)**2
@@ -310,28 +324,33 @@ def _equal_energy_components(
             / (2 * sigma**2 * peak_frequency**2)
         )
         spectrum_hz *= (1 - .287 * np.log(gamma)) * peak
-    df = frequency[1] - frequency[0]
-    integrated = np.empty(len(frequency))
-    integrated[0] = 0.0
-    integrated[1:] = np.cumsum((spectrum_hz[:-1] + spectrum_hz[1:]) * df / 2)
-    energy_per_bin = integrated[-1] / (count + 1)
-    boundaries = np.zeros(count + 2, dtype=int)
-    for k in range(1, count + 2):
-        candidate = int(np.searchsorted(integrated, k * energy_per_bin))
-        candidate = min(max(candidate, boundaries[k - 1] + 1), len(integrated) - 1)
-        earlier = candidate - 1
-        if earlier > boundaries[k - 1] and (
-            abs(integrated[earlier] - k * energy_per_bin)
-            <= abs(integrated[candidate] - k * energy_per_bin)
-        ):
-            candidate = earlier
-        # MATLAB's ``wn(k+1) = wn(k) + wna(k)`` moves one grid point beyond
-        # the nearest cumulative-energy sample.
-        boundaries[k] = min(candidate + 1, len(integrated) - 1)
-    indices = boundaries[1:-1]
-    omega = dense_omega[indices]
-    d_omega = np.diff(np.r_[dense_omega[0], omega])
-    spectral_amplitude = 2 * spectrum_hz[indices] / (2 * np.pi)
+    if scheme == "traditional":
+        omega = dense_omega
+        d_omega = np.full(count, (omega_max - omega_min) / (count - 1))
+        spectral_amplitude = spectrum_hz / np.pi
+    else:
+        df = frequency[1] - frequency[0]
+        integrated = np.empty(len(frequency))
+        integrated[0] = 0.0
+        integrated[1:] = np.cumsum((spectrum_hz[:-1] + spectrum_hz[1:]) * df / 2)
+        energy_per_bin = integrated[-1] / (count + 1)
+        boundaries = np.zeros(count + 2, dtype=int)
+        for k in range(1, count + 2):
+            candidate = int(np.searchsorted(integrated, k * energy_per_bin))
+            candidate = min(max(candidate, boundaries[k - 1] + 1), len(integrated) - 1)
+            earlier = candidate - 1
+            if earlier > boundaries[k - 1] and (
+                abs(integrated[earlier] - k * energy_per_bin)
+                <= abs(integrated[candidate] - k * energy_per_bin)
+            ):
+                candidate = earlier
+            # MATLAB's ``wn(k+1) = wn(k) + wna(k)`` moves one grid point beyond
+            # the nearest cumulative-energy sample.
+            boundaries[k] = min(candidate + 1, len(integrated) - 1)
+        indices = boundaries[1:-1]
+        omega = dense_omega[indices]
+        d_omega = np.diff(np.r_[dense_omega[0], omega])
+        spectral_amplitude = spectrum_hz[indices] / np.pi
     if phase is None:
         phase_array = _random_phases((count, len(direction)), seed, phase_generator)
     else:
