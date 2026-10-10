@@ -54,6 +54,7 @@ jobs:
         env:
           WEC_SIM_MATLAB_OSWEC_PRESSURE_DIR: matlab-oswec-nonlinear-viz-pressure
           WEC_SIM_OSWEC_FLAP_STL: applications/_Common_Input_Files/OSWEC/geometry/flap.stl
+          WEC_SIM_OSWEC_H5: applications/_Common_Input_Files/OSWEC/hydroData/oswec.h5
       - uses: actions/upload-artifact@v4
         if: always()
         with:
