@@ -304,6 +304,21 @@ that WEC-Sim ran; it does not establish Python parity.
 | Other/dynamic: `MOST` | A focused pinned MATLAB reader gate compares Python's decoding of the checked-in 20,750-step TurbSim `.bts` file at selected grid points and with spatial checks at every time. A second source gate executes the published `RunTurbsim.m` on a 1,000-frame excerpt and compares all 249 output times, three velocity components, ten X planes, and 12×12 YZ grid points with Python's lazy advection view; the maximum difference is exactly zero. A third gate compares the six-component force and all three horizontal/vertical fairlead tensions from the pinned direct `nonLinearStaticMooring.m` at ten translated and rotated poses. Observed maximum differences are below `1e-5` N force, `1.5e-4` N m moment, and `5e-6` N tension; the paired gates are `1e-3` N, `1e-2` N m, and `1e-3` N respectively. A [fourth pinned MATLAB gate](https://github.com/cmudrc/wec-sim-python/actions/runs/37957379862) extracts the active BEM rotor function from `MOST_Lib.slx`, generates its IEA 15 MW blade inputs, and compares Python's three-blade root forces and moments at five hub/wind states, including moving and rotated hubs and spatially varying wind. The maximum observed component difference is `1.5e-8` N or N m, below the absolute `1e-4` gate. The published input sets `nonlinearStaticData.flag=1`, leaves `lookupTableFlag=0`, and sets `aeroLoadsType=1` for BEM; its active mooring block is `MooringNLStatic`. The generated mooring and aerodynamic lookup tables are not used by this case. These gates establish wind input, frozen-turbulence time shift, direct static catenary force, and isolated BEM blade loads. The 10 s rotor gate below advances turbine state from prescribed platform motion. A six-coordinate runner couples it to the platform over two pinned 10 s JONSWAP seas (4 m/seed 1 and 6 m/seed 2); the 30 and 60 s developed-sea gates below extend the 6 m condition beyond its wave ramp; a separate 12 m/s constant-wind gate exercises nonzero initial pitch. The published 1,000 s coupled case now has a local independent trajectory comparison and a [passing full-duration source gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38071234135). Other wind/controller regimes remain unpaired. The WaveStar base and fault applications and both WaveBot applications are paired separately above. |
 | Other/dynamic: both `Nonlinear_Hydro/ode45` cases and `OWC/OrificeModel` | The nonlinear-hydro ode45 cases retain source force-timing gaps. The OrificeModel physical coupled path diverges late, while an explicit source-convention force route passes 130 s body/PTO gates; this does not validate the source air model beyond its Mach threshold. |
 
+The [RM3 MoorDyn visualization force export](https://github.com/cmudrc/wec-sim-python/actions/runs/38085085794)
+records acceleration, excitation, radiation, added mass, restoring, Morison,
+linear damping, and total hydrodynamic force at every 0.01 s step of the
+derived 10 s sea. The signed components reconstruct the reported total to
+less than `1e-7` N or N m for both bodies. The source's added-mass output is
+the applied force after its Simscape mass adjustment, not simply the original
+HDF5 `A_inf` times reported acceleration: at `0.01 s`, the float's reported
+surge component is `+2.257 MN`, while original `A_inf * acceleration` is
+`-0.0793 MN`. The source coefficient shifts `2.837 million kg` into adjusted
+body mass and uses delayed acceleration feedback. Comparing the logged
+hydrodynamic-force column directly with Python's physical added-mass term
+would therefore misidentify a reporting convention as a dynamics defect.
+The coupled RM3 trajectory gate remains red; this decomposition does not yet
+identify its cause.
+
 The [pinned MoorDyn ParaView writer gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38080388695)
 interpolates two lines with three and four nodes to two intermediate frames.
 Python's public `ParaviewClass.write_paraview_vtp_mooring` matches all source

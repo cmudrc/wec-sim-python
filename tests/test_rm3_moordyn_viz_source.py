@@ -142,6 +142,18 @@ def test_source_output_interval_sensitivity():
               f"at 1 s {error[10]:.8g}, at 10 s {error[-1]:.8g}")
 
 
+def test_dense_source_force_components_reconstruct_total():
+    """Check the signed WEC-Sim logging convention before using its forces."""
+    for number in (1, 2):
+        terms = _read(f"dense_forces_body{number}.csv")
+        assert terms.shape == (1001, 49)
+        excitation = terms[:, 7:13]
+        resisting = sum(terms[:, start:start + 6]
+                        for start in (13, 19, 25, 31, 37))
+        _bound(excitation - resisting, terms[:, 43:49], 1e-6,
+               f"source body{number} reported force sum")
+
+
 def test_saved_source_mooring_load_through_python_body_solver():
     """Separate body integration from MoorDyn state feedback over ten seconds."""
     source_mooring = _read("dense_mooring.csv")
