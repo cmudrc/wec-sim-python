@@ -499,6 +499,14 @@ update sample and accumulate over long runs.
 A three-seed paired diagnostic that prescribes only MATLAB's heading-update
 schedule recovers tight yaw and PTO-work agreement while Python advances its
 own motion. Native long-trajectory parity for the one-degree hold remains open.
+In the pinned irregular case, halving MATLAB's published 0.01 s step changes
+250 s PTO work by 47.8% and 19.2% in two phase realizations, even though the
+incident wave is identical at common times. Halving the step again changes
+work by 31.9% and 102.0%, respectively. Treat a nonzero threshold as a
+numerical interpolation shortcut and check step convergence for the WEC and
+sea being modeled. The zero-threshold, continuous-heading option has paired
+250 s MATLAB/Python motion checks for three phase realizations; details are
+in [PARITY.md](PARITY.md).
 
 For the published `Variable_Hydro/Passive_Yaw` case, set
 `passive_yaw=True` and `yaw_heading_bank=np.arange(-30, 30.25, 0.25)` on the
