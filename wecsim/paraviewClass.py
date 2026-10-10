@@ -1,7 +1,6 @@
 """Wave-surface and body-mesh VTP output for ParaView.
 
 The upstream file contained unfinished MATLAB syntax and could not be imported.
-Mooring visualization still needs a separate implementation.
 """
 
 from pathlib import Path
@@ -154,6 +153,108 @@ class ParaviewClass:
                 str(4 * cell) for cell in range(1, len(connectivity) + 1)
             ) + " "
             path = wave_dir / f"waves_{index}.vtp"
+            ElementTree.ElementTree(root).write(
+                path, encoding="utf-8", xml_declaration=True,
+            )
+            paths.append(path)
+        return tuple(paths)
+
+    def write_paraview_vtp_mooring(
+        self, source_times, frame_times, directory, *, lines, tensions,
+        mooring_index=1,
+    ) -> tuple[Path, ...]:
+        """Write MoorDyn node paths and segment tensions as numbered VTP frames.
+
+        Each line has shape ``(source_time, node, xyz)`` and its tensions have
+        shape ``(source_time, node - 1)``. Values are linearly interpolated to
+        ``frame_times`` as in the pinned MATLAB ``writeParaviewMooring``.
+        """
+        source_times = np.asarray(source_times, dtype=float)
+        frame_times = np.asarray(frame_times, dtype=float)
+        if (source_times.ndim != 1 or len(source_times) < 2
+                or not np.isfinite(source_times).all()
+                or np.any(np.diff(source_times) <= 0)
+                or frame_times.ndim != 1 or not len(frame_times)
+                or not np.isfinite(frame_times).all()
+                or np.any(np.diff(frame_times) <= 0)
+                or frame_times[0] < source_times[0]
+                or frame_times[-1] > source_times[-1]
+                or isinstance(mooring_index, bool)
+                or not isinstance(mooring_index, (int, np.integer))
+                or mooring_index < 1):
+            raise ValueError("mooring VTP needs ordered in-range times and a positive index")
+        if len(lines) == 0 or len(lines) != len(tensions):
+            raise ValueError("mooring VTP needs node and tension data for each line")
+
+        interpolated = []
+        for points, load in zip(lines, tensions):
+            points = np.asarray(points, dtype=float)
+            load = np.asarray(load, dtype=float)
+            if (points.ndim != 3 or points.shape[0] != len(source_times)
+                    or points.shape[1] < 2 or points.shape[2] != 3
+                    or load.shape != (len(source_times), points.shape[1] - 1)
+                    or not np.isfinite(points).all()
+                    or not np.isfinite(load).all()):
+                raise ValueError("mooring VTP lines need finite nodes and segment tensions")
+            moved = np.empty((len(frame_times), points.shape[1], 3))
+            forces = np.empty((len(frame_times), points.shape[1] - 1))
+            for node in range(points.shape[1]):
+                for axis in range(3):
+                    moved[:, node, axis] = np.interp(
+                        frame_times, source_times, points[:, node, axis],
+                    )
+            for segment in range(points.shape[1] - 1):
+                forces[:, segment] = np.interp(
+                    frame_times, source_times, load[:, segment],
+                )
+            interpolated.append((moved, forces))
+
+        line_dir = Path(directory) / f"mooring{mooring_index}"
+        line_dir.mkdir(parents=True, exist_ok=True)
+        paths = []
+        for frame in range(len(frame_times)):
+            root = ElementTree.Element("VTKFile", type="PolyData", version="0.1")
+            polydata = ElementTree.SubElement(root, "PolyData")
+            for nodes, tension in interpolated:
+                points = nodes[frame]
+                forces = tension[frame]
+                piece = ElementTree.SubElement(
+                    polydata, "Piece", NumberOfPoints=str(len(points)),
+                    NumberOfLines=str(len(forces)),
+                )
+                point_data = ElementTree.SubElement(
+                    ElementTree.SubElement(piece, "Points"), "DataArray",
+                    type="Float32", NumberOfComponents="3", format="ascii",
+                )
+                point_data.text = "\n" + "\n".join(
+                    f"{x:.5f} {y:.5f} {z:.5f}" for x, y, z in points
+                ) + "\n"
+                cells = ElementTree.SubElement(piece, "Lines")
+                connectivity = ElementTree.SubElement(
+                    cells, "DataArray", type="Int32", Name="connectivity",
+                    format="ascii",
+                )
+                connectivity.text = "\n" + "\n".join(
+                    f"{segment} {segment + 1}"
+                    for segment in range(len(forces))
+                ) + "\n"
+                offsets = ElementTree.SubElement(
+                    cells, "DataArray", type="Int32", Name="offsets",
+                    format="ascii",
+                )
+                offsets.text = " " + " ".join(
+                    str(2 * (segment + 1)) for segment in range(len(forces))
+                ) + " "
+                cell_data = ElementTree.SubElement(piece, "CellData")
+                tension_data = ElementTree.SubElement(
+                    cell_data, "DataArray", type="Float32",
+                    Name="Segment Tension", NumberOfComponents="1",
+                    format="ascii",
+                )
+                tension_data.text = " " + " ".join(
+                    f"{value:.8g}" for value in forces
+                ) + " "
+            path = line_dir / f"mooring_{frame + 1}.vtp"
             ElementTree.ElementTree(root).write(
                 path, encoding="utf-8", xml_declaration=True,
             )

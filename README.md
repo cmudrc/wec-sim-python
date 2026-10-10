@@ -1699,8 +1699,12 @@ ParaviewClass(waves).write_paraview_vtp_wave(
 For a body mesh, `ParaviewClass(waves).write_paraview_vtp(...)` accepts
 zero-based triangular `faces`, local `vertices`, one six-DOF `pose` per time,
 and optional face-pressure arrays. It writes numbered body VTP files with the
-source XYZ rotation order. The published OSWEC and RM3 visualization cases
-still need direct output gates for their actual meshes and mooring lines.
+source XYZ rotation order. `write_paraview_vtp_mooring(...)` accepts one
+`(time, node, xyz)` position history and one `(time, segment)` tension history
+per MoorDyn line; it interpolates both to the requested frames and writes
+numbered line VTP files. Wave, body, and mooring serialization have focused
+MATLAB source gates. The published OSWEC and RM3 visualization cases still
+need direct output gates for their actual meshes, pressures, and mooring lines.
 
 To run a supported case without writing Python code:
 
@@ -1724,5 +1728,5 @@ for the tested scope and next reference case.
 The Python dynamics engine uses independent coordinates for each supported
 constraint layout, avoiding numerical joint drift. New layouts and force
 models need explicit MATLAB comparisons before they are called supported.
-Wave and body VTP serialization now have small pinned MATLAB source gates;
+Wave, body, and mooring VTP serialization now have pinned MATLAB source gates;
 full application visualization and BEMIO conversion remain future work.
