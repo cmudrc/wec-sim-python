@@ -16,5 +16,14 @@ jobs:
           cache-dependency-path: pyproject.toml
       - run: python -m pip install -e . pytest
       - run: cd /tmp && python -c 'from wecsim import WEC; print(WEC.__module__)'
+      - name: Verify built wheel outside the checkout
+        run: |
+          python -m pip wheel --no-deps --wheel-dir "$RUNNER_TEMP/wecsim-wheels" .
+          python -m venv --system-site-packages "$RUNNER_TEMP/wecsim-wheel-venv"
+          "$RUNNER_TEMP/wecsim-wheel-venv/bin/python" -m pip install --force-reinstall --no-deps "$RUNNER_TEMP"/wecsim-wheels/wec_sim_python-*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/wecsim-wheel-venv/bin/python" -c 'import importlib.util, sys, wecsim; from pathlib import Path; from wecsim import WEC; assert Path(wecsim.__file__).is_relative_to(Path(sys.prefix)); assert WEC("wheel smoke").name == "wheel smoke"; assert importlib.util.find_spec("wecsim_python") is None'
+          "$RUNNER_TEMP/wecsim-wheel-venv/bin/wecsim" --help > /dev/null
+          "$RUNNER_TEMP/wecsim-wheel-venv/bin/wecsim-reference" --help > /dev/null
       - run: python -m compileall -q wecsim
       - run: python -m pytest -q
