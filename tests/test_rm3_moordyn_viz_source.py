@@ -143,23 +143,43 @@ def test_source_output_interval_sensitivity():
               f"at 1 s {error[10]:.8g}, at 10 s {error[-1]:.8g}")
 
 
-def test_dense_source_force_components_reconstruct_total():
+@pytest.mark.parametrize("prefix", ["dense", "seed2_dense"])
+def test_dense_source_wave_and_force_components(prefix):
     """Check the signed WEC-Sim logging convention before using its forces."""
+    hydro = (Path(APPLICATIONS) /
+             "_Common_Input_Files/RM3/hydroData/rm3.h5")
+    phase = _read(f"{prefix}_phase.csv")
+    assert phase.shape == (1000, 1)
+    components = jonswap_equal_energy_components(
+        hydro, significant_height=2, peak_period=8,
+        directions=[0], spreading=[1], phase=phase,
+        discretization="traditional",
+    )
+    wave = _read(f"{prefix}_wave.csv")
+    incident = tuple(synthesize_irregular_response(
+        hydro, components, dt=0.01, end_time=10, ramp_time=0,
+        body_number=number,
+    ) for number in (1, 2))
+    _bound(incident[0].elevation, wave[:, 1], 1e-10,
+           f"{prefix} source wave")
     for number in (1, 2):
-        terms = _read(f"dense_forces_body{number}.csv")
+        terms = _read(f"{prefix}_forces_body{number}.csv")
         assert terms.shape == (1001, 49)
+        _bound(incident[number - 1].excitation_force, terms[:, 7:13],
+               1e-4, f"{prefix} source body{number} excitation")
         excitation = terms[:, 7:13]
         resisting = sum(terms[:, start:start + 6]
                         for start in (13, 19, 25, 31, 37))
         _bound(excitation - resisting, terms[:, 43:49], 1e-6,
-               f"source body{number} reported force sum")
+               f"{prefix} source body{number} reported force sum")
 
 
-def test_dense_source_adjusted_mass_and_joint_force_balance():
+@pytest.mark.parametrize("prefix", ["dense", "seed2_dense"])
+def test_dense_source_adjusted_mass_and_joint_force_balance(prefix):
     """Reconstruct source inertia from its body, PTO, and MoorDyn logs."""
-    records = [_read(f"dense_body{number}.csv") for number in (1, 2)]
-    terms = [_read(f"dense_forces_body{number}.csv") for number in (1, 2)]
-    mooring = _read("dense_mooring.csv")
+    records = [_read(f"{prefix}_body{number}.csv") for number in (1, 2)]
+    terms = [_read(f"{prefix}_forces_body{number}.csv") for number in (1, 2)]
+    mooring = _read(f"{prefix}_mooring.csv")
     hydro = (Path(APPLICATIONS) /
              "_Common_Input_Files/RM3/hydroData/rm3.h5")
     matrices = []
@@ -217,7 +237,7 @@ def test_dense_source_adjusted_mass_and_joint_force_balance():
         applied += mooring_jacobian.T @ mooring[index, 13:19]
         residuals[index] = inertia - applied
     _bound(residuals, np.zeros_like(residuals), 1e-3,
-           "source adjusted-mass four-coordinate force balance")
+           f"{prefix} source adjusted-mass four-coordinate force balance")
 
 
 def test_saved_source_mooring_load_through_python_body_solver():

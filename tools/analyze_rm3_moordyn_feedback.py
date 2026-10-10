@@ -18,6 +18,8 @@ from wecsim.rm3Regular import solve_rm3_regular
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--prefix', default='dense',
+                    help='prefix of the 10 s source CSV files')
 parser.add_argument('records', type=Path, help='MATLAB dense CSV directory')
 parser.add_argument('hydro', type=Path, help='pinned RM3 hydrodynamic HDF5')
 parser.add_argument('lines', type=Path, help='pinned MoorDyn lines.txt')
@@ -30,8 +32,10 @@ lines_source = args.lines.resolve(strict=True)
 library = args.library.resolve(strict=True)
 output = args.output.resolve()
 output.mkdir(parents=True, exist_ok=True)
-source = [np.loadtxt(records / f'dense_body{n}.csv', delimiter=',') for n in (1, 2)]
-terms = [np.loadtxt(records / f'dense_forces_body{n}.csv', delimiter=',') for n in (1, 2)]
+source = [np.loadtxt(records / f'{args.prefix}_body{n}.csv', delimiter=',')
+          for n in (1, 2)]
+terms = [np.loadtxt(records / f'{args.prefix}_forces_body{n}.csv', delimiter=',')
+         for n in (1, 2)]
 assert all(values.shape == (1001, 25) for values in source)
 assert all(values.shape == (1001, 49) for values in terms)
 excitation = np.stack([term[:, 7:13] for term in terms], axis=1)
