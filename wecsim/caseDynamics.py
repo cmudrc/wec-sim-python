@@ -266,6 +266,49 @@ def _imported_elevation(wave, base, hydro_file, time, dt, ramp_time, rho, g):
     return elevation, force, path
 
 
+def _irregular_components_from_case(wave, hydro_file, base_dir):
+    if "water_depth" in wave:
+        raise ValueError("wave.water_depth override currently needs a fixed Morison body")
+    if set(wave) - {"type", "height", "period", "directions", "spreading",
+                     "seed", "phase_file", "phase_generator", "frequency_count",
+                     "excitation_interpolation", "gamma", "frequency_range",
+                     "discretization"}:
+        raise ValueError("irregular waves use height, period, directions, and phase settings")
+    if wave["type"] == "pm" and "gamma" in wave:
+        raise ValueError("gamma applies only to JONSWAP waves")
+    height = _number(wave.get("height"), "wave.height", positive=True)
+    period = _number(wave.get("period"), "wave.period", positive=True)
+    if "seed" in wave and "phase_file" in wave:
+        raise ValueError("supply either wave.seed or wave.phase_file")
+    auxiliary = ()
+    if "phase_file" in wave:
+        if not isinstance(wave["phase_file"], str) or not wave["phase_file"]:
+            raise ValueError("wave.phase_file must be a file path")
+        phase_path = (base_dir / wave["phase_file"]).resolve(strict=True)
+        phase = np.loadtxt(phase_path, delimiter=",", ndmin=2)
+        auxiliary = (phase_path,)
+        seed = None
+    else:
+        phase = None
+        seed = wave.get("seed", 7)
+        if not isinstance(seed, int) or isinstance(seed, bool):
+            raise ValueError("wave.seed must be an integer")
+    builder = (jonswap_equal_energy_components if wave["type"] == "jonswap"
+               else pm_equal_energy_components)
+    options = {"gamma": wave["gamma"]} if "gamma" in wave else {}
+    components = builder(
+        hydro_file, significant_height=height, peak_period=period,
+        directions=wave.get("directions", [0.0]),
+        spreading=wave.get("spreading", [1.0]),
+        count=wave.get("frequency_count"), seed=seed, phase=phase,
+        phase_generator=wave.get("phase_generator", "numpy"),
+        frequency_range=wave.get("frequency_range"),
+        discretization=wave.get("discretization", "equal_energy"),
+        **options,
+    )
+    return components, auxiliary
+
+
 def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
     """Run one explicitly supported wave/device configuration.
 
@@ -291,7 +334,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                      "spreading", "seed", "phase_file", "phase_generator", "frequency_count",
                      "gamma", "file", "variable", "reapply_force_ramp", "seas",
                      "excitation_interpolation", "force_quadrature",
-                     "frequency_range", "water_depth", "current"})
+                     "frequency_range", "discretization", "water_depth", "current"})
     constraint = _section(case["constraint"], "constraint", {"kind"},
                           {"kind", "location", "initial_displacement",
                            "initial_coordinate", "initial_speed", "coordinates",
@@ -748,8 +791,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
 
     if kind == "floating_joint":
         if len(bodies) != 2 or wave["type"] not in (
-                "regular", "regularCIC", "none", "elevationImport"):
-            raise ValueError("floating joint needs two bodies and regular waves, imported elevation, or no waves")
+                "regular", "regularCIC", "pm", "jonswap", "none", "elevationImport"):
+            raise ValueError("floating joint needs two bodies and supported regular or irregular waves")
         if hydro[0] != hydro[1]:
             raise ValueError("the current floating-joint layout needs one shared HDF5")
         for number, body in enumerate(bodies, start=1):
@@ -809,6 +852,23 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             )
             auxiliary_files = (wave_path,)
             height, period, direction = 0.0, 8.0, 0.0
+        elif wave["type"] in ("pm", "jonswap"):
+            components, auxiliary_files = _irregular_components_from_case(
+                wave, hydro[0], base,
+            )
+            if (len(components.directions) != 1
+                    or not np.isclose(components.directions[0], 0, atol=1e-12)):
+                raise ValueError("floating-joint dynamics currently support one 0-degree wave heading")
+            responses = tuple(synthesize_irregular_response(
+                hydro[0], components, dt=dt, end_time=end_time,
+                ramp_time=ramp_time, body_number=number, rho=rho, g=g,
+                excitation_interpolation=wave.get("excitation_interpolation", "linear"),
+            ) for number in (1, 2))
+            elevation = responses[0].elevation
+            imported_force = np.stack(
+                [response.excitation_force for response in responses], axis=1,
+            )
+            height, period, direction = 0.0, 8.0, 0.0
         else:
             height = _number(wave.get("height"), "wave.height", nonnegative=True)
             period = _number(wave.get("period"), "wave.period", positive=True)
@@ -825,12 +885,12 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         )
         if wave["type"] == "regular" and radiation_method != "constant":
             raise ValueError("regular waves need constant radiation")
-        if (wave["type"] in ("regularCIC", "none", "elevationImport")
+        if (wave["type"] in ("regularCIC", "pm", "jonswap", "none", "elevationImport")
                 and radiation_method not in ("convolution", "fir")):
             raise ValueError("radiation memory needs convolution or FIR radiation")
         if wave["type"] == "elevationImport" and radiation_method != "convolution":
             raise ValueError("imported elevation currently requires convolution radiation")
-        if wave["type"] in ("regularCIC", "none", "elevationImport"):
+        if wave["type"] in ("regularCIC", "pm", "jonswap", "none", "elevationImport"):
             radiation_memory = _number(
                 sim.get("radiation_memory", 60), "simulation.radiation_memory",
                 positive=True,
@@ -859,7 +919,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         )
         if wave["type"] == "none":
             elevation = None
-        elif wave["type"] != "elevationImport":
+        elif wave["type"] not in ("elevationImport", "pm", "jonswap"):
             ramp = np.ones(len(solved.time))
             if ramp_time > 0:
                 early = solved.time < ramp_time
@@ -1393,42 +1453,12 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         if wave["type"] == "regular" and "radiation_memory" in sim:
             raise ValueError("regular-wave linear dynamics use constant radiation")
     elif wave["type"] in ("pm", "jonswap"):
-        if "water_depth" in wave:
-            raise ValueError("wave.water_depth override currently needs a fixed Morison body")
-        if set(wave) - {"type", "height", "period", "directions", "spreading",
-                         "seed", "phase_file", "phase_generator", "frequency_count",
-                         "excitation_interpolation", "gamma", "frequency_range"}:
-            raise ValueError("irregular waves use height, period, directions, and phase settings")
-        if wave["type"] == "pm" and "gamma" in wave:
-            raise ValueError("gamma applies only to JONSWAP waves")
         height = _number(wave.get("height"), "wave.height", positive=True)
         period = _number(wave.get("period"), "wave.period", positive=True)
-        if "seed" in wave and "phase_file" in wave:
-            raise ValueError("supply either wave.seed or wave.phase_file")
-        if "phase_file" in wave:
-            if not isinstance(wave["phase_file"], str) or not wave["phase_file"]:
-                raise ValueError("wave.phase_file must be a file path")
-            phase_path = (base_dir / wave["phase_file"]).resolve(strict=True)
-            phase = np.loadtxt(phase_path, delimiter=",", ndmin=2)
-            auxiliary_files.append(phase_path)
-            seed = None
-        else:
-            phase = None
-            seed = wave.get("seed", 7)
-            if not isinstance(seed, int) or isinstance(seed, bool):
-                raise ValueError("wave.seed must be an integer")
-        component_builder = (jonswap_equal_energy_components
-                             if wave["type"] == "jonswap" else pm_equal_energy_components)
-        spectrum_options = ({"gamma": wave["gamma"]} if "gamma" in wave else {})
-        components = component_builder(
-            hydro[0], significant_height=height, peak_period=period,
-            directions=wave.get("directions", [0.0]),
-            spreading=wave.get("spreading", [1.0]),
-            count=wave.get("frequency_count", 500), seed=seed, phase=phase,
-            phase_generator=wave.get("phase_generator", "numpy"),
-            frequency_range=wave.get("frequency_range"),
-            **spectrum_options,
+        components, phase_files = _irregular_components_from_case(
+            wave, hydro[0], base_dir,
         )
+        auxiliary_files.extend(phase_files)
     elif wave["type"] == "spectrumImport":
         if set(wave) != {"type", "file"} or not isinstance(wave["file"], str) or not wave["file"]:
             raise ValueError("spectrumImport needs one MAT spectrum file")

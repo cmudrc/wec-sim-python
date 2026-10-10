@@ -75,8 +75,12 @@ Python builder covers `linear_subspace`, the single-body `floating_gbm`
 regular-wave layout, the paired two-body `floating_joint`, and the OSWEC
 `fixed_hinge` layout. Mapped
 coordinates use small-motion kinematics and fixed-axis PTOs. The floating
-joint uses its own pitched-slider geometry and a relative-heave PTO; arbitrary
-PTO attachment points are not part of that reduced layout.
+joint uses its own pitched-slider geometry and a relative-heave PTO. It now
+accepts one zero-heading PM or JONSWAP sea with EqualEnergy or Traditional
+frequency discretization, including the MATLAB 1000-bin Traditional default.
+Arbitrary PTO attachment points are not part of that reduced layout. The
+published irregular-wave MoorDyn visualization trajectory has not yet been
+paired against MATLAB.
 
 The MOST application uses a TurbSim full-field wind input. Its checked-in
 `.bts` file can be read directly with `wecsim.read_turbsim_bts(path)`; the

@@ -149,6 +149,34 @@ def test_python_builder_uses_custom_irregular_frequency_range(wave_type, builder
     assert np.isfinite(response.bodies["float"].position).all()
 
 
+def test_floating_joint_accepts_traditional_jonswap_from_public_wave():
+    wec = WEC("RM3 traditional sea")
+    float_body = wec.body("float", HYDRO, inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", HYDRO, inertia=(0, 94_407_091.24, 0))
+    wec.floating_joint(float_body, spar, damping=1_200_000,
+                       radiation_method="convolution")
+    wave = JONSWAPWave(2, 8, seed=1, phase_generator="matlab",
+                       discretization="traditional", frequency_count=64)
+    result = wec.run(wave, dt=0.1, end_time=0.3,
+                     ramp_time=0, radiation_memory=0.2)
+    assert result.case["wave"]["discretization"] == "traditional"
+    assert result.case["wave"]["frequency_count"] == 64
+    components = jonswap_equal_energy_components(
+        HYDRO, significant_height=2, peak_period=8,
+        directions=[0], spreading=[1], count=64, seed=1,
+        phase_generator="matlab", discretization="traditional",
+    )
+    expected = synthesize_irregular_response(
+        HYDRO, components, dt=0.1, end_time=0.3, ramp_time=0,
+    )
+    np.testing.assert_allclose(result.wave_elevation, expected.elevation,
+                               rtol=0, atol=1e-12)
+    assert np.isfinite(result.bodies["float"].position).all()
+    assert np.max(np.abs(result.bodies["float"].position[:, 2])) > 0
+    assert JONSWAPWave(2, 8, discretization="traditional").as_case()[
+        "frequency_count"] == 1000
+
+
 def test_hydrodynamic_frequency_range_clamps_to_bem_limits():
     settings = dict(significant_height=2.5, peak_period=8,
                     directions=[0], spreading=[1], count=32, seed=7)

@@ -310,6 +310,8 @@ class PMWave:
     A saved phase CSV replays a MATLAB realization. By default, ``seed``
     selects a reproducible NumPy realization. Set ``phase_generator="matlab"``
     to use the pinned WEC-Sim Threefry substream with that seed.
+    ``discretization="traditional"`` selects WEC-Sim's uniform frequency
+    grid (1000 bins by default); the equal-energy default uses 500 bins.
     ``frequency_range`` narrows the BEM frequency interval in rad/s. A
     ``water_depth`` override is currently used only for fixed Morison bodies.
     """
@@ -319,13 +321,14 @@ class PMWave:
     direction: float = 0.0
     seed: int | None = None
     phase_file: str | Path | None = None
-    frequency_count: int = 500
+    frequency_count: int | None = None
     directions: tuple[float, ...] | None = None
     spreading: tuple[float, ...] | None = None
     frequency_range: tuple[float, float] | None = None
     water_depth: float | None = None
     current: Current | None = None
     phase_generator: str = field(default="numpy", kw_only=True)
+    discretization: str = field(default="equal_energy", kw_only=True)
 
     def as_case(self) -> dict:
         if self.seed is not None and self.phase_file is not None:
@@ -334,6 +337,10 @@ class PMWave:
             raise ValueError("PMWave.phase_generator must be 'numpy' or 'matlab'")
         if self.phase_generator == "matlab" and self.phase_file is None and self.seed is None:
             raise ValueError("MATLAB phase generation needs a substream seed")
+        if (not isinstance(self.discretization, str)
+                or self.discretization.lower().replace("_", "")
+                not in ("equalenergy", "traditional")):
+            raise ValueError("PMWave.discretization must be 'equal_energy' or 'traditional'")
         if (self.directions is None) != (self.spreading is None):
             raise ValueError("PMWave directions and spreading must be supplied together")
         wave = {"type": "pm", "height": self.height,
@@ -342,7 +349,11 @@ class PMWave:
                                else [self.direction]),
                 "spreading": (list(self.spreading) if self.spreading is not None
                               else [1.0]),
-                "frequency_count": self.frequency_count}
+                "frequency_count": (self.frequency_count if self.frequency_count is not None
+                                    else (1000 if self.discretization.lower() == "traditional"
+                                          else 500))}
+        if self.discretization.lower().replace("_", "") == "traditional":
+            wave["discretization"] = "traditional"
         if self.frequency_range is not None:
             wave["frequency_range"] = list(self.frequency_range)
         if self.water_depth is not None:
@@ -1076,9 +1087,9 @@ class WEC:
                 or self.ptos or self.rotational_ptos or self._morison_elements
                 or self._floating_gbm_body is not None):
             raise ValueError("floating_joint cannot combine with other bodies, coordinates, or PTOs")
-        if not isinstance(wave, (RegularWave, RegularCICWave,
+        if not isinstance(wave, (RegularWave, RegularCICWave, PMWave,
                                  ImportedElevationWave, NoWave)):
-            raise ValueError("floating_joint supports regular, regularCIC, imported elevation, or no waves")
+            raise ValueError("floating_joint supports regular, irregular, imported elevation, or no waves")
         if (not np.isfinite(joint.location.coordinates()).all()
                 or not np.isfinite([joint.damping, joint.stiffness,
                                     joint.equilibrium_position,
