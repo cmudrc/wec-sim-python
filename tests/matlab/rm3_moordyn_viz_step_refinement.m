@@ -1,0 +1,80 @@
+function rm3_moordyn_viz_step_refinement
+% Refine only the pinned ode45 maximum step on the seed-1, 10 s RM3 sea.
+repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
+addpath(genpath(fullfile(repoRoot, 'matlab-ref', 'source')));
+caseDir = fullfile(repoRoot, 'applications', 'Paraview_Visualization', ...
+    'RM3_MoorDyn_Viz');
+outDir = fullfile(repoRoot, 'matlab-rm3-moordyn-viz');
+steps = [0.005, 0.0025];
+labels = {'step005', 'step0025'};
+
+for iStep = 1:numel(steps)
+    step = steps(iStep);
+    label = labels{iStep};
+    targetDir = fullfile(fileparts(caseDir), ...
+        ['RM3_MoorDyn_Viz_' label]);
+    mkdir(targetDir);
+    for name = {'wecSimInputFile.m', 'RM3MoorDyn.slx', ...
+            'userDefinedFunctions.m'}
+        copyfile(fullfile(caseDir, name{1}), ...
+            fullfile(targetDir, name{1}));
+    end
+    mkdir(fullfile(targetDir, 'Mooring'));
+    copyfile(fullfile(caseDir, 'Mooring', 'lines.txt'), ...
+        fullfile(targetDir, 'Mooring', 'lines.txt'));
+
+    inputFile = fullfile(targetDir, 'wecSimInputFile.m');
+    contents = fileread(inputFile);
+    changes = {
+        'simu.endTime = 80;', 'simu.endTime = 10;';
+        'simu.dt = 0.01;', sprintf('simu.dt = %.4f;', step);
+        'simu.dtOut = 0.1;', 'simu.dtOut = 0.01;';
+        'simu.paraview.option = 1;', 'simu.paraview.option = 0;';
+        'waves.period = 8;', ...
+            sprintf('waves.period = 8;\nwaves.phaseSeed = 1;')
+    };
+    for i = 1:size(changes, 1)
+        assert(contains(contents, changes{i, 1}), ...
+            'The pinned RM3 MoorDyn visualization input changed');
+        contents = strrep(contents, changes{i, 1}, changes{i, 2});
+    end
+    fid = fopen(inputFile, 'w');
+    assert(fid > 0);
+    cleanup = onCleanup(@() fclose(fid));
+    fwrite(fid, contents);
+    clear cleanup;
+
+    cd(targetDir);
+    wecSim;
+    assert(abs(simu.dt - step) < 1e-12 && ...
+        simu.dtOut == 0.01 && simu.endTime == 10 && ...
+        strcmp(simu.solver, 'ode45') && waves.phaseSeed == 1 && ...
+        mooring(1).moorDyn == 1, ...
+        'The refined coupling settings changed');
+    assert(size(waves.phase, 1) == 1000, ...
+        'The refined sea has an unexpected phase grid');
+    writematrix(waves.phase(:), fullfile(outDir, [label '_phase.csv']));
+    writematrix([output.wave.time(:), output.wave.elevation(:)], ...
+        fullfile(outDir, [label '_wave.csv']));
+    for iBody = 1:2
+        bodyRecord = output.bodies(iBody);
+        bodyValues = [bodyRecord.time(:), bodyRecord.position, ...
+            bodyRecord.velocity, bodyRecord.forceTotal, ...
+            bodyRecord.forceExcitation];
+        assert(size(bodyValues, 1) == 1001 && ...
+            size(bodyValues, 2) == 25 && ...
+            all(isfinite(bodyValues), 'all'), ...
+            'The refined source body record is incomplete');
+        writematrix(bodyValues, fullfile(outDir, ...
+            sprintf('%s_body%d.csv', label, iBody)));
+    end
+    record = output.mooring(1);
+    values = [record.time(:), record.position, record.velocity, ...
+        record.forceMooring];
+    assert(size(values, 1) == 1001 && size(values, 2) == 19 && ...
+        all(isfinite(values), 'all'), ...
+        'The refined source mooring record is incomplete');
+    writematrix(values, fullfile(outDir, [label '_mooring.csv']));
+    close_system('RM3MoorDyn', 0);
+end
+end

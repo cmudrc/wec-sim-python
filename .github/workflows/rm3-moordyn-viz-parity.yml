@@ -6,6 +6,7 @@ on:
       - '.github/workflows/rm3-moordyn-viz-parity.yml'
       - 'tests/matlab/rm3_moordyn_viz_baseline.m'
       - 'tests/matlab/rm3_moordyn_viz_dense_diagnostic.m'
+      - 'tests/matlab/rm3_moordyn_viz_step_refinement.m'
       - 'tests/test_rm3_moordyn_viz_source.py'
       - 'tools/analyze_rm3_moordyn_feedback.py'
       - 'wecsim/api.py'
@@ -60,6 +61,9 @@ jobs:
       - uses: matlab-actions/run-command@v3
         with:
           command: addpath('tests/matlab'); rm3_moordyn_viz_dense_diagnostic
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); rm3_moordyn_viz_step_refinement
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'

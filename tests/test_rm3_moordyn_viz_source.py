@@ -143,6 +143,30 @@ def test_source_output_interval_sensitivity():
               f"at 1 s {error[10]:.8g}, at 10 s {error[-1]:.8g}")
 
 
+@pytest.mark.parametrize("prefix", ["step005", "step0025"])
+def test_source_maximum_step_refinement_preserves_sea(prefix):
+    """Keep the same incident sea while refining ode45's maximum step."""
+    _bound(_read(f"{prefix}_phase.csv"), _read("dense_phase.csv"),
+           1e-12, f"{prefix} source phase")
+    wave = _read(f"{prefix}_wave.csv")
+    assert wave.shape == (1001, 2)
+    _bound(wave, _read("dense_wave.csv"), 1e-10,
+           f"{prefix} source wave")
+    for number, name in ((1, "float"), (2, "spar")):
+        refined = _read(f"{prefix}_body{number}.csv")
+        dense = _read(f"dense_body{number}.csv")
+        assert refined.shape == dense.shape == (1001, 25)
+        _bound(refined[:, 0], dense[:, 0], 1e-9,
+               f"{prefix} source {name} time")
+        delta = refined[:, 1:13] - dense[:, 1:13]
+        print(f"{prefix} source {name} surge at 10 s: "
+              f"{delta[-1, 0]:.8g} m")
+    mooring = _read(f"{prefix}_mooring.csv")
+    assert mooring.shape == (1001, 19)
+    _bound(mooring[:, 0], _read("dense_mooring.csv")[:, 0],
+           1e-9, f"{prefix} source MoorDyn time")
+
+
 @pytest.mark.parametrize("prefix", ["dense", "seed2_dense"])
 def test_dense_source_wave_and_force_components(prefix):
     """Check the signed WEC-Sim logging convention before using its forces."""
