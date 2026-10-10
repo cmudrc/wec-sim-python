@@ -76,4 +76,6 @@ jobs:
         if: always()
         with:
           name: rm3-moordyn-viz-source
-          path: matlab-rm3-moordyn-viz/
+          path: |
+            matlab-rm3-moordyn-viz/
+            applications/_Common_Input_Files/RM3/hydroData/rm3.h5

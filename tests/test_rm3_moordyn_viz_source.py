@@ -33,6 +33,7 @@ def _bound(actual, expected, limit, name):
     error = float(np.max(np.abs(actual - expected)))
     print(f"{name}: maximum difference {error:.8g}; gate {limit:.8g}")
     assert error < limit, name
+    return error
 
 
 def _indices(source_time, *, dt=0.01, end_time=80):
@@ -99,28 +100,50 @@ def test_public_floating_joint_tracks_published_moordyn_viz(tmp_path):
         initial_coordinate={"spar_heave": -0.21},
     )
     assert result.time.shape == (8001,)
-    _bound(result.wave_elevation[_indices(_read("wave.csv")[:, 0])],
-           _read("wave.csv")[:, 1], 1e-10, "public wave elevation")
+    violations = []
+
+    def record(actual, expected, limit, name):
+        assert actual.shape == expected.shape, name
+        error = float(np.max(np.abs(actual - expected)))
+        print(f"{name}: maximum difference {error:.8g}; gate {limit:.8g}")
+        if error >= limit:
+            violations.append(f"{name}: {error:.8g} >= {limit:.8g}")
+
+    wave = _read("wave.csv")
+    record(result.wave_elevation[_indices(wave[:, 0])],
+           wave[:, 1], 1e-10, "public wave elevation")
     for number, name in ((1, "float"), (2, "spar")):
         saved = _read(f"body{number}.csv")
         indices = _indices(saved[:, 0])
+        np.savetxt(reference / f"python_body{number}.csv",
+                   np.column_stack((saved[:, 0],
+                                    result.bodies[name].position[indices],
+                                    result.bodies[name].velocity[indices])),
+                   delimiter=",")
         for axis, position_limit, speed_limit in (
             (0, 0.01, 0.005),
             (2, 0.005, 0.005),
             (4, 0.0005, 0.0005),
         ):
-            _bound(result.bodies[name].position[indices, axis],
+            record(result.bodies[name].position[indices, axis],
                    saved[:, 1 + axis], position_limit,
                    f"{name} position axis {axis}")
-            _bound(result.bodies[name].velocity[indices, axis],
+            record(result.bodies[name].velocity[indices, axis],
                    saved[:, 7 + axis], speed_limit,
                    f"{name} velocity axis {axis}")
     pto = _read("pto.csv")
-    _bound(result.ptos["relative_heave"].force[_indices(pto[:, 0])],
-           pto[:, 15], 2_000, "PTO internal force")
+    pto_force = result.ptos["relative_heave"].force[_indices(pto[:, 0])]
+    np.savetxt(reference / "python_pto.csv",
+               np.column_stack((pto[:, 0], pto_force)), delimiter=",")
+    record(pto_force, pto[:, 15], 2_000, "PTO internal force")
     source_mooring = _read("mooring.csv")
     outputs = dict(result.raw.extra_outputs)
     indices = _indices(source_mooring[:, 0])
+    np.savetxt(reference / "python_mooring.csv",
+               np.column_stack((source_mooring[:, 0],
+                                *(outputs[f"moordyn_connection_{kind}"][indices]
+                                  for kind in ("position", "velocity", "force")))),
+               delimiter=",")
     for kind, column, limit in (
         ("position", 1, (0.01, 1e-6, 0.005, 1e-6, 0.0005, 1e-6)),
         ("velocity", 7, (0.005, 1e-6, 0.005, 1e-6, 0.0005, 1e-6)),
@@ -128,10 +151,12 @@ def test_public_floating_joint_tracks_published_moordyn_viz(tmp_path):
     ):
         actual = outputs[f"moordyn_connection_{kind}"][indices]
         for axis, bound in enumerate(limit):
-            _bound(actual[:, axis], source_mooring[:, column + axis], bound,
+            record(actual[:, axis], source_mooring[:, column + axis], bound,
                    f"mooring {kind} axis {axis}")
-    if (reference / "fairlead_tension.csv").exists():
-        source_tension = _read("fairlead_tension.csv")
-        actual_tension = np.loadtxt(input_dir / "lines.out", skiprows=1)
-        _bound(actual_tension[:, 1:4], source_tension[:, 1:4],
-               4_000, "three fairlead tensions")
+    source_tension = _read("fairlead_tension.csv")
+    actual_tension = np.loadtxt(input_dir / "lines.out", skiprows=1)
+    np.savetxt(reference / "python_fairlead_tension.csv",
+               actual_tension[:, :4], delimiter=",")
+    record(actual_tension[:, 1:4], source_tension[:, 1:4],
+           4_000, "three fairlead tensions")
+    assert not violations, "; ".join(violations)
