@@ -7,16 +7,20 @@ on:
       - '.github/workflows/paraview-wave-parity.yml'
       - 'tests/matlab/paraview_wave_baseline.m'
       - 'tests/matlab/paraview_body_baseline.m'
+      - 'tests/matlab/paraview_mooring_baseline.m'
       - 'tests/test_paraview_wave_source.py'
       - 'tests/test_paraview_body_source.py'
+      - 'tests/test_paraview_mooring_source.py'
       - 'wecsim/paraviewClass.py'
   pull_request:
     paths:
       - '.github/workflows/paraview-wave-parity.yml'
       - 'tests/matlab/paraview_wave_baseline.m'
       - 'tests/matlab/paraview_body_baseline.m'
+      - 'tests/matlab/paraview_mooring_baseline.m'
       - 'tests/test_paraview_wave_source.py'
       - 'tests/test_paraview_body_source.py'
+      - 'tests/test_paraview_mooring_source.py'
       - 'wecsim/paraviewClass.py'
   workflow_dispatch:
 
@@ -37,7 +41,7 @@ jobs:
           release: R2025b
       - uses: matlab-actions/run-command@v3
         with:
-          command: addpath(genpath('matlab-ref/source')); addpath('tests/matlab'); paraview_wave_baseline; paraview_body_baseline
+          command: addpath(genpath('matlab-ref/source')); addpath('tests/matlab'); paraview_wave_baseline; paraview_body_baseline; paraview_mooring_baseline
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -48,6 +52,9 @@ jobs:
       - run: python -m pytest -q tests/test_paraview_body_source.py
         env:
           WEC_SIM_MATLAB_PARAVIEW_BODY_DIR: matlab-paraview-body
+      - run: python -m pytest -q tests/test_paraview_mooring_source.py
+        env:
+          WEC_SIM_MATLAB_PARAVIEW_MOORING_DIR: matlab-paraview-mooring
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -55,3 +62,4 @@ jobs:
           path: |
             matlab-paraview-wave/
             matlab-paraview-body/
+            matlab-paraview-mooring/
