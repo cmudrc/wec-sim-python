@@ -16,10 +16,10 @@ def test_regular_mesh_pressure_uses_mean_and_moved_surfaces():
     vertices = np.array([[0, 0, -2], [1, 0, -2], [0, 1, -2]])
     faces = np.array([[0, 1, 2]])
     poses = np.array([[0, 0, 0, 0, 0, 0], [0, 0, 0.25, 0, 0, 0]])
-    eta = np.array([0.5, 0.5])
     pressure = regular_wave_mesh_pressures(
-        vertices, faces, poses, eta, center_gravity=[0, 0, 0],
+        vertices, faces, poses, [0, 8], center_gravity=[0, 0, 0],
         rho=1000, gravity=9.81, water_depth=10, wave_number=0.1,
+        wave_height=1, wave_period=8, ramp_time=0,
     )
     np.testing.assert_allclose(pressure.hydrostatic[:, 0], [19620, 17167.5])
     assert pressure.linear_wave[0, 0] == pressure.linear_wave[1, 0]
@@ -63,9 +63,10 @@ def test_published_oswec_nonlinear_visualization_pressures():
     np.testing.assert_allclose(elevation, wave[:, 1], rtol=0, atol=1e-10)
 
     pressure = regular_wave_mesh_pressures(
-        mesh.vertices, mesh.faces, poses, elevation,
+        mesh.vertices, mesh.faces, poses, time,
         center_gravity=source["cg"].ravel(), rho=1000, gravity=9.81,
         water_depth=depth, wave_number=wave_number,
+        wave_height=2.5, wave_period=8, ramp_time=40,
     )
     for field, key in (
         (pressure.hydrostatic, "hydrostatic"),
@@ -73,4 +74,4 @@ def test_published_oswec_nonlinear_visualization_pressures():
         (pressure.linear_wave, "linearWave"),
     ):
         assert field.shape == (1201, 1042)
-        np.testing.assert_allclose(field, source[key], rtol=0, atol=1e-5)
+        np.testing.assert_allclose(field, source[key], rtol=0, atol=1e-8)
