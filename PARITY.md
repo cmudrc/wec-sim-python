@@ -330,6 +330,17 @@ entire trajectory gap. On the same 10 s sea, the opt-in output-step
 m for the physical implicit solver. The coupled RM3 trajectory gate remains
 red; matching the source's variable-step delayed feedback requires further
 evidence before changing Python's physical default.
+An additional source-driven counterfactual projects the difference between
+the logged delayed added-mass force and the force from current acceleration
+through the four-coordinate joint, then applies that prescribed residual to
+Python's physical solver with live MoorDyn. On this seeded 10 s sea, its
+float-surge error falls from `0.191` m to `0.136` m when the correction stops
+at `0.1` s, `0.0215` m at `0.5` s, and `0.00637` m at `1` s; applying it for
+all 10 s gives `0.00407` m. Thus the first second of the source's numerical
+mass feedback explains most of this particular motion difference. The
+correction depends on the saved MATLAB acceleration and force history; it is
+an attribution experiment, **not** an independent Python parity result or a
+candidate default force model.
 
 The [pinned MoorDyn ParaView writer gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38080388695)
 interpolates two lines with three and four nodes to two intermediate frames.
