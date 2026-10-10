@@ -1,0 +1,137 @@
+"""Pair the published Traditional JONSWAP RM3 MoorDyn visualization motion."""
+
+import os
+from pathlib import Path
+import shutil
+
+import numpy as np
+import pytest
+
+from wecsim import JONSWAPWave, MoorDyn, WEC
+from wecsim.irregularWave import (
+    jonswap_equal_energy_components, synthesize_irregular_response,
+)
+
+
+APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
+REFERENCE = os.environ.get("WEC_SIM_MATLAB_RM3_VIZ_DIR")
+LIBRARY = os.environ.get("WEC_SIM_MOORDYN_LIBRARY")
+pytestmark = pytest.mark.skipif(
+    not (APPLICATIONS and REFERENCE and LIBRARY),
+    reason="pinned RM3 MoorDyn visualization input, output, and library not provided",
+)
+
+
+def _read(name):
+    values = np.loadtxt(Path(REFERENCE) / name, delimiter=",", ndmin=2)
+    assert np.isfinite(values).all(), name
+    return values
+
+
+def _bound(actual, expected, limit, name):
+    assert actual.shape == expected.shape, name
+    error = float(np.max(np.abs(actual - expected)))
+    print(f"{name}: maximum difference {error:.8g}; gate {limit:.8g}")
+    assert error < limit, name
+
+
+def _indices(source_time, *, dt=0.01, end_time=80):
+    indices = np.rint(source_time / dt).astype(int)
+    assert np.all((indices >= 0) & (indices <= round(end_time / dt)))
+    np.testing.assert_allclose(indices * dt, source_time, rtol=0, atol=1e-8)
+    return indices
+
+
+def test_published_traditional_sea_and_body_excitation():
+    apps = Path(APPLICATIONS)
+    hydro = apps / "_Common_Input_Files/RM3/hydroData/rm3.h5"
+    source = _read("components.csv")
+    assert source.shape == (1000, 4)
+    assert np.all(np.diff(source[:, 0]) > 0)
+    assert np.max(np.abs(source[:, 2])) > 0
+    components = jonswap_equal_energy_components(
+        hydro, significant_height=2, peak_period=8,
+        directions=[0], spreading=[1], phase=source[:, 3:4],
+        discretization="traditional",
+    )
+    generated = np.column_stack((
+        components.omega, components.d_omega,
+        components.spectral_amplitude / 2, components.phase[:, 0],
+    ))
+    np.testing.assert_allclose(generated, source, rtol=2e-12, atol=1e-14)
+    wave = _read("wave.csv")
+    assert wave.shape[1] == 2
+    sea = tuple(synthesize_irregular_response(
+        hydro, components, dt=0.01, end_time=80, ramp_time=0,
+        body_number=number,
+    ) for number in (1, 2))
+    _bound(sea[0].elevation[_indices(wave[:, 0])], wave[:, 1],
+           1e-10, "wave elevation")
+    for number, incident in enumerate(sea, start=1):
+        body = _read(f"body{number}.csv")
+        assert body.shape[1] == 25
+        _bound(incident.excitation_force[_indices(body[:, 0])],
+               body[:, 19:25], 1e-4, f"body{number} excitation")
+
+
+def test_public_floating_joint_tracks_published_moordyn_viz(tmp_path):
+    apps = Path(APPLICATIONS)
+    reference = Path(REFERENCE)
+    hydro = apps / "_Common_Input_Files/RM3/hydroData/rm3.h5"
+    input_dir = tmp_path / "Mooring"
+    input_dir.mkdir()
+    lines = input_dir / "lines.txt"
+    shutil.copyfile(apps / "Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt",
+                    lines)
+
+    wec = WEC("Published RM3 MoorDyn visualization")
+    float_body = wec.body("float", hydro, inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", hydro, inertia=(0, 94_407_091.24, 0))
+    wec.floating_joint(
+        float_body, spar, damping=1_200_000,
+        moordyn=MoorDyn(LIBRARY, lines),
+        moordyn_point=spar.at(0, 0, 21.5),
+    )
+    result = wec.run(
+        JONSWAPWave(2, 8, phase_file=reference / "phase.csv",
+                    discretization="traditional"),
+        dt=0.01, end_time=80, ramp_time=0, radiation_memory=60,
+        initial_coordinate={"spar_heave": -0.21},
+    )
+    assert result.time.shape == (8001,)
+    _bound(result.wave_elevation[_indices(_read("wave.csv")[:, 0])],
+           _read("wave.csv")[:, 1], 1e-10, "public wave elevation")
+    for number, name in ((1, "float"), (2, "spar")):
+        saved = _read(f"body{number}.csv")
+        indices = _indices(saved[:, 0])
+        for axis, position_limit, speed_limit in (
+            (0, 0.01, 0.005),
+            (2, 0.005, 0.005),
+            (4, 0.0005, 0.0005),
+        ):
+            _bound(result.bodies[name].position[indices, axis],
+                   saved[:, 1 + axis], position_limit,
+                   f"{name} position axis {axis}")
+            _bound(result.bodies[name].velocity[indices, axis],
+                   saved[:, 7 + axis], speed_limit,
+                   f"{name} velocity axis {axis}")
+    pto = _read("pto.csv")
+    _bound(result.ptos["relative_heave"].force[_indices(pto[:, 0])],
+           pto[:, 15], 2_000, "PTO internal force")
+    source_mooring = _read("mooring.csv")
+    outputs = dict(result.raw.extra_outputs)
+    indices = _indices(source_mooring[:, 0])
+    for kind, column, limit in (
+        ("position", 1, (0.01, 1e-6, 0.005, 1e-6, 0.0005, 1e-6)),
+        ("velocity", 7, (0.005, 1e-6, 0.005, 1e-6, 0.0005, 1e-6)),
+        ("force", 13, (2_000, 1e-3, 4_000, 1e-3, 2_000, 1e-3)),
+    ):
+        actual = outputs[f"moordyn_connection_{kind}"][indices]
+        for axis, bound in enumerate(limit):
+            _bound(actual[:, axis], source_mooring[:, column + axis], bound,
+                   f"mooring {kind} axis {axis}")
+    if (reference / "fairlead_tension.csv").exists():
+        source_tension = _read("fairlead_tension.csv")
+        actual_tension = np.loadtxt(input_dir / "lines.out", skiprows=1)
+        _bound(actual_tension[:, 1:4], source_tension[:, 1:4],
+               4_000, "three fairlead tensions")
