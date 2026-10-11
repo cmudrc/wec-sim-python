@@ -1084,6 +1084,17 @@ Python steps versus `2.874` N m against MATLAB. The source/Python pitch gap
 already reaches `0.00342` rad before any controller acts. Along with the
 derived fine-step MATLAB comparison above, this argues against Python plant
 step refinement as the remedy for the published coarse-step trajectory gap.
+The same audit accepts `--duration 225` on the fixed-fit source artifact.
+Before NMPC, the 1 ms and 0.5 ms Python runs differ by less than `1e-12` rad
+pitch and `6.5e-11` N m command. Over the full active interval, feedback
+amplifies their maximum differences to `0.00437` rad pitch, `0.0275` rad/s
+pitch speed, and `0.515` N m command. The corresponding fixed-fit
+MATLAB-versus-1 ms-Python maxima are `0.04091` rad, `0.4296` rad/s, and
+`2.874` N m. Thus the first 30 s step check cannot be extrapolated as a
+full-duration pointwise-convergence result, while the fixed-fit source gap
+remains larger than this one-step-refinement difference. A second refinement
+or other convergence evidence would be needed to establish a long-horizon
+pointwise limit for the active controller.
 A 50 ms Python RK4 pre-control solve changes the peak source pitch gap by
 only `4.7e-6` rad relative to the 1 ms solve. A fixed 50 ms DOP853 solve
 with 1 ms-resolved incident forcing agrees with the fine Python solution to
