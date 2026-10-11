@@ -378,6 +378,58 @@ def test_live_moordyn_on_same_dense_source_sea(tmp_path):
               f"1 s {error[100]:.8g}, at 10 s {error[-1]:.8g}")
 
 
+def test_physical_fine_step_self_convergence(tmp_path):
+    """Check physical Python motion convergence against the refined source sea."""
+    apps = Path(APPLICATIONS)
+    hydro = apps / "_Common_Input_Files/RM3/hydroData/rm3.h5"
+    line_input = (apps /
+                  "Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt")
+    phase = Path(REFERENCE) / "step0025_phase.csv"
+
+    def run(dt):
+        input_dir = tmp_path / f"dt-{dt:g}"
+        input_dir.mkdir()
+        lines = input_dir / "lines.txt"
+        shutil.copyfile(line_input, lines)
+        wec = WEC("RM3 MoorDyn physical step convergence")
+        float_body = wec.body("float", hydro, inertia=(0, 21_306_090.66, 0))
+        spar = wec.body("spar", hydro, inertia=(0, 94_407_091.24, 0))
+        wec.floating_joint(
+            float_body, spar, damping=1_200_000,
+            moordyn=MoorDyn(LIBRARY, lines),
+            moordyn_point=spar.at(0, 0, 21.5),
+        )
+        return wec.run(
+            JONSWAPWave(2, 8, phase_file=phase,
+                        discretization="traditional"),
+            dt=dt, end_time=10, ramp_time=0, radiation_memory=60,
+            initial_coordinate={"spar_heave": -0.21},
+        )
+
+    coarse = run(0.0025)
+    fine = run(0.00125)
+    _bound(coarse.time, fine.time[::2], 1e-10,
+           "physical solver common times")
+    source_wave = _read("step0025_wave.csv")
+    for label, result in (("coarse", coarse), ("fine", fine)):
+        indices = _indices(source_wave[:, 0], dt=result.time[1], end_time=10)
+        _bound(result.wave_elevation[indices], source_wave[:, 1],
+               1e-10, f"{label} refined-sea wave")
+    for number, name in ((1, "float"), (2, "spar")):
+        body_coarse = coarse.bodies[name]
+        body_fine = fine.bodies[name]
+        _bound(body_coarse.position, body_fine.position[::2], 2.5e-4,
+               f"{name} physical position self-convergence")
+        _bound(body_coarse.velocity, body_fine.velocity[::2], 1e-4,
+               f"{name} physical velocity self-convergence")
+        source = _read(f"step0025_body{number}.csv")
+        indices = _indices(source[:, 0], dt=0.0025, end_time=10)
+        surge_error = body_coarse.position[indices, 0] - source[:, 1]
+        print(f"{name} surge against refined source: "
+              f"maximum {np.max(np.abs(surge_error)):.8g} m; "
+              f"at 10 s {surge_error[-1]:.8g} m")
+
+
 def test_public_floating_joint_tracks_published_moordyn_viz(tmp_path):
     apps = Path(APPLICATIONS)
     reference = Path(REFERENCE)

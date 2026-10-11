@@ -386,6 +386,19 @@ mass-feedback transient. This correction uses MATLAB's saved acceleration
 and force, so it remains an attribution diagnostic, not an independently
 generated parity trajectory or a reason to change the physical default.
 
+The independent physical Python solver was also refined on this same
+`0.0025` s source sea, using the pinned native MoorDyn library and HDF5 but
+no saved source force or motion as input. Halving Python's step from `0.0025`
+to `0.00125` s changes either body's position by at most `0.109` mm and speed
+by at most `0.032` mm/s over 10 s; a focused paired test gates those changes
+at `0.25` mm and `0.1` mm/s. The float's final surge difference from the
+finer MATLAB source changes only from `32.17` to `32.07` mm. Selecting the
+opt-in output-step delayed-mass scheme instead gives `30.29` and `31.13` mm
+at the two Python steps, so refining that approximation does not close the
+source gap either. These independent runs rule out coarse Python stepping
+as the main explanation for the refined-source mismatch; the strict
+published coupled-motion gate remains open.
+
 The [pinned MoorDyn ParaView writer gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38080388695)
 interpolates two lines with three and four nodes to two intermediate frames.
 Python's public `ParaviewClass.write_paraview_vtp_mooring` matches all source
