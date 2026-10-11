@@ -6,7 +6,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.morison import MorisonElement, regular_morison_source_force
+from wecsim.morison import (
+    MorisonElement, regular_morison_source_force,
+    regular_wave_normal_tangential_morison_terms,
+)
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
@@ -65,6 +68,35 @@ def test_moving_regular_normal_tangential_source_force():
     assert error < 1e-8, f"normal/tangential source force differs by {error:.6g}"
     assert np.max(np.abs(actual[:-2])) > 1
     np.testing.assert_array_equal(actual[-2], 0)
+
+
+@pytest.mark.skipif(not REFERENCE, reason="paired MATLAB Morison states absent")
+def test_physical_normal_tangential_force_on_unrotated_source_states():
+    rows = np.loadtxt(
+        Path(REFERENCE) / "MORISON_MOVING_NORMAL_TANGENTIAL_states.csv",
+        delimiter=",",
+    )
+    element = MorisonElement(
+        point=(.8, -.5, 1.2),
+        drag_coefficient=(1.1, .7, 1.3),
+        added_mass_coefficient=(.8, 1.2, .6),
+        area=(2, 3, 1.5), volume=1.7,
+        axis=(.3, -.7, 1.1),
+    )
+    for index in (0, 1, 6):
+        row = rows[index]
+        np.testing.assert_array_equal(row[4:7], 0)
+        applied, mass = regular_wave_normal_tangential_morison_terms(
+            [element], position=row[1:7], velocity=row[7:13],
+            time=row[0], wave_height=2.5, wave_period=8,
+            direction=25, water_depth=30, ramp_time=10, rho=1025,
+        )
+        np.testing.assert_allclose(
+            applied - mass @ row[13:19], row[19:25],
+            rtol=0, atol=1e-9,
+        )
+        np.testing.assert_allclose(mass, mass.T, rtol=0, atol=1e-10)
+        assert np.linalg.eigvalsh(mass).min() > -1e-9
 
 
 @pytest.mark.skipif(not REFERENCE, reason="paired MATLAB Morison states absent")

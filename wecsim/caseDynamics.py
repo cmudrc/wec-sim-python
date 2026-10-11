@@ -39,7 +39,9 @@ from .linearCoordinates import build_coordinate_maps, initial_coordinate
 from .linearHeave import solve_heave_free_decay
 from .morison import (
     MorisonElement, no_wave_heave_morison_terms,
-    regular_wave_axial_morison_terms, regular_wave_heave_morison_terms,
+    regular_wave_axial_morison_terms,
+    regular_wave_normal_tangential_morison_terms,
+    regular_wave_heave_morison_terms,
     solve_fixed_morison_irregular,
 )
 from .moorDyn import MoorDyn
@@ -111,12 +113,13 @@ def _morison_elements(specs):
             {"point", "drag_coefficient", "added_mass_coefficient",
              "area", "volume"},
             {"point", "drag_coefficient", "added_mass_coefficient",
-             "area", "volume", "phase_mode"},
+             "area", "volume", "phase_mode", "axis"},
         )
         elements.append(MorisonElement(
             tuple(spec["point"]), tuple(spec["drag_coefficient"]),
             tuple(spec["added_mass_coefficient"]), tuple(spec["area"]),
             spec["volume"], spec.get("phase_mode", "directional"),
+            tuple(spec["axis"]) if "axis" in spec else None,
         ))
     return tuple(elements)
 
@@ -1589,6 +1592,10 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
             raise ValueError("moving Morison current needs regular-wave surge/heave/pitch")
         current_settings = _current_settings(wave)
         moving_elements = _morison_elements(bodies[0]["morison_elements"])
+        normal_tangential = [element.axis is not None
+                             for element in moving_elements]
+        if any(normal_tangential) and not all(normal_tangential):
+            raise ValueError("moving Morison elements must use one coefficient mode")
         if wave["type"] == "regular":
             raw_depth = np.asarray(loaded_bodies[0].hydroData[
                 "simulation_parameters"]["water_depth"]).item()
@@ -1599,7 +1606,10 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
                 def moving_terms(at_time, coordinate, speed):
                     pose = np.r_[centers[0], np.zeros(3)] + maps[0] @ coordinate
                     velocity = maps[0] @ speed
-                    return regular_wave_axial_morison_terms(
+                    terms = (regular_wave_normal_tangential_morison_terms
+                             if all(normal_tangential)
+                             else regular_wave_axial_morison_terms)
+                    return terms(
                         moving_elements, position=pose, velocity=velocity,
                         time=at_time, wave_height=height, wave_period=period,
                         ramp_time=ramp_time, water_depth=depth, rho=rho, g=g,

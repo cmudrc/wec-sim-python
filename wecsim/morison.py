@@ -3,10 +3,10 @@
 The public WEC runner uses Cartesian option 1 for fixed elements in a
 directional irregular sea. Each incident heading contributes its own
 nonlinear drag before the forces are summed, as in ``irregWaveMorison.m``.
-The public runner also couples axial elements to heave or to a body's
-surge/heave/pitch motion in regular waves. The separate full six-DOF
+The public runner also couples axial or normal/tangential elements to a
+body's surge/heave/pitch motion in regular waves. The separate full six-DOF
 ``regular_morison_source_force`` retains source-specific conventions only
-for diagnostics, including the normal/tangential option.
+for diagnostics.
 """
 
 from dataclasses import dataclass
@@ -25,6 +25,7 @@ class MorisonElement:
     area: tuple[float, float, float]
     volume: float
     phase_mode: str = "directional"  # "matlab_shared" replays the pinned source loop
+    axis: tuple[float, float, float] | None = None  # body-local option-2 axis
 
 
 @dataclass(frozen=True)
@@ -328,7 +329,8 @@ def _axial_heave_element(element: MorisonElement):
             or any(not np.allclose(value[:2], 0, rtol=0, atol=1e-12)
                    for value in (cd, ca, area))
             or np.any(cd < 0) or np.any(ca < 0) or np.any(area < 0)
-            or not np.isfinite(element.volume) or element.volume <= 0):
+            or not np.isfinite(element.volume) or element.volume <= 0
+            or element.axis is not None):
         raise ValueError("heave Morison elements need axial, nonnegative geometry")
     return point[2], cd[2], ca[2], area[2], element.volume
 
@@ -495,6 +497,130 @@ def regular_wave_axial_morison_terms(
     return wrench, added_mass
 
 
+def regular_wave_normal_tangential_morison_terms(
+    elements: Sequence[MorisonElement], *, position: Sequence[float],
+    velocity: Sequence[float], time: float, wave_height: float,
+    wave_period: float, direction: float = 0.0, ramp_time: float,
+    water_depth: float, rho: float, g: float = 9.81,
+    current_speed: float = 0.0, current_direction: float = 0.0,
+    current_profile: str = "uniform", current_depth: float | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Physical option-2 wrench and added mass on a six-DOF body state.
+
+    The first two coefficient and area entries are normal and tangential;
+    the third is unused, as in WEC-Sim option 2. The axis and body-local
+    point rotate with a proper XYZ attitude matrix. The returned 6x6 mass includes
+    point-offset translation/rotation coupling and is positive semidefinite
+    for nonnegative added-mass coefficients. This is not the pinned source's
+    nonorthogonal general rotation diagnostic.
+    """
+    pose = np.asarray(position, dtype=float)
+    speed = np.asarray(velocity, dtype=float)
+    if (pose.shape != (6,) or speed.shape != (6,)
+            or not np.isfinite(pose).all() or not np.isfinite(speed).all()):
+        raise ValueError("moving Morison needs finite six-DOF state")
+    if (not np.isfinite([time, wave_height, wave_period, direction,
+                         ramp_time, rho, g]).all()
+            or time < 0 or wave_height < 0 or wave_period <= 0
+            or ramp_time < 0 or rho <= 0 or g <= 0
+            or not (np.isfinite(water_depth) or np.isposinf(water_depth))
+            or water_depth <= 0 or not elements):
+        raise ValueError("regular-wave Morison settings are invalid")
+    _validate_current(current_speed, current_direction,
+                      current_profile, current_depth)
+    omega = 2 * np.pi / wave_period
+    k = (omega * omega / g if np.isposinf(water_depth) else
+         finite_depth_wavenumber(
+             np.array([omega]), water_depth=water_depth, gravity=g,
+         )[0])
+    amplitude = wave_height / 2
+    if ramp_time and time < ramp_time:
+        amplitude *= (1 - np.cos(np.pi * time / ramp_time)) / 2
+    roll, pitch, yaw = pose[3:]
+    cr, sr = np.cos(roll), np.sin(roll)
+    cp, sp = np.cos(pitch), np.sin(pitch)
+    cy, sy = np.cos(yaw), np.sin(yaw)
+    rotation = np.array([
+        [cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr],
+        [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr],
+        [-sp, cp * sr, cp * cr],
+    ])
+    angular_velocity = speed[3:]
+    wave_axis = np.array([np.cos(np.deg2rad(direction)),
+                          np.sin(np.deg2rad(direction))])
+    wrench = np.zeros(6)
+    added_mass = np.zeros((6, 6))
+    for element in elements:
+        if not isinstance(element, MorisonElement) or element.axis is None:
+            raise ValueError("normal/tangential elements need a body-local axis")
+        point = np.asarray(element.point, dtype=float)
+        axis = np.asarray(element.axis, dtype=float)
+        cd = np.asarray(element.drag_coefficient, dtype=float)
+        ca = np.asarray(element.added_mass_coefficient, dtype=float)
+        area = np.asarray(element.area, dtype=float)
+        if (any(value.shape != (3,) or not np.isfinite(value).all()
+                for value in (point, axis, cd, ca, area))
+                or np.linalg.norm(axis) == 0
+                or np.any(cd < 0) or np.any(ca < 0) or np.any(area < 0)
+                or not np.isfinite(element.volume) or element.volume <= 0):
+            raise ValueError("normal/tangential geometry and coefficients are invalid")
+        arm = rotation @ point
+        world = pose[:3] + arm
+        if world[2] > 0:
+            continue
+        tangent = rotation @ axis
+        tangent /= np.linalg.norm(tangent)
+        tangential = np.outer(tangent, tangent)
+        normal = np.eye(3) - tangential
+        kh = k * water_depth
+        if kh > np.pi:
+            horizontal = vertical = np.exp(k * world[2])
+        else:
+            kz = k * world[2]
+            horizontal = np.cosh(kz + kh) / np.cosh(kh)
+            vertical = np.sinh(kz + kh) / np.cosh(kh)
+        phase = omega * time - k * (world[:2] @ wave_axis)
+        wave_speed = amplitude * g * k / omega
+        wave_acceleration = amplitude * g * k
+        fluid_velocity = np.r_[
+            wave_speed * horizontal * np.cos(phase) * wave_axis,
+            -wave_speed * vertical * np.sin(phase),
+        ]
+        fluid_velocity[:2] += _current_speed_at_depth(
+            world[2], time, ramp_time, current_speed, current_profile,
+            current_depth,
+        ) * np.array([np.cos(np.deg2rad(current_direction)),
+                      np.sin(np.deg2rad(current_direction))])
+        fluid_acceleration = np.r_[
+            -wave_acceleration * horizontal * np.sin(phase) * wave_axis,
+            -wave_acceleration * vertical * np.cos(phase),
+        ]
+        point_velocity = speed[:3] + np.cross(angular_velocity, arm)
+        bias_acceleration = np.cross(
+            angular_velocity, np.cross(angular_velocity, arm),
+        )
+        relative = fluid_velocity - point_velocity
+        relative_n = normal @ relative
+        relative_t = tangential @ relative
+        inertia = ca[0] * normal + ca[1] * tangential
+        force = (0.5 * rho * (
+            cd[0] * area[0] * relative_n * np.linalg.norm(relative_n)
+            + cd[1] * area[1] * relative_t * np.linalg.norm(relative_t)
+        ) + rho * element.volume * (
+            fluid_acceleration
+            + inertia @ (fluid_acceleration - bias_acceleration)
+        ))
+        wrench[:3] += force
+        wrench[3:] += np.cross(arm, force)
+        skew = np.array([[0, -arm[2], arm[1]],
+                         [arm[2], 0, -arm[0]],
+                         [-arm[1], arm[0], 0]])
+        point_jacobian = np.column_stack((np.eye(3), -skew))
+        added_mass += (rho * element.volume * point_jacobian.T
+                       @ inertia @ point_jacobian)
+    return wrench, added_mass
+
+
 def solve_fixed_morison_irregular(
     components: IrregularComponents,
     elements: Sequence[MorisonElement],
@@ -542,7 +668,8 @@ def solve_fixed_morison_irregular(
                 for value in (point, drag, added, area))
                 or np.any(drag < 0) or np.any(added < 0) or np.any(area < 0)
                 or not np.isfinite(element.volume) or element.volume <= 0
-                or element.phase_mode not in ("directional", "matlab_shared")):
+                or element.phase_mode not in ("directional", "matlab_shared")
+                or element.axis is not None):
             raise ValueError("Morison point, coefficients, area, and volume are invalid")
         prepared.append((point, drag, added, area, float(element.volume),
                          element.phase_mode))
