@@ -1,5 +1,12 @@
 # wec-sim-python
 
+[![Published WEC-Sim case motion: 50 of 63 inputs independently gated](https://img.shields.io/badge/published%20case%20motion-50%2F63%20gated-blue)](PARITY.md#reference-model-and-case-inventory)
+
+The badge counts pinned published inputs with full-duration independent
+body-motion gates. See the [case inventory](PARITY.md#reference-model-and-case-inventory)
+for stationary, qualified, and open cases; this is not a measure of overall
+WEC-Sim feature parity.
+
 > **cmudrc fork status:** This is an active parity effort, not yet a complete
 > wave energy converter simulator. Selected Sphere, RM3, OSWEC, and barge
 > cases have paired MATLAB trajectory checks; general WEC-Sim dynamics and
