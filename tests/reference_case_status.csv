@@ -5,8 +5,8 @@ Body-to-Body_Interactions/B2B_Case1,independent_motion,
 Body-to-Body_Interactions/B2B_Case2,independent_motion,
 Body-to-Body_Interactions/B2B_Case3,independent_motion,
 Body-to-Body_Interactions/B2B_Case4,independent_motion,
-Body-to-Body_Interactions/B2B_Case5,open_motion,State-space radiation trajectory unpaired; pinned fit has negative low-frequency damping.
-Body-to-Body_Interactions/B2B_Case6,open_motion,State-space radiation trajectory unpaired; pinned fit has negative low-frequency damping.
+Body-to-Body_Interactions/B2B_Case5,independent_motion,Opt-in fitted radiation trajectory pairs numerically; source fit has negative active-mode damping.
+Body-to-Body_Interactions/B2B_Case6,independent_motion,Opt-in fitted radiation trajectory pairs numerically; source fit has negative active-mode damping.
 Cable,independent_motion,
 Controls/Declutching,independent_motion,
 Controls/Latching,independent_motion,
@@ -54,7 +54,7 @@ Passive_Yaw/PassiveYawON,independent_motion,
 Passive_Yaw/PassiveYawRegression,open_motion,Native held-heading irregular yaw and PTO-work trajectories diverge at sensitive heading events.
 RM3_PTO_Extension/float,qualified_motion,Finest-step free-decay motion is gated; published-step source is step-sensitive.
 RM3_PTO_Extension/spar,qualified_motion,Finest-step free-decay motion is gated; published-step source is step-sensitive.
-Radiation_Force_Options,mixed_modes,"Constant, convolution, and FIR motion are gated; state-space motion is unpaired and its pinned fit is nonpassive."
+Radiation_Force_Options,independent_motion,"All four radiation modes have motion gates; the fitted state-space option is nonpassive."
 Variable_Hydro/Passive_Yaw,mixed_modes,Published regular-wave yaw motion is gated; native 600 s irregular yaw trajectory remains unpaired.
 Variable_Hydro/Variable_Mass,independent_motion,
 WECCCOMP/WECCCOMP,independent_motion,

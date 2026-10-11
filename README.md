@@ -855,14 +855,18 @@ reproduce the pinned MATLAB/Simulink numerical trajectory, set
 `solve_rm3_regular` and the RM3 MCR runners). This explicitly selects the
 source model's mass split and 1e-7 s acceleration delay; the delay is a
 numerical setting, not a WEC property. The published Cases 5 and 6 use a
-suspect fitted state-space radiation model and remain unsupported as coupled
-trajectories. The paired Cases 3 and 4 tests check the ordinary implicit solver
-separately from this opt-in numerical comparison; neither path uses the Cases
-5 and 6 fit.
+suspect fitted state-space radiation model. Select
+`radiation_method="state_space"` on `WEC.floating_joint` to advance its HDF5
+states with the RM3 body and PTO; this is an opt-in source comparison. The
+400 s Cases 5 and 6 and the 500 s radiation-options setting have independent
+paired motion gates. The fit has negative damping in active joint modes, so
+those numerical gates do not establish a physically valid radiation model.
+The paired Cases 3 and 4 tests continue to check convolution separately.
 
 For a prescribed two-body velocity history, the diagnostic
 `wecsim.radiation.replay_rm3_fitted_radiation` reproduces the pinned MATLAB
-fit's force convention. It does not couple that nonpassive fit into a WEC run.
+fit's force convention on saved motion. The opt-in coupled runner above
+advances its own motion and uses the same zero-direct-term source convention.
 
 For the `fixed_hinge` layout, an optional second body can be fixed. The
 regular-wave case accepts a nonhydrodynamic base declared with `nonhydro:
@@ -874,9 +878,10 @@ constraint reaction forces are not yet calculated.
 The `regularCIC` floating-joint path has paired MATLAB checks for RM3
 body-to-body Cases 3 and 4 and all eight physical settings in the published
 RM3 Multiple Condition Runs Option 1 sweep. The published RM3 radiation
-options case also checks constant, convolution, and FIR dynamics over 500 s.
-MATLAB's fitted radiation state-space Cases 5 and 6 remain outside that
-validated path.
+options case also checks constant, convolution, FIR, and fitted state-space
+dynamics over 500 s.
+Its state-space setting and MATLAB's fitted Cases 5 and 6 have separate
+full-duration numerical motion gates; the default stays convolution.
 The programmatic RM3 solver also accepts `mooring_surge_stiffness` for a
 linear spring at its floating joint and `excitation_force` for sampled imported
 waves. The pinned `MooringMatrix` case pairs these forces and the full 400 s

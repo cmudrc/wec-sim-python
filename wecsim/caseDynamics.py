@@ -907,8 +907,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         if wave["type"] == "regular" and radiation_method != "constant":
             raise ValueError("regular waves need constant radiation")
         if (wave["type"] in ("regularCIC", "pm", "jonswap", "none", "elevationImport")
-                and radiation_method not in ("convolution", "fir")):
-            raise ValueError("radiation memory needs convolution or FIR radiation")
+                and radiation_method not in ("convolution", "fir", "state_space")):
+            raise ValueError("radiation memory needs convolution, FIR, or fitted radiation")
         if wave["type"] == "elevationImport" and radiation_method != "convolution":
             raise ValueError("imported elevation currently requires convolution radiation")
         if wave["type"] in ("regularCIC", "pm", "jonswap", "none", "elevationImport"):

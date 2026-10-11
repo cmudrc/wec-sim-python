@@ -10,6 +10,7 @@ from tools.rm3_radiation_diagnostic import (
     active_mode_minimum_damping, common_surge_curves,
     common_surge_feedthrough,
 )
+from wecsim.radiation import RadiationStateSpace
 from wecsim.rm3Regular import solve_rm3_regular
 
 
@@ -49,6 +50,22 @@ def test_fitted_common_surge_has_opposite_low_frequency_sign():
     assert np.all(feedthrough > 0)
     assert np.all(fitted[:, 0] + feedthrough < -2_000)
     assert np.all(fitted[:, np.argmin(abs(fitted_frequency - 2 * np.pi / 8))] > 0)
+
+
+@pytest.mark.parametrize("body_to_body", [False, True])
+def test_active_state_space_retains_source_common_surge_transfer(body_to_body):
+    """Removing inactive joint channels must preserve the fitted slow mode."""
+    model = RadiationStateSpace.from_rm3_hdf5(
+        RM3, body_to_body=body_to_body,
+    )
+    shared_surge_speed = np.zeros(12)
+    shared_surge_speed[[0, 6]] = 1
+    steady_force = model.C @ np.linalg.solve(
+        -model.A, model.B @ shared_surge_speed,
+    )
+    fitted_dc = common_surge_curves(RM3)[3][int(body_to_body), 0]
+    np.testing.assert_allclose(steady_force[[0, 6]].sum(), fitted_dc,
+                               rtol=0, atol=1e-8)
 
 
 def test_fitted_radiation_has_large_negative_active_joint_modes():

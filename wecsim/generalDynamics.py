@@ -15,6 +15,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 
 from .directLinearGenerator import DirectLinearGenerator
+from .radiation import RadiationStateSpace
 
 @dataclass(frozen=True)
 class BodyMotion:
@@ -286,6 +287,7 @@ class GeneralizedDynamics:
         adaptive_regular: bool = False,
         applied_force_history: np.ndarray | None = None,
         step_force: Callable[[float, float, np.ndarray, np.ndarray], np.ndarray] | None = None,
+        radiation_state_space: RadiationStateSpace | None = None,
     ) -> DynamicsResponse:
         """Integrate the body dynamics with optional sampled external loading.
 
@@ -315,6 +317,13 @@ class GeneralizedDynamics:
             raise ValueError("initial state must be finite")
         time = np.arange(steps + 1) * dt
         memory = any(body.radiation_kernel is not None for body in self.bodies)
+        if radiation_state_space is not None and (
+                not isinstance(radiation_state_space, RadiationStateSpace)
+                or len(self.bodies) != 2 or memory or self.controlled_ptos
+                or self.linear_generators
+                or self.added_mass_delay is not None or adaptive_regular
+                or applied_force_history is not None or step_force is not None):
+            raise ValueError("fitted radiation needs standalone continuous body dynamics")
         if applied_force_history is not None:
             applied_force_history = np.asarray(applied_force_history, dtype=float)
             if (not memory or applied_force_history.shape != (steps + 1, n)
@@ -332,7 +341,11 @@ class GeneralizedDynamics:
         controlled_force = None
         generator_state = None
         generator_force = None
-        if adaptive_regular:
+        if radiation_state_space is not None:
+            self._integrate_state_space_radiation(
+                time, q, v, a, dt, radiation_state_space,
+            )
+        elif adaptive_regular:
             self._integrate_adaptive_regular(time, q, v, a, dt)
         elif memory:
             if self.radiation_discretization == "fir":
@@ -481,6 +494,43 @@ class GeneralizedDynamics:
             q[step + 1], v[step + 1] = next_state[:n], next_state[n:]
         for step, t in enumerate(time):
             a[step] = self.acceleration(t, q[step], v[step])
+
+    def _integrate_state_space_radiation(self, time, q, v, a, dt, model):
+        """Advance body and source-fitted radiation states in the same RK4 step."""
+        n = self.coordinate_count
+        state = np.concatenate((q[0], v[0], np.zeros(len(model.A))))
+
+        def derivative(at_time, current):
+            coordinate = current[:n]
+            speed = current[n:2 * n]
+            radiation_state = current[2 * n:]
+            body_velocity = np.concatenate([
+                body.motion(coordinate, speed).jacobian @ speed
+                for body in self.bodies
+            ])
+            radiation = model.C @ radiation_state
+            acceleration = self.acceleration(
+                at_time, coordinate, speed,
+                known_radiation=(radiation[:6], radiation[6:]), dt=dt,
+            )
+            return np.concatenate((
+                speed, acceleration,
+                model.A @ radiation_state + model.B @ body_velocity,
+            ))
+
+        for step, at_time in enumerate(time):
+            k1 = derivative(at_time, state)
+            a[step] = k1[n:2 * n]
+            if step == len(time) - 1:
+                break
+            k2 = derivative(at_time + dt / 2, state + dt * k1 / 2)
+            k3 = derivative(at_time + dt / 2, state + dt * k2 / 2)
+            k4 = derivative(at_time + dt, state + dt * k3)
+            state += dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6
+            if not np.isfinite(state).all():
+                raise ValueError("fitted radiation dynamics produced nonfinite states")
+            q[step + 1] = state[:n]
+            v[step + 1] = state[n:2 * n]
 
     def _integrate_adaptive_regular(self, time, q, v, a, dt):
         """Resolve continuous nonlinear forces between requested output times."""

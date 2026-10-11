@@ -55,7 +55,7 @@ the production Python code. The live wave comparison passed on 6 October
 | RM3 MooringMatrix with imported elevation | Pinned MATLAB Applications `Mooring/MooringMatrix` input, its 3,600 s `etaData.mat`, and BEMIO-generated RM3 HDF5 | The public `run_case` interface loads the MAT elevation, applies the configured joint surge spring, and runs the full 400 s comparison. The source wave agrees with Python interpolation and ramp to `8e-14` m. Production `BodyClass` uses the source's linear excitation-IRF interpolation and noncausal `same` convolution; an explicit opt-in reproduces the source body block's additional force ramp. All logged excitation-force components agree within `1e-3` N or N m. The logged mooring force equals `−100,000` N/m times its surge displacement within `1e-5` N. On all 40,001 samples, implicit-added-mass dynamics agree within 9.77 mm surge, 2.53 mm heave, 0.000605 rad pitch, 2.55 mm PTO stroke, 0.279 mm/s PTO speed, 334 N PTO force, and 1.17 kN mooring force. General mooring layouts remain unsupported. |
 | RM3 MoorDyn coupled mooring | Pinned MATLAB Applications `Mooring/MoorDyn`, its 3,600 s elevation input, BEMIO RM3 HDF5, and native MoorDyn v2; [fresh 40,001-sample source baseline](https://github.com/cmudrc/wec-sim-python/actions/runs/37886952244) | The public Python `WEC.floating_joint(..., moordyn=MoorDyn(...), moordyn_point=spar.at(0,0,21.5))` configuration advances native MoorDyn from its own predicted connection motion and feeds the resulting six-component load back to the constrained two-body solver once per 0.01 s step. The 400 s paired run uses the full imported-elevation record and the source body block’s second force ramp; every saved source wave-force component matches to numerical precision. A local ARM64 run against the pinned MATLAB output differs by at most 0.785 mm spar surge, 0.0277 mm spar heave, 0.0147 mrad pitch, 116 N PTO force, 61.2 N surge connection force, 41.4 N heave connection force, 573 N m pitch moment, and 42.7 N fairlead tension. Explicit CI gates compare both bodies’ active positions and speeds, PTO force, six-component connection pose/velocity/force, and all three fairlead tensions over all 40,001 samples. The force is evaluated at a predicted pose once per step because legacy MoorDyn cannot roll back an implicit force trial. This validates the reduced RM3 floating joint and published mooring attachment, not arbitrary mooring layouts or the ParaView output. |
 | RM3 End_Stops force law and refined-step trajectory | Pinned MATLAB Applications `End_Stops` input; R2025b runs at published 0.1 s and diagnostic 0.025/0.0125 s steps through the published 400 s duration | Effective stroke bounds are ±0.6 m, each spring is 100 MN/m, stop damping is zero, and the 0.0001 m transition is active. The source's logged stop force matches the Python smooth-stop law within `1e-5` N even at saved samples inside the transition. The 0.025-to-0.0125 s source stroke difference is at most 2.79 mm over 400 s; the published 0.1 s run differs from the refined source by up to 286 mm after contact. The opt-in Python adaptive solver with implicit added mass agrees with the 0.0125 s MATLAB trajectory over 400 s within 0.986 mm PTO stroke, 6.77 mm/s PTO speed, 98.2 kN PTO force, and 0.139% ordinary damper energy. Paired gates cover both active body positions and velocities, PTO motion and force, and integrated energy; a separate source convergence gate checks both refined MATLAB steps. |
-| RM3 radiation force options: constant, convolution, and FIR | Pinned MATLAB Applications `Radiation_Force_Options`, BEMIO-generated RM3 HDF5, 12 s regular waves | All three published 500 s settings are checked against the Python floating-joint solver. The FIR path uses sampled kernel taps with a held radiation force during each RK4 step. Across the three cases, the largest differences are 29.6 mm surge, 2.11 mm heave, 0.00140 rad pitch, 3.25 mm PTO stroke, 1.55 mm/s PTO speed, 1.86 kN PTO force, and 1.57 kW PTO power. Direct FIR radiation-force differences remain under their paired gates. MATLAB FIR differs from MATLAB convolution by up to 345 mm surge, so the methods are not interchangeable for this case. The application's state-space trajectory remains unpaired because the pinned fit has negative low-frequency damping; its force law on prescribed motion is checked separately below. |
+| RM3 radiation force options: constant, convolution, FIR, and state-space | Pinned MATLAB Applications `Radiation_Force_Options`, BEMIO-generated RM3 HDF5, 12 s regular waves | All four published 500 s settings are checked against the Python floating-joint solver. The FIR path uses sampled kernel taps with a held radiation force during each RK4 step. Across all four cases, the largest differences are 30.7 mm surge, 2.11 mm heave, 0.00144 rad pitch, 3.25 mm PTO stroke, 1.55 mm/s PTO speed, 1.86 kN PTO force, and 1.57 kW PTO power. Direct FIR radiation-force differences remain under their paired gates. MATLAB FIR differs from MATLAB convolution by up to 345 mm surge, so the methods are not interchangeable for this case. The opt-in `radiation_method="state_space"` advances its 72 active fitted states with the independent RM3 body motion and passes the same full-duration gates; its force law on prescribed source motion is checked separately below. The fitted model has negative low-frequency damping, so this is numerical source parity, not physical passivity evidence. |
 | RM3 state-space radiation force on prescribed motion | Pinned MATLAB Applications `Radiation_Force_Options` state-space setting and [focused R2025b gate](https://github.com/cmudrc/wec-sim-python/actions/runs/37935700135) | `wecsim.radiation.replay_rm3_fitted_radiation` advances the HDF5 A/B/C channel fits from zero state using the saved six-component velocity histories, scales C by water density, and sets D to zero as the pinned MATLAB block does. Over 5,001 samples on both bodies, every radiation-force channel differs by less than `0.026%` of its source peak; the gate allows `0.03%` with a `0.0009` N floor for nearly stationary channels. This is a prescribed-motion force replay, not an independently coupled trajectory or evidence that the fitted model is passive. The default convolution solver is unchanged. |
 | RM3 PTO extension float and spar free decays | Pinned MATLAB Applications `RM3_PTO_Extension` inputs and BEMIO-generated RM3 HDF5; [three-step R2025b audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38130573831) | The no-wave floating-joint solver initializes the float at +5 m or the spar at −5 m, reproducing each published case's +5 m PTO stroke. At the published 0.1 s step, maximum 30 s active-heave differences are 47.1 mm for float and 6.84 mm for spar, with speed differences of 86.0 and 1.87 mm/s. Changing only MATLAB `simu.dt` to 0.05 and 0.025 s changes the source float heave by 53.5 then 15.8 mm and spar heave by 7.32 then 3.82 mm. At matched 0.1/0.05/0.025 s steps, independent Python float-heave errors fall 47.1/22.8/11.4 mm and spar-heave errors 6.84/3.43/1.72 mm. The finest-step speed errors are 21.4 mm/s float and 0.467 mm/s spar; focused gates allow 16/2.5 mm heave and 30/0.7 mm/s speed, respectively, and cover PTO stroke, speed, force, and power. Both source and Python show decreasing step changes through these three levels; this is numerical evidence for the pinned free-decay cases, not a proof of asymptotic convergence or a general no-wave joint solver. The passive body remains stationary within numerical precision; PTO force and power are zero in Python and below `3.5e-8` in MATLAB output. |
 | RM3 Multiple Condition Runs Option 1 physical sweep | Pinned MATLAB Applications RM3 input, expanded to eight scalar height × period × PTO-damping combinations | The Python `regularCIC` floating-joint solver agrees across all eight 400 s conditions within 75.1 mm surge, 0.387 mm heave, 0.000183 rad pitch, 0.413 mm PTO stroke, 0.231 mm/s PTO speed, 0.479 kN PTO force, and 0.487 kW PTO power. These scalar runs validate each physical condition; all three MCR drivers are separately checked below. |
@@ -303,7 +303,7 @@ and +0.686 m in Case 6 versus +0.075 m in convolution Case 4. The fit's
 effective common-surge damping is negative at low frequency although source
 BEM damping is nonnegative at its sampled frequencies. Matching the MATLAB
 state-space trajectory is a diagnostic reproduction, not evidence of physical
-validity; it is excluded from validated parity until the fit is resolved.
+validity; the opt-in numerical comparison below does not resolve passivity.
 The [paired Cases 5/6 force run](https://github.com/cmudrc/wec-sim-python/actions/runs/37936907603)
 now exports all six MATLAB radiation-force channels for both bodies over the
 published 400 s, 0.1 s cases. Given only their saved body velocities, Python
@@ -313,6 +313,19 @@ a source-channel peak (0.0526% in Case 6); the paired gate is 0.07% with a
 3 N peak floor. This tests the force law on prescribed source motion, not an
 independent coupled trajectory or the physical validity of the fit. The
 default Python convolution dynamics remain unchanged.
+An opt-in coupled `radiation_method="state_space"` now advances the pinned
+fitted radiation states and RM3 joint motion together, using the HDF5 A/B/C
+matrices, zero source direct term, and only channels active in the four moving
+coordinates. The 400 s public `WEC.floating_joint` comparisons for Cases 5
+and 6 start from the published inputs without source body motion or force as
+inputs. Across both cases, the largest active body-position differences are
+68.3 mm surge, 2.94 mm heave, and `0.00185` rad pitch; active speed
+differences are below 30.6 mm/s surge, 2.37 mm/s heave, and `0.00110` rad/s
+pitch. PTO stroke, speed, force, and absorbed power differ by at most
+4.22 mm, 3.16 mm/s, 3.79 kN, and 4.53 kW. Explicit full-duration paired
+gates cover both bodies and those PTO channels. This reproduces the published
+nonpassive fit numerically; it does not replace the convolution default or
+validate the fitted model as physical radiation damping.
 The published Cases 5 and 6 change only the state-space radiation flag from
 their respective convolution cases, apart from formatting of the inputs.
 Over their full 400 s trajectories, MATLAB's fitted-versus-convolution
@@ -432,19 +445,20 @@ API:
 
 | Motion evidence | Cases | Meaning |
 | --- | ---: | --- |
-| `independent_motion` | 47 | A full-duration Python motion run using the published case inputs has an explicit MATLAB gate. Source wave phases or external stochastic input may be replayed; source body trajectories and forces are not advanced as inputs. The detailed rows above record output and physical-model limits. |
+| `independent_motion` | 50 | A full-duration Python motion run using the published case inputs has an explicit MATLAB gate. Source wave phases or external stochastic input may be replayed; source body trajectories and forces are not advanced as inputs. The detailed rows above record output and physical-model limits. |
 | `stationary_force` | 2 | Published bodies are fixed; wave and force histories have paired gates. |
 | `qualified_motion` | 8 | A full-duration comparison needs a refined MATLAB step or a source-specific force route, or the published-step motion remains unpaired despite related motion or VTP gates. |
-| `mixed_modes` | 2 | Some published settings have independent motion gates and another material setting remains open. |
-| `open_motion` | 4 | No full-duration independent Python gate for the published moving case. Component replays or shorter derived runs may exist. |
+| `mixed_modes` | 1 | Some published settings have independent motion gates and another material setting remains open. |
+| `open_motion` | 2 | No full-duration independent Python gate for the published moving case. Component replays or shorter derived runs may exist. |
 
 These counts are **not a WEC-Sim feature-parity percentage**. One input can
 exercise several radiation or wave modes, and even a gated trajectory can
 leave reactions, raw component states, or general layouts unpaired. The CSV
 names each qualified, mixed, and open case's specific remaining gap. The
-highest-impact native-motion gaps are the nonpassive RM3 state-space radiation
-fit, held-heading irregular OSWEC yaw, and WaveStar full closed-loop NMPC;
-published-step RM3 MoorDyn visualization motion and nonlinear-hydro timing
+highest-impact native-motion gaps are held-heading irregular OSWEC yaw and
+WaveStar full closed-loop NMPC; the RM3 state-space fit now has opt-in
+numerical motion gates but remains nonpassive in active joint modes.
+Published-step RM3 MoorDyn visualization motion and nonlinear-hydro timing
 also remain qualified. The Python dynamics API still lacks arbitrary Simscape
 joints and general six-DOF mooring and moving Morison layouts.
 
