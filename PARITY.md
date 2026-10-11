@@ -351,7 +351,9 @@ checks these mode contents on the historical fixture and matches them to the
 fresh pinned BEMIO HDF5 by magnitude, avoiding dependence on state-space
 realization or eigenvector phase. A replacement fit must also be checked
 against BEM transfer data and convolution trajectories before it can replace
-the physical default.
+the physical default. The pinned [BEMIO `radiationIRFSS.m`](https://github.com/WEC-Sim/WEC-Sim/blob/0753b2e47f2457c078751dcfe5d251d1767b80ab/source/functions/BEMIO/radiationIRFSS.m)
+fits each force/velocity channel independently by Hankel SVD to an IRF
+`R²` threshold; it does not enforce passivity of the coupled joint transfer.
 Diagnostic PR #6 was closed without merging its state-space solver. The
 convolution results for Cases 3 and 4 were identical, sample for sample,
 between the original branch point and that diagnostic branch.
