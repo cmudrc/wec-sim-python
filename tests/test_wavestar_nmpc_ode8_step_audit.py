@@ -90,4 +90,16 @@ def test_precontrol_ode8_step_audit():
         errors[f"Python_vs_MATLAB_{folder}_speed_rad_s"] = float(
             np.max(np.abs(python.angular_speed - angular_speed))
         )
+    assert errors["MATLAB_25_vs_12p5_ms_pitch_rad"] < .001
+    assert (errors["MATLAB_25_vs_12p5_ms_pitch_rad"]
+            < .5 * errors["MATLAB_50_vs_25_ms_pitch_rad"])
+    assert (errors["MATLAB_25_vs_12p5_ms_speed_rad_s"]
+            < .5 * errors["MATLAB_50_vs_25_ms_speed_rad_s"])
+    for quantity, limit in (("pitch_rad", .0003),
+                            ("speed_rad_s", .003)):
+        base = errors[f"Python_vs_MATLAB_50ms_{quantity}"]
+        half = errors[f"Python_vs_MATLAB_25ms_{quantity}"]
+        quarter = errors[f"Python_vs_MATLAB_12p5ms_{quantity}"]
+        assert quarter < limit
+        assert quarter < .5 * half < .25 * base
     print("fixed-fit ode8 pre-control step audit:", errors)
