@@ -9,7 +9,7 @@ from scipy.io import loadmat
 
 from examples.configurable_rm3_pto import HYDRO, build_wec
 from wecsim.caseDynamics import run_case
-from wecsim import (FullDirectionalSpectrumWave, ImportedElevationWave, ImportedSpectrumWave, JONSWAPWave, LatchingControl, NoWave, PMWave,
+from wecsim import (FullDirectionalSpectrumWave, ImportedElevationWave, ImportedSpectrumWave, JONSWAPWave, LatchingControl, MultiPMWave, NoWave, PMWave,
                     RegularWave, WEC, WorldPoint)
 from wecsim.irregularWave import (imported_spectrum_components,
                                   jonswap_equal_energy_components,
@@ -34,6 +34,27 @@ def test_full_directional_wave_keeps_physical_defaults():
     with pytest.raises(ValueError, match="substream seed"):
         FullDirectionalSpectrumWave("fullDirSpectrum.mat",
                                     phase_generator="matlab").as_case()
+
+
+def test_multi_pm_wave_preserves_independent_sea_settings():
+    wave = MultiPMWave((
+        PMWave(2, 3, direction=0, phase_file="first.csv"),
+        PMWave(1, 3, direction=90, seed=2, phase_generator="matlab"),
+    ), excitation_interpolation="spline")
+    case = wave.as_case()
+    assert case["type"] == "pm_multi"
+    assert case["excitation_interpolation"] == "spline"
+    assert case["seas"][0]["phase_file"] == "first.csv"
+    assert case["seas"][0]["directions"] == [0]
+    assert case["seas"][1]["seed"] == 2
+    assert case["seas"][1]["phase_generator"] == "matlab"
+    with pytest.raises(ValueError, match="at least two"):
+        MultiPMWave((PMWave(2, 3),)).as_case()
+    with pytest.raises(TypeError, match="PMWave instances"):
+        MultiPMWave((PMWave(2, 3), JONSWAPWave(1, 3))).as_case()
+    with pytest.raises(ValueError, match="equal-energy"):
+        MultiPMWave((PMWave(2, 3, discretization="traditional"),
+                     PMWave(1, 3))).as_case()
 
 
 def test_python_builder_matches_equivalent_case():

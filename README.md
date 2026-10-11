@@ -451,6 +451,25 @@ The hinge can also take a `fixed_body(...)` base. Both hinge and PTO points
 currently lie on the world z axis. PTO angle and speed are in radians and
 radians per second; `absorbed_power` reports positive damping dissipation.
 
+To combine independently phased PM seas on that fixed hinge, pass one
+`PMWave` per sea. Each sea can use its own seed or phase file:
+
+```python
+from wecsim import MultiPMWave
+
+sea = MultiPMWave((
+    PMWave(2, 3, direction=0, seed=1),
+    PMWave(1, 3, direction=90, seed=2),
+), excitation_interpolation="spline")
+result = wec.run(sea, dt=0.1, end_time=100, ramp_time=0.1,
+                 radiation_memory=40)
+```
+
+`MultiPMWave` currently uses equal-energy PM spectra and the fixed-hinge
+layout. The published OSWEC two-sea comparison sets hinge damping to
+120,000 N m s/rad and opts into `added_mass_scheme="simulink_delay"` in
+`fixed_hinge`; its Python builder path has a paired MATLAB trajectory gate.
+
 The published OSWEC passive-yaw cases use one yaw coordinate and a torsional
 PTO. Set `passive_yaw=True` on the moving body to interpolate excitation at
 the wave heading relative to its current yaw angle:

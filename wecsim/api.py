@@ -386,6 +386,37 @@ class JONSWAPWave(PMWave):
 
 
 @dataclass(frozen=True)
+class MultiPMWave:
+    """Sum independently phased PM seas in a fixed-hinge WEC.
+
+    Each sea keeps its own height, period, heading, and phase seed or file.
+    The published OSWEC multiple-spectrum case uses spline interpolation.
+    """
+
+    seas: tuple[PMWave, ...]
+    excitation_interpolation: str = "linear"
+
+    def as_case(self) -> dict:
+        if len(self.seas) < 2:
+            raise ValueError("MultiPMWave needs at least two PM seas")
+        if self.excitation_interpolation not in ("linear", "spline"):
+            raise ValueError("MultiPMWave excitation interpolation must be linear or spline")
+        settings = []
+        for sea in self.seas:
+            if type(sea) is not PMWave:
+                raise TypeError("MultiPMWave seas must be PMWave instances")
+            setting = sea.as_case()
+            if set(setting) - {"type", "height", "period", "directions",
+                                "spreading", "seed", "phase_file",
+                                "phase_generator", "frequency_count"}:
+                raise ValueError("MultiPMWave supports equal-energy PM seas without current or depth overrides")
+            setting.pop("type")
+            settings.append(setting)
+        return {"type": "pm_multi", "seas": settings,
+                "excitation_interpolation": self.excitation_interpolation}
+
+
+@dataclass(frozen=True)
 class ImportedSpectrumWave:
     """WEC-Sim three-column MAT spectrum with its saved phase realization.
 
@@ -920,7 +951,7 @@ class WEC:
         return pto
 
     def to_case(
-        self, wave: RegularWave | RegularCICWave | PMWave | JONSWAPWave | ImportedSpectrumWave | FullDirectionalSpectrumWave | ImportedElevationWave | NoWave, *,
+        self, wave: RegularWave | RegularCICWave | PMWave | MultiPMWave | JONSWAPWave | ImportedSpectrumWave | FullDirectionalSpectrumWave | ImportedElevationWave | NoWave, *,
         dt: float, end_time: float,
         ramp_time: float | None = None,
         radiation_memory: float | None = None,
@@ -929,11 +960,13 @@ class WEC:
         initial_speed: Mapping[str, float] | Sequence[float] | None = None,
     ) -> dict:
         """Return the case mapping used by the validated dynamics runner."""
-        if not isinstance(wave, (RegularWave, RegularCICWave, PMWave,
+        if not isinstance(wave, (RegularWave, RegularCICWave, PMWave, MultiPMWave,
                                  JONSWAPWave, ImportedSpectrumWave,
                                  FullDirectionalSpectrumWave,
                                  ImportedElevationWave, NoWave)):
             raise TypeError("wave must be a supported regular, irregular, imported, or no-wave configuration")
+        if isinstance(wave, MultiPMWave) and self._fixed_hinge is None:
+            raise ValueError("MultiPMWave currently needs a fixed-hinge WEC")
         simulation = {"dt": dt, "end_time": end_time}
         for key, value in (
             ("ramp_time", ramp_time), ("radiation_memory", radiation_memory),
@@ -1219,7 +1252,8 @@ class WEC:
                 or self._floating_joint is not None or self.body_to_body
                 or initial_coordinate is not None or initial_speed is not None):
             raise ValueError("fixed_hinge needs its selected bodies and no custom coordinates or PTOs")
-        if not isinstance(wave, (RegularWave, PMWave, FullDirectionalSpectrumWave)):
+        if not isinstance(wave, (RegularWave, PMWave, MultiPMWave,
+                                 FullDirectionalSpectrumWave)):
             raise ValueError("fixed_hinge supports regular, PM, or full-directional waves")
         if (isinstance(wave, RegularWave)
                 and (wave.direction != 0
@@ -1278,7 +1312,7 @@ class WEC:
         }
 
     def run(
-        self, wave: RegularWave | RegularCICWave | PMWave | JONSWAPWave | ImportedSpectrumWave | FullDirectionalSpectrumWave | ImportedElevationWave | NoWave, *,
+        self, wave: RegularWave | RegularCICWave | PMWave | MultiPMWave | JONSWAPWave | ImportedSpectrumWave | FullDirectionalSpectrumWave | ImportedElevationWave | NoWave, *,
         dt: float, end_time: float,
         ramp_time: float | None = None,
         radiation_memory: float | None = None,
