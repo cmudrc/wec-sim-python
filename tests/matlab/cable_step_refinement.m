@@ -1,0 +1,90 @@
+function cable_step_refinement
+% Keep the published Cable assembly and ode45 solver; refine only simu.dt.
+repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
+addpath(genpath(fullfile(repoRoot, 'matlab-ref', 'source')));
+caseDir = fullfile(repoRoot, 'applications', 'Cable');
+inputFile = fullfile(caseDir, 'wecSimInputFile.m');
+original = fileread(inputFile);
+assert(contains(original, 'simu.dt = 0.01;') && ...
+    contains(original, 'simu.endTime = 120;') && ...
+    contains(original, "simu.solver = 'ode45';"), ...
+    'The pinned Cable input changed');
+outDir = fullfile(repoRoot, 'matlab-reference-model-output');
+coarseWave = readmatrix(fullfile(outDir, 'CABLE_SOURCE_wave.csv'));
+coarseCable = readmatrix(fullfile(outDir, 'CABLE_SOURCE_cable1.csv'));
+coarseBodies = cell(1, 3);
+for iBody = 1:3
+    coarseBodies{iBody} = readmatrix(fullfile(outDir, sprintf( ...
+        'CABLE_SOURCE_Cable_body%d.csv', iBody)));
+end
+coarseCable = [coarseCable(:, 1), coarseCable(:, 22)];
+cleanup = onCleanup(@() restore_input(inputFile, original));
+for dt = [0.005, 0.0025]
+    if dt == 0.005
+        prefix = 'CABLE_STEP';
+    else
+        prefix = 'CABLE_STEP_FINER';
+    end
+    write_input(inputFile, strrep(original, 'simu.dt = 0.01;', ...
+        sprintf('simu.dt = %.4g;', dt)));
+    cd(caseDir);
+    wecSim;
+    assert(strcmp(simu.solver, 'ode45') && simu.dt == dt && ...
+        simu.endTime == 120 && simu.rampTime == 40 && ...
+        strcmp(waves.type, 'regular') && waves.height == 1 && ...
+        waves.period == 8 && cable(1).stiffness == 1e6 && ...
+        cable(1).damping == 100 && cable(1).cableLength == 17.8 && ...
+        cable(1).mass == 1, ...
+        'Fine Cable run changed published settings beyond the time step');
+    fineWave = [output.wave.time(:), output.wave.elevation(:)];
+    fineCable = [output.cables(1).time(:), ...
+        output.cables(1).forceActuation(:, 3)];
+    samples = round(120 / dt) + 1;
+    assert(isequal(size(fineWave), [samples 2]) && ...
+        isequal(size(fineCable), [samples 2]) && ...
+        all(isfinite(fineWave), 'all') && ...
+        all(isfinite(fineCable), 'all') && ...
+        max(abs(fineWave(1:2:end, :) - coarseWave), [], 'all') < 1e-10 && ...
+        max(abs(fineCable(1:2:end, 1) - coarseCable(:, 1))) < 1e-10, ...
+        'Fine Cable grid or incident wave differs from the previous step');
+    writematrix(fineWave, fullfile(outDir, [prefix '_wave.csv']));
+    writematrix(fineCable, fullfile(outDir, [prefix '_cable_force.csv']));
+    for iBody = 1:3
+        response = output.bodies(iBody);
+        fineBody = [response.time(:), response.position, response.velocity];
+        assert(isequal(size(fineBody), [samples 13]) && ...
+            all(isfinite(fineBody), 'all') && ...
+            max(abs(fineBody(1:2:end, 1) - ...
+                coarseBodies{iBody}(:, 1))) < 1e-10, ...
+            'Fine Cable body trace is incomplete or misaligned');
+        writematrix(fineBody, fullfile(outDir, sprintf( ...
+            '%s_body%d.csv', prefix, iBody)));
+        positionChange = max(abs(fineBody(1:2:end, 2:7) - ...
+            coarseBodies{iBody}(:, 2:7)), [], 'all');
+        speedChange = max(abs(fineBody(1:2:end, 8:13) - ...
+            coarseBodies{iBody}(:, 8:13)), [], 'all');
+        fprintf('%s body %d source step change: position %.9g m, speed %.9g m/s\n', ...
+            prefix, iBody, positionChange, speedChange);
+        coarseBodies{iBody} = fineBody;
+    end
+    forceChange = fineCable(1:2:end, 2) - coarseCable(:, 2);
+    fprintf('%s source step change: force peak %.9g N, RMS %.9g N\n', ...
+        prefix, max(abs(forceChange)), sqrt(mean(forceChange.^2)));
+    coarseWave = fineWave;
+    coarseCable = fineCable;
+    close_system(erase(simu.simMechanicsFile, '.slx'), 0);
+    clear output;
+end
+clear cleanup;
+end
+
+function write_input(inputFile, contents)
+fid = fopen(inputFile, 'w');
+assert(fid ~= -1, 'Could not write temporary Cable input');
+fprintf(fid, '%s', contents);
+fclose(fid);
+end
+
+function restore_input(inputFile, original)
+write_input(inputFile, original);
+end
