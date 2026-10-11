@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim.caseDynamics import run_case
+from wecsim.rm3Regular import solve_rm3_regular
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
@@ -89,3 +90,42 @@ def test_rm3_regular_cic_against_matlab(case, b2b, mass_scheme):
     _max_error(response.pto_force, pto[:, 15], 6_000, f"{case} PTO force")
     _max_error(response.pto_force * speed, pto[:, 21], 7_000,
                f"{case} PTO power")
+
+
+@pytest.mark.parametrize("convolution_case,fitted_case,b2b,source_gap", [
+    ("B2B_Case3", "B2B_Case5", False, (0.39, 0.42)),
+    ("B2B_Case4", "B2B_Case6", True, (0.59, 0.63)),
+])
+def test_state_space_source_motion_differs_from_convolution(
+    convolution_case, fitted_case, b2b, source_gap,
+):
+    """Keep the physical convolution comparison separate from a nonpassive fit.
+
+    The published case pair changes only its radiation option. This gate
+    compares complete source trajectories as well as Python's unchanged
+    physical convolution path; it does not claim fitted-case parity.
+    """
+    hydro = (Path(APPLICATIONS) / "_Common_Input_Files/RM3/hydroData/rm3.h5")
+    reference = Path(REFERENCE)
+    convolution = np.loadtxt(
+        reference / f"RM3_B2B_{convolution_case}_body1.csv", delimiter=",",
+    )
+    fitted = np.loadtxt(
+        reference / f"RM3_B2B_{fitted_case}_body1.csv", delimiter=",",
+    )
+    assert convolution.shape == fitted.shape == (4001, 25)
+    np.testing.assert_allclose(convolution[:, 0], fitted[:, 0], rtol=0,
+                               atol=1e-10)
+    physical = solve_rm3_regular(hydro, b2b=b2b, radiation_memory=60)
+    np.testing.assert_allclose(physical.time, convolution[:, 0], rtol=0,
+                               atol=1e-10)
+    source_difference = np.max(np.abs(fitted[:, 1] - convolution[:, 1]))
+    assert source_gap[0] < source_difference < source_gap[1]
+    physical_difference = np.max(np.abs(
+        physical.body_position[:, 0, 0] - convolution[:, 1],
+    ))
+    assert physical_difference < 0.075
+    fitted_difference = np.max(np.abs(
+        physical.body_position[:, 0, 0] - fitted[:, 1],
+    ))
+    assert fitted_difference > 0.35
