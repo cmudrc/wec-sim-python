@@ -109,7 +109,8 @@ the failed time and mentions discontinuous forces rather than suggesting
 only a smaller step.
 A physical continuous-heading control keeps the same pinned HDF5, seed-1 PM
 sea, PTO, and 120 s duration, but evaluates interpolated excitation at the
-current yaw instead of selecting a bank entry. It completes at `dt=0.01`
+current yaw and rotates the body-frame force into the world frame instead of
+using the source's unrotated nearest-bank force. It completes at `dt=0.01`
 and `0.005` s with identical wave samples at common times. Maximum yaw and
 yaw-speed self-differences are `7.16e-6` rad and `1.48e-6` rad/s; PTO work
 changes from `1169.810` to `1169.803` J (`0.00056%`). An explicit gate checks
