@@ -571,8 +571,11 @@ the normal endpoint force. Its complete 120 s `0.005` s trajectory differs
 from a pinned MATLAB half-step run by at most `0.000820` rad yaw and `0.162%`
 PTO work; explicit paired gates are in [`PARITY.md`](PARITY.md). The Python
 `0.01`-to-`0.005` s change is still larger than MATLAB's, so step convergence
-remains unproven. For a continuous
-physical model, keep `passive_yaw=True` and omit `yaw_heading_bank`. Python
+remains unproven. A 250 s source audit finds `0.01562` rad yaw and `2.802%`
+PTO-work change when MATLAB itself halves that step; Python versus MATLAB
+at `0.005` s differs by `0.01950` rad and `3.590%` work. The short-run gates
+do not extend to 250 s, and finer Python steps remain nonmonotonic. For a
+continuous physical model, keep `passive_yaw=True` and omit `yaw_heading_bank`. Python
 then interpolates BEM headings and rotates the body-frame force with yaw. On
 the same 120 s sea, its `0.01` and `0.005` s runs differ by at most
 `7.16e-6` rad yaw and `0.00056%` PTO work. This is a different force
