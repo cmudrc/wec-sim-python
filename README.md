@@ -1754,8 +1754,9 @@ its `hydrostatic`, `nonlinear_wave`, and `linear_wave` fields to the body VTP
 writer. The actual published OSWEC nonlinear visualization flap pressures
 and independently advanced pitch motion have full-duration MATLAB gates.
 Selected published RM3 wave and float/spar body VTP frames are also paired;
-the body-frame gate uses saved MATLAB poses. Full VTP histories and actual
-RM3 MoorDyn line frames remain unpaired.
+the body-frame gate uses saved MATLAB poses. All 801 published RM3 MoorDyn
+line VTP frames are paired from saved source node and tension histories. Full
+wave/body VTP histories and the original-step coupled motion remain unpaired.
 
 To run a supported case without writing Python code:
 
