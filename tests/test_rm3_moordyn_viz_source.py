@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 import shutil
+from xml.etree import ElementTree
 
 import h5py
 import numpy as np
@@ -12,6 +13,8 @@ from wecsim import JONSWAPWave, MoorDyn, WEC
 from wecsim.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
+from wecsim.paraviewClass import ParaviewClass
+from wecsim.waveClass import WaveClass
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
@@ -42,6 +45,73 @@ def _indices(source_time, *, dt=0.01, end_time=80):
     assert np.all((indices >= 0) & (indices <= round(end_time / dt)))
     np.testing.assert_allclose(indices * dt, source_time, rtol=0, atol=1e-8)
     return indices
+
+
+def _wave_vtp(path):
+    piece = ElementTree.parse(path).find("./PolyData/Piece")
+    points = np.fromstring(piece.findtext("./Points/DataArray"), sep=" ")
+    cells = np.fromstring(
+        piece.findtext("./Polys/DataArray[@Name='connectivity']"),
+        sep=" ", dtype=int,
+    )
+    offsets = np.fromstring(
+        piece.findtext("./Polys/DataArray[@Name='offsets']"),
+        sep=" ", dtype=int,
+    )
+    return points.reshape(-1, 3), cells.reshape(-1, 4), offsets
+
+
+def test_published_irregular_wave_vtp_frames(tmp_path):
+    """Pair selected actual RM3 ParaView wave meshes from the 80 s case."""
+    reference = Path(REFERENCE)
+    parameters = _read("wave_vtp_parameters.csv").ravel()
+    assert parameters.shape == (7,)
+    domain, depth, moorings, nx, ny, direction, spreading = parameters
+    assert (domain, depth, moorings, nx, ny) == (300, 70, 1, 1000, 2)
+    components = _read("wave_vtp_components.csv")
+    assert components.shape == (1000, 5)
+    sea_components = _read("components.csv")
+    _bound(components[:, (0, 3, 4)], sea_components[:, (0, 1, 3)],
+           1e-12, "published VTP frequency, width, and phase")
+    _bound(components[:, 2], 2 * sea_components[:, 2],
+           1e-12, "published VTP amplitude convention")
+    wave = WaveClass("irregular")
+    wave.w = components[:, 0]
+    wave.k = components[:, 1]
+    wave.A = components[:, 2]
+    wave.dw = components[:, 3]
+    wave.phase = components[:, 4][None, :]
+    wave.waveDir = [direction]
+    wave.waveSpread = [spreading]
+    wave.waterDepth = depth
+    wave.viz = {"numPointsX": int(nx), "numPointsY": int(ny)}
+    source_wave = _read("wave.csv")
+    origin = np.array([
+        ParaviewClass(wave).waveElevationGrid(
+            time, np.array([[0.]]), np.array([[0.]]),
+        ).item()
+        for time in (0, 10, 80)
+    ])
+    _bound(origin, source_wave[[0, 100, 800], 1],
+           1e-10, "published VTP component origin elevation")
+    paths = ParaviewClass(wave).write_paraview_vtp_wave(
+        [0, 10, 80], tmp_path, domain_size=domain,
+        num_moordyn=int(moorings),
+    )
+    assert (tmp_path / "ground.txt").read_text() == (
+        reference / "published_vtp/ground.txt"
+    ).read_text()
+    for frame, path in zip((1, 1001, 8001), paths):
+        actual_points, actual_cells, actual_offsets = _wave_vtp(path)
+        source_points, source_cells, source_offsets = _wave_vtp(
+            reference / "published_vtp/waves" / f"waves_{frame}.vtp"
+        )
+        assert actual_points.shape == source_points.shape == (2000, 3)
+        assert actual_cells.shape == source_cells.shape == (999, 4)
+        _bound(actual_points, source_points, 1.01e-5,
+               f"published wave VTP frame {frame} points")
+        np.testing.assert_array_equal(actual_cells, source_cells)
+        np.testing.assert_array_equal(actual_offsets, source_offsets)
 
 
 def test_published_traditional_sea_and_body_excitation():
