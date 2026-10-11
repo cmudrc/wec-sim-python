@@ -66,6 +66,14 @@ def test_nearest_sampled_bank_selects_heading_without_yaw_rotation():
     np.testing.assert_allclose(
         bank.force(0, yaw), [10, 20, 0, 0, 0, 30], rtol=0, atol=1e-13,
     )
+    assert bank.freeze_step_excitation(
+        .01, np.array([yaw]), np.array([yaw]), np.array([yaw]),
+    ) is None
+    np.testing.assert_allclose(
+        bank.freeze_step_excitation(
+            .01, np.array([yaw]), np.array([yaw]), np.array([np.deg2rad(8.8)]),
+        ), bank.force(.01, yaw), rtol=0, atol=1e-13,
+    )
 
 
 @pytest.mark.skipif(
@@ -167,6 +175,45 @@ def test_irregular_120s_bank_against_pinned_matlab():
     python_work = np.trapezoid(result.ptos["hinge"].absorbed_power, result.time)
     assert source_work > 0
     assert abs(python_work - source_work) / source_work < .005
+
+
+@pytest.mark.skipif(
+    not (os.environ.get("WEC_SIM_APPLICATIONS_DIR")
+         and os.environ.get("WEC_SIM_MATLAB_STEP_AUDIT_DIR")),
+    reason="fresh refined variable-yaw MATLAB output not provided",
+)
+def test_irregular_120s_fine_bank_against_pinned_matlab():
+    """Pair the independent half-step trajectory after one ambiguous event."""
+    hydro = (Path(os.environ["WEC_SIM_APPLICATIONS_DIR"])
+             / "_Common_Input_Files/OSWEC/hydroData/oswec.h5")
+    source = np.loadtxt(
+        Path(os.environ["WEC_SIM_MATLAB_STEP_AUDIT_DIR"])
+        / "fine_trajectory.csv", delimiter=",",
+    )
+    assert source.shape == (24001, 7)
+    assert np.isfinite(source).all()
+    headings = np.arange(-30, 30.25, .25)
+    wec = WEC("OSWEC refined irregular variable yaw")
+    moving = wec.body(
+        "flap", hydro, mass=12700, inertia=(1.85e6,) * 3,
+        passive_yaw=True, yaw_heading_bank=headings,
+    )
+    wec.body("base", hydro, mass=999, inertia=(999,) * 3)
+    yaw = wec.coordinate("yaw", moving.move("yaw", pivot=WorldPoint(0, 0, -8.9)))
+    wec.rotational_pto("hinge", yaw, damping=120000)
+    result = wec.run(
+        PMWave(2.5, 8, direction=10, seed=1, phase_generator="matlab"),
+        dt=.005, end_time=120, ramp_time=100, radiation_memory=40,
+    )
+    np.testing.assert_allclose(result.time, source[:, 0], rtol=0, atol=1e-10)
+    flap = result.bodies["flap"]
+    assert np.max(np.abs(flap.position[:, 5] - source[:, 1])) < .0012
+    assert np.max(np.abs(flap.velocity[:, 5] - source[:, 2])) < .00025
+    assert np.max(np.abs(result.ptos["hinge"].force - source[:, 5])) < 30
+    source_work = -np.trapezoid(source[:, 6], source[:, 0])
+    python_work = np.trapezoid(result.ptos["hinge"].absorbed_power, result.time)
+    assert source_work > 0
+    assert abs(python_work - source_work) / source_work < .003
 
 
 @pytest.mark.skipif(

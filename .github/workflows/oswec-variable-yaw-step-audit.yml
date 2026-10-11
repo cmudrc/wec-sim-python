@@ -5,6 +5,10 @@ on:
     paths:
       - '.github/workflows/oswec-variable-yaw-step-audit.yml'
       - 'tests/matlab/oswec_variable_yaw_step_audit.m'
+      - 'tests/test_variable_yaw_heading_bank.py'
+      - 'wecsim/generalDynamics.py'
+      - 'wecsim/passiveYaw.py'
+      - 'wecsim/caseDynamics.py'
   workflow_dispatch:
 
 jobs:
@@ -37,6 +41,14 @@ jobs:
       - uses: matlab-actions/run-command@v3
         with:
           command: addpath('tests/matlab'); oswec_variable_yaw_step_audit()
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e . pytest
+      - run: python -m pytest -q tests/test_variable_yaw_heading_bank.py::test_irregular_120s_fine_bank_against_pinned_matlab
+        env:
+          WEC_SIM_APPLICATIONS_DIR: applications
+          WEC_SIM_MATLAB_STEP_AUDIT_DIR: matlab-oswec-variable-yaw-step-audit
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -546,10 +546,13 @@ headings. The paired baseline generates those same selected files with the
 pinned interpolation rule; see [`PARITY.md`](PARITY.md).
 The selected-bank force jumps at heading boundaries. On the pinned irregular
 sea, a `dt=0.005` s implicit step at 86.08 s alternates between adjacent bank
-entries and has no self-consistent endpoint. A pinned MATLAB `0.005` s run
-completes: relative to its `0.01` s run, yaw changes by at most `0.000182` rad
-and PTO work by `0.0151%`. Two source steps do not prove convergence, but the
-Python half-step failure needs separate event handling. For a continuous
+entries and has no self-consistent endpoint. Python now resolves that single
+ambiguous step using the preceding accepted bank heading, then returns to
+the normal endpoint force. Its complete 120 s `0.005` s trajectory differs
+from a pinned MATLAB half-step run by at most `0.000820` rad yaw and `0.162%`
+PTO work; explicit paired gates are in [`PARITY.md`](PARITY.md). The Python
+`0.01`-to-`0.005` s change is still larger than MATLAB's, so step convergence
+remains unproven. For a continuous
 physical model, keep `passive_yaw=True` and omit `yaw_heading_bank`. Python
 then interpolates BEM headings and rotates the body-frame force with yaw. On
 the same 120 s sea, its `0.01` and `0.005` s runs differ by at most
