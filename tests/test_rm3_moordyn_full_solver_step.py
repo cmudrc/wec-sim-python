@@ -1,4 +1,4 @@
-"""Diagnose full-duration RM3 motion with MATLAB ode45 MaxStep refined alone."""
+"""Gate full-duration RM3 motion with MATLAB ode45 MaxStep refined alone."""
 
 import os
 from pathlib import Path
@@ -25,10 +25,11 @@ def _load(name):
     return values
 
 
-def _difference(actual, expected, label):
+def _difference(actual, expected, label, limit):
     assert actual.shape == expected.shape, label
     error = float(np.max(np.abs(actual - expected)))
-    print(f"{label}: {error:.9g}")
+    print(f"{label}: {error:.9g} (limit {limit:.9g})")
+    assert error <= limit, label
     return error
 
 
@@ -37,8 +38,8 @@ def test_full_duration_maxstep_only_source_and_python(tmp_path):
     wave = _load("wave")
     assert phase.shape == (1000, 1)
     assert wave.shape == (8001, 2)
-    _difference(wave[:, 0], np.arange(8001) * .01, "source output time")
-    assert np.max(abs(wave[:, 0] - np.arange(8001) * .01)) < 1e-8
+    _difference(wave[:, 0], np.arange(8001) * .01,
+                "source output time", 1e-8)
 
     apps = Path(APPLICATIONS)
     hydro = apps / "_Common_Input_Files/RM3/hydroData/rm3.h5"
@@ -62,10 +63,13 @@ def test_full_duration_maxstep_only_source_and_python(tmp_path):
     )
     indices = np.arange(8001) * 8
     assert result.time.shape == (64001,)
-    assert _difference(result.time[indices], wave[:, 0],
-                       "Python sample time") < 1e-8
-    assert _difference(result.wave_elevation[indices], wave[:, 1],
-                       "Python wave elevation") < 1e-10
+    _difference(result.time[indices], wave[:, 0], "Python sample time", 1e-8)
+    _difference(result.wave_elevation[indices], wave[:, 1],
+                "Python wave elevation", 1e-10)
+    motion_limits = {
+        "position": {"surge": .006, "heave": .002, "pitch": 5e-5},
+        "velocity": {"surge": .001, "heave": .001, "pitch": 5e-5},
+    }
     for number, name in ((1, "float"), (2, "spar")):
         source = _load(f"body{number}")
         assert source.shape == (8001, 25)
@@ -73,16 +77,21 @@ def test_full_duration_maxstep_only_source_and_python(tmp_path):
             actual = getattr(result.bodies[name], kind)[indices]
             for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
                 _difference(actual[:, axis], source[:, offset + axis],
-                            f"{name} {label} {kind}")
+                            f"{name} {label} {kind}", motion_limits[kind][label])
     source = _load("mooring")
     assert source.shape == (8001, 19)
     outputs = dict(result.raw.extra_outputs)
+    connection_limits = {
+        **motion_limits,
+        "force": {"surge": 2_000, "heave": 1_500, "pitch": 15_000},
+    }
     for kind, offset in (("position", 1), ("velocity", 7), ("force", 13)):
         actual = outputs[f"moordyn_connection_{kind}"][indices]
         for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
             _difference(actual[:, axis], source[:, offset + axis],
-                        f"MoorDyn {label} {kind}")
+                        f"MoorDyn {label} {kind}",
+                        connection_limits[kind][label])
     source = _load("pto")
     assert source.shape == (8001, 25)
     _difference(result.ptos["relative_heave"].force[indices], source[:, 15],
-                "PTO force")
+                "PTO force", 750)
