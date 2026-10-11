@@ -690,8 +690,8 @@ acceleration. The direct source force law is paired for three current profiles.
 A derived 40 s Sphere run with current shows a convention gap at nonzero
 pitch: the pinned MATLAB Cartesian option-1 function adds no heave force
 from horizontal current, while the Python axial element projects that current
-onto its rotated axis. The coupled moving-current trajectory is not paired;
-the measured differences are in [PARITY.md](PARITY.md).
+onto its rotated axis. That Cartesian option-1 coupled trajectory has no
+parity gate; the measured differences are in [PARITY.md](PARITY.md).
 
 A linear PTO can use separate native damping and passive velocity feedback.
 For the paired Sphere control case, set `damping=100_000`,
@@ -711,8 +711,11 @@ normal/tangential option in this layout, pass a body-local `axis=(0, 1, 0)`
 to `wec.morison_element`; the first two drag, added-mass, and area entries
 are normal and tangential, while the third entry is unused. A derived Sphere
 option-2 trajectory and a second heave-plus-PTO trajectory are paired in
-[PARITY.md](PARITY.md). General six-DOF
-moving Morison layouts and moving-current trajectories remain unpaired.
+[PARITY.md](PARITY.md). The option-2 Sphere layout also has a paired 40 s
+current response with `RegularWave(1, 8, current=Current(.8, 0, "power", 30))`;
+the gate checks both the absolute motion and the difference from its
+no-current control. General six-DOF moving Morison layouts and other
+moving-current configurations remain unpaired.
 
 For a heave or other `linear_subspace` device, `JONSWAPWave(2.5, 8,
 seed=1, gamma=3.3)` selects a JONSWAP sea. Omitting `gamma` uses WEC-Sim's

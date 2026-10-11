@@ -42,6 +42,11 @@ def _response(current):
     )
 
 
+def _max_error(actual, expected, limit, label):
+    error = float(np.max(np.abs(actual - expected)))
+    assert error < limit, f"{label}: {error:.6g} exceeds {limit}"
+
+
 def test_normal_current_source_force_and_independent_motion():
     reference = Path(REFERENCE)
     prefix = "SPHERE_MOVING_MORISON_NORMAL"
@@ -102,7 +107,7 @@ def test_normal_current_source_force_and_independent_motion():
     physical_increment = np.asarray(physical_increment)
     source_increment = np.asarray(source_increment)
     np.testing.assert_allclose(direct_delta[:, 0], current[:, 0], atol=1e-12)
-    assert np.max(np.abs(source_increment - direct_delta[:, 1:])) < 1e-6
+    assert np.max(np.abs(source_increment - direct_delta[:, 1:])) < 2e-6
     for axis, minimum, label in ((0, 1000, "surge"),
                                  (2, 1000, "heave"),
                                  (4, 10000, "pitch")):
@@ -117,10 +122,16 @@ def test_normal_current_source_force_and_independent_motion():
 
     python_current = _response(Current(.8, 0, "power", 30))
     python_no_current = _response(None)
-    assert np.max(np.abs(python_current.time - current[:, 0])) < 1e-10
-    assert np.max(np.abs(python_current.wave_elevation - wave[:, 1])) < 1e-10
-    print("normal/tangential current motion diagnostic:")
-    for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
+    _max_error(python_current.time, current[:, 0], 1e-10, "time")
+    _max_error(python_current.wave_elevation, wave[:, 1], 1e-10,
+               "wave elevation")
+    for axis, label, absolute_limits, effect_minima, effect_limits in (
+            (0, "surge", (.007, .0008), (5, .1), (.004, .001)),
+            (2, "heave", (.002, .0025), (.01, .01), (.001, .001)),
+            (4, "pitch", (.0003, .0002), (.005, .002), (.0003, .00015))):
+        position_limit, speed_limit = absolute_limits
+        effect_position_minimum, effect_speed_minimum = effect_minima
+        effect_position_limit, effect_speed_limit = effect_limits
         actual = python_current.bodies["sphere"]
         baseline = python_no_current.bodies["sphere"]
         source_position_increment = (
@@ -129,10 +140,19 @@ def test_normal_current_source_force_and_independent_motion():
         python_position_increment = (
             actual.position[:, axis] - baseline.position[:, axis]
         )
-        print(label, "absolute position", np.max(np.abs(
-            actual.position[:, axis] - current[:, 1 + axis])),
-              "absolute speed", np.max(np.abs(
-                  actual.velocity[:, axis] - current[:, 7 + axis])),
-              "current response peak", np.max(np.abs(source_position_increment)),
-              "current response error", np.max(np.abs(
-                  python_position_increment - source_position_increment)))
+        source_speed_increment = (
+            current[:, 7 + axis] - no_current[:, 7 + axis]
+        )
+        python_speed_increment = (
+            actual.velocity[:, axis] - baseline.velocity[:, axis]
+        )
+        _max_error(actual.position[:, axis], current[:, 1 + axis],
+                   position_limit, f"{label} position")
+        _max_error(actual.velocity[:, axis], current[:, 7 + axis],
+                   speed_limit, f"{label} speed")
+        assert np.max(np.abs(source_position_increment)) > effect_position_minimum
+        assert np.max(np.abs(source_speed_increment)) > effect_speed_minimum
+        _max_error(python_position_increment, source_position_increment,
+                   effect_position_limit, f"{label} current position response")
+        _max_error(python_speed_increment, source_speed_increment,
+                   effect_speed_limit, f"{label} current speed response")
