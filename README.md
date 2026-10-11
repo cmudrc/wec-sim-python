@@ -79,8 +79,9 @@ joint uses its own pitched-slider geometry and a relative-heave PTO. It now
 accepts one zero-heading PM or JONSWAP sea with EqualEnergy or Traditional
 frequency discretization, including the MATLAB 1000-bin Traditional default.
 Arbitrary PTO attachment points are not part of that reduced layout. The
-published irregular-wave MoorDyn visualization trajectory has not yet been
-paired against MATLAB.
+published 0.01 s irregular-wave MoorDyn visualization trajectory remains
+unpaired. A [derived 80 s fine-step comparison](PARITY.md) pairs its physical
+motion, connection loads, and PTO force without changing the Python default.
 
 The MOST application uses a TurbSim full-field wind input. Its checked-in
 `.bts` file can be read directly with `wecsim.read_turbsim_bts(path)`; the
