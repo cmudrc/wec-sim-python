@@ -1228,6 +1228,25 @@ at most `0.000190` rad pitch, `0.0155` rad/s pitch speed, `5.68` N m torque
 request, and `27.8` N PTO force. These are diagnostics, not NMPC parity gates.
 The published 0.05 s controller and full closed-loop trajectory remain open.
 
+A [second derived R2025b split-step diagnostic](https://github.com/cmudrc/wec-sim-python/pull/226)
+keeps the published 50 ms controller discretization while advancing the
+Simscape plant at 1 ms through 15.2 s. Its exported body and controller
+histories contain 15,201 and 305 samples respectively; the 500 sea
+components match the other fine-step run on the same hydrodynamic fit.
+Explicit multirate scheduling delays the derived model's applied actuator
+torque by one 50 ms controller tick relative to its logged request, unlike
+the published single-rate model. Replaying the prior request through the
+production actuator on every saved source stroke reproduces axial force
+within `1e-6` N. A diagnostic Python adapter mirrors only that tick delay
+while independently advancing its plant and controller. Over all 15,201
+samples, including 0.2 s of active NMPC, maximum source/Python differences
+are `5.17e-5` rad pitch, `7.80e-4` rad/s pitch speed, `10.4` μm PTO stroke,
+`0.062` N axial force, and `0.0128` N m requested torque; the paired gates
+are `1e-4` rad, `1.5e-3` rad/s, `20` μm, `0.1` N, and `0.025` N m.
+This is a short derived multirate motion gate with its timing difference
+explicitly reproduced. The published 225 s single-rate NMPC trajectory
+remains unpaired; no Python physical default was changed for this diagnostic.
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001
