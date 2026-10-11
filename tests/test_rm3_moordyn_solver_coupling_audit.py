@@ -61,13 +61,23 @@ def test_independent_solver_and_moordyn_step_audit():
         # recorded after the pinned source experiment runs.
         for name, index in (("surge", 1), ("heave", 3), ("pitch", 5)):
             solver_change = np.max(abs(records[1][:, index] - records[0][:, index]))
-            coupling_change = np.max(abs(records[2][:, index] - records[1][:, index]))
+            dt_change = np.max(abs(records[2][:, index] - records[1][:, index]))
             print(f"{channel} {name}: MaxStep-only {solver_change:.9g}; "
-                  f"additional MoorDyn coupling {coupling_change:.9g}")
+                  f"additional simu.dt change {dt_change:.9g}")
+            if channel in ("body1", "body2") and name == "surge":
+                # Pinned source result: the MaxStep-only arm removes nearly
+                # all of the published-step surge shift. The remaining
+                # simu.dt change also refines wave/radiation grids, so it
+                # must not be attributed solely to MoorDyn coupling.
+                assert solver_change > .17
+                assert dt_change < .001
+            if channel in ("body1", "body2") and name == "pitch":
+                assert solver_change > .0017
+                assert dt_change < 2e-5
         if channel == "mooring":
             for name, index in (("surge force", 13), ("heave force", 15),
                                 ("pitch moment", 17)):
                 solver_change = np.max(abs(records[1][:, index] - records[0][:, index]))
-                coupling_change = np.max(abs(records[2][:, index] - records[1][:, index]))
+                dt_change = np.max(abs(records[2][:, index] - records[1][:, index]))
                 print(f"MoorDyn {name}: MaxStep-only {solver_change:.9g}; "
-                      f"additional coupling {coupling_change:.9g}")
+                      f"additional simu.dt change {dt_change:.9g}")
