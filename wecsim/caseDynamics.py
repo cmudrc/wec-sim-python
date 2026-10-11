@@ -1913,7 +1913,8 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
                         passive_model, yaw_banks[index - 1],
                     )
 
-            if isinstance(passive_model, HeldPassiveYawExcitation):
+            if isinstance(passive_model, (HeldPassiveYawExcitation,
+                                          NearestSampledHeadingExcitation)):
                 state_excitation = passive_model
             else:
                 def state_excitation(at_time, coordinate, speed, *,

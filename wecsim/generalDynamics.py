@@ -193,6 +193,7 @@ class GeneralizedDynamics:
         known_radiation: tuple[np.ndarray, ...] | None = None,
         dt: float | None = None,
         applied_force: np.ndarray | None = None,
+        excitation_overrides: tuple[np.ndarray | None, ...] | None = None,
     ) -> np.ndarray:
         """Assemble M(q) and generalized force, then solve M(q) q'' = F."""
         if any(body.radiation_kernel is not None for body in self.bodies):
@@ -200,6 +201,8 @@ class GeneralizedDynamics:
                 raise ValueError("radiation-memory acceleration needs history and dt")
         if known_radiation is not None and len(known_radiation) != len(self.bodies):
             raise ValueError("radiation history needs one force vector per body")
+        if excitation_overrides is not None and len(excitation_overrides) != len(self.bodies):
+            raise ValueError("excitation overrides need one entry per body")
         n = self.coordinate_count
         motions = tuple(body.motion(coordinate, speed) for body in self.bodies)
         mass = np.zeros((n, n))
@@ -222,10 +225,15 @@ class GeneralizedDynamics:
             j = motion.jacobian
             rigid_mass = (body.rigid_mass if self.added_mass_delay is None
                           else self.adjusted_rigid_mass[i])
-            excitation = (body.excitation(at_time)
-                          if body.state_excitation is None else
-                          np.asarray(body.state_excitation(
-                              at_time, coordinate, speed), dtype=float))
+            override = (None if excitation_overrides is None else
+                        excitation_overrides[i])
+            if override is not None:
+                excitation = np.asarray(override, dtype=float)
+            elif body.state_excitation is None:
+                excitation = body.excitation(at_time)
+            else:
+                excitation = np.asarray(body.state_excitation(
+                    at_time, coordinate, speed), dtype=float)
             if excitation.shape != (6,) or not np.isfinite(excitation).all():
                 raise ValueError("body excitation must be a finite six-vector")
             body_force = (body.static_force + excitation
@@ -579,24 +587,47 @@ class GeneralizedDynamics:
                                   - body_acceleration[step - 2]))
                 self.delayed_body_acceleration = tuple(delayed)
             known = known_radiation(step)
-            trial_speed = v[step - 1].copy()
-            # Mesh-pressure forces can make the trapezoidal fixed point
-            # slower to converge near the instantaneous waterline.
-            for _ in range(30):
-                trial_coordinate = q[step - 1] + dt * (v[step - 1] + trial_speed) / 2
-                trial_acceleration = self.acceleration(
-                    time[step], trial_coordinate, trial_speed,
-                    known_radiation=known, dt=dt,
-                    applied_force=sampled_force,
-                )
-                next_speed = v[step - 1] + dt * (
-                    a[step - 1] + trial_acceleration
-                ) / 2
-                if np.max(np.abs(next_speed - trial_speed)) < 1e-12:
+            def solve_speed(overrides=None):
+                trial_speed = v[step - 1].copy()
+                # Mesh-pressure forces can make the trapezoidal fixed point
+                # slower to converge near the instantaneous waterline.
+                for _ in range(30):
+                    trial_coordinate = (q[step - 1]
+                                        + dt * (v[step - 1] + trial_speed) / 2)
+                    trial_acceleration = self.acceleration(
+                        time[step], trial_coordinate, trial_speed,
+                        known_radiation=known, dt=dt,
+                        applied_force=sampled_force,
+                        excitation_overrides=overrides,
+                    )
+                    next_speed = v[step - 1] + dt * (
+                        a[step - 1] + trial_acceleration
+                    ) / 2
+                    if np.max(np.abs(next_speed - trial_speed)) < 1e-12:
+                        return next_speed, None, None
                     trial_speed = next_speed
-                    break
-                trial_speed = next_speed
-            else:
+                next_coordinate = (q[step - 1]
+                                   + dt * (v[step - 1] + next_speed) / 2)
+                return None, trial_coordinate, next_coordinate
+
+            trial_speed, trial_coordinate, next_coordinate = solve_speed()
+            if trial_speed is None:
+                # A sampled force may jump across a heading boundary so that
+                # neither side is a self-consistent implicit endpoint. In
+                # that case, hold only that force at the preceding accepted
+                # selection for this step, then sample the new endpoint force.
+                overrides = []
+                for body in self.bodies:
+                    freeze = getattr(body.state_excitation,
+                                     "freeze_step_excitation", None)
+                    overrides.append(
+                        None if freeze is None else
+                        freeze(time[step], q[step - 1],
+                               trial_coordinate, next_coordinate)
+                    )
+                if any(force is not None for force in overrides):
+                    trial_speed, _, _ = solve_speed(tuple(overrides))
+            if trial_speed is None:
                 raise RuntimeError(
                     f"radiation-memory step at t={time[step]:.6g} s did not "
                     "converge; check discontinuous forces or reduce dt"

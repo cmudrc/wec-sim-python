@@ -103,27 +103,35 @@ MATLAB/Python motion and torque gates and 3% of the PTO-work gate. The two
 source steps do not prove convergence, but the MATLAB half-step run completes
 with a small change relative to those gates.
 
-The irregular variable-yaw bank is also sensitive to time-step refinement in
-Python. With the published sea and bank but `dt=0.005` s, the 120 s run stops at
-86.08 s because the implicit radiation-memory step alternates between the
-adjacent −8.75° and −8.50° excitation headings across their −8.625° boundary.
-Thirty successive trial accelerations repeat this two-cycle rather than
-converging. The pinned application's `calcIndex.m` selects the nearest heading
-on every evaluation; its previous-index hold rule is commented out. The
-passing 120 s pair at the published `dt=0.01` s therefore does not establish a
-step-converged physical trajectory, and MATLAB's successful half-step run does
-not resolve Python's implicit endpoint ambiguity. Resolving this discrete
-event requires a defined within-step heading rule; no force coefficient was
-changed to suppress the failure.
+The irregular variable-yaw bank is sensitive to time-step refinement in
+Python. Before event handling, its `dt=0.005` s run stopped at 86.08 s: the
+implicit radiation-memory endpoint alternated between the adjacent −8.75°
+and −8.50° excitation headings across their −8.625° boundary. The two trial
+yaws straddled the boundary by only `7.7e-10` and `5.4e-10` rad, leaving no
+self-consistent endpoint for that implicit equation. The pinned application's
+`calcIndex.m` selects the nearest heading on every evaluation; its
+previous-index hold rule is commented out. Increasing iteration count or
+relaxing tolerance would only hide the two-cycle.
 
-At the first failed `0.005` s step, `t=86.08` s, the endpoint iterations
-alternate between the −8.75° and −8.50° bank entries. Their trial yaw
-angles straddle the −8.625° selection boundary by only `7.7e-10` and
-`5.4e-10` rad. Neither candidate is self-consistent under the nearest-bank
-implicit update. Increasing the iteration count or merely relaxing its
-speed tolerance would hide that discrete ambiguity. The solver now reports
-the failed time and mentions discontinuous forces rather than suggesting
-only a smaller step.
+The Python memory solver now retries a failed step with the preceding
+accepted bank heading **only when the two final endpoint trials select
+different headings**. It then evaluates the actual selected force at the
+accepted endpoint. On this sea the fallback is used once, at 86.08 s;
+the `dt=0.01` s path never uses it and retains its existing paired gate.
+At `dt=0.005` s, Python completes all 24,001 samples. Against the pinned
+MATLAB half-step run, maximum yaw, yaw-speed, and PTO-torque differences are
+`0.000820` rad, `0.000158` rad/s, and `18.95` N m, below new gates of
+`0.0012` rad, `0.00025` rad/s, and `30` N m. PTO work is `1150.853` J versus
+MATLAB's `1152.719` J (`−0.162%`), below a `0.3%` gate. No force coefficient
+was adjusted.
+
+This event rule resolves the isolated implicit ambiguity, but does not prove
+step convergence or full 600 s parity. Python's `0.01`-to-`0.005` s yaw
+change is `0.00231` rad and PTO work changes by `0.535%`, larger than
+MATLAB's same-step differences above. A further local Python run at
+`dt=0.0025` s needs no fallback and gives `0.000953` rad yaw difference and
+`0.175%` work difference relative to Python `0.005` s. A matching MATLAB
+quarter-step source run has not been checked.
 
 A physical continuous-heading control keeps the same pinned HDF5, seed-1 PM
 sea, PTO, and 120 s duration, but evaluates interpolated excitation at the

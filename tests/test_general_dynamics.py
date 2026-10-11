@@ -1,6 +1,7 @@
 """Check the shared dynamics stage against independent oscillator solutions."""
 
 import numpy as np
+import pytest
 from scipy.integrate import solve_ivp
 
 from wecsim.generalDynamics import (
@@ -98,6 +99,44 @@ def test_radiation_memory_matches_augmented_state_equation():
     assert expected.success
     assert np.max(np.abs(response.coordinate[:, 0] - expected.y[0])) < 3e-4
     assert np.max(np.abs(response.speed[:, 0] - expected.y[1])) < 6e-4
+
+
+def test_discontinuous_sampled_force_uses_accepted_selection_only_on_failure():
+    """An implicit endpoint can have no solution across a force jump."""
+    from dataclasses import replace
+
+    class JumpForce:
+        def __init__(self):
+            self.fallback_times = []
+
+        def __call__(self, at_time, coordinate, speed):
+            force = np.zeros(6)
+            force[2] = 1 if coordinate[0] < .25 else -1
+            return force
+
+        def freeze_step_excitation(self, at_time, accepted_coordinate,
+                                   trial_coordinate, next_coordinate):
+            if ((trial_coordinate[0] < .25)
+                    == (next_coordinate[0] < .25)):
+                return None
+            self.fallback_times.append(at_time)
+            return self(at_time, accepted_coordinate, np.zeros(1))
+
+    kernel = np.zeros((2, 6, 6))
+    system = _oscillator(mass=1, stiffness=0, radiation=kernel)
+    source = JumpForce()
+    system.bodies = (replace(system.bodies[0], state_excitation=source),)
+    response = system.integrate(dt=1, end_time=1)
+    np.testing.assert_allclose(response.coordinate[:, 0], [0, .5])
+    np.testing.assert_allclose(response.speed[:, 0], [0, 1])
+    np.testing.assert_allclose(response.acceleration[:, 0], [1, -1])
+    assert source.fallback_times == [1]
+
+    no_fallback = _oscillator(mass=1, stiffness=0, radiation=kernel)
+    no_fallback.bodies = (replace(no_fallback.bodies[0],
+                                  state_excitation=lambda t, q, v: source(t, q, v)),)
+    with pytest.raises(RuntimeError, match="did not converge"):
+        no_fallback.integrate(dt=1, end_time=1)
 
 
 def test_trapezoidal_radiation_halves_full_window_endpoint():

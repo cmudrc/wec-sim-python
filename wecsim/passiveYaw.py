@@ -273,6 +273,19 @@ class NearestSampledHeadingExcitation:
         coefficient_yaw = np.deg2rad(incident - self.heading(yaw))
         return self.model.force(time, 0.0, coefficient_yaw=coefficient_yaw)
 
+    def __call__(self, at_time: float, coordinate: np.ndarray,
+                 speed: np.ndarray) -> np.ndarray:
+        return self.force(at_time, float(coordinate[0]))
+
+    def freeze_step_excitation(
+        self, at_time: float, accepted_coordinate: np.ndarray,
+        trial_coordinate: np.ndarray, next_coordinate: np.ndarray,
+    ) -> np.ndarray | None:
+        """Use the accepted heading only when endpoint trials cross a bank edge."""
+        if self.heading(float(trial_coordinate[0])) == self.heading(float(next_coordinate[0])):
+            return None
+        return self.force(at_time, float(accepted_coordinate[0]))
+
 
 class HeldPassiveYawExcitation:
     """Apply the source's sampled heading-coefficient update threshold.
