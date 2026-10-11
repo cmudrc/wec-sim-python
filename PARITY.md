@@ -1166,6 +1166,21 @@ between output samples, so neither interpolation reconstructs the actual
 internal force history. This record cannot isolate the entire plant gap from
 actuator input timing and is not a parity gate.
 
+A [fresh pinned R2025b prescribed-torque gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38179306134)
+uses the **saved MATLAB torque request** to let the corrected actuator hold
+torque while projecting force through the Python rod pose at
+every 1 ms plant step and intermediate RK4 state. On the same fixed-fit 225 s
+run, replaying that request on the saved MATLAB stroke reproduces logged
+axial force within `5.7e-11` N. With independently advanced Python motion,
+maximum axial-force error is `0.354` N, or `0.55%` of the source's `64.35` N
+peak; the paired prescribed-input diagnostic gates it below `1%` of peak.
+Maximum pitch, pitch-speed, and PTO-stroke gaps remain `0.03652` rad,
+`0.4124` rad/s, and `7.16` mm, versus `0.04110` rad, `0.4356` rad/s, and
+`8.21` mm in the autonomous controller run. The actuator output is now close
+under the same requested torque, but forcing the source commands does not
+close the plant trajectory. This is an input-prescribed diagnosis, not an
+independent NMPC parity gate.
+
 A [fixed-fit R2025b `ode8` step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38177360148)
 truncates the pinned NMPC application at 9.95 s, before PTO activation, and
 changes only `simu.dt` from 50 to 25 to 12.5 ms. All three runs reuse one
