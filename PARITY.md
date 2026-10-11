@@ -99,6 +99,23 @@ passing 120 s pair at the published `dt=0.01` s therefore does not establish a
 step-converged physical trajectory. Resolving this discrete event requires a
 defined within-step heading rule; no force coefficient was changed to suppress
 the failure.
+At the first failed `0.005` s step, `t=86.08` s, the endpoint iterations
+alternate between the −8.75° and −8.50° bank entries. Their trial yaw
+angles straddle the −8.625° selection boundary by only `7.7e-10` and
+`5.4e-10` rad. Neither candidate is self-consistent under the nearest-bank
+implicit update. Increasing the iteration count or merely relaxing its
+speed tolerance would hide that discrete ambiguity. The solver now reports
+the failed time and mentions discontinuous forces rather than suggesting
+only a smaller step.
+A physical continuous-heading control keeps the same pinned HDF5, seed-1 PM
+sea, PTO, and 120 s duration, but evaluates interpolated excitation at the
+current yaw instead of selecting a bank entry. It completes at `dt=0.01`
+and `0.005` s with identical wave samples at common times. Maximum yaw and
+yaw-speed self-differences are `7.16e-6` rad and `1.48e-6` rad/s; PTO work
+changes from `1169.810` to `1169.803` J (`0.00056%`). An explicit gate checks
+`2e-5` rad, `3e-6` rad/s, and `0.01%` work limits. This verifies a stable
+Python alternative on this sea, not native parity for MATLAB's selected-bank
+case or a converged solution for the discontinuous force law.
 
 The published one-degree irregular passive-yaw hold has a [three-seed R2025b
 audit](https://github.com/cmudrc/wec-sim-python/actions/runs/37915267886).
@@ -333,7 +350,8 @@ gates for their pinned published configurations; their rows identify outputs
 or other regimes that remain unpaired. The full native motion gates still
 open here are RM3 body-to-body Cases 5/6 and the state-space radiation option,
 OSWEC PassiveYawRegression and the published variable-hydrodynamics irregular
-yaw run, RM3 MoorDyn ParaView, and WaveStar NMPC. The ode45 nonlinear-hydro
+yaw run, published-step RM3 MoorDyn coupled motion, and WaveStar NMPC. The
+ode45 nonlinear-hydro
 and OWC OrificeModel physical-force paths have source-timing or force-routing
 limits described below. Numerical `Wave_Markers` elevation is paired, while
 glyph rendering is not. A passing upstream MATLAB application test only

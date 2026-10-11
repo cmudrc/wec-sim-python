@@ -170,6 +170,48 @@ def test_irregular_120s_bank_against_pinned_matlab():
 
 
 @pytest.mark.skipif(
+    not os.environ.get("WEC_SIM_APPLICATIONS_DIR"),
+    reason="pinned variable-yaw HDF5 not provided",
+)
+def test_continuous_irregular_120s_step_stability():
+    """Check a continuous-heading physical control on the pinned PM sea."""
+    hydro = (Path(os.environ["WEC_SIM_APPLICATIONS_DIR"])
+             / "_Common_Input_Files/OSWEC/hydroData/oswec.h5")
+    results = []
+    for dt in (.01, .005):
+        wec = WEC("OSWEC continuous-heading stability control")
+        flap = wec.body(
+            "flap", hydro, mass=12700, inertia=(1.85e6,) * 3,
+            passive_yaw=True,
+        )
+        wec.body("base", hydro, mass=999, inertia=(999,) * 3)
+        yaw = wec.coordinate(
+            "yaw", flap.move("yaw", pivot=WorldPoint(0, 0, -8.9)),
+        )
+        wec.rotational_pto("hinge", yaw, damping=120000)
+        results.append(wec.run(
+            PMWave(2.5, 8, direction=10, seed=1,
+                   phase_generator="matlab"),
+            dt=dt, end_time=120, ramp_time=100, radiation_memory=40,
+        ))
+
+    coarse, fine = results
+    assert coarse.time.shape == (12001,)
+    assert fine.time.shape == (24001,)
+    np.testing.assert_allclose(coarse.time, fine.time[::2], rtol=0, atol=1e-10)
+    np.testing.assert_allclose(coarse.wave_elevation,
+                               fine.wave_elevation[::2], rtol=0, atol=1e-12)
+    for kind, limit in (("position", 2e-5), ("velocity", 3e-6)):
+        a = getattr(coarse.bodies["flap"], kind)[:, 5]
+        b = getattr(fine.bodies["flap"], kind)[::2, 5]
+        assert np.max(np.abs(a - b)) < limit, kind
+    work = [np.trapezoid(result.ptos["hinge"].absorbed_power, result.time)
+            for result in results]
+    assert min(work) > 0
+    assert abs(work[0] - work[1]) / work[1] < 1e-4
+
+
+@pytest.mark.skipif(
     not (os.environ.get("WEC_SIM_APPLICATIONS_DIR")
          and os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")),
     reason="fresh variable-yaw MATLAB output not provided",

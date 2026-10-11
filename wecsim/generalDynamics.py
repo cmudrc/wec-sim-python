@@ -597,7 +597,10 @@ class GeneralizedDynamics:
                     break
                 trial_speed = next_speed
             else:
-                raise RuntimeError("radiation-memory step did not converge; reduce dt")
+                raise RuntimeError(
+                    f"radiation-memory step at t={time[step]:.6g} s did not "
+                    "converge; check discontinuous forces or reduce dt"
+                )
             v[step] = trial_speed
             q[step] = q[step - 1] + dt * (v[step - 1] + v[step]) / 2
             a[step] = self.acceleration(
