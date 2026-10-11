@@ -88,6 +88,21 @@ the production Python code. The live wave comparison passed on 6 October
 | OWC `OrificeModel` wave, force, and early coupled motion | Pinned MATLAB Applications `OWC/OrificeModel`, BEMIO-cleaned seven-DOF HDF5, and a fresh 130 s R2025b `ode23t` [source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37799665808) | `wecsim.OrificePTO` reproduces the embedded Simulink orifice block on its 418,828 logged internal solver evaluations. Maximum force, pressure, and source-power differences are `4.8e-10` N, `2.9e-12` kPa, and `4.2e-13` kW; the Mach flag is identical. Interpolating source flow to the independent 26,001-sample flexible-mode output gives a piston-speed difference below `3.6e-13` m/s. The 500 PM bins agree within `5.2e-15`, wave elevation within `2.8e-14` m, and all six rigid plus one flexible excitation channels within `1.5e-10` N. Flexible mass/stiffness/damping, added mass, and hydrostatic matrices agree within `2.3e-13` in their units. With the [rigid-force diagnostic run](https://github.com/cmudrc/wec-sim-python/actions/runs/37804483371), radiation reconstructed from all seven MATLAB velocities differs by at most `0.0074` N in the flexible channel and `0.22` N across rigid channels (peak rigid magnitude `1,182` N). The rigid restoring and linear-damping forces reproduce the source logs within `8.6e-11` N and `1.1e-12` N, and the rigid hydrodynamic force sum closes within `1.7e-10` N. MATLAB's flexible hydrodynamic force sum closes within `1e-12` N; its effective-mass acceleration including the orifice force closes within `3.5e-8` N. The source rigid surge, heave, and pitch balances close within `1.2e-10` in their force units when using its adjusted translational mass and logged piston reaction. `WEC.floating_gbm(..., orifice=...)` now integrates the seven-DOF PM case with memory radiation, quadratic drag, and the coupled piston force. Against the saved source phases, maximum surge, heave, unwrapped-pitch, and flexible-position differences through 6 s are `0.0113` m, `0.0244` m, `0.0098` rad, and `0.0070` m. At 130 s the physical coupled path has heave and flexible-displacement differences of `1.94` m and `0.280` m. The separate opt-in `orifice_force_path="published_owc"` follows the pinned Simulink routing, which leaves the piston out of the flexible state-space input but retains it in reported acceleration and rigid added-mass feedback. Over all 26,001 samples, its maximum surge, heave, unwrapped-pitch, and flexible-position differences are `0.174` m, `0.0367` m, `0.0108` rad, and `0.0054` m; PTO reaction and absorbed-power maxima differ by `1.98` kN and `1.75` kW, and integrated absorbed work by `4.76%`. These are explicit 130 s source-convention gates, **not physical coupled-path parity**. Python reports SI watts while the source's numeric power is kW. The source first exceeds its Mach threshold at 10.13 s; it is above 0.3 for 61.4% of simulated time and peaks at Mach 1.11. Matching its incompressible law after that point does not establish physical accuracy. |
 | Case-driven dynamics runner | Current MATLAB RM3 and OSWEC examples plus Sphere and RM3 Applications cases | One generalized-coordinate engine assembles rigid inertia, hydrodynamic added mass and radiation, hydrostatic restoring, excitation, and linear PTO forces. The heave, fixed-hinge, and floating-joint layouts run the paired cases above, including imported elevation, a joint surge spring for RM3 MooringMatrix, and native MoorDyn coupling for the published RM3 mooring. A fourth `linear_subspace` layout maps independent coordinates into arbitrary bodies; its RM3 two-body heave, Sphere free decay, configured Sphere PTO, and two instantaneous nonlinear-hydro cases have paired MATLAB checks. Arbitrary Simscape layouts, general moorings, and other nonlinear-hydro/application cases remain unsupported. |
 
+The shortened 120 s MATLAB selected-bank baseline reproduces the first 120 s
+of the published 600 s run: its 500 incident-wave components and selected
+headings agree exactly, yaw within `1.1e-15` rad, and PTO torque within
+`1.3e-10` N m. A [pinned R2025b source step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38121406233)
+then changes only `simu.dt` from `0.01` to `0.005` s while reusing that same
+241-heading bank. At all 12,001 common times, wave elevation differs by at
+most `4.89e-15` m; maximum yaw, yaw-speed, and PTO-torque changes are
+`0.000182` rad, `4.42e-5` rad/s, and `5.31` N m. PTO work changes from
+`1152.894` to `1152.719` J (`-0.0151%`). Both source runs make 181 heading
+switches; their selected headings differ at 87 common-time samples, first
+at 56.44 s. These changes are 9–15% of the corresponding 120 s
+MATLAB/Python motion and torque gates and 3% of the PTO-work gate. The two
+source steps do not prove convergence, but the MATLAB half-step run completes
+with a small change relative to those gates.
+
 The irregular variable-yaw bank is also sensitive to time-step refinement in
 Python. With the published sea and bank but `dt=0.005` s, the 120 s run stops at
 86.08 s because the implicit radiation-memory step alternates between the
@@ -96,9 +111,11 @@ Thirty successive trial accelerations repeat this two-cycle rather than
 converging. The pinned application's `calcIndex.m` selects the nearest heading
 on every evaluation; its previous-index hold rule is commented out. The
 passing 120 s pair at the published `dt=0.01` s therefore does not establish a
-step-converged physical trajectory. Resolving this discrete event requires a
-defined within-step heading rule; no force coefficient was changed to suppress
-the failure.
+step-converged physical trajectory, and MATLAB's successful half-step run does
+not resolve Python's implicit endpoint ambiguity. Resolving this discrete
+event requires a defined within-step heading rule; no force coefficient was
+changed to suppress the failure.
+
 At the first failed `0.005` s step, `t=86.08` s, the endpoint iterations
 alternate between the −8.75° and −8.50° bank entries. Their trial yaw
 angles straddle the −8.625° selection boundary by only `7.7e-10` and
@@ -107,6 +124,7 @@ implicit update. Increasing the iteration count or merely relaxing its
 speed tolerance would hide that discrete ambiguity. The solver now reports
 the failed time and mentions discontinuous forces rather than suggesting
 only a smaller step.
+
 A physical continuous-heading control keeps the same pinned HDF5, seed-1 PM
 sea, PTO, and 120 s duration, but evaluates interpolated excitation at the
 current yaw and rotates the body-frame force into the world frame instead of
@@ -334,9 +352,9 @@ file paths, plus 17 other or dynamic cases. Generate the CSV with
 `python tools/build_reference_case_inventory.py CORE_CHECKOUT APPLICATIONS_CHECKOUT`.
 This is a source inventory, not a claim that every case runs in Python.
 
-The [latest full reference-model sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/38108295073)
-completed 40 MATLAB/Python jobs successfully on `2d35cfb5`, with one optional
-comparison skipped. It includes the current-profile comparison. The three-seed
+The [latest full reference-model sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/38121025199)
+completed all 40 MATLAB/Python jobs successfully on `8651a682`. It includes
+the current-profile comparison. The three-seed
 continuous-yaw control was checked in the separate focused CI runs linked
 above; the RM3 Cases 5/6 fitted-force audit also uses its separate focused
 job. The sweep covers the cases selected by its matrix, not all 63 inventory

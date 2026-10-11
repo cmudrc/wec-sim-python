@@ -546,12 +546,16 @@ headings. The paired baseline generates those same selected files with the
 pinned interpolation rule; see [`PARITY.md`](PARITY.md).
 The selected-bank force jumps at heading boundaries. On the pinned irregular
 sea, a `dt=0.005` s implicit step at 86.08 s alternates between adjacent bank
-entries and has no self-consistent endpoint. For a continuous physical model,
-keep `passive_yaw=True` and omit `yaw_heading_bank`: Python then interpolates
-BEM headings and rotates the body-frame force with yaw. On the same 120 s sea,
-its `0.01` and `0.005` s runs differ by at most `7.16e-6` rad yaw and
-`0.00056%` PTO work. This is a different force convention from the published
-selected-bank case, so its step stability is not a MATLAB parity claim.
+entries and has no self-consistent endpoint. A pinned MATLAB `0.005` s run
+completes: relative to its `0.01` s run, yaw changes by at most `0.000182` rad
+and PTO work by `0.0151%`. Two source steps do not prove convergence, but the
+Python half-step failure needs separate event handling. For a continuous
+physical model, keep `passive_yaw=True` and omit `yaw_heading_bank`. Python
+then interpolates BEM headings and rotates the body-frame force with yaw. On
+the same 120 s sea, its `0.01` and `0.005` s runs differ by at most
+`7.16e-6` rad yaw and `0.00056%` PTO work. This is a different force
+convention from the published selected-bank case, so its step stability is
+not a MATLAB parity claim.
 
 The published `Morison_Element/morisonElement` application has a fixed
 monopile and tower without HDF5 hydrodynamic bodies. Its nonlinear drag and
