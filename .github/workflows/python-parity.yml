@@ -25,5 +25,8 @@ jobs:
           "$RUNNER_TEMP/wecsim-wheel-venv/bin/python" -c 'import importlib.util, sys, wecsim; from pathlib import Path; from wecsim import WEC; assert Path(wecsim.__file__).is_relative_to(Path(sys.prefix)); assert WEC("wheel smoke").name == "wheel smoke"; assert importlib.util.find_spec("wecsim_python") is None'
           "$RUNNER_TEMP/wecsim-wheel-venv/bin/wecsim" --help > /dev/null
           "$RUNNER_TEMP/wecsim-wheel-venv/bin/wecsim-reference" --help > /dev/null
+          cp "$GITHUB_WORKSPACE/tests/wheel_install_smoke.py" "$RUNNER_TEMP/"
+          cp "$GITHUB_WORKSPACE/examples/data/rm3.h5" "$RUNNER_TEMP/"
+          "$RUNNER_TEMP/wecsim-wheel-venv/bin/python" wheel_install_smoke.py rm3.h5
       - run: python -m compileall -q wecsim
       - run: python -m pytest -q
