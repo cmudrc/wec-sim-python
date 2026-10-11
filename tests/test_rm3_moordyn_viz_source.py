@@ -99,6 +99,71 @@ def _body_facets(path):
     return points[faces]
 
 
+def _mooring_vtp(path):
+    pieces = ElementTree.parse(path).findall("./PolyData/Piece")
+    assert len(pieces) == 3
+    records = []
+    for piece in pieces:
+        points = np.fromstring(
+            piece.findtext("./Points/DataArray"), sep=" ",
+        ).reshape(-1, 3)
+        cells = np.fromstring(
+            piece.findtext("./Lines/DataArray[@Name='connectivity']"),
+            sep=" ", dtype=int,
+        ).reshape(-1, 2)
+        offsets = np.fromstring(
+            piece.findtext("./Lines/DataArray[@Name='offsets']"),
+            sep=" ", dtype=int,
+        )
+        tension = np.fromstring(
+            piece.findtext("./CellData/DataArray[@Name='Segment Tension']"),
+            sep=" ",
+        )
+        assert (points.shape == (21, 3) and cells.shape == (20, 2)
+                and offsets.shape == tension.shape == (20,))
+        records.append((points, cells, offsets, tension))
+    return records
+
+
+def test_published_moordyn_line_vtp_history(tmp_path):
+    """Pair every actual line frame from saved source nodes and tensions."""
+    source = Path(REFERENCE)
+    histories = [_read(f"line{line}_vtp_history.csv") for line in (1, 2, 3)]
+    assert all(history.shape == (801, 84) for history in histories)
+    times = histories[0][:, 0]
+    np.testing.assert_allclose(times, np.arange(801) * 0.1, rtol=0, atol=1e-8)
+    for history in histories[1:]:
+        np.testing.assert_allclose(history[:, 0], times, rtol=0, atol=1e-8)
+    lines = [history[:, 1:64].reshape(801, 21, 3) for history in histories]
+    tensions = [history[:, 64:] for history in histories]
+    paths = ParaviewClass(None).write_paraview_vtp_mooring(
+        times, times, tmp_path, lines=lines, tensions=tensions,
+    )
+    assert len(paths) == 801
+    max_point_error = 0.0
+    max_tension_error = 0.0
+    for frame, path in enumerate(paths, start=1):
+        expected = _mooring_vtp(
+            source / "published_vtp/mooring1" / f"mooring_{frame}.vtp"
+        )
+        actual = _mooring_vtp(path)
+        for actual_line, expected_line in zip(actual, expected):
+            points, cells, offsets, load = actual_line
+            source_points, source_cells, source_offsets, source_load = expected_line
+            max_point_error = max(
+                max_point_error, float(np.max(np.abs(points - source_points))),
+            )
+            max_tension_error = max(
+                max_tension_error, float(np.max(np.abs(load - source_load))),
+            )
+            np.testing.assert_array_equal(cells, source_cells)
+            np.testing.assert_array_equal(offsets, source_offsets)
+    print(f"published MoorDyn VTP node difference: {max_point_error:.8g} m")
+    print(f"published MoorDyn VTP tension difference: {max_tension_error:.8g} N")
+    assert max_point_error < 1.01e-5
+    assert max_tension_error < 0.1
+
+
 def test_published_body_vtp_frames_on_source_poses(tmp_path):
     """Pair actual body meshes; source poses are inputs to this writer check."""
     reference = Path(REFERENCE)
