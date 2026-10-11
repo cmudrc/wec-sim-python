@@ -143,7 +143,7 @@ def test_source_output_interval_sensitivity():
               f"at 1 s {error[10]:.8g}, at 10 s {error[-1]:.8g}")
 
 
-@pytest.mark.parametrize("prefix", ["step005", "step0025"])
+@pytest.mark.parametrize("prefix", ["step005", "step0025", "step00125"])
 def test_source_maximum_step_refinement_preserves_sea(prefix):
     """Keep the same incident sea while refining ode45's maximum step."""
     _bound(_read(f"{prefix}_phase.csv"), _read("dense_phase.csv"),
@@ -167,8 +167,30 @@ def test_source_maximum_step_refinement_preserves_sea(prefix):
            1e-9, f"{prefix} source MoorDyn time")
 
 
+def test_source_refined_motion_change_diagnostic():
+    """Report what another ode45 maximum-step halving changes on one sea."""
+    for number, name in ((1, "float"), (2, "spar")):
+        medium = _read(f"step005_body{number}.csv")
+        fine = _read(f"step0025_body{number}.csv")
+        finer = _read(f"step00125_body{number}.csv")
+        assert medium.shape == fine.shape == finer.shape == (1001, 25)
+        for column, unit, channel in ((1, "m", "surge"),
+                                      (3, "m", "heave"),
+                                      (5, "rad", "pitch"),
+                                      (7, "m/s", "surge speed"),
+                                      (9, "m/s", "heave speed"),
+                                      (11, "rad/s", "pitch speed")):
+            first = fine[:, column] - medium[:, column]
+            second = finer[:, column] - fine[:, column]
+            print(f"source {name} {channel} step-change {unit}: "
+                  f"0.005->0.0025 max {np.max(np.abs(first)):.8g}, "
+                  f"final {first[-1]:.8g}; "
+                  f"0.0025->0.00125 max {np.max(np.abs(second)):.8g}, "
+                  f"final {second[-1]:.8g}")
+
+
 @pytest.mark.parametrize("prefix", ["dense", "seed2_dense",
-                                    "step005", "step0025"])
+                                    "step005", "step0025", "step00125"])
 def test_dense_source_wave_and_force_components(prefix):
     """Check the signed WEC-Sim logging convention before using its forces."""
     hydro = (Path(APPLICATIONS) /
@@ -204,7 +226,7 @@ def test_dense_source_wave_and_force_components(prefix):
 
 
 @pytest.mark.parametrize("prefix", ["dense", "seed2_dense",
-                                    "step005", "step0025"])
+                                    "step005", "step0025", "step00125"])
 def test_dense_source_adjusted_mass_and_joint_force_balance(prefix):
     """Reconstruct source inertia from its body, PTO, and MoorDyn logs."""
     records = [_read(f"{prefix}_body{number}.csv") for number in (1, 2)]
@@ -422,12 +444,16 @@ def test_physical_fine_step_self_convergence(tmp_path):
                f"{name} physical position self-convergence")
         _bound(body_coarse.velocity, body_fine.velocity[::2], 1e-4,
                f"{name} physical velocity self-convergence")
-        source = _read(f"step0025_body{number}.csv")
-        indices = _indices(source[:, 0], dt=0.0025, end_time=10)
-        surge_error = body_coarse.position[indices, 0] - source[:, 1]
-        print(f"{name} surge against refined source: "
-              f"maximum {np.max(np.abs(surge_error)):.8g} m; "
-              f"at 10 s {surge_error[-1]:.8g} m")
+        for prefix in ("step0025", "step00125"):
+            source = _read(f"{prefix}_body{number}.csv")
+            for label, result in (("coarse", coarse), ("fine", fine)):
+                indices = _indices(source[:, 0], dt=result.time[1],
+                                   end_time=10)
+                surge_error = (result.bodies[name].position[indices, 0]
+                               - source[:, 1])
+                print(f"{name} {label} surge against {prefix} source: "
+                      f"maximum {np.max(np.abs(surge_error)):.8g} m; "
+                      f"at 10 s {surge_error[-1]:.8g} m")
 
 
 def test_public_floating_joint_tracks_published_moordyn_viz(tmp_path):
