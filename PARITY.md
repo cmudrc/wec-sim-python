@@ -482,6 +482,20 @@ This is a derived 10 s
 numerical pair, not convergence proof or full published-case parity; the
 physical default and the red 80 s gate are unchanged.
 
+A [fifth and final short-case source refinement](https://github.com/cmudrc/wec-sim-python/actions/runs/38103660538)
+halves `simu.dt` to `0.0003125` s on the same sea. The `0.000625` and
+`0.0003125` s MATLAB trajectories differ by at most `0.195`/`0.218` mm
+float/spar surge, `1.09e-6` rad pitch, and `1.391` kN m MoorDyn pitch
+moment. All active body and mooring pose, speed, and load changes pass the
+same explicit limits as the Python pair. Against the finest source, an
+independent physical Python run at `0.00125` s differs by at most `0.271`/
+`0.142` mm float/spar surge, `6.16e-6` rad pitch, `110`/`90` N mooring
+surge/heave force, and `0.813` kN m mooring pitch moment on local ARM64.
+The gates cover the complete 10 s active trajectories, not only final values.
+This supports the derived fine-step physical dynamics over that sea at the
+declared numerical resolution. It does not validate every source output or
+the original `simu.dt=0.01` s, 80 s published trajectory, which remains red.
+
 A [deterministic full-duration comparison](https://github.com/cmudrc/wec-sim-python/actions/runs/38099166656)
 runs the published 80 s input with only `waves.phaseSeed=1` added in a
 temporary copy. Its phases, wave, both-body motion, and MoorDyn connection

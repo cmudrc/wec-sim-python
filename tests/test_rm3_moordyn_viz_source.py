@@ -40,6 +40,13 @@ def _bound(actual, expected, limit, name):
     return error
 
 
+FINE_SOURCE_LIMITS = {
+    "position": (0.002, 5e-5),
+    "velocity": (0.0005, 5e-5),
+    "force": (500, 2000),
+}
+
+
 def _indices(source_time, *, dt=0.01, end_time=80):
     indices = np.rint(source_time / dt).astype(int)
     assert np.all((indices >= 0) & (indices <= round(end_time / dt)))
@@ -285,6 +292,28 @@ def test_source_refined_motion_change_diagnostic():
         delta = right[:, 17] - left[:, 17]
         print(f"source MoorDyn pitch moment {step} step-change N m: "
               f"max {np.max(np.abs(delta)):.8g}, final {delta[-1]:.8g}")
+
+
+def test_source_finest_coupling_steps_are_within_paired_gates():
+    """Bound the remaining MATLAB step change before using the fine pair."""
+    for number, name in ((1, "float"), (2, "spar")):
+        coarse = _read(f"step000625_body{number}.csv")
+        fine = _read(f"step0003125_body{number}.csv")
+        _bound(coarse[:, 0], fine[:, 0], 1e-9,
+               f"source finest {name} time")
+        for kind, start in (("position", 1), ("velocity", 7)):
+            for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
+                _bound(coarse[:, start + axis], fine[:, start + axis],
+                       FINE_SOURCE_LIMITS[kind][axis == 4],
+                       f"source finest {name} {label} {kind}")
+    coarse = _read("step000625_mooring.csv")
+    fine = _read("step0003125_mooring.csv")
+    _bound(coarse[:, 0], fine[:, 0], 1e-9, "source finest MoorDyn time")
+    for kind, start in (("position", 1), ("velocity", 7), ("force", 13)):
+        for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
+            _bound(coarse[:, start + axis], fine[:, start + axis],
+                   FINE_SOURCE_LIMITS[kind][axis == 4],
+                   f"source finest MoorDyn {label} {kind}")
 
 
 @pytest.mark.parametrize("prefix", ["dense", "seed2_dense",
@@ -555,25 +584,22 @@ def test_physical_fine_step_self_convergence(tmp_path):
                 print(f"{name} {label} surge against {prefix} source: "
                       f"maximum {np.max(np.abs(surge_error)):.8g} m; "
                       f"at 10 s {surge_error[-1]:.8g} m")
-        source = _read(f"step000625_body{number}.csv")
+        source = _read(f"step0003125_body{number}.csv")
         indices = _indices(source[:, 0], dt=fine.time[1], end_time=10)
         for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
-            position_limit = 5e-5 if axis == 4 else 0.002
-            speed_limit = 5e-5 if axis == 4 else 0.0005
             _bound(body_fine.position[indices, axis], source[:, 1 + axis],
-                   position_limit, f"fine-source {name} {label} position")
+                   FINE_SOURCE_LIMITS["position"][axis == 4],
+                   f"fine-source {name} {label} position")
             _bound(body_fine.velocity[indices, axis], source[:, 7 + axis],
-                   speed_limit, f"fine-source {name} {label} velocity")
-    source_mooring = _read("step000625_mooring.csv")
+                   FINE_SOURCE_LIMITS["velocity"][axis == 4],
+                   f"fine-source {name} {label} velocity")
+    source_mooring = _read("step0003125_mooring.csv")
     indices = _indices(source_mooring[:, 0], dt=fine.time[1], end_time=10)
     outputs = dict(fine.raw.extra_outputs)
-    limits = {"position": (0.002, 5e-5),
-              "velocity": (0.0005, 5e-5),
-              "force": (500, 2000)}
     for kind, start in (("position", 1), ("velocity", 7), ("force", 13)):
         actual = outputs[f"moordyn_connection_{kind}"][indices]
         for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
-            limit = limits[kind][axis == 4]
+            limit = FINE_SOURCE_LIMITS[kind][axis == 4]
             _bound(actual[:, axis], source_mooring[:, start + axis], limit,
                    f"fine-source MoorDyn {label} {kind}")
 
