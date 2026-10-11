@@ -497,7 +497,7 @@ def test_live_moordyn_on_same_dense_source_sea(tmp_path):
 
 
 def test_physical_fine_step_self_convergence(tmp_path):
-    """Check physical Python motion convergence against the refined source sea."""
+    """Check Python step convergence and pair a refined source trajectory."""
     apps = Path(APPLICATIONS)
     hydro = apps / "_Common_Input_Files/RM3/hydroData/rm3.h5"
     line_input = (apps /
@@ -550,6 +550,27 @@ def test_physical_fine_step_self_convergence(tmp_path):
                 print(f"{name} {label} surge against {prefix} source: "
                       f"maximum {np.max(np.abs(surge_error)):.8g} m; "
                       f"at 10 s {surge_error[-1]:.8g} m")
+        source = _read(f"step000625_body{number}.csv")
+        indices = _indices(source[:, 0], dt=fine.time[1], end_time=10)
+        for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
+            position_limit = 5e-5 if axis == 4 else 0.002
+            speed_limit = 5e-5 if axis == 4 else 0.0005
+            _bound(body_fine.position[indices, axis], source[:, 1 + axis],
+                   position_limit, f"fine-source {name} {label} position")
+            _bound(body_fine.velocity[indices, axis], source[:, 7 + axis],
+                   speed_limit, f"fine-source {name} {label} velocity")
+    source_mooring = _read("step000625_mooring.csv")
+    indices = _indices(source_mooring[:, 0], dt=fine.time[1], end_time=10)
+    outputs = dict(fine.raw.extra_outputs)
+    limits = {"position": (0.002, 5e-5),
+              "velocity": (0.0005, 5e-5),
+              "force": (500, 2000)}
+    for kind, start in (("position", 1), ("velocity", 7), ("force", 13)):
+        actual = outputs[f"moordyn_connection_{kind}"][indices]
+        for axis, label in ((0, "surge"), (2, "heave"), (4, "pitch")):
+            limit = limits[kind][axis == 4]
+            _bound(actual[:, axis], source_mooring[:, start + axis], limit,
+                   f"fine-source MoorDyn {label} {kind}")
 
 
 def test_public_floating_joint_tracks_published_moordyn_viz(tmp_path):

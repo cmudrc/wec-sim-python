@@ -466,6 +466,22 @@ The closer motion agreement is not a validated converged pair. The published
 80 s coupled-motion gate still fails, and the Python physical default remains
 unchanged.
 
+A [fourth source coupling-step refinement](https://github.com/cmudrc/wec-sim-python/actions/runs/38102253800)
+halves `simu.dt` to `0.000625` s, changing both ode45 MaxStep and MoorDyn's
+call interval. The source sea and logged force balances still agree. Relative
+to `0.00125` s, source float/spar surge changes by up to `5.99`/`5.21` mm
+and MoorDyn pitch moment by `9.69` kN m over 10 s; source convergence remains
+unproven. An independent Python physical run at `0.00125` s, without saved
+source motion or forces as inputs, matches this refined source within `0.466`/
+`0.360` mm float/spar surge, `5.19e-6` rad pitch, `132`/`104` N MoorDyn
+surge/heave force, and `0.906` kN m MoorDyn pitch moment on local ARM64.
+Explicit paired gates check both bodies' active positions and velocities and
+the MoorDyn connection pose, velocity, and force: `2` mm or `5e-5` rad
+positions, `0.5` mm/s or `5e-5` rad/s speeds, and `500` N or `2` kN m loads.
+This is a derived 10 s
+numerical pair, not convergence proof or full published-case parity; the
+physical default and the red 80 s gate are unchanged.
+
 A [deterministic full-duration comparison](https://github.com/cmudrc/wec-sim-python/actions/runs/38099166656)
 runs the published 80 s input with only `waves.phaseSeed=1` added in a
 temporary copy. Its phases, wave, both-body motion, and MoorDyn connection
