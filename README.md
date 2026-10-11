@@ -1783,7 +1783,11 @@ and optional face-pressure arrays. It writes numbered body VTP files with the
 source XYZ rotation order. `write_paraview_vtp_mooring(...)` accepts one
 `(time, node, xyz)` position history and one `(time, segment)` tension history
 per MoorDyn line; it interpolates both to the requested frames and writes
-numbered line VTP files. Wave, body, and mooring serialization have focused
+numbered line VTP files. After writing the frames,
+`write_paraview_response(times, directory, model_name=..., bodies=...)`
+writes the `.pvd` time-series collection and `bodies.txt` display settings;
+each body entry supplies its name, RGB color, and opacity. Wave, body, and
+mooring serialization have focused
 MATLAB source gates. For a regular-wave body with logged world-CG poses,
 `wecsim.nonlinearHydro.regular_wave_mesh_pressures(...)` calculates the three
 face-pressure arrays from its STL mesh, wave settings, and output times; pass
