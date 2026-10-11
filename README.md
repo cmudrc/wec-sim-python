@@ -26,15 +26,14 @@ python3 -m venv .venv
 
 For a regular install without cloning, use
 `python -m pip install git+https://github.com/cmudrc/wec-sim-python.git`.
-Both methods install the `wecsim` import and the `wecsim` and
-`wecsim-reference` commands.
+Both methods install the `wecsim` import and the `wecsim` command.
 
 For development, run the production-code parity checks with:
 
 ```sh
 .venv/bin/python -m pip install pytest
 .venv/bin/python -m compileall -q wecsim
-.venv/bin/python -m pytest -q tests/test_wave_parity.py tests/test_body_io.py tests/test_oswec_standalone.py tests/test_rm3_standalone.py tests/test_reference_cli.py tests/test_general_dynamics.py tests/test_case_dynamics.py tests/test_pto_connections.py tests/test_python_api.py
+.venv/bin/python -m pytest -q tests/test_wave_parity.py tests/test_body_io.py tests/test_oswec_standalone.py tests/test_rm3_standalone.py tests/test_general_dynamics.py tests/test_case_dynamics.py tests/test_pto_connections.py tests/test_python_api.py
 ```
 
 **WEC-Sim-Python** is Sungjun Won's Python port of
@@ -1846,22 +1845,6 @@ published RM3 wave, float/spar body, and MoorDyn line VTP frames are
 paired numerically on saved MATLAB body histories. The body and line checks use saved MATLAB poses and
 line histories; the original-step independent coupled motion remains unpaired.
 
-To run a supported case without writing Python code:
-
-```sh
-python -m wecsim.reference rm3 --h5 path/to/rm3.h5 --output results/rm3.csv
-python -m wecsim.reference rm3 --h5 path/to/rm3.h5 --output results/rm3-b2b.csv --b2b
-python -m wecsim.reference oswec --h5 path/to/oswec.h5 --output results/oswec.csv --seed 7
-python -m wecsim.reference sphere --h5 path/to/sphere.h5 --output results/sphere.csv --initial-displacement 1
-```
-
-Each command writes a numeric CSV and an adjacent JSON file with the model
-settings, HDF5 SHA-256 hash, NumPy version, and Git revision/dirty state.
-For RM3, `--b2b` includes cross-body hydrodynamic coupling as in the
-published B2B Case 2; the default matches B2B Case 1.
-The original README projected completion in
-August 2022; that date is no longer applicable. See [PARITY.md](PARITY.md)
-for the tested scope and next reference case.
 
 ## Design direction
 
