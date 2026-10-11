@@ -1061,6 +1061,17 @@ variation, and no residual MATLAB source variation appeared with a fixed
 fit. The independent Python-versus-MATLAB trajectory gap remains open;
 these component gates do not establish full-duration closed-loop parity.
 
+Using that **same** fixed-fit HDF5 and the saved source phases, an independent
+225 s Python run with a 0.001 s plant step and the published 0.05 s control
+step differs from the now-repeatable MATLAB trajectory by at most `0.04091`
+rad float pitch, `0.4296` rad/s pitch speed, `8.175` mm PTO stroke, `2.874`
+N m torque command, and `13.87` N axial PTO force. The pitch gap already
+reaches `0.003416` rad during the zero-PTO interval before 10 s; the source
+and Python commands are then both exactly zero. These figures use the HDF5
+and source records in the fixed-fit artifact above, with the public runner
+and `tests/test_wavestar_nmpc_source.py`'s independent-loop configuration.
+They are a stable-source diagnostic, **not** a full closed-loop parity gate.
+
 The WaveStar NMPC solver-step audit in
 `tools/wavestar_nmpc_step_audit.py` compares the first 30 s of the pinned
 published `ode8`/0.05 s source run with independent Python closed loops at
@@ -1073,8 +1084,16 @@ Python steps versus `2.874` N m against MATLAB. The source/Python pitch gap
 already reaches `0.00342` rad before any controller acts. Along with the
 derived fine-step MATLAB comparison above, this argues against Python plant
 step refinement as the remedy for the published coarse-step trajectory gap.
-It does not isolate every difference in the active closed loop or establish
-full NMPC parity. The physical Python plant and PTO laws remain unchanged.
+A 50 ms Python RK4 pre-control solve changes the peak source pitch gap by
+only `4.7e-6` rad relative to the 1 ms solve. A fixed 50 ms DOP853 solve
+with 1 ms-resolved incident forcing agrees with the fine Python solution to
+roughly `1e-12` rad, while retaining the `0.003416` rad source gap. DOP853
+is stable on all 92 pinned radiation states at that step; RK4 has 18 unstable
+linear modes there and its full coarse-step closed loop becomes nonfinite.
+This rules out simply switching Python to the published 50 ms step or a
+standard eighth-order step as a numerical remedy. It does not isolate every
+difference in MATLAB's active Simscape integration or establish full NMPC
+parity. The physical Python plant and PTO laws remain unchanged.
 
 A [derived fine-step WaveStar NMPC activation run](https://github.com/cmudrc/wec-sim-python/pull/143)
 extends the 0.001 s `ode4` source through 15.2 s with the published sea,
