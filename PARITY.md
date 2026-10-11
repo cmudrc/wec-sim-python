@@ -1018,15 +1018,21 @@ remains unpaired.
 
 The pinned WaveStar radiation fit is sensitive to linkage angle. In the
 [published NMPC source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37876181993),
-the float reaches `0.3814` rad pitch. Projecting the fitted state-space
+the float reaches about `0.3813`–`0.3814` rad pitch across two source exports.
+Projecting the fitted state-space
 transfer through the same pivot Jacobian used by the Python runner gives
 `-0.0996` N m s/rad damping at the lowest BEM frequency (`0.2` rad/s), while
 the source BEM table gives `+0.0996` N m s/rad. The fit gives `+0.1821`
-N m s/rad at neutral pitch. The source exceeds `0.25` rad at 21 of its 4,501
-saved samples, first at 43.9 s. This is a frozen-pose, low-frequency
+N m s/rad at neutral pitch. The two exports exceed `0.25` rad at 20 and 21
+of their 4,501 saved samples, first at 43.9 s. This is a frozen-pose, low-frequency
 passivity diagnostic; it does not explain the motion gap before control or
 prove that the fit causes the later closed-loop difference. The independent
-closed-loop gate remains open.
+closed-loop gate remains open. A [fresh focused source run](https://github.com/cmudrc/wec-sim-python/actions/runs/38148087160)
+passed this new fit diagnostic but its existing independent full-loop check
+stopped when the Python NMPC optimizer returned `ABNORMAL`. Its post-control
+MATLAB trajectory also differs slightly from the earlier export despite
+identical wave components. These observations need a separate reproducibility
+investigation before claiming a full-duration controller gate.
 
 The WaveStar NMPC solver-step audit in
 `tools/wavestar_nmpc_step_audit.py` compares the first 30 s of the pinned
