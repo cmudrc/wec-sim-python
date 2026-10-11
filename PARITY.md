@@ -1166,8 +1166,9 @@ between output samples, so neither interpolation reconstructs the actual
 internal force history. This record cannot isolate the entire plant gap from
 actuator input timing and is not a parity gate.
 
-Prescribing the **saved MATLAB torque request** instead lets the corrected
-actuator hold torque while projecting force through the Python rod pose at
+A [fresh pinned R2025b prescribed-torque gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38179306134)
+uses the **saved MATLAB torque request** to let the corrected actuator hold
+torque while projecting force through the Python rod pose at
 every 1 ms plant step and intermediate RK4 state. On the same fixed-fit 225 s
 run, replaying that request on the saved MATLAB stroke reproduces logged
 axial force within `5.7e-11` N. With independently advanced Python motion,
