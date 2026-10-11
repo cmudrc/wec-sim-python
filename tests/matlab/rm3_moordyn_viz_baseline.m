@@ -117,5 +117,19 @@ for frame = [1, 101, 801]
         'The published RM3 ParaView wave frame is missing');
     copyfile(sourceFile, fullfile(waveVtpDir, filename));
 end
+% Keep matching actual body frames for a prescribed-pose mesh check.
+for iBody = 1:2
+    bodyName = string(body(iBody).name);
+    bodyDir = sprintf('body%d_%s', iBody, bodyName);
+    destination = fullfile(outDir, 'published_vtp', bodyDir);
+    mkdir(destination);
+    for frame = [1, 101, 801]
+        filename = sprintf('%s_%d.vtp', bodyName, frame);
+        sourceFile = fullfile(simu.paraview.path, bodyDir, filename);
+        assert(isfile(sourceFile), ...
+            'The published RM3 ParaView body frame is missing');
+        copyfile(sourceFile, fullfile(destination, filename));
+    end
+end
 close_system('RM3MoorDyn', 0);
 end
