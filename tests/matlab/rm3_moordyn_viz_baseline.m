@@ -102,7 +102,7 @@ assert(numel(frameTimes) == 801 && ...
     'The published MoorDyn VTP frame grid changed');
 for iLine = 1:mooring(1).moorDynLines
     nodeCount = mooring(1).moorDynNodes(iLine);
-    lineRecord = lines.(sprintf('Line%d', iLine));
+    lineRecord = output.moorDyn(1).(sprintf('Line%d', iLine));
     history = zeros(numel(frameTimes), 4 * nodeCount);
     history(:, 1) = frameTimes(:);
     column = 2;
