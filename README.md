@@ -659,8 +659,9 @@ uses `NoWave()` and `radiation_memory=15`. These moving-body layouts have
 no PTO; regular waves require zero heading and a body centered at x=y=0.
 The three-DOF Morison force uses a proper pitch rotation and does not copy
 the pinned MATLAB source function's nonorthogonal rotation. Other moving
-Morison layouts, moving-current wave types, and the normal/tangential coefficient
-mode remain unsupported.
+Morison layouts and moving-current wave types remain unsupported in the public
+runner. A separate prescribed-state diagnostic pairs the source's
+normal/tangential coefficient mode; it does not provide a coupled WEC configuration.
 
 For a heave or other `linear_subspace` device, `JONSWAPWave(2.5, 8,
 seed=1, gamma=3.3)` selects a JONSWAP sea. Omitting `gamma` uses WEC-Sim's
