@@ -63,6 +63,11 @@ class WaveStarNmpcActuator:
         self._torque[:] = [torque, self._torque[0]]
         return float(np.clip(torque, -12, 12) / arm)
 
+    def force_at(self, stroke: float) -> float:
+        """Project the held motor torque through the current rod geometry."""
+        return float(np.clip(self._torque[0], -12, 12)
+                     / self.moment_arm(stroke))
+
 
 class WaveStarNmpcObserver:
     """Replay the published sampled position/velocity filter and Kalman observer.
@@ -341,8 +346,9 @@ class WaveStarNmpcPTO:
 
     The plant advances at ``plant_dt`` while the observer, predictor,
     controller, and actuator update every ``control_dt``. The resulting
-    axial force is held between controller samples. Defaults reproduce the
-    published Sea State 6 control settings with a fine plant step.
+    motor torque is held between controller samples while the axial force
+    follows the moving rod moment arm. Defaults reproduce the published
+    Sea State 6 control settings with a fine plant step.
     """
 
     def __init__(
@@ -402,5 +408,11 @@ class WaveStarNmpcPTO:
             self._previous_command = command
             self._command_time.append(instant)
             self._command_torque.append(command)
+        else:
+            self._force = self.actuator.force_at(stroke)
         self._step += 1
         return self._force
+
+    def force_at_stroke(self, stroke: float) -> float:
+        """Read the current torque at an intermediate plant stroke."""
+        return self.actuator.force_at(stroke)

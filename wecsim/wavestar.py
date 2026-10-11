@@ -231,6 +231,9 @@ def run_wavestar_published(
     sample_count = steps // output_stride + 1
     history = np.zeros((sample_count, count + 2))
     pto_forces = np.zeros(sample_count)
+    # The NMPC motor holds torque; its axial force follows rod geometry.
+    force_at_stroke = (None if pto_controller is None else
+                       getattr(pto_controller, "force_at_stroke", None))
     for index in range(steps + 1):
         pto_force = (0. if pto_controller is None else pto_controller.step(
             linkage.pto_stroke(state[0]),
@@ -244,15 +247,24 @@ def run_wavestar_published(
         time = index * dt
         first = derivative(state, incident.excitation_force[2 * index],
                            time, pto_force)
-        second = derivative(state + dt * first / 2,
+        second_state = state + dt * first / 2
+        second_force = (pto_force if force_at_stroke is None else
+                        force_at_stroke(linkage.pto_stroke(second_state[0])))
+        second = derivative(second_state,
                             incident.excitation_force[2 * index + 1],
-                            time + dt / 2, pto_force)
-        third = derivative(state + dt * second / 2,
+                            time + dt / 2, second_force)
+        third_state = state + dt * second / 2
+        third_force = (pto_force if force_at_stroke is None else
+                       force_at_stroke(linkage.pto_stroke(third_state[0])))
+        third = derivative(third_state,
                            incident.excitation_force[2 * index + 1],
-                           time + dt / 2, pto_force)
-        fourth = derivative(state + dt * third,
+                           time + dt / 2, third_force)
+        fourth_state = state + dt * third
+        fourth_force = (pto_force if force_at_stroke is None else
+                        force_at_stroke(linkage.pto_stroke(fourth_state[0])))
+        fourth = derivative(fourth_state,
                             incident.excitation_force[2 * index + 2],
-                            time + dt, pto_force)
+                            time + dt, fourth_force)
         state += dt * (first + 2 * second + 2 * third + fourth) / 6
 
     angle = history[:, 0]

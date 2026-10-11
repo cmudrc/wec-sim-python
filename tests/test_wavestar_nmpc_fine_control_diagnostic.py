@@ -47,6 +47,9 @@ class _ResistivePto:
         self.sample += 1
         return force
 
+    def force_at_stroke(self, stroke):
+        return self.actuator.force_at(stroke)
+
 
 def test_fine_step_resistive_control_diagnostic():
     components = _source("components")

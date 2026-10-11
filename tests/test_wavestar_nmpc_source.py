@@ -354,6 +354,35 @@ def test_nmpc_unforced_plant_motion_diagnostic():
     )) < .2
 
 
+def test_nmpc_moving_arm_short_window_step_refinement():
+    """The moving PTO arm must not create plant-step drift before 30 s."""
+    components = _source("components")
+    sea = jonswap_equal_energy_components(
+        HYDRO, significant_height=.1042, peak_period=1.836,
+        directions=np.array([0.]), spreading=np.array([1.]),
+        gamma=3.3, phase=components[:, 3, None],
+    )
+    runs = []
+    for plant_dt in (.001, .0005):
+        pto = WaveStarNmpcPTO(plant_dt=plant_dt, control_dt=.05)
+        response = run_wavestar_published(
+            HYDRO, sea, dt=plant_dt, end_time=30, ramp_time=25,
+            g=9.80665, pto_controller=pto,
+            output_stride=round(.05 / plant_dt),
+        )
+        runs.append((response, pto))
+    (coarse, coarse_pto), (fine, fine_pto) = runs
+    np.testing.assert_allclose(coarse.time, fine.time, rtol=0, atol=1e-10)
+    assert np.max(np.abs(
+        coarse_pto.command_torque[coarse.time >= 15]
+    )) > 1
+    assert np.max(np.abs(coarse.angle - fine.angle)) < 1e-5
+    assert np.max(np.abs(
+        coarse_pto.command_torque - fine_pto.command_torque
+    )) < 1e-3
+    assert np.max(np.abs(coarse.pto_force - fine.pto_force)) < .01
+
+
 def test_nmpc_independent_full_closed_loop_diagnostic():
     """Expose the published coarse-solver gap without tuning plant physics."""
     source_float = _source("WECCCOMP_Nonlinear_Model_Predictive_body1")
