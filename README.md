@@ -1222,10 +1222,13 @@ and the configured PTO. The STL determines equilibrium mass when
 Current validation covers one pure-heave body with its center of gravity at
 horizontal origin in zero-direction regular waves, with either constant or
 convolution radiation.
-The published ode45 variants are tracked separately: MATLAB applies mesh
-buoyancy from the preceding 0.05 s sample while the Python mode evaluates it
-at the current state. Their motion comparisons are recorded as solver
-diagnostics in [PARITY.md](PARITY.md), not as ode45 numerical parity.
+The ode45 variants also have full 150 s paired comparisons after refining
+MATLAB `simu.dt` and independently running Python at 0.005 s. Maximum heave
+differences are 1.855 mm for Regular and 1.933 mm for RegularCIC across all
+30,001 samples. The published 0.05 s MATLAB run still applies mesh buoyancy
+from the preceding saved state, while Python evaluates it at the current
+state. Its original trajectory remains unpaired; the refined-step results
+and limits are documented in [PARITY.md](PARITY.md).
 Other motions and sea states raise an error until their mesh force and dynamics
 checks are paired with MATLAB.
 
