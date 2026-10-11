@@ -89,8 +89,7 @@ def regular_morison_source_force(
     This source-law diagnostic does not solve a coupled WEC trajectory. It
     retains the source's rotation and local-point
     angular kinematics so that a comparison can expose source-specific
-    behavior. Option 2 requires one body-local axis per element and retains
-    the source's squared tangential body-acceleration projection.
+    behavior. Option 2 requires one body-local axis per element.
     """
     state = [np.asarray(value, dtype=float) for value in
              (position, velocity, acceleration)]
@@ -192,9 +191,9 @@ def regular_morison_source_force(
             fluid_acceleration_t = axis * (
                 axis @ fluid_acceleration / axis_norm_squared
             )
-            # Pinned source squares this scalar before multiplying by the
-            # axis; it is not the physical vector projection.
-            body_acceleration_t = axis * (axis @ body_acceleration / axis_norm)**2
+            body_acceleration_t = axis * (
+                axis @ body_acceleration / axis_norm_squared
+            )
             relative_t = fluid_velocity_t - body_velocity_t
             relative_n = ((fluid_velocity - fluid_velocity_t)
                           - (body_velocity - body_velocity_t))
