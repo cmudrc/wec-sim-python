@@ -1,0 +1,64 @@
+name: MATLAB WaveStar NMPC fixed-fit repeatability
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/wavestar-nmpc-repeatability.yml'
+      - 'tools/wavestar_nmpc_repeatability.py'
+  workflow_dispatch:
+
+jobs:
+  source-repeatability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: |
+            WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive
+            WECCCOMP/hydroData
+            WECCCOMP/geometry
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody Stateflow Control_System_Toolbox Optimization_Toolbox System_Identification_Toolbox Statistics_and_Machine_Learning_Toolbox
+      - name: Save pinned application input
+        run: cp applications/WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive/wecSimInputFile.m "$RUNNER_TEMP/wecSimInputFile.m"
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); reference_model_baseline('WECCCOMP_NMPC_SOURCE')
+      - name: Save first source run and fixed hydro fit
+        run: |
+          mkdir wavestar-repeatability
+          mv matlab-reference-model-output wavestar-repeatability/first
+          sha256sum applications/WECCCOMP/hydroData/wavestar.h5 > wavestar-repeatability/hydro.sha256
+          cp "$RUNNER_TEMP/wecSimInputFile.m" applications/WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive/wecSimInputFile.m
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); reference_model_baseline('WECCCOMP_NMPC_SOURCE')
+      - name: Compare independent source processes on the same fit
+        run: |
+          sha256sum --check wavestar-repeatability/hydro.sha256
+          mv matlab-reference-model-output wavestar-repeatability/second
+          python -m pip install numpy scipy
+          python tools/wavestar_nmpc_repeatability.py wavestar-repeatability/first wavestar-repeatability/second wavestar-repeatability/comparison.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wavestar-nmpc-fixed-fit-repeatability
+          path: |
+            wavestar-repeatability/
+            applications/WECCCOMP/hydroData/wavestar.h5
