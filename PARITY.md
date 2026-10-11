@@ -1041,7 +1041,24 @@ states and forecasts, Python's controller replay differs by at most `0.00782`
 N m (RMS `0.000212` N m) on one export and `6.25e-5` N m (RMS `1.63e-6` N m)
 on the other. The paired controller gates are therefore `0.01` N m peak and
 `0.0003` N m RMS, including the composed observer/predictor/controller path.
-The source-run variation and independent trajectory gap remain unexplained;
+A [fixed-fit R2025b repeatability run](https://github.com/cmudrc/wec-sim-python/actions/runs/38155596820)
+executed the pinned 225 s application twice in separate MATLAB invocations
+while reusing one generated `wavestar.h5` (checksum verified before the
+second run). Its 500 sea components and 4,501 wave samples match within
+`1e-12`; float pitch and pitch speed, PTO stroke and axial actuation force,
+and NMPC torque command are exactly equal at every saved sample. All ten
+numeric CSV exports are byte-identical, and all saved controller signal
+arrays are identical; the two `.mat` file headers contain different save
+times. A separate 130 s Python fit-swap audit held the source phases,
+Python plant, and controller fixed while changing only the `body1` radiation
+state-space group between the two earlier generated HDF5 files. The largest
+coefficient difference in its `A` matrix is `3.28e-12`; this swap alone
+changes Python pitch by up to `0.00960` rad and command by `0.425` N m.
+The fit-swapped Python run is exactly equal to a run on the complete second
+HDF5 at all 2,601 saved samples. Thus fit regeneration is sufficient to
+amplify roundoff-scale differences into the observed order of closed-loop
+variation, and no residual MATLAB source variation appeared with a fixed
+fit. The independent Python-versus-MATLAB trajectory gap remains open;
 these component gates do not establish full-duration closed-loop parity.
 
 The WaveStar NMPC solver-step audit in
