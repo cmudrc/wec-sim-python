@@ -574,6 +574,27 @@ positions, `0.7` mm/s and `5e-5` rad/s speeds, and `1.5` kN or `10` kN m
 MoorDyn loads. These load gates are looser than the fully refined pair;
 original-step independent Python motion parity remains unestablished.
 
+A [full 80 s MaxStep-only run](https://github.com/cmudrc/wec-sim-python/actions/runs/38117328859)
+keeps the same seed-1 sea, `simu.dt=0.01` s, and WEC settings, while setting
+only ode45 `MaxStep=0.0003125` s. It records at 0.01 s and disables ParaView
+output. The 1,000 phases and common wave samples match both prior source
+arms. Relative to the published-step MATLAB run, MaxStep alone changes
+float/spar surge by at most `203.37`/`181.50` mm and MoorDyn pitch moment
+by `101.27` kN m. Refining `simu.dt` as well changes the MaxStep-only run
+by another `4.20`/`4.15` mm in surge and `11.77` kN m in moment. Thus the
+MaxStep effect remains dominant across the full duration, while the other
+source discretizations still matter. An independent physical Python run
+against the MaxStep-only source differs by at most `3.44`/`3.58` mm in
+float/spar surge, `2.45e-5` rad in pitch, `1.56`/`1.14` kN in MoorDyn
+surge/heave force, `10.97` kN m in moment, and `575` N in PTO force.
+The full-trajectory gate checks both bodies' active positions and velocities,
+MoorDyn connection pose, velocity, and loads, and PTO force. Its limits are
+`6` mm surge, `2` mm heave, `5e-5` rad pitch, `1` mm/s and `5e-5` rad/s
+speeds, `2`/`1.5` kN surge/heave force, `15` kN m moment, and `750` N PTO
+force. These are looser than the fully refined pair. This comparison isolates
+the leading source step sensitivity; it does not establish parity with the
+published-step trajectory or prove convergence to a unique 80 s solution.
+
 The same pinned run exports actual published ParaView wave surfaces at 0, 10,
 and 80 s. Python independently rebuilds their 2,000-point grids from the
 exported sea components. All point coordinates match exactly at the source
