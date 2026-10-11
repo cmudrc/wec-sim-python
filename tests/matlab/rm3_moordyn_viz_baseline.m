@@ -131,8 +131,7 @@ for iLine = 1:mooring(1).moorDynLines
     writematrix(history, fullfile(outDir, ...
         sprintf('line%d_vtp_history.csv', iLine)));
 end
-% Retain three actual published-case wave surfaces without uploading all
-% 801 ParaView frames from the 80 s run.
+% Retain the complete published 0.1 s VTP scene for a full-history gate.
 waveVtpDir = fullfile(outDir, 'published_vtp', 'waves');
 mkdir(waveVtpDir);
 assert(simu.paraview.startTime == 0 && ...
@@ -150,20 +149,20 @@ writematrix([waves.omega(:), waves.wavenumber(:), ...
     fullfile(outDir, 'wave_vtp_components.csv'));
 copyfile(fullfile(simu.paraview.path, 'ground.txt'), ...
     fullfile(outDir, 'published_vtp', 'ground.txt'));
-for frame = [1, 101, 801]
+for frame = 1:801
     filename = sprintf('waves_%d.vtp', frame);
     sourceFile = fullfile(simu.paraview.path, 'waves', filename);
     assert(isfile(sourceFile), ...
         'The published RM3 ParaView wave frame is missing');
     copyfile(sourceFile, fullfile(waveVtpDir, filename));
 end
-% Keep matching actual body frames for a prescribed-pose mesh check.
+% Keep every actual body frame for a prescribed-pose mesh check.
 for iBody = 1:2
     bodyName = string(body(iBody).name);
     bodyDir = sprintf('body%d_%s', iBody, bodyName);
     destination = fullfile(outDir, 'published_vtp', bodyDir);
     mkdir(destination);
-    for frame = [1, 101, 801]
+    for frame = 1:801
         filename = sprintf('%s_%d.vtp', bodyName, frame);
         sourceFile = fullfile(simu.paraview.path, bodyDir, filename);
         assert(isfile(sourceFile), ...

@@ -164,26 +164,30 @@ def test_published_moordyn_line_vtp_history(tmp_path):
     assert max_tension_error < 0.1
 
 
-def test_published_body_vtp_frames_on_source_poses(tmp_path):
-    """Pair actual body meshes; source poses are inputs to this writer check."""
+def test_published_body_vtp_history_on_source_poses(tmp_path):
+    """Pair every body mesh frame; source poses are writer inputs."""
     reference = Path(REFERENCE)
     apps = Path(APPLICATIONS)
-    frames = (1, 101, 801)
     for body_index, (name, stl) in enumerate(
         (("float", "float.stl"), ("spar", "plate.stl")), start=1,
     ):
         states = _read(f"body{body_index}.csv")
         assert states.shape == (801, 25)
-        np.testing.assert_allclose(states[[0, 100, 800], 0], [0, 10, 80], atol=1e-9)
+        np.testing.assert_allclose(states[:, 0], np.arange(801) * .1,
+                                   rtol=0, atol=1e-8)
         mesh = trimesh.load_mesh(
             apps / "_Common_Input_Files/RM3/geometry" / stl, process=False,
         )
         paths = ParaviewClass(None).write_paraview_vtp(
-            [0, 10, 80], tmp_path, body_name=name,
+            states[:, 0], tmp_path, body_name=name,
             vertices=mesh.vertices, faces=mesh.faces,
-            poses=states[[0, 100, 800], 1:7], body_index=body_index,
+            poses=states[:, 1:7], body_index=body_index,
         )
-        for frame, path in zip(frames, paths):
+        assert len(paths) == 801
+        max_center_error = 0.0
+        max_vertex_error = 0.0
+        max_area_error = 0.0
+        for frame, path in enumerate(paths, start=1):
             source = (reference / "published_vtp" / f"body{body_index}_{name}"
                       / f"{name}_{frame}.vtp")
             expected = _body_facets(source)
@@ -195,8 +199,18 @@ def test_published_body_vtp_frames_on_source_poses(tmp_path):
             actual_center = actual.mean(axis=1)
             distance, match = cKDTree(actual_center).query(source_center)
             assert len(np.unique(match)) == len(match)
-            _bound(distance, np.zeros_like(distance), 3e-5,
-                   f"published {name} VTP frame {frame} facet centers")
+            max_center_error = max(max_center_error, float(np.max(distance)))
+            # Compare all three vertices of every matched facet, independent
+            # of each STL reader's winding and starting-vertex convention.
+            vertex_distance = np.linalg.norm(
+                expected[:, :, None, :] - actual[match][:, None, :, :],
+                axis=3,
+            )
+            max_vertex_error = max(
+                max_vertex_error,
+                float(np.max(np.min(vertex_distance, axis=2))),
+                float(np.max(np.min(vertex_distance, axis=1))),
+            )
             source_area = np.linalg.norm(np.cross(
                 expected[:, 1] - expected[:, 0],
                 expected[:, 2] - expected[:, 0],
@@ -205,12 +219,22 @@ def test_published_body_vtp_frames_on_source_poses(tmp_path):
                 actual[:, 1] - actual[:, 0],
                 actual[:, 2] - actual[:, 0],
             ), axis=1) / 2
-            _bound(actual_area[match], source_area, 1e-3,
-                   f"published {name} VTP frame {frame} facet areas")
+            max_area_error = max(max_area_error, float(np.max(
+                np.abs(actual_area[match] - source_area),
+            )))
+        print(f"published {name} VTP maximum facet-center difference: "
+              f"{max_center_error:.8g} m")
+        print(f"published {name} VTP maximum facet-vertex difference: "
+              f"{max_vertex_error:.8g} m")
+        print(f"published {name} VTP maximum facet-area difference: "
+              f"{max_area_error:.8g} m²")
+        assert max_center_error < 3e-5
+        assert max_vertex_error < 3e-5
+        assert max_area_error < 1e-3
 
 
-def test_published_irregular_wave_vtp_frames(tmp_path):
-    """Pair selected actual RM3 ParaView wave meshes from the 80 s case."""
+def test_published_irregular_wave_vtp_history(tmp_path):
+    """Pair every actual RM3 wave mesh from the 80 s application."""
     reference = Path(REFERENCE)
     parameters = _read("wave_vtp_parameters.csv").ravel()
     assert parameters.shape == (7,)
@@ -234,6 +258,9 @@ def test_published_irregular_wave_vtp_frames(tmp_path):
     wave.waterDepth = depth
     wave.viz = {"numPointsX": int(nx), "numPointsY": int(ny)}
     source_wave = _read("wave.csv")
+    assert source_wave.shape == (801, 2)
+    np.testing.assert_allclose(source_wave[:, 0], np.arange(801) * .1,
+                               rtol=0, atol=1e-8)
     origin = np.array([
         ParaviewClass(wave).waveElevationGrid(
             time, np.array([[0.]]), np.array([[0.]]),
@@ -243,23 +270,28 @@ def test_published_irregular_wave_vtp_frames(tmp_path):
     _bound(origin, source_wave[[0, 100, 800], 1],
            1e-10, "published VTP component origin elevation")
     paths = ParaviewClass(wave).write_paraview_vtp_wave(
-        [0, 10, 80], tmp_path, domain_size=domain,
+        source_wave[:, 0], tmp_path, domain_size=domain,
         num_moordyn=int(moorings),
     )
+    assert len(paths) == 801
     assert (tmp_path / "ground.txt").read_text() == (
         reference / "published_vtp/ground.txt"
     ).read_text()
-    for frame, path in zip((1, 101, 801), paths):
+    max_point_error = 0.0
+    for frame, path in enumerate(paths, start=1):
         actual_points, actual_cells, actual_offsets = _wave_vtp(path)
         source_points, source_cells, source_offsets = _wave_vtp(
             reference / "published_vtp/waves" / f"waves_{frame}.vtp"
         )
         assert actual_points.shape == source_points.shape == (2000, 3)
         assert actual_cells.shape == source_cells.shape == (999, 4)
-        _bound(actual_points, source_points, 1.01e-5,
-               f"published wave VTP frame {frame} points")
+        max_point_error = max(max_point_error, float(np.max(
+            np.abs(actual_points - source_points),
+        )))
         np.testing.assert_array_equal(actual_cells, source_cells)
         np.testing.assert_array_equal(actual_offsets, source_offsets)
+    print(f"published wave VTP maximum point difference: {max_point_error:.8g} m")
+    assert max_point_error < 1.01e-5
 
 
 def test_published_traditional_sea_and_body_excitation():
