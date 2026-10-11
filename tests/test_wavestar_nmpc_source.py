@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 
+import h5py
 import numpy as np
 import pytest
 from scipy.io import loadmat
@@ -32,6 +33,57 @@ def _source(name):
     )
     assert np.isfinite(values).all()
     return values
+
+
+def test_nmpc_source_radiation_fit_at_observed_high_pitch():
+    """The source fit can add low-frequency energy at its own large pitch."""
+    source_float = _source("WECCCOMP_Nonlinear_Model_Predictive_body1")
+    assert source_float.shape == (4501, 25)
+    high_pitch = float(np.max(source_float[:, 5]))
+    assert .35 < high_pitch < .4
+    high_samples = source_float[:, 5] > .25
+    assert 0 < np.count_nonzero(high_samples) < .01 * len(source_float)
+    assert source_float[np.flatnonzero(high_samples)[0], 0] > 15
+
+    with h5py.File(HYDRO) as h5:
+        omega = float(np.asarray(h5["simulation_parameters/w"]).ravel()[0])
+        rho = float(np.asarray(h5["simulation_parameters/rho"]).item())
+        center = np.asarray(h5["body1/properties/cg"]).ravel()
+        radiation = h5["body1/hydro_coeffs/radiation_damping"]
+        bem = np.asarray(radiation["all"])[:, :, 0] * rho
+        fit = radiation["state_space"]
+        order = np.asarray(fit["it"], dtype=int)
+        matrix_a = np.asarray(fit["A/all"])
+        matrix_b = np.asarray(fit["B/all"])
+        matrix_c = np.asarray(fit["C/all"]) * rho
+    assert .15 < omega < .25
+
+    def projected_damping(angle):
+        jacobian = np.zeros(6)
+        jacobian[[0, 2]] = WaveStarLinkage().point_velocity(
+            center[[0, 2]], angle, 1.,
+        )
+        jacobian[4] = 1
+        fitted = 0j
+        for output in (0, 2, 4):
+            for input_axis in (0, 2, 4):
+                count = order[output, input_axis]
+                if count:
+                    state_a = matrix_a[output, input_axis, :count, :count]
+                    state_b = matrix_b[output, input_axis, :count, 0]
+                    state_c = matrix_c[output, input_axis, 0, :count]
+                    fitted += (jacobian[output] * jacobian[input_axis]
+                               * state_c @ np.linalg.solve(
+                                   1j * omega * np.eye(count) - state_a,
+                                   state_b,
+                               ))
+        return fitted.real, float(jacobian @ bem @ jacobian)
+
+    neutral_fit, _ = projected_damping(0.)
+    high_fit, high_bem = projected_damping(high_pitch)
+    assert neutral_fit > .1
+    assert high_fit < -.05
+    assert high_bem > .05
 
 
 def test_nmpc_published_sea_and_excitation():
