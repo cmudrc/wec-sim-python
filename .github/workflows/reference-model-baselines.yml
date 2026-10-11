@@ -639,10 +639,12 @@ jobs:
       - run: python -m pytest -q tests/test_wave_markers_parity.py -k RM3
         if: matrix.model == 'WAVE_MARKERS_RM3'
         env:
+          WEC_SIM_APPLICATIONS_DIR: applications
           WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
       - run: python -m pytest -q tests/test_wave_markers_parity.py -k OSWEC
         if: matrix.model == 'WAVE_MARKERS_OSWEC'
         env:
+          WEC_SIM_APPLICATIONS_DIR: applications
           WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
       - run: python -m pytest -q tests/test_sphere_passive_parity.py
         if: matrix.model == 'Sphere_Passive'

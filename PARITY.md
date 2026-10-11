@@ -21,6 +21,7 @@ the production Python code. The live wave comparison passed on 6 October
 | Irregular Bretschneider equal-energy binning | Original MATLAB-era test constants | Production `WaveClass` agrees after NumPy/SciPy API updates. This is historical compatibility only: current MATLAB WEC-Sim rejects the `BS` option. |
 | Wave-surface grid for no-wave, regular, and directional irregular waves | Current MATLAB `waveClass.waveElevationGrid` equations | Implemented and checked for regular and two-direction irregular cases. |
 | Published RM3 and OSWEC `Wave_Markers` elevations | Pinned MATLAB Applications inputs with 25 world XY markers, 400 s regular waves, and focused R2025b runs for [RM3](https://github.com/cmudrc/wec-sim-python/actions/runs/37934252549) and [OSWEC](https://github.com/cmudrc/wec-sim-python/actions/runs/37932186068) | Public `RegularWave.elevation_at` independently samples the source marker locations from wave height, period, direction, BEM water depth, and 100 s ramp. Against all 4,001 times and 25 markers per case, maximum elevation errors are `3.76e-11` m (RM3, 200 m depth) and `7.12e-14` m (OSWEC, 10.9 m depth), below a `1e-10` m gate. Source origin elevation and marker ordering are checked separately. Marker glyph style, size, color, and visualization files remain unpaired. |
+| Published RM3 and OSWEC `Wave_Markers` body and PTO motion | The same pinned 400 s R2025b runs as the marker elevations above, including both bodies and the published linear PTO in each case | The public `WEC.floating_joint` and `WEC.fixed_hinge` builders independently advance the 2.5 m, 8 s regular-wave devices over all 4,001 samples. The paired gate checks all six position and velocity channels on both bodies and PTO stroke, speed, force, and absorbed power, with MATLAB's opposite power sign accounted for. RM3 maximum active errors are 36.8 mm body surge, 4.18 mm heave, `6.72e-4` rad pitch, 5.04 mm PTO stroke, 4.74 kN force, and 5.72 kW absorbed power; OSWEC maxima are 20.7 mm body surge, 7.91 mm heave, `0.00444` rad pitch, `0.00444` rad PTO stroke, 39.3 N m torque, and 19.8 W absorbed power. Inactive axes and the fixed OSWEC base agree within `1e-10` in their units. Both full-duration local pairs pass explicit per-channel limits. Marker glyph rendering remains unpaired. |
 | RM3 HDF5 hydrodynamic input | Original `rm3.h5` | Both bodies load, including their names and water depth, under NumPy 2. |
 | Current RM3 and OSWEC HDF5 hydrodynamic inputs | Pinned current MATLAB core examples | Both bodies in each model load and complete regularCIC or directional irregular preprocessing with finite restoring, added-mass, excitation, and radiation arrays. This is input compatibility, not motion parity. |
 | RM3 regular-wave force preprocessing | Original MATLAB-generated `body_1_test` constants and files | Production `BodyClass` agrees for restoring stiffness, added mass, excitation, and radiation IRF; the RM3 runner now completes preprocessing. |
@@ -399,8 +400,8 @@ OSWEC PassiveYawRegression and the published variable-hydrodynamics irregular
 yaw run, published-step RM3 MoorDyn coupled motion, and WaveStar NMPC. The
 ode45 nonlinear-hydro
 and OWC OrificeModel physical-force paths have source-timing or force-routing
-limits described below. Numerical `Wave_Markers` elevation is paired, while
-glyph rendering is not. A passing upstream MATLAB application test only
+limits described below. Numerical `Wave_Markers` elevation and body/PTO motion
+are paired, while glyph rendering is not. A passing upstream MATLAB application test only
 establishes that WEC-Sim ran; it does not establish Python parity.
 
 | Published case(s) | Evidence and remaining work |
