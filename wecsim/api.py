@@ -169,6 +169,7 @@ class LinearPTO:
     control: DeclutchingControl | LatchingControl | None = None
     direct_drive: SimpleDirectDrive | None = None
     linear_generator: DirectLinearGenerator | None = None
+    velocity_control_gain: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -539,7 +540,11 @@ class LinearGeneratorHistory:
 
 @dataclass(frozen=True)
 class PTOHistory:
-    """PTO stroke in metres, or angle in radians for a rotational PTO."""
+    """PTO stroke in metres, or angle in radians for a rotational PTO.
+
+    Force and absorbed power include a configured velocity-control gain;
+    the optional control histories expose that contribution separately.
+    """
 
     stroke: np.ndarray
     velocity: np.ndarray
@@ -547,6 +552,8 @@ class PTOHistory:
     absorbed_power: np.ndarray
     direct_drive: DirectDriveHistory | None = None
     linear_generator: LinearGeneratorHistory | None = None
+    control_force: np.ndarray | None = None
+    control_absorbed_power: np.ndarray | None = None
 
 
 @dataclass(frozen=True)
@@ -903,7 +910,8 @@ class WEC:
             pretension: float | None = None,
             control: DeclutchingControl | LatchingControl | None = None,
             direct_drive: SimpleDirectDrive | None = None,
-            linear_generator: DirectLinearGenerator | None = None) -> LinearPTO:
+            linear_generator: DirectLinearGenerator | None = None,
+            velocity_control_gain: float = 0.0) -> LinearPTO:
         if any(existing.name == name for existing in
                (*self.ptos, *self.rotational_ptos)):
             raise ValueError(f"PTO name already exists: {name}")
@@ -913,29 +921,37 @@ class WEC:
             if (isinstance(point, BodyPoint)
                     and not any(point.body is body for body in self.bodies)):
                 raise ValueError("PTO body point must belong to this WEC")
+        try:
+            gain = (float(velocity_control_gain)
+                    if not isinstance(velocity_control_gain, bool) else np.nan)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("velocity_control_gain must be finite and nonnegative") from exc
+        if not np.isfinite(gain) or gain < 0:
+            raise ValueError("velocity_control_gain must be finite and nonnegative")
         if control is not None:
             if not isinstance(control, (DeclutchingControl, LatchingControl)):
                 raise TypeError("PTO control must be a supported control law")
-            if damping or stiffness or equilibrium_position is not None or pretension is not None:
+            if (damping or stiffness or equilibrium_position is not None
+                    or pretension is not None or gain):
                 raise ValueError("sampled PTO control sets its own gain and has no spring")
         if direct_drive is not None:
             if not isinstance(direct_drive, SimpleDirectDrive):
                 raise TypeError("direct_drive must be SimpleDirectDrive")
-            if (control is not None or damping or stiffness
+            if (control is not None or damping or stiffness or gain
                     or equilibrium_position is not None or pretension is not None
                     or linear_generator is not None):
                 raise ValueError("direct drive supplies its own PTO force")
         if linear_generator is not None:
             if not isinstance(linear_generator, DirectLinearGenerator):
                 raise TypeError("linear_generator must be DirectLinearGenerator")
-            if (control is not None or damping or stiffness
+            if (control is not None or damping or stiffness or gain
                     or equilibrium_position is not None or pretension is not None):
                 raise ValueError("linear generator supplies its own PTO force")
         pto = LinearPTO(
             name, from_point, to_point,
             tuple(axis) if axis is not None else None,
             damping, stiffness, equilibrium_position, pretension, control,
-            direct_drive, linear_generator,
+            direct_drive, linear_generator, gain,
         )
         self.ptos.append(pto)
         return pto
@@ -1423,6 +1439,12 @@ class WEC:
                     )
                 )) if isinstance(pto, LinearPTO) and pto.linear_generator is not None
                  else None),
+                (extras[f"pto_{pto.name}_control_force"]
+                 if isinstance(pto, LinearPTO) and pto.velocity_control_gain
+                 else None),
+                (extras[f"pto_{pto.name}_control_absorbed_power"]
+                 if isinstance(pto, LinearPTO) and pto.velocity_control_gain
+                 else None),
             )
             for pto in (*self.ptos, *self.rotational_ptos)
         }
@@ -1469,6 +1491,8 @@ class WEC:
                         else pto.damping),
             "stiffness": pto.stiffness,
         }
+        if pto.velocity_control_gain:
+            item["velocity_control_gain"] = pto.velocity_control_gain
         if pto.control is not None:
             if isinstance(pto.control, DeclutchingControl):
                 item["control"] = {

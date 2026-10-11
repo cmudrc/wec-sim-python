@@ -24,6 +24,7 @@ class LinearPTOConnection:
     stiffness: float
     equilibrium_position: float
     control: DeclutchingControl | LatchingControl | None = None
+    velocity_control_gain: float = 0.0
 
     def force(self, coordinate: np.ndarray, speed: np.ndarray) -> np.ndarray:
         if self.control is not None:
@@ -31,7 +32,7 @@ class LinearPTOConnection:
         stroke = coordinate @ self.stroke_jacobian
         stroke_speed = speed @ self.stroke_jacobian
         return (-self.stiffness * (stroke - self.equilibrium_position)
-                - self.damping * stroke_speed)
+                - (self.damping + self.velocity_control_gain) * stroke_speed)
 
     def outputs(self, coordinate: np.ndarray,
                 speed: np.ndarray, *,
@@ -45,14 +46,22 @@ class LinearPTOConnection:
                  else np.asarray(force_override, dtype=float))
         if force.shape != stroke_speed.shape:
             raise ValueError("controlled PTO force must match the time grid")
-        absorbed_power = (self.damping * stroke_speed**2
+        absorbed_power = ((self.damping + self.velocity_control_gain) * stroke_speed**2
                           if force_override is None else -force * stroke_speed)
-        return (
+        output = (
             (f"{prefix}_stroke", stroke),
             (f"{prefix}_velocity", stroke_speed),
             (f"{prefix}_force", force),
             (f"{prefix}_absorbed_power", absorbed_power),
         )
+        if self.velocity_control_gain:
+            control_force = -self.velocity_control_gain * stroke_speed
+            output += (
+                (f"{prefix}_control_force", control_force),
+                (f"{prefix}_control_absorbed_power",
+                 self.velocity_control_gain * stroke_speed**2),
+            )
+        return output
 
 
 def _object(value, name, required, allowed):
@@ -130,7 +139,7 @@ def build_linear_ptos(specs, maps, centers, names, coordinate_names=None, *,
         spec = _object(raw, f"ptos[{position}]", {"name", "kind"},
                        {"name", "kind", "from", "to", "axis", "damping",
                         "stiffness", "equilibrium_position", "pretension",
-                        "control", "coordinate"}
+                        "control", "coordinate", "velocity_control_gain"}
                        | ({"direct_drive"} if allow_direct_drive else set())
                        | ({"linear_generator"} if allow_linear_generator else set()))
         name = spec["name"]
@@ -171,19 +180,24 @@ def build_linear_ptos(specs, maps, centers, names, coordinate_names=None, *,
             raise ValueError("PTO kind must be linear_actuator or coordinate_torque")
         coefficient = _number(spec.get("damping", 0),
                               f"ptos[{position}].damping", nonnegative=True)
+        control_gain = _number(
+            spec.get("velocity_control_gain", 0),
+            f"ptos[{position}].velocity_control_gain", nonnegative=True,
+        )
         spring = _number(spec.get("stiffness", 0),
                          f"ptos[{position}].stiffness", nonnegative=True)
-        if not coefficient and not spring and not (
+        if not coefficient and not spring and not control_gain and not (
                 (allow_direct_drive and "direct_drive" in spec)
                 or (allow_linear_generator and "linear_generator" in spec)):
             raise ValueError("PTO actuator needs damping or stiffness")
         if "direct_drive" in spec and (
-                coefficient or spring or "control" in spec
+                coefficient or spring or control_gain or "control" in spec
                 or "equilibrium_position" in spec or "pretension" in spec
                 or "linear_generator" in spec):
             raise ValueError("direct drive supplies its own PTO force")
         if "linear_generator" in spec and (
                 spec["kind"] != "linear_actuator" or coefficient or spring
+                or control_gain
                 or "control" in spec or "equilibrium_position" in spec
                 or "pretension" in spec):
             raise ValueError("linear generator supplies its own actuator force")
@@ -207,7 +221,7 @@ def build_linear_ptos(specs, maps, centers, names, coordinate_names=None, *,
                 {"kind", "declutch_time", "minimum_on_time", "latch_time",
                  "latch_damping", "minimum_normal_time"},
             )
-            if not coefficient or spring or equilibrium:
+            if not coefficient or spring or equilibrium or control_gain:
                 raise ValueError("sampled PTO control needs damping and no spring")
             kind = control_spec["kind"]
             if kind == "declutching":
@@ -240,10 +254,11 @@ def build_linear_ptos(specs, maps, centers, names, coordinate_names=None, *,
             else:
                 raise ValueError("unsupported PTO control kind")
         connection = LinearPTOConnection(name, jacobian, coefficient,
-                                         spring, equilibrium, control)
+                                         spring, equilibrium, control,
+                                         control_gain)
         connections.append(connection)
         stiffness += spring * np.outer(jacobian, jacobian)
         if control is None:
-            damping += coefficient * np.outer(jacobian, jacobian)
+            damping += (coefficient + control_gain) * np.outer(jacobian, jacobian)
         bias += spring * equilibrium * jacobian
     return tuple(connections), stiffness, damping, bias

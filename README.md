@@ -692,6 +692,14 @@ from horizontal current, while the Python axial element projects that current
 onto its rotated axis. The coupled moving-current trajectory is not paired;
 the measured differences are in [PARITY.md](PARITY.md).
 
+A linear PTO can use separate native damping and passive velocity feedback.
+For the paired Sphere control case, set `damping=100_000`,
+`stiffness=50_000`, and `velocity_control_gain=860_870` on `wec.pto`.
+The gain applies force opposite PTO speed, while
+`result.ptos["main"].control_force` and `control_absorbed_power` report its
+contribution separately. Total PTO force and absorbed power include both
+the native damper and this control term.
+
 For pure heave, define only the heave coordinate. Still-water free decay
 uses `NoWave()` and `radiation_memory=15`. These moving-body layouts accept a
 linear PTO defined by body-local attachment points; regular waves require zero
