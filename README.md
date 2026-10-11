@@ -1790,8 +1790,9 @@ face-pressure arrays from its STL mesh, wave settings, and output times; pass
 its `hydrostatic`, `nonlinear_wave`, and `linear_wave` fields to the body VTP
 writer. The actual published OSWEC nonlinear visualization flap pressures
 and independently advanced pitch motion have full-duration MATLAB gates.
-All 801 published RM3 wave, float/spar body, and MoorDyn line VTP frames
-are paired numerically. The body and line checks use saved MATLAB poses and
+All 1,201 published OSWEC wave, flap, and base VTP frames and all 801
+published RM3 wave, float/spar body, and MoorDyn line VTP frames are
+paired numerically on saved MATLAB body histories. The body and line checks use saved MATLAB poses and
 line histories; the original-step independent coupled motion remains unpaired.
 
 To run a supported case without writing Python code:
@@ -1817,5 +1818,6 @@ The Python dynamics engine uses independent coordinates for each supported
 constraint layout, avoiding numerical joint drift. New layouts and force
 models need explicit MATLAB comparisons before they are called supported.
 Wave, body, and mooring VTP serialization now have pinned MATLAB source gates;
-the published OSWEC nonlinear flap pressure fields have a separate paired
-gate. Full application visualization and BEMIO conversion remain future work.
+the published OSWEC nonlinear flap pressure fields and full VTP history have
+separate paired gates. Other application visualization and BEMIO conversion
+remain future work.
