@@ -1,0 +1,105 @@
+name: RM3 MoorDyn visualization parity
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/rm3-moordyn-viz-parity.yml'
+      - 'tests/matlab/rm3_moordyn_viz_baseline.m'
+      - 'tests/matlab/rm3_moordyn_viz_dense_diagnostic.m'
+      - 'tests/matlab/rm3_moordyn_viz_step_refinement.m'
+      - 'tests/test_rm3_moordyn_viz_source.py'
+      - 'tools/analyze_rm3_moordyn_feedback.py'
+      - 'wecsim/api.py'
+      - 'wecsim/caseDynamics.py'
+      - 'wecsim/irregularWave.py'
+  workflow_dispatch:
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: |
+            _Common_Input_Files/RM3
+            Paraview_Visualization/RM3_MoorDyn_Viz
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/MoorDyn
+          ref: 34c0703c9a5b74fd2cc5bb52caaadaaa356d675e
+          path: MoorDyn
+      - name: Install pinned MoorDyn and compatible C++ runtime
+        run: |
+          mkdir -p matlab-ref/source/functions/moorDyn
+          cp -r MoorDyn/* matlab-ref/source/functions/moorDyn/
+          cp MoorDyn/linux_libraries/x86_64/libmoordyn.so* matlab-ref/source/functions/moorDyn/
+          library=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
+          test -f "$library"
+          strings "$library" | grep GLIBCXX_3.4.32
+          echo "LD_PRELOAD=$library" >> "$GITHUB_ENV"
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); rm3_moordyn_viz_baseline
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); rm3_moordyn_viz_dense_diagnostic
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); rm3_moordyn_viz_step_refinement
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e . pytest
+      - name: Diagnose source added-mass feedback
+        run: |
+          python tools/analyze_rm3_moordyn_feedback.py \
+            matlab-rm3-moordyn-viz \
+            applications/_Common_Input_Files/RM3/hydroData/rm3.h5 \
+            applications/Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt \
+            matlab-ref/source/functions/moorDyn/libmoordyn.so \
+            rm3-moordyn-viz-feedback
+          python tools/analyze_rm3_moordyn_feedback.py --prefix seed2_dense \
+            matlab-rm3-moordyn-viz \
+            applications/_Common_Input_Files/RM3/hydroData/rm3.h5 \
+            applications/Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt \
+            matlab-ref/source/functions/moorDyn/libmoordyn.so \
+            rm3-moordyn-viz-feedback-seed2
+          python tools/analyze_rm3_moordyn_feedback.py --prefix step0025 \
+            matlab-rm3-moordyn-viz \
+            applications/_Common_Input_Files/RM3/hydroData/rm3.h5 \
+            applications/Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt \
+            matlab-ref/source/functions/moorDyn/libmoordyn.so \
+            rm3-moordyn-viz-feedback-step0025
+      - run: python -m pytest -q -s tests/test_rm3_moordyn_viz_source.py
+        env:
+          WEC_SIM_APPLICATIONS_DIR: applications
+          WEC_SIM_MATLAB_RM3_VIZ_DIR: matlab-rm3-moordyn-viz
+          WEC_SIM_MOORDYN_LIBRARY: matlab-ref/source/functions/moorDyn/libmoordyn.so
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rm3-moordyn-viz-source
+          path: |
+            matlab-rm3-moordyn-viz/
+            rm3-moordyn-viz-feedback/
+            rm3-moordyn-viz-feedback-seed2/
+            rm3-moordyn-viz-feedback-step0025/
+            applications/_Common_Input_Files/RM3/hydroData/rm3.h5

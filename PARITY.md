@@ -343,7 +343,7 @@ establishes that WEC-Sim ran; it does not establish Python parity.
 | RM3 `B2B_Case5` and `B2B_Case6`; state-space setting in `Radiation_Force_Options` | MATLAB trajectories, fitted-transfer diagnostics, and source-motion radiation-force replays exist for all three settings. The pinned fit has negative low-frequency damping in the active joint coordinates. No physically validated Python state-space trajectory pair exists. |
 | OSWEC `PassiveYawRegression` | Three phase realizations of the published irregular hold show up to `83.6%` disagreement in 250 s PTO work after event divergence, despite source-force replay matching all six channels. Prescribing only the source heading-update sequence restores tight yaw and PTO-work gates across all three seeds. In a pinned three-step audit, MATLAB PTO work changes by `-47.8%` then `+31.9%` for seed 1 and `-19.2%` then `+102.0%` for seed 3 as `dt` halves from `0.01` to `0.005` to `0.0025` s, with identical incident waves. Native full-trajectory parity and a converged held-heading reference remain unestablished. |
 | OSWEC `Variable_Hydro/Passive_Yaw`, published 600 s irregular sea | The [R2025b published run](https://github.com/cmudrc/wec-sim-python/actions/runs/38035515976) and Python agree on the sea, saved-state heading selection, and six excitation components, but native heading events diverge after 54.73 s. The 600 s native Python run differs by up to `0.1103` rad yaw and `9.05%` PTO work. Prescribing MATLAB's saved heading choices reduces those to `0.00868` rad and `0.0081%`; that is a diagnostic, not native trajectory parity. |
-| RM3 `Paraview_Visualization/RM3_MoorDyn_Viz` | The pinned MATLAB application [runs in CI](https://github.com/cmudrc/wec-sim-python/actions/runs/37885063313); Python’s independent RM3 MoorDyn body/PTO/mooring trajectory is paired through the separate `Mooring/MoorDyn` case above. The ParaView output files themselves have no direct Python gate. |
+| RM3 `Paraview_Visualization/RM3_MoorDyn_Viz` | The pinned 80 s R2025b application now exports its Traditional 1000-bin sea, both bodies, PTO, MoorDyn connection, and three fairlead tensions in a [focused source comparison](https://github.com/cmudrc/wec-sim-python/actions/runs/38084526959). On multiple independent phase realizations, Python wave elevation agrees within `1.8e-14` m and all body excitation components within `3.7e-8` N or N m. A derived 10 s run supplies every source MoorDyn connection pose and speed; replaying those through the same pinned native library reproduces all six source load components within `0.01` N or N m on both Linux and macOS. The same seeded MATLAB source motion and mooring forces are identical at all shared samples with `dtOut=0.01` and the published `0.1` s; the output interval does not explain the gap. Full coupled motion remains unpaired: the original 80 s case has shown up to `234` mm float surge error across repeated random seas, while independent seed-1 and seed-2 derived seas show `191` and `20.1` mm over 10 s despite matching waves and native mooring loads on saved poses. Halving Python's physical time step from `0.01` to `0.005` s changes seed-1 surge by at most `0.35` mm, far below its source gap. The Python implicit-added-mass default and the coupled gates remain unchanged. Three actual published wave VTP frames at 0, 10, and 80 s now match Python exactly in a [focused R2025b gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38101364860); body and MoorDyn VTP histories remain unpaired. |
 | OSWEC `Desalination` | The pinned 300 s Simscape Fluids application runs under R2025b; [expanded source baseline](https://github.com/cmudrc/wec-sim-python/actions/runs/37838787789) records flap, PTO, pressure, flow, and mechanical-power traces. Its 250-bin incident sea, six flap excitation components, and body-local rod motion pair with Python over all 30,001 samples; maximum excitation error is below `1e-6` N or N m. The source Morison drag law matches 605 sampled flap states within `1e-6` N or N m after accounting for the source's logged-force sign. The source PTO actuation force exactly follows the measured cylinder force with a one-step delay over the full trajectory. Given MATLAB's inlet pressure, the Python osmotic valve and resistance reproduce all 30,001 permeate-flow values within `2.1e-12` m³/s. Given the source accumulator flow and startup pressure, the Python gas-volume and hard-stop law reconstructs all 30,001 pressure values within `1e-3` Pa using the source's backward Euler flow step. The initial inferred liquid volume is negative because the source starts its network far below the 3 MPa precharge while allowing finite hard-stop penetration. Given the source chamber pressures and rod speed, the Python ideal cylinder reproduces all 30,001 rod-force samples within `1e-7` N and both port-flow traces within `1e-12` m³/s; the measured source force has the opposite sign. The published hydraulic junction balance closes within `2e-15` m³/s, including the relief branch. The high-pressure network now advances from saved rod speed alone, without measured source pressure or branch flows. Over all 30,001 samples it gates pressure within `500` Pa (source pressure reaches 5.6 MPa), permeate, brine, and recovered flow within `1e-5` m³/s each, and relief/accumulator flow within `3e-3` m³/s each. Using the source feed flow instead, the network reconstructs the first 6001 pressure states within `0.01` Pa. This also provides a stronger prescribed-rod-motion component gate than the coupled check below. A four-valve cylinder model using the published passive-orifice settings predicts chamber pressures and rod force from Python high pressure and the saved rod speed. The pinned legacy solver alternates raw chamber pressure at the 0.01 s sample rate while valve flow remains smooth; over 20% of valve 1 samples log flow against the pressure drop. Pointwise chamber pressure and force are therefore not claimed as paired. After a 0.1 s mean, the independent rod-force error is below 100 kN RMS; net rod work differs by less than 3% over 300 s. Raw rod-force disagreement remains above 1 MN RMS. The independent 300 s Python runner now couples incident sea, flap motion, radiation memory, source-convention Morison drag, four-valve chamber force, and high-pressure dynamics. With the pinned HDF5 and saved MATLAB random phases, but no source forces or state trajectories as inputs, its paired gates are maximum flap-pitch error below `0.02` rad, pitch-speed error below `0.01` rad/s, body-center error below `0.1` m, rod-speed error below `0.02` m/s, high-pressure error below `40` kPa, rod-stroke error below `0.05` m, 0.1 s mean rod-force error below `150` kN RMS, and net rod-work error below `2%` over 300 s. The source-specific Morison convention and one-step PTO actuation delay are confined to this case runner. The raw chamber pressure/force artifact remains unpaired. The source also permits chamber gauge pressure below −15 MPa, so this numerical comparison is not evidence of physical cavitation behavior. The two published OSWEC PTO-Sim hydraulic crank applications are covered above. |
 | OSWEC `Paraview_Visualization/OSWEC_NonLinear_Viz`; RM3 and OSWEC `Wave_Markers` rendering | Python writes regular-wave VTP surfaces with the source 2D grid, quad connectivity, and `ground.txt` metadata; a two-frame, six-vertex pinned MATLAB R2025b gate compares point coordinates and polygons. A second source-writer gate compares a translated and XYZ-rotated triangular body mesh, cell areas, and all three pressure arrays over two frames. The published OSWEC nonlinear visualization case now has a full 120 s pressure pair on its actual 1,042-facet flap STL and 1,201 saved source poses. Python independently regenerates the regular sea and evaluates facetwise elevation, hydrostatic pressure, and nonlinear and linear Froude–Krylov pressure. Maximum MATLAB/Python differences are `4.4e-11`, `1.8e-10`, and `1.7e-10` Pa, respectively, against a `1e-8` Pa paired gate. The source pose is an input to this pressure check; the independently advanced nonlinear flap motion is paired against a refined MATLAB run below. The full published VTP scene remains unpaired. The 25 numerical elevation histories in each published Wave Markers case are paired above; their rendered marker glyphs and actual RM3 MoorDyn line histories remain unpaired. |
 | WaveStar `WECCCOMP/WECCCOMP_Fault_Implementation` | [Fresh R2025b source runs](https://github.com/cmudrc/wec-sim-python/actions/runs/37871185462) complete the pinned 141.2 s application and export five bodies, four PTOs, the 500-bin sea, hydrodynamic forces, PTO actuation, and the controller's true and faulted position at every 0.001 s step. Python reproduces the saved sea and all six excitation channels within `1e-12` in their units. The float and arm retain the base case's one-coordinate linkage: body positions, speeds, and B-to-C PTO stroke/speed match source states within `1e-12`. The public `StribeckFriction` law reconstructs all three joint-friction torques within `1e-12` N m, including the pivot's 55–115 s fault window. Given the realized position-sensor disturbance and source stroke, `WaveStarFaultController` reconstructs axial motor force within `1e-7` N after the published discrete filters and actuator transfer. The measured sensor has approximately 3% exact dropouts and 0.003 rad noise. The public `run_wavestar_fault_published` uses only that exogenous stochastic disturbance and the saved wave phases as inputs; it independently advances its own 92 radiation states, arm angle, friction, sensor geometry, controller state, and PTO force at 0.001 s. Across two distinct random realizations and all 14,121 output samples, its worst float-pitch error is `9.16e-5` rad, pitch-speed error `0.00702` rad/s, float-position error 44 µm, PTO-stroke error 18.3 µm, axial-force error 0.128 N, and radiation-force error 0.0026 N or N m. The paired gates allow up to `2e-4` rad pitch, `0.015` rad/s speed, `0.1` mm body position, `0.04` mm PTO stroke, `0.3` N axial force, and `0.01` N or N m radiation force. These are numerical gates for the source's fitted radiation and sampled controller; the broader `WEC` radiation default remains unchanged. |
@@ -351,6 +351,177 @@ establishes that WEC-Sim ran; it does not establish Python parity.
 | OWC `FloatingOWC` | The pinned [source and air-train run](https://github.com/cmudrc/wec-sim-python/actions/runs/37895804527) completes the published 500 s `ode45` case and saves 50,001 samples of both bodies, PTO, wave, six-component MoorDyn coupling, available fairlead tensions, turbine speed/control, efficiency, and pneumatic/turbine power. BEMIO generates its two-body, 12-DOF HDF5. Python now pairs the regular-wave excitation on all 12 body channels over all 50,001 samples; the largest absolute difference is `4.04e-6` N or N m, below a `1e-5` gate. This checks hydrodynamic input only, with no source force history passed to Python. The published run leaves body-to-body coupling disabled, so each body applies `6×6` added-mass and damping blocks despite the shared HDF5; Python matches those logged matrices within `1e-5` and `1e-7` respectively. A corrected HDF5 hydrostatic orientation matches both full `6×6` source matrices within `1e-5`, including asymmetric yaw couplings. The source radiation-force record also equals its damping matrix times body velocity within `1e-8` N or N m. The published nine-line configuration logs five named `FairTen` channels. The state-bus exporter records chamber pressure, water-column displacement and speed, and rotor speed; Simulink names the bus speed field `signal4`. Public `FloatingOwcColumnJoint` now reconstructs the water-column center pose and velocity from the saved floater state and PTO axial stroke/speed at all 50,001 samples within `1e-10` m, m/s, or rad/s. Its world heave relative to the column equilibrium center and world heave speed reproduce both chamber input signals within `1e-10`. This is a prescribed-floater-and-PTO kinematic gate. A separate two-coordinate Python heave solve advances both bodies from the pinned wave and HDF5 coefficients using only the saved MoorDyn vertical force and chamber pressure as external histories: over 500 s, maximum floater/column heave differences are `0.00516`/`0.00981` m and heave-speed differences are `0.00258`/`0.00355` m/s (gates `0.015` m and `0.006` m/s). This reduced model omits surge and rotation and prescribes rather than advances MoorDyn and chamber state; it is a mechanical-motion diagnostic, not full floating OWC parity. Given only the saved water-column displacement and speed after initialization, public `FloatingOwcChamber` and `FloatingOwcTurbine` advance the coupled chamber pressure and rotor speed over all 50,001 samples. Local ARM64 maximum differences are `0.0121` Pa pressure and `0.000501` rad/s speed; RMS differences are `0.00416` Pa and `0.000263` rad/s. Linux x86 gives `0.0124` Pa pressure RMS on identical source data. The explicit gates are `0.05` Pa and `0.002` rad/s maximum, `0.02` Pa and `0.001` rad/s RMS. From locally advanced states, maximum differences are `0.0195` W for logged turbine load power, `0.141` W pneumatic power, `5.01e-5` N m load torque, and `9.81e-6` turbine efficiency; power gates allow `0.1` W and `0.5` W. Evaluated directly on saved pressure and speed, the fitted Wells curves and control law reproduce each logged turbine output within `1e-7` in its units. This is a prescribed-water-column-motion air-train comparison. A separate fully coupled seven-coordinate Python trajectory with live MoorDyn, chamber, and turbine feedback is now gated below. |
 | Other/dynamic: `MOST` | A focused pinned MATLAB reader gate compares Python's decoding of the checked-in 20,750-step TurbSim `.bts` file at selected grid points and with spatial checks at every time. A second source gate executes the published `RunTurbsim.m` on a 1,000-frame excerpt and compares all 249 output times, three velocity components, ten X planes, and 12×12 YZ grid points with Python's lazy advection view; the maximum difference is exactly zero. A third gate compares the six-component force and all three horizontal/vertical fairlead tensions from the pinned direct `nonLinearStaticMooring.m` at ten translated and rotated poses. Observed maximum differences are below `1e-5` N force, `1.5e-4` N m moment, and `5e-6` N tension; the paired gates are `1e-3` N, `1e-2` N m, and `1e-3` N respectively. A [fourth pinned MATLAB gate](https://github.com/cmudrc/wec-sim-python/actions/runs/37957379862) extracts the active BEM rotor function from `MOST_Lib.slx`, generates its IEA 15 MW blade inputs, and compares Python's three-blade root forces and moments at five hub/wind states, including moving and rotated hubs and spatially varying wind. The maximum observed component difference is `1.5e-8` N or N m, below the absolute `1e-4` gate. The published input sets `nonlinearStaticData.flag=1`, leaves `lookupTableFlag=0`, and sets `aeroLoadsType=1` for BEM; its active mooring block is `MooringNLStatic`. The generated mooring and aerodynamic lookup tables are not used by this case. These gates establish wind input, frozen-turbulence time shift, direct static catenary force, and isolated BEM blade loads. The 10 s rotor gate below advances turbine state from prescribed platform motion. A six-coordinate runner couples it to the platform over two pinned 10 s JONSWAP seas (4 m/seed 1 and 6 m/seed 2); the 30 and 60 s developed-sea gates below extend the 6 m condition beyond its wave ramp; a separate 12 m/s constant-wind gate exercises nonzero initial pitch. The published 1,000 s coupled case now has a local independent trajectory comparison and a [passing full-duration source gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38071234135). Other wind/controller regimes remain unpaired. The WaveStar base and fault applications and both WaveBot applications are paired separately above. |
 | Other/dynamic: both `Nonlinear_Hydro/ode45` cases and `OWC/OrificeModel` | The nonlinear-hydro ode45 cases retain source force-timing gaps. The OrificeModel physical coupled path diverges late, while an explicit source-convention force route passes 130 s body/PTO gates; this does not validate the source air model beyond its Mach threshold. |
+
+The [RM3 MoorDyn visualization force export](https://github.com/cmudrc/wec-sim-python/actions/runs/38085085794)
+records acceleration, excitation, radiation, added mass, restoring, Morison,
+linear damping, and total hydrodynamic force at every 0.01 s step of the
+derived 10 s sea. The signed components reconstruct the reported total to
+less than `1e-7` N or N m for both bodies. The source's added-mass output is
+the applied force after its Simscape mass adjustment, not simply the original
+HDF5 `A_inf` times reported acceleration: at `0.01 s`, the float's reported
+surge component is `+2.257 MN`, while original `A_inf * acceleration` is
+`-0.0793 MN`. The source coefficient shifts `2.837 million kg` into adjusted
+body mass and uses delayed acceleration feedback. Comparing the logged
+hydrodynamic-force column directly with Python's physical added-mass term
+would therefore misidentify a reporting convention as a dynamics defect.
+After undoing the source's rotational-force postprocessing, the adjusted
+rigid inertia projected onto the RM3 joint agrees with the logged
+hydrodynamic, PTO, and MoorDyn generalized forces across all 1,001 samples:
+maximum residual is `1.37e-6` N or N m. At startup the source's shifted mass
+and zero delayed-feedback state give float/spar surge accelerations of
+`-0.183/-0.00725` m/s². With the original HDF5 added mass implicit, those
+same initial applied forces predict `-0.526/-0.200` m/s², close to Python's
+first-step mean `-0.523/-0.199` m/s². This establishes the initial source
+mass-feedback transient; it does not establish that the transient causes the
+entire trajectory gap. On the same 10 s sea, the opt-in output-step
+`simulink_delay` approximation has `0.198` m float-surge error versus `0.191`
+m for the physical implicit solver. The coupled RM3 trajectory gate remains
+red; matching the source's variable-step delayed feedback requires further
+evidence before changing Python's physical default.
+The reproducible
+[source-driven counterfactual](tools/analyze_rm3_moordyn_feedback.py)
+projects the difference between
+the logged delayed added-mass force and the force from current acceleration
+through the four-coordinate joint, then applies that prescribed residual to
+Python's physical solver with live MoorDyn. On this seeded 10 s sea, its
+float-surge error falls from `0.191` m to `0.136` m when the correction stops
+at `0.1` s, `0.0215` m at `0.5` s, and `0.00637` m at `1` s; applying it for
+all 10 s gives `0.00407` m. Thus the first second of the source's numerical
+mass feedback explains most of this particular motion difference. The
+correction depends on the saved MATLAB acceleration and force history; it is
+an attribution experiment, **not** an independent Python parity result or a
+candidate default force model.
+The [second-seed R2025b run](https://github.com/cmudrc/wec-sim-python/actions/runs/38087382937)
+independently reproduces all 1,000 MATLAB random phases from `phaseSeed=2`,
+then pairs wave elevation, six-component excitation, source force balance,
+and adjusted-mass joint balance. Its 10 s float-surge difference is `20.1` mm
+with the physical Python solver. Applying the same source-driven correction
+for only the first `0.1`, `0.5`, or `1` s reduces the final difference to
+`11.9`, `3.02`, or `1.57` mm; correction for all 10 s gives `1.54` mm.
+The separate seed supports startup mass-feedback attribution without
+providing an independent replacement for MATLAB's delayed feedback or
+closing the published coupled-motion gate.
+
+A [source maximum-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38088631075)
+holds the seed-1 sea, `ode45`, `dtOut=0.01` s, hydrodynamics, PTO, and native
+MoorDyn input fixed while changing only MATLAB `simu.dt`, which sets
+Simulink's `MaxStep`. At `0.01`, `0.005`, and `0.0025` s, all 1,000 random
+phases and all 1,001 saved wave samples are identical. MATLAB's 10 s float
+surge is `0.860672`, `1.083537`, and `1.084102` m; spar surge is
+`1.348353`, `1.548801`, and `1.549752` m. Thus the published-step to half-step
+change is `223` mm float and `200` mm spar, while the next halving changes
+them by only `0.565` and `0.951` mm. Python's physical implicit-mass path at
+`0.01` s has float surge `1.051404` m: its difference from the `0.0025` s
+MATLAB run is `32.7` mm, versus `190.7` mm from the original `0.01` s MATLAB
+run. The physical Python `0.01` to `0.005` s step change was below `0.35` mm
+on this sea. The coarse MATLAB source trajectory is therefore strongly
+maximum-step-sensitive. These two refinements do not prove convergence of
+all output channels or isolate which internal wave, solver, or MoorDyn
+substep causes the sensitivity. They also do not explain the remaining
+`32.7` mm; the independent
+coupled-motion gate stays red, and Python's physical default is unchanged.
+The [refined-force gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38089549994)
+also saves all six force components on both finer source runs. Their logged
+force sums and adjusted-mass four-coordinate balances close to within
+`1.2e-6` N or N m, and Python independently regenerates the source phases,
+wave, and excitation. Against the `0.0025` s MATLAB trajectory, the physical
+Python path differs by `32.7` mm float and `30.4` mm spar surge at 10 s.
+Applying the **source-derived** delayed-mass residual to Python for only the
+first `0.1` s reduces those final differences to `3.61` and `3.41` mm;
+applying it throughout 10 s gives `4.22` and `3.97` mm. The refined case's
+remaining difference is therefore also dominated by the source's initial
+mass-feedback transient. This correction uses MATLAB's saved acceleration
+and force, so it remains an attribution diagnostic, not an independently
+generated parity trajectory or a reason to change the physical default.
+
+The independent physical Python solver was also refined on this same
+`0.0025` s source sea, using the pinned native MoorDyn library and HDF5 but
+no saved source force or motion as input. Halving Python's step from `0.0025`
+to `0.00125` s changes either body's position by at most `0.109` mm and speed
+by at most `0.032` mm/s over 10 s; a
+[paired Linux run](https://github.com/cmudrc/wec-sim-python/actions/runs/38097663337)
+confirms the same maxima within rounding. The focused test gates those changes
+at `0.25` mm and `0.1` mm/s. The float's final surge difference from the
+finer MATLAB source changes only from `32.17` to `32.07` mm. Selecting the
+opt-in output-step delayed-mass scheme instead gives `30.29` and `31.13` mm
+at the two Python steps, so refining that approximation does not close the
+source gap either. These independent runs rule out coarse Python stepping
+as the main explanation for the refined-source mismatch; the strict
+published coupled-motion gate remains open.
+
+A [third source step refinement](https://github.com/cmudrc/wec-sim-python/actions/runs/38098351547)
+on the same 10 s seed-1 sea halves MATLAB's ode45 maximum step again to
+`0.00125` s. All saved phases and wave samples still match, and the source
+force sum and adjusted-mass joint balance gates pass. The float/spar surge
+changes by `37.59`/`34.75` mm relative to the `0.0025` s source, after the
+preceding `0.005` to `0.0025` s halving changed them by only `0.72`/`0.95` mm
+at most. This nonmonotonic change rules out treating the earlier small
+step difference as convergence. Python's independent physical `0.00125` s
+run is within `5.52`/`4.85` mm float/spar surge of this latest MATLAB run at
+10 s. The source MoorDyn pitch moment changes by up to `37.60` kN m between
+the last two MATLAB steps; Python's physical `0.0025` to `0.00125` s change
+is at most `1.00` kN m. Against the latest source, the independent Python
+moment still differs by `8.79` kN m, above the `2` kN m published-case gate.
+The closer motion agreement is not a validated converged pair. The published
+80 s coupled-motion gate still fails, and the Python physical default remains
+unchanged.
+
+A [fourth source coupling-step refinement](https://github.com/cmudrc/wec-sim-python/actions/runs/38102253800)
+halves `simu.dt` to `0.000625` s, changing both ode45 MaxStep and MoorDyn's
+call interval. The source sea and logged force balances still agree. Relative
+to `0.00125` s, source float/spar surge changes by up to `5.99`/`5.21` mm
+and MoorDyn pitch moment by `9.69` kN m over 10 s; source convergence remains
+unproven. An independent Python physical run at `0.00125` s, without saved
+source motion or forces as inputs, matches this refined source within `0.466`/
+`0.360` mm float/spar surge, `5.19e-6` rad pitch, `132`/`104` N MoorDyn
+surge/heave force, and `0.906` kN m MoorDyn pitch moment on local ARM64.
+Explicit paired gates check both bodies' active positions and velocities and
+the MoorDyn connection pose, velocity, and force: `2` mm or `5e-5` rad
+positions, `0.5` mm/s or `5e-5` rad/s speeds, and `500` N or `2` kN m loads.
+This is a derived 10 s
+numerical pair, not convergence proof or full published-case parity; the
+physical default and the red 80 s gate are unchanged.
+
+A [fifth and final short-case source refinement](https://github.com/cmudrc/wec-sim-python/actions/runs/38103660538)
+halves `simu.dt` to `0.0003125` s on the same sea. The `0.000625` and
+`0.0003125` s MATLAB trajectories differ by at most `0.195`/`0.218` mm
+float/spar surge, `1.09e-6` rad pitch, and `1.391` kN m MoorDyn pitch
+moment. All active body and mooring pose, speed, and load changes pass the
+same explicit limits as the Python pair. Against the finest source, an
+independent physical Python run at `0.00125` s differs by at most `0.271`/
+`0.142` mm float/spar surge, `6.16e-6` rad pitch, `110`/`90` N mooring
+surge/heave force, and `0.813` kN m mooring pitch moment on local ARM64.
+The gates cover the complete 10 s active trajectories, not only final values.
+This supports the derived fine-step physical dynamics over that sea at the
+declared numerical resolution. It does not validate every source output or
+the original `simu.dt=0.01` s, 80 s published trajectory, whose paired gates
+remain unmet.
+The published 80 s test keeps its original numerical limits and runs as a
+strict expected failure for its known coupled-motion and MoorDyn channels.
+Wave agreement and any newly failing channel remain required checks; an
+unexpected full pass also fails CI until this limitation is reviewed and the
+expected-failure marker is removed. This scopes the passing short-case result
+without claiming published-case motion parity.
+
+A [deterministic full-duration comparison](https://github.com/cmudrc/wec-sim-python/actions/runs/38099166656)
+runs the published 80 s input with only `waves.phaseSeed=1` added in a
+temporary copy. Its phases, wave, both-body motion, and MoorDyn connection
+loads agree exactly with the first 10 s of the same-seed short source run
+at common samples; the source duration and ParaView setting do not explain
+that initial gap. Against this repeatable 80 s source, independent physical
+Python reaches `203` mm maximum float surge error and `101` kN m maximum
+MoorDyn pitch-moment error, above the existing `10` mm and `2` kN m gates.
+The [focused CI](https://github.com/cmudrc/wec-sim-python/actions/runs/38101364860)
+has 22 passing checks and this one failing coupled-motion
+gate. Seeding makes the failure reproducible but does not establish source
+step convergence or full coupled parity.
+
+The same pinned run exports actual published ParaView wave surfaces at 0, 10,
+and 80 s. Python independently rebuilds their 2,000-point grids from the
+exported sea components. All point coordinates match exactly at the source
+VTP precision; polygon connectivity, offsets, and `ground.txt` also match.
+This establishes selected published wave visualization output, not the body
+or MoorDyn VTP histories or coupled motion.
 
 For the published OSWEC nonlinear visualization case, the pinned source also
 exports flap velocity and all six-component force channels. On all 1,201 saved
@@ -868,7 +1039,8 @@ that reference-environment issue. Targeted R2025b runs now pass the published
 [RM3 MoorDyn](https://github.com/cmudrc/wec-sim-python/actions/runs/37884438725)
 and [RM3 MoorDyn ParaView](https://github.com/cmudrc/wec-sim-python/actions/runs/37885063313)
 tests. The independent Python RM3 body/PTO/mooring trajectory is paired above;
-the published application ParaView files remain unpaired.
+selected published RM3 wave surfaces are paired above; body, mooring, and
+full application ParaView histories remain unpaired.
 
 The `Multiple_Wave_Spectra` test class is excluded by MATLAB because its
 class name does not match its filename. Our harness generates its OSWEC HDF5
@@ -951,9 +1123,10 @@ tolerances.
 
 The inherited `paraviewClass.py` was invalid Python mixed with unfinished
 MATLAB code. It now calculates wave surfaces and writes source-paired wave,
-triangular-body, and mooring-line VTP files. Application-specific geometry
-and pressure histories, actual line histories, and full visualization
-collections remain open.
+triangular-body, and mooring-line VTP files. The actual published RM3 wave
+meshes are paired at three times, and the OSWEC nonlinear flap pressures are
+paired separately. Other application-specific geometry and pressure histories,
+actual line histories, and full visualization collections remain open.
 The older object tests import duplicate copies of classes inside test folders.
 The parity tests here import the production files instead.
 Six inherited files under `tests/test_simulink` still contain unfinished
