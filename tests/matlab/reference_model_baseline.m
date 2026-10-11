@@ -2976,9 +2976,24 @@ blocks = find_system('WaveStar', 'LookUnderMasks', 'all', ...
     'BlockType', 'DiscreteTransferFcn');
 assert(numel(blocks) == 3, ...
     'The WaveStar discrete controller blocks changed');
+filterCount = 0;
+actuatorCount = 0;
 for iBlock = 1:numel(blocks)
-    set_param(blocks{iBlock}, 'SampleTime', '0.05');
+    blockName = string(get_param(blocks{iBlock}, 'Name'));
+    if contains(blockName, "Cmd torque to measured torque dynamics")
+        % Its input now comes from the explicit 50 ms NMPC chart, so the
+        % inherited sample rate is already 50 ms. Forcing it explicitly
+        % inserts an extra controller-tick delay in this derived model.
+        assert(strcmp(get_param(blocks{iBlock}, 'SampleTime'), '-1'), ...
+            'The pinned WaveStar torque block rate changed');
+        actuatorCount = actuatorCount + 1;
+    else
+        set_param(blocks{iBlock}, 'SampleTime', '0.05');
+        filterCount = filterCount + 1;
+    end
 end
+assert(filterCount == 2 && actuatorCount == 1, ...
+    'The WaveStar controller filter blocks changed');
 end
 
 function instrument_sphere_mpc()

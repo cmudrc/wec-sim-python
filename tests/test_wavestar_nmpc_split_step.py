@@ -7,6 +7,8 @@ import numpy as np
 import pytest
 from scipy.io import loadmat
 
+from wecsim import WaveStarNmpcActuator, WaveStarNmpcObserver
+
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
 pytestmark = pytest.mark.skipif(
@@ -59,6 +61,24 @@ def test_split_step_source_rates_and_precontrol_identity():
     np.testing.assert_allclose(command[command_time < 10], 0.,
                                rtol=0, atol=1e-12)
     assert np.max(np.abs(command[command_time >= 10])) > .01
+    _, stroke = _trace(log, "motor_displacement")
+    stroke = stroke.reshape(-1)
+    assert stroke.shape == (15201,)
+    observer = WaveStarNmpcObserver(dt=.05)
+    estimated = np.asarray(log["estimated_states"]["signals"]["values"])
+    replayed_state = np.array([
+        observer.step(stroke[index * 50], command[index - 1] if index else 0.)
+        for index in range(305)
+    ])
+    np.testing.assert_allclose(replayed_state, estimated, rtol=0, atol=1e-9)
+    actuator = WaveStarNmpcActuator()
+    replayed_force = np.array([
+        actuator.step(command[index // 50], point)
+        if index % 50 == 0 else actuator.force_at(point)
+        for index, point in enumerate(pto[:, 3])
+    ])
+    np.testing.assert_allclose(replayed_force, pto[:, 33],
+                               rtol=0, atol=1e-6)
     print("split-step source: plant samples", len(body),
           "controller samples", len(command),
           "active command peak", np.max(np.abs(command[command_time >= 15])))
