@@ -8,6 +8,8 @@ from xml.etree import ElementTree
 import h5py
 import numpy as np
 import pytest
+import trimesh
+from scipy.spatial import cKDTree
 
 from wecsim import JONSWAPWave, MoorDyn, WEC
 from wecsim.irregularWave import (
@@ -83,6 +85,63 @@ def _wave_vtp(path):
         sep=" ", dtype=int,
     )
     return points.reshape(-1, 3), cells.reshape(-1, 4), offsets
+
+
+def _body_facets(path):
+    piece = ElementTree.parse(path).find("./PolyData/Piece")
+    points = np.fromstring(piece.findtext("./Points/DataArray"), sep=" ").reshape(-1, 3)
+    faces = np.fromstring(
+        piece.findtext("./Polys/DataArray[@Name='connectivity']"),
+        sep=" ", dtype=int,
+    ).reshape(-1, 3)
+    assert len(points) == int(piece.get("NumberOfPoints"))
+    assert len(faces) == int(piece.get("NumberOfPolys"))
+    return points[faces]
+
+
+def test_published_body_vtp_frames_on_source_poses(tmp_path):
+    """Pair actual body meshes; source poses are inputs to this writer check."""
+    reference = Path(REFERENCE)
+    apps = Path(APPLICATIONS)
+    frames = (1, 101, 801)
+    for body_index, (name, stl) in enumerate(
+        (("float", "float.stl"), ("spar", "plate.stl")), start=1,
+    ):
+        states = _read(f"body{body_index}.csv")
+        assert states.shape == (801, 25)
+        np.testing.assert_allclose(states[[0, 100, 800], 0], [0, 10, 80], atol=1e-9)
+        mesh = trimesh.load_mesh(
+            apps / "_Common_Input_Files/RM3/geometry" / stl, process=False,
+        )
+        paths = ParaviewClass(None).write_paraview_vtp(
+            [0, 10, 80], tmp_path, body_name=name,
+            vertices=mesh.vertices, faces=mesh.faces,
+            poses=states[[0, 100, 800], 1:7], body_index=body_index,
+        )
+        for frame, path in zip(frames, paths):
+            source = (reference / "published_vtp" / f"body{body_index}_{name}"
+                      / f"{name}_{frame}.vtp")
+            expected = _body_facets(source)
+            actual = _body_facets(path)
+            assert actual.shape == expected.shape
+            # STL readers can number shared vertices differently. Compare
+            # every geometric facet using a one-to-one centroid match.
+            source_center = expected.mean(axis=1)
+            actual_center = actual.mean(axis=1)
+            distance, match = cKDTree(actual_center).query(source_center)
+            assert len(np.unique(match)) == len(match)
+            _bound(distance, np.zeros_like(distance), 3e-5,
+                   f"published {name} VTP frame {frame} facet centers")
+            source_area = np.linalg.norm(np.cross(
+                expected[:, 1] - expected[:, 0],
+                expected[:, 2] - expected[:, 0],
+            ), axis=1) / 2
+            actual_area = np.linalg.norm(np.cross(
+                actual[:, 1] - actual[:, 0],
+                actual[:, 2] - actual[:, 0],
+            ), axis=1) / 2
+            _bound(actual_area[match], source_area, 1e-3,
+                   f"published {name} VTP frame {frame} facet areas")
 
 
 def test_published_irregular_wave_vtp_frames(tmp_path):
