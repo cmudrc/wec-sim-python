@@ -1,0 +1,61 @@
+name: Ellipsoid ode45 nonlinear-hydro refinement
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ellipsoid-ode45-refinement.yml'
+      - 'tests/matlab/ellipsoid_ode45_refinement.m'
+      - 'tests/test_ellipsoid_ode45_refinement.py'
+      - 'wecsim/nonlinearHydro.py'
+      - 'wecsim/caseDynamics.py'
+  workflow_dispatch:
+
+jobs:
+  compare:
+    strategy:
+      fail-fast: false
+      matrix:
+        wave: [Regular, RegularCIC]
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    name: ${{ matrix.wave }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: Nonlinear_Hydro
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); ellipsoid_ode45_refinement('${{ matrix.wave }}')
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e . pytest
+      - run: python -m pytest -q -s tests/test_ellipsoid_ode45_refinement.py
+        env:
+          WEC_SIM_APPLICATIONS_DIR: applications
+          WEC_SIM_ELLIPSOID_ODE45_FINE_DIR: matlab-ellipsoid-ode45-fine
+          WEC_SIM_ELLIPSOID_CASE: ${{ matrix.wave }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ellipsoid-ode45-${{ matrix.wave }}
+          path: |
+            matlab-ellipsoid-ode45-fine/${{ matrix.wave }}/
+            applications/Nonlinear_Hydro/hydroData/ellipsoid.h5
