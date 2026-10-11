@@ -405,9 +405,12 @@ published-step RM3 MoorDyn visualization motion and nonlinear-hydro timing
 also remain qualified. The Python dynamics API still lacks arbitrary Simscape
 joints and general six-DOF mooring and moving Morison layouts.
 
-The [latest full reference-model sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/38121025199)
-completed all 40 MATLAB/Python jobs successfully on `8651a682`. It includes
-the current-profile comparison. The three-seed
+The [latest full reference-model sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/38145501091)
+completed all 42 selected baseline jobs successfully on `38adeee1`. Its
+conditional full-duration end-stops comparison job was skipped because this
+was a push sweep, not the `RM3_END_STOPS_FULL_PAIR` dispatch. The passing
+matrix includes the current-profile comparison, moving normal/tangential
+Sphere, and the Sphere PTO with a moving Morison element. The three-seed
 continuous-yaw control was checked in the separate focused CI runs linked
 above; the RM3 Cases 5/6 fitted-force audit also uses its separate focused
 job. The sweep covers the cases selected by its matrix, not all 63 inventory
