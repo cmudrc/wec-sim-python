@@ -1,0 +1,70 @@
+name: RM3 MoorDyn solver and coupling audit
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/rm3-moordyn-solver-coupling-audit.yml'
+      - 'tests/matlab/rm3_moordyn_solver_coupling_audit.m'
+      - 'tests/matlab/rm3_moordyn_simulate_with_max_step.m'
+      - 'tests/test_rm3_moordyn_solver_coupling_audit.py'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: |
+            _Common_Input_Files/RM3
+            Paraview_Visualization/RM3_MoorDyn_Viz
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/MoorDyn
+          ref: 34c0703c9a5b74fd2cc5bb52caaadaaa356d675e
+          path: MoorDyn
+      - name: Install pinned MoorDyn and compatible C++ runtime
+        run: |
+          mkdir -p matlab-ref/source/functions/moorDyn
+          cp -r MoorDyn/* matlab-ref/source/functions/moorDyn/
+          cp MoorDyn/linux_libraries/x86_64/libmoordyn.so* matlab-ref/source/functions/moorDyn/
+          library=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
+          test -f "$library"
+          strings "$library" | grep GLIBCXX_3.4.32
+          echo "LD_PRELOAD=$library" >> "$GITHUB_ENV"
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); rm3_moordyn_solver_coupling_audit
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e . pytest
+      - run: python -m pytest -q -s tests/test_rm3_moordyn_solver_coupling_audit.py
+        env:
+          WEC_SIM_RM3_SOLVER_COUPLING_AUDIT_DIR: matlab-rm3-solver-coupling-audit
+          WEC_SIM_MATLAB_SOURCE_DIR: matlab-ref/source
+          WEC_SIM_APPLICATIONS_DIR: applications
+          WEC_SIM_MOORDYN_LIBRARY: matlab-ref/source/functions/moorDyn/libmoordyn.so
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rm3-moordyn-solver-coupling-audit
+          path: matlab-rm3-solver-coupling-audit/

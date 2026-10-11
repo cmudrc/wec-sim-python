@@ -416,9 +416,10 @@ them by only `0.565` and `0.951` mm. Python's physical implicit-mass path at
 MATLAB run is `32.7` mm, versus `190.7` mm from the original `0.01` s MATLAB
 run. The physical Python `0.01` to `0.005` s step change was below `0.35` mm
 on this sea. The coarse MATLAB source trajectory is therefore strongly
-maximum-step-sensitive. These two refinements do not prove convergence of
+step-sensitive. These two refinements alone do not prove convergence of
 all output channels or isolate which internal wave, solver, or MoorDyn
-substep causes the sensitivity. They also do not explain the remaining
+substep causes the sensitivity; the later MaxStep-only audit below narrows
+this attribution. They also do not explain the remaining
 `32.7` mm; the independent
 coupled-motion gate stays red, and Python's physical default is unchanged.
 The [refined-force gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38089549994)
@@ -540,13 +541,38 @@ The original 0.01 s MATLAB trajectory differs from the finest MATLAB
 trajectory by up to `203.4` mm float surge and `104.2` kN m MoorDyn pitch
 moment; Python differs from that original by `203.2` mm and `104.0` kN m.
 The common sea and the refined source pair support a numerical-step cause
-for nearly the entire published-step gap on this seed. Because refining
-`simu.dt` changes both ode45 MaxStep and MoorDyn coupling, it does not
-isolate either contribution or prove a unique converged limit. This is
+for nearly the entire published-step gap on this seed. Refining `simu.dt`
+changes ode45 MaxStep, MoorDyn coupling, and wave/radiation discretization
+together; the short isolation audit below separates MaxStep from the other
+changes but does not prove a unique converged 80 s limit. This is
 full-duration **derived fine-step** parity for the named channels, not
 parity with the original published-step trajectory or all fairlead and
 ParaView outputs. The physical Python default and strict expected failure
 for the published-step gate remain unchanged.
+
+A [pinned 10 s MaxStep isolation audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38116072640)
+uses the same 1,000 source phases, wave, output times, and initial states in
+three runs: published `simu.dt=MaxStep=0.01` s; `simu.dt=0.01` s with only
+ode45 `MaxStep=0.0003125` s; and both at `0.0003125` s. The first and last
+traces reproduce the earlier short-case baselines exactly. Refining only
+MaxStep changes float/spar surge by at most `191.4`/`171.6` mm, versus a
+further `0.577`/`0.482` mm when `simu.dt` is refined too. Body pitch changes
+by `0.001774` rad in the MaxStep-only arm versus a further `1.17e-5` rad.
+MoorDyn pitch moment changes by up to `102.0` kN m and then `8.38` kN m.
+Thus ode45 MaxStep accounts for nearly all of this 10 s source surge/pitch
+sensitivity. The residual `simu.dt` change also refines the source wave and
+radiation grids as well as MoorDyn's trigger, so it cannot be attributed to
+MoorDyn alone. Heave and force channels have different sensitivity. Against
+the MaxStep-only source, an independent Python solve uses the pinned sea
+phases, HDF5, and native MoorDyn library without saved source motion or
+forces. Over all 1,001 samples, its largest float/spar surge differences are
+`0.540`/`0.517` mm; spar heave differs by at most `1.60` mm; pitch by
+`5.58e-6` rad; active speed differences stay below `0.47` mm/s. MoorDyn
+connection surge/heave forces differ by at most `1.014`/`0.639` kN and pitch
+moment by `7.68` kN m. The derived 10 s gate allows `2` mm and `5e-5` rad
+positions, `0.7` mm/s and `5e-5` rad/s speeds, and `1.5` kN or `10` kN m
+MoorDyn loads. These load gates are looser than the fully refined pair;
+original-step independent Python motion parity remains unestablished.
 
 The same pinned run exports actual published ParaView wave surfaces at 0, 10,
 and 80 s. Python independently rebuilds their 2,000-point grids from the
