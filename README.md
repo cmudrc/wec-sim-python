@@ -1786,9 +1786,8 @@ per MoorDyn line; it interpolates both to the requested frames and writes
 numbered line VTP files. After writing the frames,
 `write_paraview_response(times, directory, model_name=..., bodies=...)`
 writes the `.pvd` time-series collection and `bodies.txt` display settings;
-each body entry supplies its name, RGB color, and opacity. Wave, body, and
-mooring serialization have focused
-MATLAB source gates. For a regular-wave body with logged world-CG poses,
+each body entry supplies its name, RGB color, and opacity. Wave, body,
+mooring, and collection serialization have focused MATLAB source gates. For a regular-wave body with logged world-CG poses,
 `wecsim.nonlinearHydro.regular_wave_mesh_pressures(...)` calculates the three
 face-pressure arrays from its STL mesh, wave settings, and output times; pass
 its `hydrostatic`, `nonlinear_wave`, and `linear_wave` fields to the body VTP
