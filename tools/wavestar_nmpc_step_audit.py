@@ -1,4 +1,4 @@
-"""Compare WaveStar NMPC source motion with two converging Python plant steps.
+"""Compare WaveStar NMPC source motion with two Python plant steps.
 
 The MATLAB source files come from the pinned WECCCOMP_NMPC_SOURCE baseline.
 This is a diagnostic of the published 0.05 s ode8 trajectory, not a parity
@@ -25,22 +25,29 @@ def main() -> None:
     parser.add_argument("--hydro", type=Path, required=True)
     parser.add_argument("--reference-dir", type=Path, required=True)
     parser.add_argument("--plot", type=Path, required=True)
+    parser.add_argument("--duration", type=float, choices=(30.0, 225.0),
+                        default=30.0)
     args = parser.parse_args()
 
     prefix = "WECCCOMP_NMPC_SOURCE_"
     reference = args.reference_dir
+    count = round(args.duration / .05) + 1
     components = np.loadtxt(reference / f"{prefix}components.csv", delimiter=",")
     source_float = np.loadtxt(
         reference / f"{prefix}WECCCOMP_Nonlinear_Model_Predictive_body1.csv",
-        delimiter=",")[:601]
+        delimiter=",")[:count]
     source_pto = np.loadtxt(
         reference / f"{prefix}WECCCOMP_Nonlinear_Model_Predictive_pto1.csv",
-        delimiter=",")[:601]
+        delimiter=",")[:count]
     source_controller = loadmat(reference / f"{prefix}controller.mat",
                                 simplify_cells=True)
     source_command = np.asarray(
         source_controller["cmd_ptoM"]["signals"]["values"]
-    )[:601]
+    )[:count]
+    if (source_float.shape != (count, 25)
+            or source_pto.shape != (count, 43)
+            or source_command.shape != (count,)):
+        raise ValueError("published NMPC source does not cover the requested duration")
     sea = jonswap_equal_energy_components(
         args.hydro, significant_height=.1042, peak_period=1.836,
         directions=np.array([0.]), spreading=np.array([1.]),
@@ -50,11 +57,11 @@ def main() -> None:
     for dt in (.001, .0005):
         pto = WaveStarNmpcPTO(plant_dt=dt, control_dt=.05)
         response = run_wavestar_published(
-            args.hydro, sea, dt=dt, end_time=30, ramp_time=25,
+            args.hydro, sea, dt=dt, end_time=args.duration, ramp_time=25,
             g=9.80665, pto_controller=pto,
             output_stride=round(.05 / dt),
         )
-        if (response.time.shape != (601,)
+        if (response.time.shape != (count,)
                 or np.max(np.abs(response.time - source_float[:, 0])) > 1e-9):
             raise ValueError("source and Python output grids do not align")
         results[dt] = {
@@ -67,7 +74,7 @@ def main() -> None:
     time = source_float[:, 0]
     windows = (("before_control", 0, 10),
                ("resistive", 10, 15),
-               ("nmpc", 15, 30.001))
+               ("nmpc", 15, args.duration + .001))
     summary = {}
     for label, start, stop in windows:
         selected = (time >= start) & (time < stop)
@@ -94,7 +101,7 @@ def main() -> None:
     axes[0].plot(time, results[.0005]["pitch"], color="#db762e", lw=1,
                  ls="--", label="Python plant, 0.5 ms")
     axes[0].set_ylabel("Float pitch (rad)")
-    axes[0].set_title("WaveStar NMPC: published source versus independent Python, first 30 s",
+    axes[0].set_title("WaveStar NMPC: published source versus independent Python",
                       loc="left", weight="bold")
     axes[0].legend(loc="upper left", fontsize=9, ncol=2, frameon=False)
     for dt, color, style in ((.001, "#147d9d", "-"),
@@ -120,7 +127,7 @@ def main() -> None:
         for instant in (10, 15):
             axis.axvline(instant, color="#8b8d92", lw=.8, ls=":")
         axis.grid(alpha=.18)
-        axis.set_xlim(0, 30)
+        axis.set_xlim(0, args.duration)
     args.plot.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.plot, dpi=170)
     print(json.dumps(summary, indent=2))
