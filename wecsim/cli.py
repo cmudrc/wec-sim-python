@@ -47,8 +47,20 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, required=True, help="numeric CSV output")
     args = parser.parse_args(argv)
     case_file = args.case.expanduser().resolve(strict=True)
+    output = args.output.expanduser().resolve()
+    if output == case_file:
+        parser.error("CSV output cannot overwrite the case input")
     case = json.loads(case_file.read_text(encoding="utf-8"))
     response = run_case(case, base_dir=case_file.parent)
+    input_files = {case_file, *(Path(path).resolve() for path in response.hydro_files),
+                   *(Path(path).resolve() for path in response.auxiliary_files)}
+    if output in input_files:
+        parser.error("CSV output cannot overwrite a case input file")
+    metadata_path = output.with_suffix(".json")
+    if metadata_path == output or metadata_path.resolve() in input_files:
+        metadata_path = output.with_suffix(".provenance.json")
+    if metadata_path == output or metadata_path.resolve() in input_files:
+        parser.error("provenance output cannot overwrite a case input file")
 
     columns = ["time"]
     arrays = [response.time]
@@ -88,7 +100,6 @@ def main(argv=None):
     if not np.isfinite(values).all():
         raise RuntimeError("the dynamics produced nonfinite output")
 
-    output = args.output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     np.savetxt(output, values, delimiter=",", header=",".join(columns),
                comments="", fmt="%.17g")
@@ -111,7 +122,7 @@ def main(argv=None):
         "csv_columns": columns,
         "time_steps": len(values),
     }
-    output.with_suffix(".json").write_text(
+    metadata_path.write_text(
         json.dumps(metadata, indent=2) + "\n", encoding="utf-8",
     )
     print(output)

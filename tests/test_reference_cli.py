@@ -36,3 +36,17 @@ def test_reference_runner_exports_result_and_metadata(tmp_path, model, h5_file, 
     assert len(metadata["csv_columns"]) == columns
     if model == "rm3":
         assert metadata["parameters"]["b2b"] == ("--b2b" in extra)
+
+
+def test_reference_runner_keeps_hydrodynamic_input(tmp_path):
+    h5_file = tmp_path / "rm3.h5"
+    h5_file.write_bytes((ROOT / "examples/data/rm3.h5").read_bytes())
+    original = h5_file.read_bytes()
+    rejected = subprocess.run(
+        [sys.executable, "-m", "wecsim.reference", "rm3",
+         "--h5", str(h5_file), "--output", str(h5_file)],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+    assert rejected.returncode == 2
+    assert "cannot overwrite the hydrodynamic input" in rejected.stderr
+    assert h5_file.read_bytes() == original
