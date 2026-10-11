@@ -169,3 +169,98 @@ def test_split_step_independent_short_motion():
     for name, limit in limits.items():
         assert errors[name] < limit, f"{name}: {errors[name]} >= {limit}"
     print("split-step short closed-loop errors:", errors)
+
+
+def test_full_split_step_source_consistency():
+    source = Path(REFERENCE)
+    short_body = np.loadtxt(
+        source / f"{PREFIX}WECCCOMP_Nonlinear_Model_Predictive_body1.csv",
+        delimiter=",", ndmin=2,
+    )
+    short_pto = np.loadtxt(
+        source / f"{PREFIX}WECCCOMP_Nonlinear_Model_Predictive_pto1.csv",
+        delimiter=",", ndmin=2,
+    )
+    full_prefix = "WECCCOMP_NMPC_SPLIT_STEP_FULL_"
+    body = np.loadtxt(
+        source / f"{full_prefix}WECCCOMP_Nonlinear_Model_Predictive_body1.csv",
+        delimiter=",", ndmin=2,
+    )
+    pto = np.loadtxt(
+        source / f"{full_prefix}WECCCOMP_Nonlinear_Model_Predictive_pto1.csv",
+        delimiter=",", ndmin=2,
+    )
+    assert body.shape == (4501, 25)
+    assert pto.shape == (4501, 43)
+    np.testing.assert_allclose(body[:, 0], np.arange(4501) * .05,
+                               rtol=0, atol=1e-9)
+    np.testing.assert_allclose(pto[:, 0], body[:, 0], rtol=0, atol=1e-9)
+    np.testing.assert_allclose(body[:305, 5], short_body[::50, 5],
+                               rtol=0, atol=1e-7)
+    np.testing.assert_allclose(pto[:305, 33], short_pto[::50, 33],
+                               rtol=0, atol=1e-4)
+    full_components = np.loadtxt(
+        source / f"{full_prefix}components.csv", delimiter=",")
+    short_components = np.loadtxt(
+        source / f"{PREFIX}components.csv", delimiter=",")
+    np.testing.assert_allclose(full_components, short_components,
+                               rtol=0, atol=1e-12)
+    log = loadmat(source / f"{full_prefix}controller.mat", simplify_cells=True)
+    command_time, command = _trace(log, "cmd_ptoM")
+    assert len(command_time) == 4501
+    np.testing.assert_allclose(command_time, body[:, 0], rtol=0, atol=1e-9)
+    assert np.isfinite(command).all()
+    actuator = WaveStarNmpcActuator()
+    delayed_force = np.array([
+        actuator.step(command[max(0, index - 1)], stroke)
+        for index, stroke in enumerate(pto[:, 3])
+    ])
+    np.testing.assert_allclose(delayed_force, pto[:, 33],
+                               rtol=0, atol=1e-5)
+
+
+@pytest.mark.skipif(not HYDRO, reason="pinned WaveStar hydrodynamics are absent")
+def test_full_split_step_independent_motion():
+    source = Path(REFERENCE)
+    prefix = "WECCCOMP_NMPC_SPLIT_STEP_FULL_"
+    body = np.loadtxt(
+        source / f"{prefix}WECCCOMP_Nonlinear_Model_Predictive_body1.csv",
+        delimiter=",", ndmin=2,
+    )
+    pto = np.loadtxt(
+        source / f"{prefix}WECCCOMP_Nonlinear_Model_Predictive_pto1.csv",
+        delimiter=",", ndmin=2,
+    )
+    components = np.loadtxt(source / f"{prefix}components.csv", delimiter=",")
+    log = loadmat(source / f"{prefix}controller.mat", simplify_cells=True)
+    _, source_command = _trace(log, "cmd_ptoM")
+    sea = jonswap_equal_energy_components(
+        HYDRO, significant_height=.1042, peak_period=1.836,
+        directions=np.array([0.]), spreading=np.array([1.]),
+        gamma=3.3, phase=components[:, 3, None],
+    )
+    controller = _DelayedSampledPTO()
+    response = run_wavestar_published(
+        HYDRO, sea, dt=.001, end_time=225., ramp_time=25,
+        g=9.80665, pto_controller=controller, output_stride=50,
+    )
+    np.testing.assert_allclose(response.time, body[:, 0], rtol=0, atol=1e-9)
+    errors = {
+        "pitch_rad": np.max(np.abs(response.angle - body[:, 5])),
+        "pitch_speed_rad_s": np.max(np.abs(
+            response.angular_speed - body[:, 11])),
+        "stroke_m": np.max(np.abs(response.pto_stroke - pto[:, 3])),
+        "axial_force_N": np.max(np.abs(response.pto_force - pto[:, 33])),
+        "requested_torque_Nm": np.max(np.abs(
+            np.asarray(controller.commands) - source_command.reshape(-1))),
+    }
+    limits = {
+        "pitch_rad": 5e-4,
+        "pitch_speed_rad_s": 5e-3,
+        "stroke_m": 1e-4,
+        "axial_force_N": 1.,
+        "requested_torque_Nm": .1,
+    }
+    print("full split-step independent motion errors:", errors)
+    for name, limit in limits.items():
+        assert errors[name] < limit, f"{name}: {errors[name]} >= {limit}"
