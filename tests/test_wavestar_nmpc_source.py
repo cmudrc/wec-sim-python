@@ -429,3 +429,65 @@ def test_nmpc_independent_full_closed_loop_diagnostic():
             response.pto_force - source_pto[:, 33])),
     }
     print("published coarse-step NMPC motion differences:", errors)
+
+
+def test_nmpc_prescribed_torque_full_plant_diagnostic():
+    """Isolate the plant with source torque and a moving rod-arm force."""
+    source_float = _source("WECCCOMP_Nonlinear_Model_Predictive_body1")
+    source_pto = _source("WECCCOMP_Nonlinear_Model_Predictive_pto1")
+    components = _source("components")
+    controller = loadmat(
+        Path(REFERENCE) / "WECCCOMP_NMPC_SOURCE_controller.mat",
+        simplify_cells=True,
+    )
+    command = np.asarray(controller["cmd_ptoM"]["signals"]["values"])
+    assert source_float.shape == (4501, 25)
+    assert source_pto.shape == (4501, 43)
+    assert command.shape == (4501,)
+
+    class PrescribedTorquePTO:
+        plant_dt = .001
+
+        def __init__(self):
+            self.sample = 0
+            self.actuator = WaveStarNmpcActuator()
+
+        def step(self, stroke, *, noise=0., dropout=False):
+            assert noise == 0. and not dropout
+            if self.sample % 50 == 0:
+                force = self.actuator.step(command[self.sample // 50], stroke)
+            else:
+                force = self.actuator.force_at(stroke)
+            self.sample += 1
+            return force
+
+        def force_at_stroke(self, stroke):
+            return self.actuator.force_at(stroke)
+
+    sea = jonswap_equal_energy_components(
+        HYDRO, significant_height=.1042, peak_period=1.836,
+        directions=np.array([0.]), spreading=np.array([1.]),
+        gamma=3.3, phase=components[:, 3, None],
+    )
+    response = run_wavestar_published(
+        HYDRO, sea, dt=.001, end_time=225, ramp_time=25,
+        g=9.80665, pto_controller=PrescribedTorquePTO(), output_stride=50,
+    )
+    np.testing.assert_allclose(response.time, source_float[:, 0],
+                               rtol=0, atol=1e-9)
+    active = response.time >= 15
+    source_force = source_pto[:, 33]
+    peak_force = np.max(np.abs(source_force[active]))
+    force_error = np.max(np.abs(response.pto_force - source_force))
+    assert peak_force > 60
+    assert force_error < .01 * peak_force
+    errors = {
+        "pitch_rad": np.max(np.abs(response.angle - source_float[:, 5])),
+        "pitch_speed_rad_s": np.max(np.abs(
+            response.angular_speed - source_float[:, 11])),
+        "pto_stroke_m": np.max(np.abs(
+            response.pto_stroke - source_pto[:, 3])),
+        "axial_force_N": force_error,
+    }
+    assert np.isfinite(list(errors.values())).all()
+    print("prescribed NMPC torque, independently advanced plant:", errors)
