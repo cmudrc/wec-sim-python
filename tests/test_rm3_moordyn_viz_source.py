@@ -143,6 +143,21 @@ def test_source_output_interval_sensitivity():
               f"at 1 s {error[10]:.8g}, at 10 s {error[-1]:.8g}")
 
 
+def test_seeded_full_case_shares_short_source_prefix():
+    """Keep the 80 s published settings aligned with the short source audit."""
+    _bound(_read("phase.csv"), _read("dense_phase.csv"),
+           1e-12, "seeded full-case source phase")
+    _bound(_read("wave.csv")[:101], _read("coarse_wave.csv"),
+           1e-10, "seeded full-case source wave through 10 s")
+    for number, name in ((1, "float"), (2, "spar")):
+        _bound(_read(f"body{number}.csv")[:101, :13],
+               _read(f"coarse_body{number}.csv")[:, :13],
+               1e-6, f"seeded full-case source {name} motion through 10 s")
+    _bound(_read("mooring.csv")[:101, 13:19],
+           _read("coarse_mooring.csv")[:, 13:19],
+           1e-3, "seeded full-case source mooring through 10 s")
+
+
 @pytest.mark.parametrize("prefix", ["step005", "step0025", "step00125"])
 def test_source_maximum_step_refinement_preserves_sea(prefix):
     """Keep the same incident sea while refining ode45's maximum step."""

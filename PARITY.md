@@ -438,7 +438,9 @@ The independent physical Python solver was also refined on this same
 `0.0025` s source sea, using the pinned native MoorDyn library and HDF5 but
 no saved source force or motion as input. Halving Python's step from `0.0025`
 to `0.00125` s changes either body's position by at most `0.109` mm and speed
-by at most `0.032` mm/s over 10 s; a focused paired test gates those changes
+by at most `0.032` mm/s over 10 s; a
+[paired Linux run](https://github.com/cmudrc/wec-sim-python/actions/runs/38097663337)
+confirms the same maxima within rounding. The focused test gates those changes
 at `0.25` mm and `0.1` mm/s. The float's final surge difference from the
 finer MATLAB source changes only from `32.17` to `32.07` mm. Selecting the
 opt-in output-step delayed-mass scheme instead gives `30.29` and `31.13` mm
@@ -446,6 +448,19 @@ at the two Python steps, so refining that approximation does not close the
 source gap either. These independent runs rule out coarse Python stepping
 as the main explanation for the refined-source mismatch; the strict
 published coupled-motion gate remains open.
+
+A [third source step refinement](https://github.com/cmudrc/wec-sim-python/actions/runs/38098351547)
+on the same 10 s seed-1 sea halves MATLAB's ode45 maximum step again to
+`0.00125` s. All saved phases and wave samples still match, and the source
+force sum and adjusted-mass joint balance gates pass. The float/spar surge
+changes by `37.59`/`34.75` mm relative to the `0.0025` s source, after the
+preceding `0.005` to `0.0025` s halving changed them by only `0.72`/`0.95` mm
+at most. This nonmonotonic change rules out treating the earlier small
+step difference as convergence. Python's independent physical `0.00125` s
+run is within `5.52`/`4.85` mm float/spar surge of this latest MATLAB run at
+10 s, but that closer agreement is not a validated converged pair. The
+published 80 s coupled-motion gate still fails, and the Python physical
+default remains unchanged.
 
 For the published OSWEC nonlinear visualization case, the pinned source also
 exports flap velocity and all six-component force channels. On all 1,201 saved
