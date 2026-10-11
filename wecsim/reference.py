@@ -65,6 +65,13 @@ def main(argv=None):
     args = parser.parse_args(argv)
     h5_file = args.h5.expanduser().resolve(strict=True)
     output = args.output.expanduser().resolve()
+    if output == h5_file:
+        parser.error("CSV output cannot overwrite the hydrodynamic input")
+    metadata_path = output.with_suffix(".json")
+    if metadata_path == output or metadata_path.resolve() == h5_file:
+        metadata_path = output.with_suffix(".provenance.json")
+    if metadata_path == output or metadata_path.resolve() == h5_file:
+        parser.error("provenance output cannot overwrite the hydrodynamic input")
     output.parent.mkdir(parents=True, exist_ok=True)
 
     if args.model == "rm3":
@@ -133,7 +140,7 @@ def main(argv=None):
         "csv_columns": columns,
         "time_steps": len(values),
     }
-    output.with_suffix(".json").write_text(
+    metadata_path.write_text(
         json.dumps(metadata, indent=2) + "\n", encoding="utf-8",
     )
     print(output)

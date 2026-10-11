@@ -411,7 +411,8 @@ PTO force or torque, and a JSON provenance record beside the CSV. HDF5 paths
 in the case file resolve relative to that file. For a comparison with current
 MATLAB WEC-Sim, point the case at the HDF5 file from the pinned reference run.
 The provenance record hashes the case, hydrodynamic files, and any replayed
-phase CSV.
+phase CSV. When the case JSON and output CSV share a stem in one directory,
+the provenance file uses `.provenance.json` so the case input is preserved.
 
 Supported combinations are:
 

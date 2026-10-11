@@ -38,6 +38,40 @@ def test_example_case_runs_and_records_provenance(tmp_path):
     assert len(metadata["hydro_files"][0]["sha256"]) == 64
 
 
+def test_cli_keeps_case_when_csv_has_same_stem(tmp_path):
+    case = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    case["simulation"].update(end_time=0.2, ramp_time=0)
+    for body in case["bodies"]:
+        body["hydro_file"] = str((EXAMPLE.parent / body["hydro_file"]).resolve())
+    case_file = tmp_path / "case.json"
+    original = json.dumps(case)
+    case_file.write_text(original, encoding="utf-8")
+    output = tmp_path / "case.csv"
+
+    subprocess.run(
+        [sys.executable, "-m", "wecsim", str(case_file),
+         "--output", str(output)],
+        cwd=ROOT, check=True, capture_output=True, text=True,
+    )
+
+    assert case_file.read_text(encoding="utf-8") == original
+    values = np.loadtxt(output, delimiter=",", skiprows=1)
+    assert values.shape == (3, 27) and np.isfinite(values).all()
+    metadata = json.loads(
+        (tmp_path / "case.provenance.json").read_text(encoding="utf-8"),
+    )
+    assert metadata["case"] == case
+    assert metadata["time_steps"] == 3
+    rejected = subprocess.run(
+        [sys.executable, "-m", "wecsim", str(case_file),
+         "--output", str(case_file)],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+    assert rejected.returncode == 2
+    assert "cannot overwrite the case input" in rejected.stderr
+    assert case_file.read_text(encoding="utf-8") == original
+
+
 def test_independent_multibody_radiation_maps_each_body_to_its_own_velocity():
     hydro = str((EXAMPLE.parent / json.loads(EXAMPLE.read_text())[
         "bodies"][0]["hydro_file"]).resolve())
