@@ -304,16 +304,33 @@ class WaveStarNmpcController:
         linear = output_sensitivity.T @ self._weight @ output
         bounds = list(zip(-self.torque_limit - nominal,
                           self.torque_limit - nominal))
+        objective = lambda delta: .5 * delta @ hessian @ delta + linear @ delta
+        gradient = lambda delta: hessian @ delta + linear
         solution = minimize(
-            lambda delta: .5 * delta @ hessian @ delta + linear @ delta,
+            objective,
             np.zeros(self.horizon),
-            jac=lambda delta: hessian @ delta + linear,
+            jac=gradient,
             bounds=bounds, method="L-BFGS-B",
             options={"ftol": 1e-13, "gtol": 1e-11, "maxiter": 1000,
                      "maxls": 50},
         )
         if not solution.success:
-            raise RuntimeError(f"WaveStar NMPC QP failed: {solution.message}")
+            # SciPy's line search can report ABNORMAL on this bounded
+            # quadratic even when the iterate is close to the solution.
+            # Retry the same QP with an independent constrained solver.
+            retry = minimize(
+                objective,
+                solution.x if np.isfinite(solution.x).all()
+                else np.zeros(self.horizon),
+                jac=gradient, bounds=bounds, method="SLSQP",
+                options={"ftol": 1e-12, "maxiter": 1000},
+            )
+            if not retry.success:
+                raise RuntimeError(
+                    "WaveStar NMPC QP failed: "
+                    f"L-BFGS-B: {solution.message}; SLSQP: {retry.message}"
+                )
+            solution = retry
         self._nominal = nominal + solution.x
         return float(np.clip(self._nominal[0],
                              -self.torque_limit, self.torque_limit))
