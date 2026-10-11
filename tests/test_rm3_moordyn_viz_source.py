@@ -87,7 +87,7 @@ def _wave_vtp(path):
     return points.reshape(-1, 3), cells.reshape(-1, 4), offsets
 
 
-def _body_facets(path):
+def _body_vtp(path):
     piece = ElementTree.parse(path).find("./PolyData/Piece")
     points = np.fromstring(piece.findtext("./Points/DataArray"), sep=" ").reshape(-1, 3)
     faces = np.fromstring(
@@ -96,7 +96,11 @@ def _body_facets(path):
     ).reshape(-1, 3)
     assert len(points) == int(piece.get("NumberOfPoints"))
     assert len(faces) == int(piece.get("NumberOfPolys"))
-    return points[faces]
+    cell_data = piece.findall("./CellData/DataArray")
+    assert [field.get("Name") for field in cell_data] == ["CellArea"]
+    cell_area = np.fromstring(cell_data[0].text, sep=" ")
+    assert cell_area.shape == (len(faces),)
+    return points[faces], cell_area
 
 
 def _mooring_vtp(path):
@@ -187,11 +191,12 @@ def test_published_body_vtp_history_on_source_poses(tmp_path):
         max_center_error = 0.0
         max_vertex_error = 0.0
         max_area_error = 0.0
+        max_cell_area_error = 0.0
         for frame, path in enumerate(paths, start=1):
             source = (reference / "published_vtp" / f"body{body_index}_{name}"
                       / f"{name}_{frame}.vtp")
-            expected = _body_facets(source)
-            actual = _body_facets(path)
+            expected, source_cell_area = _body_vtp(source)
+            actual, actual_cell_area = _body_vtp(path)
             assert actual.shape == expected.shape
             # STL readers can number shared vertices differently. Compare
             # every geometric facet using a one-to-one centroid match.
@@ -222,15 +227,21 @@ def test_published_body_vtp_history_on_source_poses(tmp_path):
             max_area_error = max(max_area_error, float(np.max(
                 np.abs(actual_area[match] - source_area),
             )))
+            max_cell_area_error = max(max_cell_area_error, float(np.max(
+                np.abs(actual_cell_area[match] - source_cell_area),
+            )))
         print(f"published {name} VTP maximum facet-center difference: "
               f"{max_center_error:.8g} m")
         print(f"published {name} VTP maximum facet-vertex difference: "
               f"{max_vertex_error:.8g} m")
         print(f"published {name} VTP maximum facet-area difference: "
               f"{max_area_error:.8g} m²")
+        print(f"published {name} VTP maximum CellArea difference: "
+              f"{max_cell_area_error:.8g} m²")
         assert max_center_error < 3e-5
         assert max_vertex_error < 3e-5
         assert max_area_error < 1e-3
+        assert max_cell_area_error < 2e-5
 
 
 def test_published_irregular_wave_vtp_history(tmp_path):
