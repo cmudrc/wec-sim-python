@@ -1575,13 +1575,12 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         if (len(bodies) != 1 or moving_morison != (0,)
                 or not (heave_only or surge_heave_pitch)
                 or wave["type"] not in ("none", "regular") or b2b
-                or any(key in case for key in ("pto", "ptos"))
                 or bodies[0].get("nonlinear_hydro") is not None
                 or bodies[0].get("passive_yaw", False)
                 or bodies[0].get("mean_drift", "none") != "none"):
             raise ValueError(
                 "moving Morison needs one hydrodynamic body in pure heave "
-                "or regular-wave surge/heave/pitch without a PTO"
+                "or regular-wave surge/heave/pitch"
             )
         if wave["type"] == "regular" and direction != 0:
             raise ValueError("moving Morison needs zero-heading regular waves")
@@ -1596,13 +1595,15 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
                              for element in moving_elements]
         if any(normal_tangential) and not all(normal_tangential):
             raise ValueError("moving Morison elements must use one coefficient mode")
+        if any(normal_tangential) and wave["type"] != "regular":
+            raise ValueError("normal/tangential moving Morison needs a regular wave")
         if wave["type"] == "regular":
             raw_depth = np.asarray(loaded_bodies[0].hydroData[
                 "simulation_parameters"]["water_depth"]).item()
             depth = (np.inf if str(raw_depth).lower() == "infinite"
                      else float(raw_depth))
 
-            if surge_heave_pitch:
+            if surge_heave_pitch or all(normal_tangential):
                 def moving_terms(at_time, coordinate, speed):
                     pose = np.r_[centers[0], np.zeros(3)] + maps[0] @ coordinate
                     velocity = maps[0] @ speed
