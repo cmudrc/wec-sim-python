@@ -562,8 +562,17 @@ MoorDyn pitch moment changes by up to `102.0` kN m and then `8.38` kN m.
 Thus ode45 MaxStep accounts for nearly all of this 10 s source surge/pitch
 sensitivity. The residual `simu.dt` change also refines the source wave and
 radiation grids as well as MoorDyn's trigger, so it cannot be attributed to
-MoorDyn alone. Heave and force channels have different sensitivity; this
-does not establish original-step independent Python motion parity.
+MoorDyn alone. Heave and force channels have different sensitivity. Against
+the MaxStep-only source, an independent Python solve uses the pinned sea
+phases, HDF5, and native MoorDyn library without saved source motion or
+forces. Over all 1,001 samples, its largest float/spar surge differences are
+`0.540`/`0.517` mm; spar heave differs by at most `1.60` mm; pitch by
+`5.58e-6` rad; active speed differences stay below `0.47` mm/s. MoorDyn
+connection surge/heave forces differ by at most `1.014`/`0.639` kN and pitch
+moment by `7.68` kN m. The derived 10 s gate allows `2` mm and `5e-5` rad
+positions, `0.7` mm/s and `5e-5` rad/s speeds, and `1.5` kN or `10` kN m
+MoorDyn loads. These load gates are looser than the fully refined pair;
+original-step independent Python motion parity remains unestablished.
 
 The same pinned run exports actual published ParaView wave surfaces at 0, 10,
 and 80 s. Python independently rebuilds their 2,000-point grids from the

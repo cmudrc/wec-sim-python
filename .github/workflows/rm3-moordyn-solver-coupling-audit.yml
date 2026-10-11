@@ -61,6 +61,8 @@ jobs:
         env:
           WEC_SIM_RM3_SOLVER_COUPLING_AUDIT_DIR: matlab-rm3-solver-coupling-audit
           WEC_SIM_MATLAB_SOURCE_DIR: matlab-ref/source
+          WEC_SIM_APPLICATIONS_DIR: applications
+          WEC_SIM_MOORDYN_LIBRARY: matlab-ref/source/functions/moorDyn/libmoordyn.so
       - uses: actions/upload-artifact@v4
         if: always()
         with:

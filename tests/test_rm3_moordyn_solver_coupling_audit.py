@@ -2,14 +2,19 @@
 
 import os
 from pathlib import Path
+import shutil
 from zipfile import ZipFile
 
 import numpy as np
 import pytest
 
+from wecsim import JONSWAPWave, MoorDyn, WEC
+
 
 RECORDS = os.environ.get("WEC_SIM_RM3_SOLVER_COUPLING_AUDIT_DIR")
 SOURCE = os.environ.get("WEC_SIM_MATLAB_SOURCE_DIR")
+APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
+LIBRARY = os.environ.get("WEC_SIM_MOORDYN_LIBRARY")
 pytestmark = pytest.mark.skipif(
     not (RECORDS and SOURCE), reason="pinned solver/coupling audit absent",
 )
@@ -81,3 +86,56 @@ def test_independent_solver_and_moordyn_step_audit():
                 dt_change = np.max(abs(records[2][:, index] - records[1][:, index]))
                 print(f"MoorDyn {name}: MaxStep-only {solver_change:.9g}; "
                       f"additional simu.dt change {dt_change:.9g}")
+
+
+@pytest.mark.skipif(not (RECORDS and APPLICATIONS and LIBRARY),
+                    reason="pinned source, hydro data, or MoorDyn absent")
+def test_independent_python_motion_on_solver_refined_source(tmp_path):
+    """Advance Python with source sea phases, never source forces or motion."""
+    apps = Path(APPLICATIONS)
+    hydro = apps / "_Common_Input_Files/RM3/hydroData/rm3.h5"
+    lines = tmp_path / "Mooring" / "lines.txt"
+    lines.parent.mkdir()
+    shutil.copyfile(apps / "Paraview_Visualization/RM3_MoorDyn_Viz"
+                    / "Mooring/lines.txt", lines)
+    wec = WEC("RM3 solver-only MATLAB step pair")
+    float_body = wec.body("float", hydro, inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", hydro, inertia=(0, 94_407_091.24, 0))
+    wec.floating_joint(
+        float_body, spar, damping=1_200_000,
+        moordyn=MoorDyn(LIBRARY, lines),
+        moordyn_point=spar.at(0, 0, 21.5),
+    )
+    result = wec.run(
+        JONSWAPWave(
+            2, 8, phase_file=Path(RECORDS) / "solver_only_phase.csv",
+            discretization="traditional",
+        ),
+        dt=.00125, end_time=10, ramp_time=0, radiation_memory=60,
+        initial_coordinate={"spar_heave": -.21},
+    )
+    indices = np.arange(1001) * 8
+    np.testing.assert_allclose(result.time[indices], _read("solver_only", "wave")[:, 0],
+                               rtol=0, atol=1e-8)
+    np.testing.assert_allclose(result.wave_elevation[indices],
+                               _read("solver_only", "wave")[:, 1],
+                               rtol=0, atol=1e-10)
+
+    limits = {"position": (0.002, 5e-5),
+              "velocity": (0.0007, 5e-5),
+              "force": (1500, 10000)}
+    for number, name in ((1, "float"), (2, "spar")):
+        source = _read("solver_only", f"body{number}")
+        for kind, offset in (("position", 1), ("velocity", 7)):
+            actual = getattr(result.bodies[name], kind)[indices]
+            for axis in (0, 2, 4):
+                error = np.max(abs(actual[:, axis] - source[:, offset + axis]))
+                assert error < limits[kind][axis == 4], (name, kind, axis, error)
+
+    source = _read("solver_only", "mooring")
+    outputs = dict(result.raw.extra_outputs)
+    for kind, offset in (("position", 1), ("velocity", 7), ("force", 13)):
+        actual = outputs[f"moordyn_connection_{kind}"][indices]
+        for axis in (0, 2, 4):
+            error = np.max(abs(actual[:, axis] - source[:, offset + axis]))
+            assert error < limits[kind][axis == 4], ("MoorDyn", kind, axis, error)
