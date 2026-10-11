@@ -93,7 +93,7 @@ def common_surge_feedthrough(hydro_file):
     return feedthrough
 
 
-def active_mode_minimum_damping(hydro_file):
+def active_mode_minimum_damping(hydro_file, *, return_modes=False):
     """Minimum radiation damping on RM3's four moving joint coordinates.
 
     The coordinates are common surge, float heave, spar heave, and shared
@@ -101,6 +101,8 @@ def active_mode_minimum_damping(hydro_file):
     projected coordinate has units of metres. A negative eigenvalue of the
     Hermitian transfer matrix permits a harmonic motion that receives energy
     from radiation. The published source fit omits the saved HDF5 D terms.
+    With ``return_modes=True``, append the fitted least-damped eigenvector
+    in the same four energy-conjugate coordinates at each frequency.
     """
     with h5py.File(hydro_file) as h5:
         rho = float(np.asarray(h5["simulation_parameters/rho"]).item())
@@ -150,8 +152,16 @@ def active_mode_minimum_damping(hydro_file):
         hermitian = (projected + projected.conj().swapaxes(-1, -2)) / 2
         return np.linalg.eigvalsh(hermitian)[:, 0]
 
+    def minimum_eigenpair(matrix):
+        projected = motion.T @ matrix @ motion
+        hermitian = (projected + projected.conj().swapaxes(-1, -2)) / 2
+        values, vectors = np.linalg.eigh(hermitian)
+        return values[:, 0], vectors[:, :, 0]
+
     source_minimum = np.empty((2, len(frequencies)))
     fitted_minimum = np.empty((2, len(fitted_frequencies)))
+    if return_modes:
+        fitted_modes = np.empty((2, len(fitted_frequencies), 4), dtype=complex)
     for coupled in (False, True):
         source_variant = source.copy()
         fitted_variant = fitted.copy()
@@ -161,8 +171,13 @@ def active_mode_minimum_damping(hydro_file):
             fitted_variant[:, :6, 6:] = 0
             fitted_variant[:, 6:, :6] = 0
         source_minimum[int(coupled)] = minimum_eigenvalue(source_variant)
-        fitted_minimum[int(coupled)] = minimum_eigenvalue(fitted_variant)
-    return frequencies, source_minimum, fitted_frequencies, fitted_minimum
+        if return_modes:
+            fitted_minimum[int(coupled)], fitted_modes[int(coupled)] = (
+                minimum_eigenpair(fitted_variant))
+        else:
+            fitted_minimum[int(coupled)] = minimum_eigenvalue(fitted_variant)
+    result = (frequencies, source_minimum, fitted_frequencies, fitted_minimum)
+    return (*result, fitted_modes) if return_modes else result
 
 
 def plot_curves(source_frequency, source, fitted_frequency, fitted, output,

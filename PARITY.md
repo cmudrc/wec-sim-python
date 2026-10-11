@@ -340,6 +340,18 @@ sampled frequency nearest the 8 s wave, the coupled source minimum is
 −0.030 kN s/m while the fit is −5.87 kN s/m. These are properties of the
 linearized radiation data in the active joint subspace, not proof that every
 negative mode is excited in Cases 5 and 6.
+The fitted least-damped mode changes with frequency. In the four
+energy-conjugate joint coordinates, its unit-norm zero-frequency vector has
+common-surge magnitude 0.993 with cross-body radiation off and 0.999 with it
+on; both heave components are below `3e-5`. At the 8 s wave frequency with
+cross-body radiation on, the negative mode instead has float/spar-heave
+magnitudes 0.432/0.902, with surge and pitch each below `1e-5`. A correction
+to common surge alone cannot make this fit passive. The focused diagnostic
+checks these mode contents on the historical fixture and matches them to the
+fresh pinned BEMIO HDF5 by magnitude, avoiding dependence on state-space
+realization or eigenvector phase. A replacement fit must also be checked
+against BEM transfer data and convolution trajectories before it can replace
+the physical default.
 Diagnostic PR #6 was closed without merging its state-space solver. The
 convolution results for Cases 3 and 4 were identical, sample for sample,
 between the original branch point and that diagnostic branch.
