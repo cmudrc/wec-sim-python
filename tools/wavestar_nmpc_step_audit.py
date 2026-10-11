@@ -1,4 +1,4 @@
-"""Compare WaveStar NMPC source motion with two Python plant steps.
+"""Compare WaveStar NMPC source motion with refined Python plant steps.
 
 The MATLAB source files come from the pinned WECCCOMP_NMPC_SOURCE baseline.
 This is a diagnostic of the published 0.05 s ode8 trajectory, not a parity
