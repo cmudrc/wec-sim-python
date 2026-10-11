@@ -21,6 +21,7 @@ fclose(fid);
 outDir = fullfile(repoRoot, 'matlab-oswec-variable-yaw-step-audit');
 mkdir(outDir);
 cd(caseDir);
+waveFlag = 'irregular';
 wecSim;
 assert(strcmp(simu.solver, 'ode4') && simu.dt == 0.005 && ...
     simu.endTime == 120 && simu.rampTime == 100 && ...
