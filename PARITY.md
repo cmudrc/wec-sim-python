@@ -1149,9 +1149,22 @@ pitch speed, and `0.515` N m command. The corresponding fixed-fit
 MATLAB-versus-1 ms-Python maxima are `0.04091` rad, `0.4296` rad/s, and
 `2.874` N m. Thus the first 30 s step check cannot be extrapolated as a
 full-duration pointwise-convergence result, while the fixed-fit source gap
-remains larger than this one-step-refinement difference. A second refinement
-or other convergence evidence would be needed to establish a long-horizon
-pointwise limit for the active controller.
+remains larger than this one-step-refinement difference.
+A third Python plant-step comparison uses the same fixed-fit HDF5 and source
+phases, the same 0.05 s controller step, and a 0.00025 s plant step. Through
+30 s, active-control pitch differences shrink from `5.82e-5` rad between
+the 0.001 and 0.0005 s runs to `1.51e-5` rad between 0.0005 and 0.00025 s;
+the corresponding torque-command differences shrink from `0.00743` to
+`0.00181` N m. Over the full 225 s, however, the finer pair differs by up to
+`0.00640` rad pitch and `0.625` N m command, exceeding the coarser pair's
+`0.00437` rad and `0.515` N m. The 0.00025 s Python trajectory still differs
+from the published MATLAB run by up to `0.04080` rad pitch and `2.873` N m
+command. The first 0.00025-versus-0.0005 s pitch gap above `1e-4` rad occurs
+at 35.3 s. This establishes short-window refinement but still no
+full-duration pointwise convergence for the sensitive closed loop. The
+diagnostic is reproducible with `tools/wavestar_nmpc_step_audit.py` and
+`--duration 225 --quarter-ms` on the fixed-fit source artifact; it changes no
+production physics or parity gate.
 A 50 ms Python RK4 pre-control solve changes the peak source pitch gap by
 only `4.7e-6` rad relative to the 1 ms solve. A fixed 50 ms DOP853 solve
 with 1 ms-resolved incident forcing agrees with the fine Python solution to
