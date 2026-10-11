@@ -1119,9 +1119,10 @@ MoorDyn binaries and preloading the runner's compatible C++ runtime resolved
 that reference-environment issue. Targeted R2025b runs now pass the published
 [RM3 MoorDyn](https://github.com/cmudrc/wec-sim-python/actions/runs/37884438725)
 and [RM3 MoorDyn ParaView](https://github.com/cmudrc/wec-sim-python/actions/runs/37885063313)
-tests. The independent Python RM3 body/PTO/mooring trajectory is paired above;
-selected published RM3 wave surfaces are paired above; body, mooring, and
-full application ParaView histories remain unpaired.
+tests. The independent Python RM3 body/PTO/mooring trajectory is paired above.
+The published RM3 wave, body, and mooring-line ParaView histories pass the
+prescribed-state gate above; other application ParaView histories remain
+unpaired.
 
 The `Multiple_Wave_Spectra` test class is excluded by MATLAB because its
 class name does not match its filename. Our harness generates its OSWEC HDF5
