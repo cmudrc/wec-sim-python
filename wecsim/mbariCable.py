@@ -64,13 +64,16 @@ def run_mbari_cable(
     ramp_time: float = 40.,
     rho: float = 1000.,
     g: float = 9.81,
+    endpoint_mass: float = 1.,
 ) -> MBARICableResponse:
     """Advance all three bodies with cable tension and endpoint drag.
 
     The buoy and cylinder share the published spherical joint at z=-0.59 m.
     The spar and cylinder are connected by a spring cable with two drag bodies
-    at its endpoints. The 1 kg inertia of each drag body is omitted; the
-    dominant endpoint drag and cable actuation both feed back into motion.
+    at its endpoints. Each published drag body contributes 1 kg of
+    translational inertia at its body-local attachment point. The endpoint
+    mass can be changed explicitly while the cable and drag force laws remain
+    the same.
     Hydrodynamics use the published regular-wave HDF5 bodies and implicit
     frequency-dependent added mass. This is a planar case runner, not a
     general six-DOF Simscape constraint solver.
@@ -83,9 +86,10 @@ def run_mbari_cable(
             attachment, PlanarCableAttachment):
         raise TypeError("cable and attachment need their public configuration objects")
     values = np.asarray((wave_height, wave_period, dt, end_time,
-                         ramp_time, rho, g), dtype=float)
+                         ramp_time, rho, g, endpoint_mass), dtype=float)
     if (not np.isfinite(values).all() or wave_height < 0 or wave_period <= 0
             or dt <= 0 or end_time <= 0 or ramp_time < 0 or rho <= 0 or g <= 0
+            or endpoint_mass < 0
             or not np.isclose(cable.initial_length, attachment.initial_length,
                               rtol=0, atol=1e-10)
             or attachment.base_offset[0] != 0
@@ -121,6 +125,29 @@ def run_mbari_cable(
     def ramp(at_time):
         return (1. if ramp_time == 0 or at_time >= ramp_time else
                 (1 - np.cos(np.pi * at_time / ramp_time)) / 2)
+
+    def endpoint_inertia(body_index, offset):
+        """Return a point mass's wrench and spatial mass at a rotating point."""
+        angle_index = 5 if body_index == 1 else 6
+        local_x, local_z = offset
+
+        def evaluate(_at_time, q, v):
+            angle = q[angle_index]
+            rate = v[angle_index]
+            sine, cosine = np.sin(angle), np.cos(angle)
+            arm_x = local_x * cosine + local_z * sine
+            arm_z = -local_x * sine + local_z * cosine
+            point_jacobian = np.zeros((2, 6))
+            point_jacobian[0, 0] = point_jacobian[1, 2] = 1
+            point_jacobian[0, 4] = arm_z
+            point_jacobian[1, 4] = -arm_x
+            relative_bias = -np.array([arm_x, arm_z]) * rate**2
+            mass = endpoint_mass * point_jacobian.T @ point_jacobian
+            # Source joint loads contain endpoint m*a but no separate weight.
+            force = -endpoint_mass * point_jacobian.T @ relative_bias
+            return force, mass
+
+        return evaluate
 
     zero = np.zeros((6, 6))
     bodies = []
@@ -182,6 +209,11 @@ def run_mbari_cable(
             return excitation, state_force
 
         excitation, state_force = make_excitation(index, re, im)
+        point_inertia = None
+        if endpoint_mass and index in (1, 2):
+            offset = (attachment.base_offset if index == 1
+                      else attachment.follower_offset)
+            point_inertia = endpoint_inertia(index, offset)
         bodies.append(DynamicBody(
             rigid_mass=rigid,
             added_mass=tuple(added_blocks),
@@ -193,6 +225,7 @@ def run_mbari_cable(
             motion=motion(index),
             excitation=excitation,
             state_excitation=state_force,
+            state_inertia=point_inertia,
         ))
 
     def generalized_cable_force(q, v):
