@@ -301,6 +301,15 @@ independent coupled trajectory or the physical validity of the fit. The
 default Python convolution dynamics remain unchanged.
 The published Cases 5 and 6 change only the state-space radiation flag from
 their respective convolution cases, apart from formatting of the inputs.
+Over their full 400 s trajectories, MATLAB's fitted-versus-convolution
+float-surge difference reaches 0.405 m (Case 5 versus 3) and 0.611 m
+(Case 6 versus 4). Independent Python convolution differs from the matched
+MATLAB convolution by at most 0.0569 m and 0.0483 m, respectively, while
+the same Python motion differs from the fitted MATLAB cases by 0.428 m
+and 0.583 m. A paired source gate checks these distinctions using fresh
+BEMIO hydrodynamics. The fitted-case displacement is therefore chiefly a
+difference between MATLAB's two radiation options, not evidence that the
+Python convolution path should be tuned toward the fitted trajectory.
 Over an 8 s window ending at 392 s, MATLAB float-surge means are 0.465 m
 and 0.597 m for Cases 5 and 6, compared with 0.101 m and 0.047 m for
 Cases 3 and 4. Repeating Cases 5 and 6 with a 0.05 s step gives means of
@@ -346,7 +355,7 @@ common-surge magnitude 0.993 with cross-body radiation off and 0.999 with it
 on; both heave components are below `3e-5`. At the 8 s wave frequency with
 cross-body radiation on, the negative mode instead has float/spar-heave
 magnitudes 0.432/0.902, with surge and pitch each below `1e-5`. A correction
-magnitudes 0.432/0.902, with surge and pitch each below `1e-5`. A third
+to common surge alone cannot address that heave mode. A third
 negative region near 1.2 rad/s is dominated by shared pitch (unit-mode
 magnitude above 0.999; least damping below −4 kN s/m). The coupled fit has
 negative least-damped bands at approximately 0–0.40, 0.44–0.92, and
