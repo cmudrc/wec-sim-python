@@ -262,6 +262,10 @@ jobs:
       - uses: matlab-actions/run-command@v3
         with:
           command: addpath('tests/matlab'); reference_model_baseline('${{ matrix.model }}')
+      - uses: matlab-actions/run-command@v3
+        if: matrix.model == 'CABLE_SOURCE'
+        with:
+          command: addpath('tests/matlab'); cable_step_refinement
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
