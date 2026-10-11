@@ -53,8 +53,8 @@ function runOne(sourceDir, outDir, label, couplingStep, maximumStep)
         % The pinned wecSim.m calls sim from a script. Keep that script
         % context so Simulink's SrcWorkspace='parent' sees the variant
         % controls created by initializeWecSim in this function workspace.
-        run(fullfile(fileparts(outDir), 'tests', 'matlab', ...
-            'rm3_moordyn_simulate_with_max_step.m'));
+        addpath(fullfile(fileparts(outDir), 'tests', 'matlab'));
+        rm3_moordyn_simulate_with_max_step;
         assert(size(waves.phase, 1) == 1000, 'Unexpected phase grid');
         writematrix(waves.phase(:), ...
             fullfile(outDir, [label '_phase.csv']));
