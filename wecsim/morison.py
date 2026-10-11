@@ -6,7 +6,7 @@ nonlinear drag before the forces are summed, as in ``irregWaveMorison.m``.
 The public runner also couples axial elements to heave or to a body's
 surge/heave/pitch motion in regular waves. The separate full six-DOF
 ``regular_morison_source_force`` retains source-specific conventions only
-for diagnostics.
+for diagnostics, including the normal/tangential option.
 """
 
 from dataclasses import dataclass
@@ -80,14 +80,17 @@ def regular_morison_source_force(
     rho: float = 1025.0, g: float = 9.81,
     current_speed: float = 0.0, current_direction: float = 0.0,
     current_profile: str = "uniform", current_depth: float | None = None,
+    body_morison: int = 1,
+    element_axes: Sequence[Sequence[float]] | None = None,
 ) -> np.ndarray:
-    """Evaluate pinned ``regWaveMorison.m`` option 1 at a moving-body state.
+    """Evaluate pinned ``regWaveMorison.m`` at a moving-body state.
 
     The six state components are surge, sway, heave, roll, pitch, and yaw.
     This source-law diagnostic does not solve a coupled WEC trajectory. It
     retains the source's rotation and local-point
-    angular kinematics so that
-    a comparison can expose, rather than conceal, source-specific behavior.
+    angular kinematics so that a comparison can expose source-specific
+    behavior. Option 2 requires one body-local axis per element and retains
+    the source's squared tangential body-acceleration projection.
     """
     state = [np.asarray(value, dtype=float) for value in
              (position, velocity, acceleration)]
@@ -103,6 +106,18 @@ def regular_morison_source_force(
                       current_profile, current_depth)
     if not elements:
         raise ValueError("regular Morison force needs at least one element")
+    if body_morison not in (1, 2):
+        raise ValueError("body_morison must be Cartesian (1) or normal/tangential (2)")
+    if body_morison == 1 and element_axes is not None:
+        raise ValueError("element_axes are only used by normal/tangential mode")
+    if body_morison == 2:
+        if element_axes is None or len(element_axes) != len(elements):
+            raise ValueError("normal/tangential mode needs one axis per element")
+        for axis in element_axes:
+            vector = np.asarray(axis, dtype=float)
+            if (vector.shape != (3,) or not np.isfinite(vector).all()
+                    or np.linalg.norm(vector) == 0):
+                raise ValueError("Morison element axes need finite nonzero three-vectors")
 
     pose, speed, accel = state
     roll, pitch, yaw = pose[3:]
@@ -125,7 +140,7 @@ def regular_morison_source_force(
     if ramp_time and time < ramp_time:
         amplitude *= (1 - np.cos(np.pi * time / ramp_time)) / 2
     result = np.zeros(6)
-    for element in elements:
+    for index, element in enumerate(elements):
         if not isinstance(element, MorisonElement):
             raise TypeError("elements must be MorisonElement values")
         point, cd, ca, area = (
@@ -166,17 +181,44 @@ def regular_morison_source_force(
                       np.sin(np.deg2rad(current_direction))])
         fluid_acceleration = np.r_[horizontal_acceleration * wave_axis,
                                    vertical_acceleration]
-        relative_velocity = fluid_velocity - body_velocity
-        # These row-vector coefficient transforms are the source block's
-        # option-1 convention; they are not a rotated drag tensor.
-        area_rot = np.abs(area @ rotation)
-        cd_rot = np.abs(cd) @ rotation
-        ca_rot = np.abs(ca @ rotation)
-        force = (0.5 * rho * cd_rot * area_rot * relative_velocity
-                 * np.abs(relative_velocity)
-                 + rho * element.volume * (
-                     fluid_acceleration
-                     + ca_rot * (fluid_acceleration - body_acceleration)))
+        if body_morison == 2:
+            axis = rotation @ np.asarray(element_axes[index], dtype=float)
+            axis_norm = np.linalg.norm(axis)
+            if axis_norm == 0:
+                raise ValueError("rotated Morison axis has zero length")
+            axis_norm_squared = axis_norm**2
+            fluid_velocity_t = axis * (axis @ fluid_velocity / axis_norm_squared)
+            body_velocity_t = axis * (axis @ body_velocity / axis_norm_squared)
+            fluid_acceleration_t = axis * (
+                axis @ fluid_acceleration / axis_norm_squared
+            )
+            # Pinned source squares this scalar before multiplying by the
+            # axis; it is not the physical vector projection.
+            body_acceleration_t = axis * (axis @ body_acceleration / axis_norm)**2
+            relative_t = fluid_velocity_t - body_velocity_t
+            relative_n = ((fluid_velocity - fluid_velocity_t)
+                          - (body_velocity - body_velocity_t))
+            force = (0.5 * rho * (
+                cd[0] * area[0] * relative_n * np.linalg.norm(relative_n)
+                + cd[1] * area[1] * relative_t * np.linalg.norm(relative_t)
+            ) + rho * element.volume * (
+                fluid_acceleration
+                + ca[0] * ((fluid_acceleration - fluid_acceleration_t)
+                           - (body_acceleration - body_acceleration_t))
+                + ca[1] * (fluid_acceleration_t - body_acceleration_t)
+            ))
+        else:
+            relative_velocity = fluid_velocity - body_velocity
+            # These row-vector coefficient transforms are the source block's
+            # option-1 convention; they are not a rotated drag tensor.
+            area_rot = np.abs(area @ rotation)
+            cd_rot = np.abs(cd) @ rotation
+            ca_rot = np.abs(ca @ rotation)
+            force = (0.5 * rho * cd_rot * area_rot * relative_velocity
+                     * np.abs(relative_velocity)
+                     + rho * element.volume * (
+                         fluid_acceleration
+                         + ca_rot * (fluid_acceleration - body_acceleration)))
         result[:3] += force
         result[3:] += np.cross(rotated_point, force)
     return result
