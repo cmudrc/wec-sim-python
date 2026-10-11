@@ -91,6 +91,46 @@ lines = output.moorDyn(1).Lines;
 writematrix([lines.Time(:), lines.FairTen1(:), ...
     lines.FairTen2(:), lines.FairTen3(:)], ...
     fullfile(outDir, 'fairlead_tension.csv'));
+% Export the three line histories at every published ParaView frame. The
+% source writer interpolates the 0.01 s MoorDyn record to this 0.1 s grid.
+assert(numel(lines.Time) == 8001, ...
+    'The published MoorDyn node time grid changed');
+frameIndex = 1:10:numel(lines.Time);
+frameTimes = lines.Time(frameIndex);
+assert(numel(frameTimes) == 801 && ...
+    max(abs(frameTimes(:) - (0:0.1:80)')) < 1e-8, ...
+    'The published MoorDyn VTP frame grid changed');
+for iLine = 1:mooring(1).moorDynLines
+    nodeCount = mooring(1).moorDynNodes(iLine);
+    lineRecord = lines.(sprintf('Line%d', iLine));
+    history = zeros(numel(frameTimes), 4 * nodeCount);
+    history(:, 1) = frameTimes(:);
+    column = 2;
+    for iNode = 0:nodeCount - 1
+        for axis = {'px', 'py', 'pz'}
+            field = sprintf('Node%d%s', iNode, axis{1});
+            values = lineRecord.(field);
+            assert(numel(values) == numel(lines.Time), ...
+                'The published MoorDyn node record changed');
+            sampled = values(frameIndex);
+            history(:, column) = sampled(:);
+            column = column + 1;
+        end
+    end
+    for iSegment = 1:nodeCount - 1
+        values = lineRecord.(sprintf('Seg%dTe', iSegment));
+        assert(numel(values) == numel(lines.Time), ...
+            'The published MoorDyn tension record changed');
+        sampled = values(frameIndex);
+        history(:, column) = sampled(:);
+        column = column + 1;
+    end
+    assert(column == size(history, 2) + 1 && ...
+        all(isfinite(history), 'all'), ...
+        'The published MoorDyn VTP history is incomplete');
+    writematrix(history, fullfile(outDir, ...
+        sprintf('line%d_vtp_history.csv', iLine)));
+end
 % Retain three actual published-case wave surfaces without uploading all
 % 801 ParaView frames from the 80 s run.
 waveVtpDir = fullfile(outDir, 'published_vtp', 'waves');
@@ -130,6 +170,15 @@ for iBody = 1:2
             'The published RM3 ParaView body frame is missing');
         copyfile(sourceFile, fullfile(destination, filename));
     end
+end
+mooringVtpDir = fullfile(outDir, 'published_vtp', 'mooring1');
+mkdir(mooringVtpDir);
+for frame = 1:801
+    filename = sprintf('mooring_%d.vtp', frame);
+    sourceFile = fullfile(simu.paraview.path, 'mooring1', filename);
+    assert(isfile(sourceFile), ...
+        'The published RM3 ParaView mooring frame is missing');
+    copyfile(sourceFile, fullfile(mooringVtpDir, filename));
 end
 close_system('RM3MoorDyn', 0);
 end
