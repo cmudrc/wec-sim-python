@@ -1540,6 +1540,13 @@ feeds the remainder through a short acceleration delay, so brief cable snap
 events differ more than body positions. The source law can report positive
 force while stretched and contracting rapidly because its damping term is not
 clamped.
+In the published 0.01 s source run, the largest Python position and cable-force
+differences are 42.7 mm and 40.0 kN. Halving the source step changes those
+traces by 43.0 mm and 40.0 kN; a further halving changes them by 1.04 mm and
+1.62 kN. With the same assembly and a 0.005 s Python step, the comparison
+against the 0.0025 s MATLAB run is within 0.515 mm position and 560 N cable
+force on all common samples. See [PARITY.md](PARITY.md) for the paired gates
+and limits of this numerical step audit.
 
 The published WaveBot `CalcImpedance` application uses three independent
 motions and a sampled multisine input. Generate its HDF5 file with

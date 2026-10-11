@@ -51,6 +51,9 @@ def test_finer_source_step_and_independent_cable_motion():
     # The published source step changes the snap response materially.
     assert np.max(np.abs(fine[::2, :, 1:7] - coarse[:, :, 1:7])) > .03
     assert np.max(np.abs(fine_cable[::2, 1] - coarse_cable[:, 21])) > 30_000
+    # The next source refinement is much smaller on the same wave and grid.
+    assert np.max(np.abs(finer[::2, :, 1:7] - fine[:, :, 1:7])) < .002
+    assert np.max(np.abs(finer_cable[::2, 1] - fine_cable[:, 1])) < 2_500
 
     result = run_mbari_cable(HYDRO, dt=.005)
     np.testing.assert_allclose(result.time, fine_wave[:, 0],
@@ -65,3 +68,20 @@ def test_finer_source_step_and_independent_cable_motion():
     assert np.max(np.abs(force_error)) < 2_500
     assert np.sqrt(np.mean(force_error**2)) < 400
     assert abs(np.trapezoid(force_error, result.time)) < 100
+
+    finer_position_error = result.body_position - finer[::2, :, 1:7]
+    finer_speed_error = result.body_velocity - finer[::2, :, 7:13]
+    finer_force_error = result.cable_force_z - finer_cable[::2, 1]
+    assert np.max(np.abs(finer_position_error)) < .001
+    assert np.max(np.abs(finer_speed_error)) < .01
+    assert np.max(np.abs(finer_force_error)) < 1_000
+    assert np.sqrt(np.mean(finer_force_error**2)) < 150
+    assert abs(np.trapezoid(finer_force_error, result.time)) < 50
+
+    coarse_python = run_mbari_cable(HYDRO, dt=.01)
+    assert np.max(np.abs(coarse_python.body_position
+                         - result.body_position[::2])) < 2e-5
+    assert np.max(np.abs(coarse_python.body_velocity
+                         - result.body_velocity[::2])) < 2.5e-4
+    assert np.max(np.abs(coarse_python.cable_force_z
+                         - result.cable_force_z[::2])) < 25
