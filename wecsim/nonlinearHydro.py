@@ -1,9 +1,9 @@
-"""Instantaneous free-surface forces on a triangulated heaving body.
+"""Instantaneous free-surface pressures and forces on triangulated bodies.
 
-This implements WEC-Sim's nonlinearHydro=2 regular-wave force construction
-for a body constrained to heave, with constant or convolution radiation.
-Mesh triangles are in body coordinates about
-the center of gravity, as required by WEC-Sim's geometry import.
+The mesh pressure and wrench functions accept six-component body poses.
+The coupled nonlinearHydro=2 solver below is currently limited to heave.
+Mesh triangles are in body coordinates about the center of gravity, as
+required by WEC-Sim's geometry import.
 """
 
 from dataclasses import dataclass
@@ -12,6 +12,162 @@ from pathlib import Path
 import numpy as np
 from scipy.optimize import brentq
 import trimesh
+
+
+@dataclass(frozen=True)
+class MeshPressures:
+    """Hydrostatic, moving-surface, and mean-surface pressure per mesh face."""
+
+    hydrostatic: np.ndarray
+    nonlinear_wave: np.ndarray
+    linear_wave: np.ndarray
+
+
+@dataclass(frozen=True)
+class MeshPressureWrenches:
+    """Physical pressure force and moment about the body's CG, per time."""
+
+    hydrostatic: np.ndarray
+    nonlinear_wave: np.ndarray
+    linear_wave: np.ndarray
+
+
+def _xyz_rotation(roll, pitch, yaw):
+    cx, sx = np.cos(roll), np.sin(roll)
+    cy, sy = np.cos(pitch), np.sin(pitch)
+    cz, sz = np.cos(yaw), np.sin(yaw)
+    rx = np.array([[1, 0, 0], [0, cx, -sx], [0, sx, cx]])
+    ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
+    rz = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
+    return rz @ ry @ rx
+
+
+def regular_wave_mesh_pressures(
+    vertices, faces, poses, times, *, center_gravity, rho, gravity,
+    water_depth, wave_number, wave_height, wave_period, ramp_time,
+    direction_deg=0, deep_water=False,
+) -> MeshPressures:
+    """Evaluate WEC-Sim's regular-wave mesh pressures on prescribed poses.
+
+    Vertices are body-local STL coordinates. Pose translations are world CG
+    positions, followed by XYZ roll/pitch/yaw. The incident elevation is
+    evaluated at each *moved facet center*, including for the linear pressure
+    on mean geometry, as in the pinned ``nonlinearHydro=2`` source blocks.
+    This evaluates pressures only; it does not advance body dynamics.
+    """
+    vertices = np.asarray(vertices, dtype=float)
+    faces = np.asarray(faces)
+    poses = np.asarray(poses, dtype=float)
+    times = np.asarray(times, dtype=float)
+    cg = np.asarray(center_gravity, dtype=float)
+    if (vertices.ndim != 2 or vertices.shape[1] != 3
+            or faces.ndim != 2 or faces.shape[1] != 3
+            or not np.issubdtype(faces.dtype, np.integer)
+            or not len(faces) or np.any(faces < 0)
+            or np.any(faces >= len(vertices))
+            or poses.ndim != 2 or poses.shape[1] != 6
+            or times.shape != (len(poses),) or cg.shape != (3,)
+            or not all(np.isfinite(a).all() for a in
+                       (vertices, poses, times, cg))
+            or not np.isfinite([rho, gravity, water_depth, wave_number,
+                                wave_height, wave_period, ramp_time,
+                                direction_deg]).all()
+            or rho <= 0 or gravity <= 0 or water_depth <= 0
+            or wave_number <= 0 or wave_height < 0 or wave_period <= 0
+            or ramp_time < 0):
+        raise ValueError("mesh pressures need finite triangles, poses, and wave data")
+
+    centers = vertices[faces].mean(axis=1)
+    mean_z = centers[:, 2] + cg[2]
+    shape = (len(poses), len(faces))
+    hydrostatic = np.empty(shape)
+    nonlinear = np.empty(shape)
+    linear = np.empty(shape)
+    direction = np.deg2rad(direction_deg)
+    heading = np.array([np.cos(direction), np.sin(direction)])
+    omega = 2 * np.pi / wave_period
+
+    def wave_pressure(z, elevation):
+        if deep_water:
+            stretched = z - elevation
+            pressure = rho * gravity * elevation * np.exp(wave_number * stretched)
+        else:
+            stretched = ((z - elevation) * water_depth
+                         / (water_depth + elevation))
+            pressure = (rho * gravity * elevation
+                        * np.cosh(wave_number * (stretched + water_depth))
+                        / np.cosh(wave_number * water_depth))
+        return np.where(stretched > 0, 0.0, pressure)
+
+    for i, (pose, at_time) in enumerate(zip(poses, times)):
+        moved = centers @ _xyz_rotation(*pose[3:]).T + pose[:3]
+        moved_z = moved[:, 2]
+        ramp = (1 if ramp_time == 0 or at_time >= ramp_time
+                else (1 - np.cos(np.pi * at_time / ramp_time)) / 2)
+        elevation = (wave_height / 2 * ramp
+                     * np.cos(wave_number * (moved[:, :2] @ heading)
+                              - omega * at_time))
+        if not deep_water and np.any(water_depth + elevation <= 0):
+            raise ValueError("instantaneous water depth must remain positive")
+        hydrostatic[i] = -rho * gravity * np.where(moved_z > elevation, 0, moved_z)
+        nonlinear[i] = wave_pressure(moved_z, elevation)
+        # The linear term uses mean geometry and no surface stretching.
+        if deep_water:
+            linear[i] = rho * gravity * elevation * np.exp(wave_number * mean_z)
+        else:
+            linear[i] = (rho * gravity * elevation
+                         * np.cosh(wave_number * (mean_z + water_depth))
+                         / np.cosh(wave_number * water_depth))
+        linear[i, mean_z > 0] = 0.0
+    return MeshPressures(hydrostatic, nonlinear, linear)
+
+
+def mesh_pressure_wrenches(vertices, faces, poses, pressures: MeshPressures):
+    """Integrate facet pressures into physical six-component body wrenches.
+
+    The hydrostatic and nonlinear pressures act on the moved surface; the
+    linear wave pressure acts on the mean surface. Moments are about the CG.
+    Weight and the post-processor's resisting-force sign are not included.
+    """
+    vertices = np.asarray(vertices, dtype=float)
+    faces = np.asarray(faces)
+    poses = np.asarray(poses, dtype=float)
+    if (vertices.ndim != 2 or vertices.shape[1] != 3
+            or faces.ndim != 2 or faces.shape[1] != 3
+            or not np.issubdtype(faces.dtype, np.integer)
+            or not len(faces) or np.any(faces < 0)
+            or np.any(faces >= len(vertices))
+            or poses.ndim != 2 or poses.shape[1] != 6
+            or not np.isfinite(vertices).all() or not np.isfinite(poses).all()):
+        raise ValueError("pressure wrenches need finite triangles and poses")
+    shape = (len(poses), len(faces))
+    for field in (pressures.hydrostatic, pressures.nonlinear_wave,
+                  pressures.linear_wave):
+        if np.shape(field) != shape or not np.isfinite(field).all():
+            raise ValueError("each pressure field must match the poses and faces")
+    triangles = vertices[faces]
+    centers = triangles.mean(axis=1)
+    area_vectors = np.cross(triangles[:, 1] - triangles[:, 0],
+                            triangles[:, 2] - triangles[:, 0]) / 2
+
+    def integrate(pressure, center, area):
+        facet_force = -pressure[:, None] * area
+        return np.r_[facet_force.sum(axis=0),
+                     np.cross(center, facet_force).sum(axis=0)]
+
+    linear = np.array([
+        integrate(pressure, centers, area_vectors)
+        for pressure in pressures.linear_wave
+    ]).reshape(len(poses), 6)
+    hydrostatic = np.empty((len(poses), 6))
+    nonlinear = np.empty_like(hydrostatic)
+    for i, pose in enumerate(poses):
+        rotation = _xyz_rotation(*pose[3:])
+        center = centers @ rotation.T
+        area = area_vectors @ rotation.T
+        hydrostatic[i] = integrate(pressures.hydrostatic[i], center, area)
+        nonlinear[i] = integrate(pressures.nonlinear_wave[i], center, area)
+    return MeshPressureWrenches(hydrostatic, nonlinear, linear)
 
 
 @dataclass(frozen=True)

@@ -419,7 +419,7 @@ Supported combinations are:
 | `heave` | `none` | One equilibrium-mass body, initial heave displacement, no PTO | Radiation convolution |
 | `fixed_hinge` | `pm` or `pm_multi` | Hydrodynamic flap, optional fixed hydrodynamic base, pitch PTO | Directional PM excitation and radiation convolution; `pm_multi` sums independently phased seas |
 | `fixed_hinge` | `spectrumImportFullDir` | Hydrodynamic flap, optional fixed hydrodynamic base, pitch PTO | Imported frequency-dependent directional spectrum and radiation convolution |
-| `fixed_hinge` | `regular` | One hydrodynamic flap, optional fixed nonhydrodynamic base, pitch PTO | Regular-wave excitation and constant-frequency radiation |
+| `fixed_hinge` | `regular` | One hydrodynamic flap, optional fixed nonhydrodynamic base, pitch PTO | Regular-wave excitation and constant-frequency radiation; optional instantaneous STL mesh hydrostatics and Froude–Krylov force |
 | `fixed_morison` | `pm` | Stationary bodies without HDF5; body-local Cartesian Morison elements; no PTO | Directional irregular-wave velocity, acceleration, and six-component Morison force; optional single-heading current |
 | `linear_subspace` | `none` or zero-heading `regular` | One hydrodynamic body with axial body-local Morison elements; pure heave, or surge/heave/pitch in regular waves; no PTO | Radiation convolution or constant-frequency radiation, relative-fluid drag, fluid inertia, and Morison added mass in the acceleration solve; optional regular-wave current for surge/heave/pitch |
 | `floating_joint` | `regular` or `regularCIC` | Two equilibrium-mass bodies, pitch inertias, relative-heave PTO; optional `body_to_body` | Constant-frequency radiation, impulse-response convolution, or sampled FIR radiation |
@@ -499,6 +499,14 @@ update sample and accumulate over long runs.
 A three-seed paired diagnostic that prescribes only MATLAB's heading-update
 schedule recovers tight yaw and PTO-work agreement while Python advances its
 own motion. Native long-trajectory parity for the one-degree hold remains open.
+In the pinned irregular case, halving MATLAB's published 0.01 s step changes
+250 s PTO work by 47.8% and 19.2% in two phase realizations, even though the
+incident wave is identical at common times. Halving the step again changes
+work by 31.9% and 102.0%, respectively. Treat a nonzero threshold as a
+numerical interpolation shortcut and check step convergence for the WEC and
+sea being modeled. The zero-threshold, continuous-heading option has paired
+250 s MATLAB/Python motion checks for three phase realizations; details are
+in [PARITY.md](PARITY.md).
 
 For the published `Variable_Hydro/Passive_Yaw` case, set
 `passive_yaw=True` and `yaw_heading_bank=np.arange(-30, 30.25, 0.25)` on the
@@ -1669,6 +1677,33 @@ Simulink's delayed added-mass feedback. Integrated forcing and implicit added
 mass remain the defaults. The equivalent low-level case wave type is
 `spectrumImportFullDir`.
 
+For the published nonlinear OSWEC flap, give the body its STL and select
+instantaneous hydro. The same `fixed_hinge` builder then advances its own
+flap motion and returns the named pitch history:
+
+```python
+from wecsim import RegularWave, WEC, WorldPoint
+
+wec = WEC("Nonlinear OSWEC")
+flap = wec.body(
+    "flap", "path/to/oswec.h5", mass=127000,
+    inertia=(1.85e6, 1.85e6, 1.85e6),
+    geometry_file="path/to/flap.stl", nonlinear_hydro="instantaneous",
+)
+base = wec.fixed_body("base", center_gravity=(0, 0, -10.9),
+                      mass=999, inertia=(1, 1, 1))
+wec.fixed_hinge(flap, base, location=WorldPoint(0, 0, -10),
+                pto_location=WorldPoint(0, 0, -8.9))
+result = wec.run(RegularWave(2.5, 8), dt=0.1, end_time=120,
+                 ramp_time=40)
+pitch = result.coordinates["pitch"].position
+```
+
+This path supports the zero-heading regular wave and fixed pitch hinge. It
+uses implicit added mass; the pinned Simulink run applies delayed acceleration
+feedback and its published 0.1 s motion is step-sensitive. The paired force
+and refined-motion gates are recorded in [PARITY.md](PARITY.md).
+
 The same wave calculation is available directly in Python:
 
 ```python
@@ -1707,8 +1742,13 @@ source XYZ rotation order. `write_paraview_vtp_mooring(...)` accepts one
 `(time, node, xyz)` position history and one `(time, segment)` tension history
 per MoorDyn line; it interpolates both to the requested frames and writes
 numbered line VTP files. Wave, body, and mooring serialization have focused
-MATLAB source gates. The published OSWEC and RM3 visualization cases still
-need direct output gates for their actual meshes, pressures, and mooring lines.
+MATLAB source gates. For a regular-wave body with logged world-CG poses,
+`wecsim.nonlinearHydro.regular_wave_mesh_pressures(...)` calculates the three
+face-pressure arrays from its STL mesh, wave settings, and output times; pass
+its `hydrostatic`, `nonlinear_wave`, and `linear_wave` fields to the body VTP
+writer. The actual published OSWEC nonlinear visualization flap pressures
+and independently advanced pitch motion have full-duration MATLAB gates. The
+full published VTP scene and actual RM3 MoorDyn line histories remain unpaired.
 
 To run a supported case without writing Python code:
 
@@ -1733,4 +1773,5 @@ The Python dynamics engine uses independent coordinates for each supported
 constraint layout, avoiding numerical joint drift. New layouts and force
 models need explicit MATLAB comparisons before they are called supported.
 Wave, body, and mooring VTP serialization now have pinned MATLAB source gates;
-full application visualization and BEMIO conversion remain future work.
+the published OSWEC nonlinear flap pressure fields have a separate paired
+gate. Full application visualization and BEMIO conversion remain future work.

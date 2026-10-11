@@ -1,0 +1,50 @@
+name: MATLAB OSWEC passive-yaw step audit
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/oswec-passive-yaw-step-audit.yml'
+      - 'tests/matlab/oswec_passive_yaw_step_refinement.m'
+  workflow_dispatch:
+
+jobs:
+  refine:
+    strategy:
+      fail-fast: false
+      matrix:
+        phase_seed: [1, 3]
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: |
+            _Common_Input_Files/OSWEC
+            Passive_Yaw/PassiveYawRegression
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); oswec_passive_yaw_step_refinement(${{ matrix.phase_seed }})
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: matlab-oswec-passive-yaw-step-seed-${{ matrix.phase_seed }}
+          path: |
+            matlab-oswec-passive-yaw-refinement/
+            applications/_Common_Input_Files/OSWEC/hydroData/oswec.h5

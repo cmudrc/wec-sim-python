@@ -10,9 +10,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+import trimesh
 
 from .bodyClass import BodyClass
 from .generalDynamics import BodyMotion, DynamicBody, GeneralizedDynamics
+from .morison import finite_depth_wavenumber
+from .nonlinearHydro import mesh_pressure_wrenches, regular_wave_mesh_pressures
 
 
 @dataclass(frozen=True)
@@ -291,4 +294,167 @@ def solve_hinged_pitch_regular(
         pto_torque=(-pto_damping * speed
                     - pto_stiffness * (angle - pto_equilibrium)),
         excitation_force=force_history,
+    )
+
+
+def solve_hinged_pitch_nonlinear_regular(
+    h5_file: str | Path,
+    geometry_file: str | Path,
+    *,
+    wave_height: float,
+    wave_period: float,
+    hinge_z: float,
+    body_mass: float,
+    pitch_inertia: float,
+    pto_damping: float,
+    pto_stiffness: float = 0.0,
+    pto_equilibrium: float = 0.0,
+    dt: float = 0.1,
+    end_time: float = 120.0,
+    ramp_time: float = 40.0,
+    rho: float = 1000.0,
+    g: float = 9.81,
+) -> HingePitchResponse:
+    """Advance a hinged flap with instantaneous regular-wave mesh pressures.
+
+    The pressure and frequency-domain force laws are paired with the pinned
+    nonlinear OSWEC case. The body motion uses implicit added mass and resolves
+    pressure forces between output samples; it does not adopt Simulink's delayed
+    acceleration feedback.
+    """
+    values = [wave_height, wave_period, hinge_z, body_mass, pitch_inertia,
+              pto_damping, pto_stiffness, pto_equilibrium, dt, end_time,
+              ramp_time, rho, g]
+    if (not np.isfinite(values).all() or wave_height < 0 or wave_period <= 0
+            or body_mass <= 0 or pitch_inertia <= 0 or pto_damping < 0
+            or pto_stiffness < 0 or dt <= 0 or end_time < 0
+            or ramp_time < 0 or rho <= 0 or g <= 0):
+        raise ValueError("invalid nonlinear hinged-flap parameters")
+    steps = round(end_time / dt)
+    if not np.isclose(steps * dt, end_time, rtol=0, atol=1e-10):
+        raise ValueError("end_time must be an integer multiple of dt")
+    time = np.arange(steps + 1) * dt
+    omega = 2 * np.pi / wave_period
+
+    body = BodyClass(str(h5_file))
+    body.bodyNumber = body.bodyTotal = 1
+    body.readH5file()
+    if int(np.asarray(body.dof).item()) != 6:
+        raise ValueError("the hinged flap needs six hydrodynamic DOFs")
+    cg = np.asarray(body.hydroData["properties"]["cg"], dtype=float).ravel()
+    if not np.allclose(cg[:2], 0, atol=1e-10, rtol=0):
+        raise ValueError("nonlinear hinged flap needs its CG on the hinge's z axis")
+    lever = cg[2] - hinge_z
+    if lever <= 0:
+        raise ValueError("the hinge must be below the center of gravity")
+    depth = float(np.asarray(
+        body.hydroData["simulation_parameters"]["water_depth"]
+    ).item())
+    if not np.isfinite(depth) or depth <= 0:
+        raise ValueError("nonlinear regular waves need finite positive water depth")
+    wave_number = finite_depth_wavenumber(
+        np.array([omega]), water_depth=depth, gravity=g,
+    )[0]
+    mesh = trimesh.load_mesh(str(geometry_file), process=False)
+    if len(mesh.faces) == 0:
+        raise ValueError("nonlinear hinged flap needs a triangular geometry mesh")
+
+    body.mass = body_mass
+    body.hydroStiffness = np.zeros((6, 6))
+    body.viscDrag = {
+        "Drag": np.zeros((6, 6)), "cd": np.zeros(6),
+        "characteristicArea": np.zeros(6),
+    }
+    body.linearDamping = np.zeros((6, 6))
+    body.hydroForcePre(
+        omega, [0], 1, np.array([0.0]), [], dt, rho, g,
+        "regular", np.vstack((time, np.zeros_like(time))),
+        1, 1, 0, 2, 0,
+    )
+    hydro = body.hydroForce
+    re = np.asarray(hydro["fExt"]["re"])
+    im = np.asarray(hydro["fExt"]["im"])
+
+    def motion(q, v):
+        angle, speed = q[0], v[0]
+        jacobian = np.array([
+            lever * np.cos(angle), 0.0, -lever * np.sin(angle),
+            0.0, 1.0, 0.0,
+        ])[:, None]
+        bias = np.array([
+            -lever * np.sin(angle), 0.0, -lever * np.cos(angle),
+            0.0, 0.0, 0.0,
+        ]) * speed**2
+        displacement = np.array([
+            lever * np.sin(angle), 0.0,
+            lever * (np.cos(angle) - 1), 0.0, angle, 0.0,
+        ])
+        return BodyMotion(displacement, jacobian, bias)
+
+    def forces(at_time, angle):
+        pose = np.array([[
+            lever * np.sin(angle), 0.0,
+            hinge_z + lever * np.cos(angle), 0.0, angle, 0.0,
+        ]])
+        pressure = regular_wave_mesh_pressures(
+            mesh.vertices, mesh.faces, pose, [at_time],
+            center_gravity=cg, rho=rho, gravity=g,
+            water_depth=depth, wave_number=wave_number,
+            wave_height=wave_height, wave_period=wave_period,
+            ramp_time=ramp_time,
+        )
+        wrench = mesh_pressure_wrenches(
+            mesh.vertices, mesh.faces, pose, pressure,
+        )
+        ramp = (1.0 if ramp_time == 0 or at_time >= ramp_time
+                else (1 - np.cos(np.pi * at_time / ramp_time)) / 2)
+        excitation = (wave_height / 2 * ramp * (
+            re * np.cos(omega * at_time) - im * np.sin(omega * at_time)
+        ) + ramp * (wrench.nonlinear_wave[0] - wrench.linear_wave[0]))
+        hydrostatic = wrench.hydrostatic[0].copy()
+        hydrostatic[2] -= body_mass * g
+        return hydrostatic, excitation
+
+    def state_excitation(at_time, coordinate, speed):
+        hydrostatic, excitation = forces(at_time, coordinate[0])
+        return hydrostatic + excitation
+
+    rigid_mass = np.diag([
+        body_mass, body_mass, body_mass, 0.0, pitch_inertia, 0.0,
+    ])
+    device = GeneralizedDynamics((DynamicBody(
+        rigid_mass=rigid_mass,
+        added_mass=(np.asarray(hydro["fAddedMass"]),),
+        damping=(np.asarray(hydro["fDamping"]),),
+        restoring=np.zeros((6, 6)), static_force=np.zeros(6),
+        reference_position=np.r_[cg, np.zeros(3)],
+        motion=motion, excitation=lambda at_time: np.zeros(6),
+        state_excitation=state_excitation,
+    ),), 1,
+        pto_stiffness=np.array([[pto_stiffness]]),
+        pto_damping=np.array([[pto_damping]]),
+        pto_equilibrium=np.array([pto_equilibrium]),
+    )
+    solved = device.integrate(
+        dt=dt, end_time=end_time, adaptive_regular=True,
+    )
+    angle = solved.coordinate[:, 0]
+    speed = solved.speed[:, 0]
+    excitation_force = np.array([
+        forces(at_time, state_angle)[1]
+        for at_time, state_angle in zip(solved.time, angle)
+    ])
+    torque = np.array([
+        motion(solved.coordinate[i], solved.speed[i]).jacobian[:, 0]
+        @ excitation_force[i]
+        for i in range(len(solved.time))
+    ])
+    return HingePitchResponse(
+        time=solved.time, angle=angle, angular_velocity=speed,
+        center_position=solved.body_position[:, 0, :3],
+        center_velocity=solved.body_velocity[:, 0, :3],
+        excitation_torque=torque,
+        pto_torque=(-pto_damping * speed
+                    - pto_stiffness * (angle - pto_equilibrium)),
+        excitation_force=excitation_force,
     )
