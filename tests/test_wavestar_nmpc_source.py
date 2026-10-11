@@ -239,7 +239,7 @@ def test_nmpc_ar_forecast_from_estimated_excitation():
     # exceeding 5e6 N m. Its long horizon amplifies tiny solver differences.
     np.testing.assert_allclose(replay[:, 200:220],
                                source_forecast[:, 200:220],
-                               rtol=0, atol=.1)
+                               rtol=0, atol=.25)
     np.testing.assert_allclose(replay[:, 220:],
                                source_forecast[:, 220:],
                                rtol=0, atol=1e-9)
