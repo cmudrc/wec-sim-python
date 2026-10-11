@@ -111,7 +111,8 @@ def test_published_oswec_body_vtp_history(
     np.testing.assert_allclose(source[time_key].ravel(), times, rtol=0, atol=1e-8)
     poses = source[pose_key]
     assert poses.shape == (1201, 6)
-    mesh = trimesh.load_mesh(stl, process=False)
+    # MATLAB's stlread shares coincident vertices (523 flap, 8 base).
+    mesh = trimesh.load_mesh(stl, process=True)
     kwargs = {}
     if body_index == 1:
         assert len(mesh.faces) == 1042
