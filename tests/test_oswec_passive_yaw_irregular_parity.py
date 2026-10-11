@@ -225,6 +225,48 @@ def test_published_irregular_passive_yaw_heading_threshold(tmp_path):
     assert pto.shape == (25001, 25)
 
 
+@pytest.mark.parametrize(
+    "seed,end_time,yaw_limit",
+    ((1, 53.44, 5e-6), (2, 86.73, 3e-4), (3, 67.39, 2e-5)),
+)
+def test_published_irregular_held_heading_before_first_event_timing_split(
+    tmp_path, seed, end_time, yaw_limit,
+):
+    """Gate native motion up to the first differing heading-update sample."""
+    source = Path(REFERENCE)
+    hydro = (Path(APPLICATIONS)
+             / "_Common_Input_Files/OSWEC/hydroData/oswec.h5").resolve()
+    prefix = "OSWEC_PASSIVE_YAW_IRR" + (f"_SEED{seed}" if seed > 1 else "")
+    case = "PassiveYawRegression" + (f"Seed{seed}" if seed > 1 else "")
+    components = np.loadtxt(source / f"{prefix}_components.csv", delimiter=",")
+    flap = np.loadtxt(source / f"OSWEC_PASSIVE_YAW_IRR_{case}_body1.csv",
+                      delimiter=",")
+    wave = np.loadtxt(source / f"{prefix}_wave.csv", delimiter=",")
+    phases = tmp_path / "phases.csv"
+    np.savetxt(phases, components[:, 3, None], delimiter=",")
+
+    wec = WEC("OSWEC held-heading prefix")
+    moving = wec.body(
+        "flap", hydro, mass=12700, inertia=(1.85e6,) * 3,
+        passive_yaw=True, passive_yaw_threshold=1,
+    )
+    wec.body("base", hydro, mass=999, inertia=(999,) * 3)
+    yaw = wec.coordinate(
+        "yaw", moving.move("yaw", pivot=WorldPoint(0, 0, -8.9)),
+    )
+    wec.rotational_pto("hinge", yaw, damping=120000)
+    result = wec.run(
+        PMWave(2.5, 8, direction=10, phase_file=phases),
+        dt=.01, end_time=end_time, ramp_time=100, radiation_memory=40,
+    )
+    count = len(result.time)
+    _max_error(result.time, flap[:count, 0], 1e-10, "prefix time")
+    _max_error(result.wave_elevation, wave[:count, 1], 1e-11,
+               "prefix incident wave")
+    _max_error(result.bodies["flap"].position[:, 5], flap[:count, 6],
+               yaw_limit, "native yaw before first differing heading event")
+
+
 @pytest.mark.parametrize("seed", (1, 2, 3))
 def test_continuous_heading_irregular_passive_yaw(seed):
     """Pair continuous heading and 250 s flap/PTO trajectories in three seas."""

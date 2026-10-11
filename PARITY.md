@@ -183,6 +183,20 @@ evidence that the discrete heading events can amplify small trajectory
 offsets; it does not establish which numerical path is physically preferable
 or full published-case parity.
 
+A three-seed prefix audit locates the first differing **heading-update time**
+between native Python and the published MATLAB runs. At the `0.01` s step,
+Python updates one sample before MATLAB at `53.45` s in seed 1 and `67.40` s
+in seed 3; MATLAB updates one sample before Python at `86.74` s in seed 2.
+Maximum yaw differences *before* those samples are `4.31e-6`, `2.47e-4`, and
+`1.44e-5` rad respectively. On the first differing samples, evaluating the
+same Python excitation bank at each run's selected heading gives yaw-torque
+differences of `28.8`, `14.2`, and `82.6` kN m for seeds 1, 2, and 3.
+The paired test now gates each native prefix through the preceding sample,
+including its incident wave and yaw. These one-sample switches explain how a
+small preceding state offset can produce a large instantaneous force
+difference; they do not prove that every later trajectory difference has the
+same cause or make either full-duration result a converged target.
+
 The seed-2 Python held-heading result is also sensitive to time step: with
 the same sea phases and configuration, PTO damper work is `2,795`, `3,188`,
 and `2,681` J at `dt = 0.01`, `0.005`, and `0.0025` s. For comparison, the
