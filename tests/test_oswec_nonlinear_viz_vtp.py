@@ -53,6 +53,29 @@ def _time(source):
     return times
 
 
+def test_published_oswec_paraview_collection(tmp_path):
+    """Pair the file that opens the full wave and body history in ParaView."""
+    times = _time(_source())
+    actual = ParaviewClass(None).write_paraview_response(
+        times, tmp_path, model_name="OSWEC",
+        bodies=[("flap", (1, 1, 0), 1), ("base", (1, 1, 0), 1)],
+    )
+    saved = Path(REFERENCE) / "vtp_samples"
+    assert (tmp_path / "bodies.txt").read_text() == (
+        saved / "bodies.txt"
+    ).read_text()
+    actual_root = ElementTree.parse(actual).getroot()
+    source_root = ElementTree.parse(saved / "OSWEC.pvd").getroot()
+    assert actual_root.attrib == source_root.attrib == {
+        "type": "Collection", "version": "0.1",
+    }
+    actual_entries = [item.attrib for item in actual_root.findall("./Collection/DataSet")]
+    source_entries = [item.attrib for item in source_root.findall("./Collection/DataSet")]
+    assert len(actual_entries) == 3 * len(times) == 3603
+    assert actual_entries == source_entries
+    assert all((Path(VTP) / item["file"]).is_file() for item in source_entries)
+
+
 def test_published_oswec_wave_vtp_history(tmp_path):
     """Check every wave point, quad, and ground parameter on source times."""
     source = _source()
