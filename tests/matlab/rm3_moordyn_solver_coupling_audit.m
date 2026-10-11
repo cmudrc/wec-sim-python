@@ -50,22 +50,11 @@ function runOne(sourceDir, outDir, label, couplingStep, maximumStep)
         clear cleanup;
         cd(caseDir);
 
-        % These are the three calls made by the pinned wecSim.m. Override
-        % MaxStep after setup, leaving simu.dt, its wave grid, and the
-        % MoorDynCaller pulse/step at the requested couplingStep.
-        run('initializeWecSim');
-        assert(abs(simu.dt - couplingStep) < 1e-12 && ...
-            simu.dtOut == 0.01 && simu.endTime == 10 && ...
-            strcmp(simu.solver, 'ode45') && waves.phaseSeed == 1 && ...
-            mooring(1).moorDyn == 1, 'Audit settings changed');
-        [~, modelName, ~] = fileparts(simu.simMechanicsFile);
-        set_param(modelName, 'MaxStep', ...
-            num2str(maximumStep, '%.15g'));
-        assert(abs(str2double(get_param(modelName, ...
-            'MaxStep')) - maximumStep) < 1e-12, ...
-            'Could not set the independent ode45 maximum step');
-        sim(simu.simMechanicsFile, [], simset('SrcWorkspace', 'parent'));
-        run('stopWecSim');
+        % The pinned wecSim.m calls sim from a script. Keep that script
+        % context so Simulink's SrcWorkspace='parent' sees the variant
+        % controls created by initializeWecSim in this function workspace.
+        run(fullfile(fileparts(outDir), 'tests', 'matlab', ...
+            'rm3_moordyn_simulate_with_max_step.m'));
         assert(size(waves.phase, 1) == 1000, 'Unexpected phase grid');
         writematrix(waves.phase(:), ...
             fullfile(outDir, [label '_phase.csv']));

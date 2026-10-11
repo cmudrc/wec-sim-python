@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/rm3-moordyn-solver-coupling-audit.yml'
       - 'tests/matlab/rm3_moordyn_solver_coupling_audit.m'
+      - 'tests/matlab/rm3_moordyn_simulate_with_max_step.m'
       - 'tests/test_rm3_moordyn_solver_coupling_audit.py'
   workflow_dispatch:
 
