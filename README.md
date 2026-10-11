@@ -1643,7 +1643,10 @@ length, which differs slightly from the physical B-to-C linkage. The held
 motor torque is projected through the moving rod arm at each plant stage.
 The source sea, linkage, resistive startup, and actuator force have paired gates. A
 derived 0.001 s MATLAB run also pairs the unforced plant through 9.95 s; the
-published 0.05 s run has a larger numerical difference. The observer replays
+published 0.05 s run has a larger numerical difference. A fixed-fit MATLAB
+`ode8` step audit reduces the pre-control Python pitch gap from `0.003416`
+rad at 50 ms to `0.000148` rad at 12.5 ms; see [PARITY.md](PARITY.md).
+The observer replays
 all five published estimator states from saved stroke and the previous torque
 request. The autoregressive forecast is paired from saved estimated moments;
 the composed observer and predictor are also paired after 11 s from stroke

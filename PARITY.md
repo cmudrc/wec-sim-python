@@ -1166,6 +1166,21 @@ between output samples, so neither interpolation reconstructs the actual
 internal force history. This record cannot isolate the entire plant gap from
 actuator input timing and is not a parity gate.
 
+A [fixed-fit R2025b `ode8` step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38177360148)
+truncates the pinned NMPC application at 9.95 s, before PTO activation, and
+changes only `simu.dt` from 50 to 25 to 12.5 ms. All three runs reuse one
+checksum-verified hydrodynamic fit, the same 500 sea components, matching
+wave elevation at shared times, and zero PTO actuation. MATLAB's own maximum
+50-to-25 ms pitch/speed changes are `0.002867` rad and `0.02969` rad/s;
+25-to-12.5 ms changes fall to `0.000481` rad and `0.00521` rad/s. Against
+the same 1 ms Python plant, maximum pitch/speed gaps shrink from
+`0.003416` rad/`0.03530` rad/s at 50 ms to `0.000629` rad/`0.00667` rad/s
+at 25 ms and `0.000148` rad/`0.00146` rad/s at 12.5 ms. The paired gate
+checks input identity, zero actuation, decreasing source and cross-language
+step gaps, and final limits of `0.0003` rad and `0.003` rad/s. This strongly
+implicates the published coarse source step in the pre-control gap; it does
+not prove step convergence or account for the active 225 s closed loop.
+
 Before PTO actuation, a 50 ms Python RK4 solve changes the peak source pitch
 gap by only `4.7e-6` rad relative to the 1 ms solve. A fixed 50 ms DOP853
 solve with 1 ms-resolved incident forcing agrees with the fine Python
