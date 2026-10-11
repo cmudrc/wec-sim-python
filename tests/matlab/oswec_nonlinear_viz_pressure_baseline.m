@@ -103,6 +103,7 @@ sampleDir = fullfile(outDir, 'vtp_samples');
 mkdir(sampleDir);
 copyfile(fullfile(vtkDir, 'ground.txt'), sampleDir);
 copyfile(fullfile(vtkDir, 'bodies.txt'), sampleDir);
+copyfile(fullfile(vtkDir, 'OSWEC.pvd'), sampleDir);
 for frame = [1, 601, 1201]
     for folder = {'waves', ['body1_' flapName], ['body2_' baseName]}
         name = folder{1};

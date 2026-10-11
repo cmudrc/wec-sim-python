@@ -70,6 +70,67 @@ class ParaviewClass:
             f"wave-surface visualization is not implemented for {waves.wType!r}"
         )
 
+    def write_paraview_response(
+        self, times, directory, *, model_name, bodies, num_moordyn=0,
+    ) -> Path:
+        """Write the WEC-Sim PVD collection and ``bodies.txt`` manifest.
+
+        ``bodies`` is an ordered sequence of ``(name, RGB color, opacity)``.
+        Write this after the numbered wave, body, and mooring VTP frames.
+        """
+        times = np.asarray(times, dtype=float)
+        if (times.ndim != 1 or not len(times)
+                or not np.isfinite(times).all()
+                or np.any(np.diff(times) <= 0)):
+            raise ValueError("ParaView response times must be finite and increasing")
+        if (not isinstance(model_name, str) or not model_name
+                or model_name in (".", "..")
+                or "/" in model_name or "\\" in model_name
+                or isinstance(num_moordyn, bool)
+                or not isinstance(num_moordyn, (int, np.integer))
+                or num_moordyn < 0):
+            raise ValueError("ParaView response needs a model name and mooring count")
+        body_specs = []
+        for name, color, opacity in bodies:
+            color = np.asarray(color, dtype=float)
+            if (not isinstance(name, str) or not name or name in (".", "..")
+                    or "/" in name or "\\" in name
+                    or color.shape != (3,) or not np.isfinite(color).all()
+                    or np.any((color < 0) | (color > 1))
+                    or not np.isfinite(opacity) or not 0 <= opacity <= 1):
+                raise ValueError("ParaView body needs a name, RGB color, and opacity")
+            body_specs.append((name, color, opacity))
+        names = [name for name, _, _ in body_specs]
+        if len(names) != len(set(names)):
+            raise ValueError("ParaView body names must be unique")
+
+        directory = Path(directory)
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "bodies.txt").write_text("".join(
+            f"{name}\n{'  '.join(f'{value:g}' for value in color)}\n"
+            f"{opacity:g}\n\n"
+            for name, color, opacity in body_specs
+        ), encoding="utf-8")
+        root = ElementTree.Element("VTKFile", type="Collection", version="0.1")
+        collection = ElementTree.SubElement(root, "Collection")
+        for folder, stem in (
+            ("waves", "waves"),
+            *((f"body{index}_{name}", name)
+              for index, name in enumerate(names, start=1)),
+            *((f"mooring{index}", "mooring")
+              for index in range(1, num_moordyn + 1)),
+        ):
+            for index, instant in enumerate(times, start=1):
+                ElementTree.SubElement(
+                    collection, "DataSet", timestep=f"{instant:g}",
+                    group="", part="", file=f"{folder}/{stem}_{index}.vtp",
+                )
+        path = directory / f"{model_name}.pvd"
+        ElementTree.ElementTree(root).write(
+            path, encoding="utf-8", xml_declaration=True,
+        )
+        return path
+
     def write_paraview_vtp_wave(
         self, times, directory, *, domain_size,
         num_points_x=None, num_points_y=None, water_depth=None,
