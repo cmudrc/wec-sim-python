@@ -458,9 +458,25 @@ preceding `0.005` to `0.0025` s halving changed them by only `0.72`/`0.95` mm
 at most. This nonmonotonic change rules out treating the earlier small
 step difference as convergence. Python's independent physical `0.00125` s
 run is within `5.52`/`4.85` mm float/spar surge of this latest MATLAB run at
-10 s, but that closer agreement is not a validated converged pair. The
-published 80 s coupled-motion gate still fails, and the Python physical
-default remains unchanged.
+10 s. The source MoorDyn pitch moment changes by up to `37.60` kN m between
+the last two MATLAB steps; Python's physical `0.0025` to `0.00125` s change
+is at most `1.00` kN m. Against the latest source, the independent Python
+moment still differs by `8.79` kN m, above the `2` kN m published-case gate.
+The closer motion agreement is not a validated converged pair. The published
+80 s coupled-motion gate still fails, and the Python physical default remains
+unchanged.
+
+A [deterministic full-duration comparison](https://github.com/cmudrc/wec-sim-python/actions/runs/38099166656)
+runs the published 80 s input with only `waves.phaseSeed=1` added in a
+temporary copy. Its phases, wave, both-body motion, and MoorDyn connection
+loads agree exactly with the first 10 s of the same-seed short source run
+at common samples; the source duration and ParaView setting do not explain
+that initial gap. Against this repeatable 80 s source, independent physical
+Python reaches `203` mm maximum float surge error and `101` kN m maximum
+MoorDyn pitch-moment error, above the existing `10` mm and `2` kN m gates.
+The focused CI has 21 passing checks and this one failing coupled-motion
+gate. Seeding makes the failure reproducible but does not establish source
+step convergence or full coupled parity.
 
 For the published OSWEC nonlinear visualization case, the pinned source also
 exports flap velocity and all six-component force channels. On all 1,201 saved
