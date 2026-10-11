@@ -316,8 +316,8 @@ file paths, plus 17 other or dynamic cases. Generate the CSV with
 `python tools/build_reference_case_inventory.py CORE_CHECKOUT APPLICATIONS_CHECKOUT`.
 This is a source inventory, not a claim that every case runs in Python.
 
-The [latest full reference-model sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/37938680408)
-completed 40 MATLAB/Python jobs successfully on `a3b6df3`, with one optional
+The [latest full reference-model sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/38108295073)
+completed 40 MATLAB/Python jobs successfully on `2d35cfb5`, with one optional
 comparison skipped. It includes the current-profile comparison. The three-seed
 continuous-yaw control was checked in the separate focused CI runs linked
 above; the RM3 Cases 5/6 fitted-force audit also uses its separate focused
