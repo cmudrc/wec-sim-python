@@ -664,20 +664,28 @@ class WEC:
                         drag_coefficient: Sequence[float],
                         added_mass_coefficient: Sequence[float],
                         area: Sequence[float], volume: float,
-                        phase_mode: str = "directional") -> MorisonElement:
+                        phase_mode: str = "directional",
+                        axis: Sequence[float] | None = None) -> MorisonElement:
         """Attach a Cartesian Morison element at a body-local point.
 
-        Moving hydrodynamic bodies support axial elements in pure heave or
-        regular-wave surge/heave/pitch motion; the case runner validates
-        those layouts.
+        A body-local ``axis`` selects normal/tangential option 2 for a moving
+        regular-wave surge/heave/pitch body. Its first two coefficient and
+        area entries are normal and tangential. Without an axis, moving
+        hydrodynamic bodies support axial Cartesian elements.
         """
         if not any(body is item for item in self.bodies):
             raise ValueError("Morison body must belong to this WEC")
         if not isinstance(point, BodyPoint) or point.body is not body:
             raise ValueError("Morison point must belong to its body")
+        if axis is not None:
+            vector = np.asarray(axis, dtype=float)
+            if (vector.shape != (3,) or not np.isfinite(vector).all()
+                    or np.linalg.norm(vector) == 0):
+                raise ValueError("Morison axis needs a finite nonzero body-local vector")
         element = MorisonElement(
             tuple(point.coordinates()), tuple(drag_coefficient),
             tuple(added_mass_coefficient), tuple(area), volume, phase_mode,
+            tuple(float(value) for value in axis) if axis is not None else None,
         )
         self._morison_elements.append((body, element))
         return element
@@ -1000,7 +1008,9 @@ class WEC:
                          "drag_coefficient": list(element.drag_coefficient),
                          "added_mass_coefficient": list(element.added_mass_coefficient),
                          "area": list(element.area), "volume": element.volume,
-                         "phase_mode": element.phase_mode}
+                         "phase_mode": element.phase_mode,
+                         **({"axis": list(element.axis)}
+                            if element.axis is not None else {})}
                         for attached_body, element in self._morison_elements
                         if attached_body is body
                     ],
@@ -1047,7 +1057,9 @@ class WEC:
                      "drag_coefficient": list(element.drag_coefficient),
                      "added_mass_coefficient": list(element.added_mass_coefficient),
                      "area": list(element.area), "volume": element.volume,
-                     "phase_mode": element.phase_mode}
+                     "phase_mode": element.phase_mode,
+                     **({"axis": list(element.axis)}
+                        if element.axis is not None else {})}
                     for element in elements
                 ]
             bodies.append(body_case)
