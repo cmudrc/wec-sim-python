@@ -101,7 +101,7 @@ def test_published_irregular_wave_vtp_frames(tmp_path):
     assert (tmp_path / "ground.txt").read_text() == (
         reference / "published_vtp/ground.txt"
     ).read_text()
-    for frame, path in zip((1, 1001, 8001), paths):
+    for frame, path in zip((1, 101, 801), paths):
         actual_points, actual_cells, actual_offsets = _wave_vtp(path)
         source_points, source_cells, source_offsets = _wave_vtp(
             reference / "published_vtp/waves" / f"waves_{frame}.vtp"
