@@ -96,6 +96,7 @@ on:
       - 'tests/test_morison_moving_source.py'
       - 'tests/test_sphere_moving_morison_parity.py'
       - 'tests/test_sphere_wave_morison_parity.py'
+      - 'tests/test_sphere_normal_tangential_parity.py'
       - 'tests/test_passive_yaw_configuration.py'
       - 'tests/test_sphere_dynamics_parity.py'
       - 'tests/test_sphere_elevation_import_parity.py'
@@ -331,6 +332,11 @@ jobs:
           WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
       - run: python -m pytest -q tests/test_sphere_wave_morison_parity.py
         if: matrix.model == 'SPHERE_MOVING_MORISON_WAVE'
+        env:
+          WEC_SIM_SPHERE_H5: applications/_Common_Input_Files/Sphere/hydroData/sphere.h5
+          WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
+      - run: python -m pytest -q tests/test_sphere_normal_tangential_parity.py
+        if: matrix.model == 'SPHERE_MOVING_MORISON_NORMAL'
         env:
           WEC_SIM_SPHERE_H5: applications/_Common_Input_Files/Sphere/hydroData/sphere.h5
           WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output

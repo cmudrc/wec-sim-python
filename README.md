@@ -422,7 +422,7 @@ Supported combinations are:
 | `fixed_hinge` | `spectrumImportFullDir` | Hydrodynamic flap, optional fixed hydrodynamic base, pitch PTO | Imported frequency-dependent directional spectrum and radiation convolution |
 | `fixed_hinge` | `regular` | One hydrodynamic flap, optional fixed nonhydrodynamic base, pitch PTO | Regular-wave excitation and constant-frequency radiation; optional instantaneous STL mesh hydrostatics and Froude–Krylov force |
 | `fixed_morison` | `pm` | Stationary bodies without HDF5; body-local Cartesian Morison elements; no PTO | Directional irregular-wave velocity, acceleration, and six-component Morison force; optional single-heading current |
-| `linear_subspace` | `none` or zero-heading `regular` | One hydrodynamic body with axial body-local Morison elements; pure heave, or surge/heave/pitch in regular waves; no PTO | Radiation convolution or constant-frequency radiation, relative-fluid drag, fluid inertia, and Morison added mass in the acceleration solve; optional regular-wave current for surge/heave/pitch |
+| `linear_subspace` | `none` or zero-heading `regular` | One hydrodynamic body with body-local Morison elements; pure heave accepts axial elements, and regular-wave surge/heave/pitch accepts axial or normal/tangential elements; no PTO | Radiation convolution or constant-frequency radiation, relative-fluid drag, fluid inertia, and Morison added mass in the acceleration solve; optional regular-wave current for surge/heave/pitch |
 | `floating_joint` | `regular` or `regularCIC` | Two equilibrium-mass bodies, pitch inertias, relative-heave PTO; optional `body_to_body` | Constant-frequency radiation, impulse-response convolution, or sampled FIR radiation |
 | `floating_joint` | `elevationImport` | Two equilibrium-mass bodies, relative-heave PTO, optional joint surge spring | Imported MAT elevation and radiation convolution |
 | `floating_joint` | `none` | Two equilibrium-mass bodies, named initial coordinates and speeds, relative-heave PTO | Radiation convolution for paired free decay; sampled FIR is also available |
@@ -696,10 +696,12 @@ For pure heave, define only the heave coordinate. Still-water free decay
 uses `NoWave()` and `radiation_memory=15`. These moving-body layouts have
 no PTO; regular waves require zero heading and a body centered at x=y=0.
 The three-DOF Morison force uses a proper pitch rotation and does not copy
-the pinned MATLAB source function's nonorthogonal rotation. Other moving
-Morison layouts and moving-current wave types remain unsupported in the public
-runner. A separate prescribed-state diagnostic pairs the source's
-normal/tangential coefficient mode; it does not provide a coupled WEC configuration.
+the pinned MATLAB source function's nonorthogonal rotation. To use the
+normal/tangential option in this layout, pass a body-local `axis=(0, 1, 0)`
+to `wec.morison_element`; the first two drag, added-mass, and area entries
+are normal and tangential, while the third entry is unused. A derived Sphere
+option-2 trajectory is paired in [PARITY.md](PARITY.md). General six-DOF
+moving Morison layouts and moving-current trajectories remain unpaired.
 
 For a heave or other `linear_subspace` device, `JONSWAPWave(2.5, 8,
 seed=1, gamma=3.3)` selects a JONSWAP sea. Omitting `gamma` uses WEC-Sim's

@@ -666,7 +666,7 @@ class WEC:
                         area: Sequence[float], volume: float,
                         phase_mode: str = "directional",
                         axis: Sequence[float] | None = None) -> MorisonElement:
-        """Attach a Cartesian Morison element at a body-local point.
+        """Attach a Morison element at a body-local point.
 
         A body-local ``axis`` selects normal/tangential option 2 for a moving
         regular-wave surge/heave/pitch body. Its first two coefficient and
