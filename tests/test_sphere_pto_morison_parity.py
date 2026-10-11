@@ -63,7 +63,8 @@ def test_moving_normal_tangential_morison_with_linear_pto():
     )
     wec.pto(
         "main", sphere.at(1, 0, 2), WorldPoint(1, 0, 0),
-        axis=(0, 0, 1), stiffness=50_000, damping=960_870,
+        axis=(0, 0, 1), stiffness=50_000, damping=100_000,
+        velocity_control_gain=860_870,
     )
     result = wec.run(
         RegularWave(2.5, 9.6664), dt=.02, end_time=40, ramp_time=10,
@@ -84,9 +85,21 @@ def test_moving_normal_tangential_morison_with_linear_pto():
            "heave speed")
     _check(-result.ptos["main"].stroke, pto[:, 3], .0002, "PTO stroke")
     _check(-result.ptos["main"].velocity, pto[:, 9], .0002, "PTO speed")
+    assert result.case["ptos"][0]["damping"] == 100_000
+    assert result.case["ptos"][0]["velocity_control_gain"] == 860_870
     native_force = -(50_000 * result.ptos["main"].stroke
                      + 100_000 * result.ptos["main"].velocity)
-    controller_force = -860_870 * result.ptos["main"].velocity
+    controller_force = result.ptos["main"].control_force
+    controller_power = result.ptos["main"].control_absorbed_power
+    assert controller_force is not None and controller_power is not None
+    np.testing.assert_allclose(
+        controller_force, -860_870 * result.ptos["main"].velocity,
+        rtol=0, atol=1e-10,
+    )
+    np.testing.assert_allclose(
+        result.ptos["main"].force, native_force + controller_force,
+        rtol=0, atol=1e-9,
+    )
     _check(-native_force, pto[:, 15], 20, "native PTO force")
     _check(-controller_force, controller[:, 3], 100,
            "proportional controller force")
@@ -94,8 +107,7 @@ def test_moving_normal_tangential_morison_with_linear_pto():
            "combined PTO force")
     _check(native_force * result.ptos["main"].velocity, pto[:, 21], 10,
            "native PTO power")
-    _check(controller_force * result.ptos["main"].velocity,
-           controller[:, 9], 50, "controller power")
+    _check(-controller_power, controller[:, 9], 50, "controller power")
     for dof, name, limit in (
         (0, "surge", 5), (2, "heave", 20), (4, "pitch", 10),
     ):
