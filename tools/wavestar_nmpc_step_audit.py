@@ -27,6 +27,8 @@ def main() -> None:
     parser.add_argument("--plot", type=Path, required=True)
     parser.add_argument("--duration", type=float, choices=(30.0, 225.0),
                         default=30.0)
+    parser.add_argument("--quarter-ms", action="store_true",
+                        help="also compare a 0.25 ms Python plant step")
     args = parser.parse_args()
 
     prefix = "WECCCOMP_NMPC_SOURCE_"
@@ -54,7 +56,8 @@ def main() -> None:
         gamma=3.3, phase=components[:, 3, None],
     )
     results = {}
-    for dt in (.001, .0005):
+    steps = (.001, .0005, .00025) if args.quarter_ms else (.001, .0005)
+    for dt in steps:
         pto = WaveStarNmpcPTO(plant_dt=dt, control_dt=.05)
         response = run_wavestar_published(
             args.hydro, sea, dt=dt, end_time=args.duration, ramp_time=25,
@@ -91,6 +94,14 @@ def main() -> None:
                 "matlab_difference_1ms": float(np.max(np.abs(
                     results[.001][name][selected] - target[selected]))),
             }
+            if args.quarter_ms:
+                summary[label][name].update({
+                    "python_step_difference_quarter_half_ms": float(np.max(np.abs(
+                        results[.00025][name][selected]
+                        - results[.0005][name][selected]))),
+                    "matlab_difference_quarter_ms": float(np.max(np.abs(
+                        results[.00025][name][selected] - target[selected]))),
+                })
 
     fig, axes = plt.subplots(3, 1, figsize=(9, 9), sharex=True,
                              constrained_layout=True)
@@ -100,12 +111,17 @@ def main() -> None:
                  label="Python plant, 1 ms")
     axes[0].plot(time, results[.0005]["pitch"], color="#db762e", lw=1,
                  ls="--", label="Python plant, 0.5 ms")
+    if args.quarter_ms:
+        axes[0].plot(time, results[.00025]["pitch"], color="#80568d", lw=1,
+                     ls=":", label="Python plant, 0.25 ms")
     axes[0].set_ylabel("Float pitch (rad)")
     axes[0].set_title("WaveStar NMPC: published source versus independent Python",
                       loc="left", weight="bold")
     axes[0].legend(loc="upper left", fontsize=9, ncol=2, frameon=False)
-    for dt, color, style in ((.001, "#147d9d", "-"),
-                             (.0005, "#db762e", "--")):
+    plot_steps = ((.001, "#147d9d", "-"), (.0005, "#db762e", "--"))
+    if args.quarter_ms:
+        plot_steps += ((.00025, "#80568d", ":"),)
+    for dt, color, style in plot_steps:
         axes[1].semilogy(time, np.maximum(np.abs(
             results[dt]["pitch"] - source_float[:, 5]), 1e-9),
             color=color, ls=style, label=f"{dt * 1000:g} ms vs MATLAB")
@@ -118,6 +134,11 @@ def main() -> None:
     axes[2].plot(time, np.abs(
         results[.001]["command"] - results[.0005]["command"]),
         color="#689069", label="Python step difference")
+    if args.quarter_ms:
+        for axis, name in ((axes[1], "pitch"), (axes[2], "command")):
+            axis.plot(time, np.abs(
+                results[.0005][name] - results[.00025][name]),
+                color="#80568d", ls=":", label="0.25 vs 0.5 ms")
     axes[1].set_ylabel("Absolute pitch difference (rad)")
     axes[2].set_ylabel("Torque-command difference (N m)")
     axes[2].set_xlabel("Time (s)")
