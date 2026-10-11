@@ -1520,7 +1520,8 @@ force_z = cable.force_z(stroke, speed)
 
 # The published application generates this file with Cable/hydroData/bemio.m.
 response = run_mbari_cable("applications/Cable/hydroData/mbari.h5",
-                           cable=cable, attachment=attachment)
+                           cable=cable, attachment=attachment,
+                           endpoint_mass=1.0)
 print(response.body_position.shape)  # time × three bodies × six coordinates
 print(response.cable_force_z)         # signed axial force, N
 ```
@@ -1531,8 +1532,10 @@ body-local endpoints as the bodies surge, heave, and pitch. The coupled runner
 advances the two hydrodynamic bodies and the nonhydrodynamic cylinder, including
 spring/damper feedback and quadratic drag on the cable's two endpoint bodies.
 Its planar buoy-to-cylinder spherical joint matches the published geometry.
-It uses implicit regular-wave added mass and omits the endpoint bodies' 1 kg
-inertias. The MATLAB source shifts added mass into its Simscape bodies and
+It uses implicit regular-wave added mass and includes each endpoint body's
+published 1 kg translational inertia at its body-local attachment point.
+`endpoint_mass` sets the mass of each point; use zero to omit both for a
+comparison. The MATLAB source shifts added mass into its Simscape bodies and
 feeds the remainder through a short acceleration delay, so brief cable snap
 events differ more than body positions. The source law can report positive
 force while stretched and contracting rapidly because its damping term is not
