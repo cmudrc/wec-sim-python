@@ -346,10 +346,16 @@ common-surge magnitude 0.993 with cross-body radiation off and 0.999 with it
 on; both heave components are below `3e-5`. At the 8 s wave frequency with
 cross-body radiation on, the negative mode instead has float/spar-heave
 magnitudes 0.432/0.902, with surge and pitch each below `1e-5`. A correction
-to common surge alone cannot make this fit passive. The focused diagnostic
-checks these mode contents on the historical fixture and matches them to the
-fresh pinned BEMIO HDF5 by magnitude, avoiding dependence on state-space
-realization or eigenvector phase. A replacement fit must also be checked
+magnitudes 0.432/0.902, with surge and pitch each below `1e-5`. A third
+negative region near 1.2 rad/s is dominated by shared pitch (unit-mode
+magnitude above 0.999; least damping below −4 kN s/m). The coupled fit has
+negative least-damped bands at approximately 0–0.40, 0.44–0.92, and
+1.04–1.32 rad/s; a smaller pitch-dominated negative band also appears near
+1.68–1.80 rad/s. A correction to common surge alone cannot make this fit
+passive. The focused diagnostic checks the three major mode contents on the
+historical fixture and matches them to the fresh pinned BEMIO HDF5 by
+magnitude, avoiding dependence on state-space realization or eigenvector
+phase. A replacement fit must also be checked
 against BEM transfer data and convolution trajectories before it can replace
 the physical default. The pinned [BEMIO `radiationIRFSS.m`](https://github.com/WEC-Sim/WEC-Sim/blob/0753b2e47f2457c078751dcfe5d251d1767b80ab/source/functions/BEMIO/radiationIRFSS.m)
 fits each force/velocity channel independently by Hankel SVD to an IRF
