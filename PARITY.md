@@ -494,7 +494,14 @@ surge/heave force, and `0.813` kN m mooring pitch moment on local ARM64.
 The gates cover the complete 10 s active trajectories, not only final values.
 This supports the derived fine-step physical dynamics over that sea at the
 declared numerical resolution. It does not validate every source output or
-the original `simu.dt=0.01` s, 80 s published trajectory, which remains red.
+the original `simu.dt=0.01` s, 80 s published trajectory, whose paired gates
+remain unmet.
+The published 80 s test keeps its original numerical limits and runs as a
+strict expected failure for its known coupled-motion and MoorDyn channels.
+Wave agreement and any newly failing channel remain required checks; an
+unexpected full pass also fails CI until this limitation is reviewed and the
+expected-failure marker is removed. This scopes the passing short-case result
+without claiming published-case motion parity.
 
 A [deterministic full-duration comparison](https://github.com/cmudrc/wec-sim-python/actions/runs/38099166656)
 runs the published 80 s input with only `waves.phaseSeed=1` added in a
