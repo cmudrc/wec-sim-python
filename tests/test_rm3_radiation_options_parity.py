@@ -48,7 +48,8 @@ def _fir_radiation_force(h5, body, velocity, dt=0.1, memory=60):
     return force
 
 
-@pytest.mark.parametrize("mode", ["constant", "convolution", "FIR"])
+@pytest.mark.parametrize("mode", ["constant", "convolution", "FIR",
+                                  "state_space"])
 def test_published_rm3_radiation_options(mode):
     hydro = (Path(APPLICATIONS)
              / "_Common_Input_Files/RM3/hydroData/rm3.h5").resolve()
@@ -59,6 +60,10 @@ def test_published_rm3_radiation_options(mode):
         simulation["added_mass_scheme"] = "simulink_delay"
     if mode == "FIR":
         simulation["radiation_method"] = "fir"
+    if mode == "state_space":
+        # Reproduce the published nonpassive fit explicitly; convolution
+        # remains the default radiation model.
+        simulation["radiation_method"] = "state_space"
     case = {
         "simulation": simulation,
         "wave": {"type": "regularCIC" if mode != "constant" else "regular",

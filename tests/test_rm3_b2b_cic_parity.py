@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from wecsim import RegularCICWave, WEC
 from wecsim.caseDynamics import run_case
 from wecsim.rm3Regular import solve_rm3_regular
 
@@ -129,3 +130,47 @@ def test_state_space_source_motion_differs_from_convolution(
         physical.body_position[:, 0, 0] - fitted[:, 1],
     ))
     assert fitted_difference > 0.35
+
+
+@pytest.mark.parametrize("case,b2b", [
+    ("B2B_Case5", False), ("B2B_Case6", True),
+])
+def test_opt_in_fitted_radiation_advances_published_motion(case, b2b):
+    """Pair the nonpassive source fit without changing convolution dynamics."""
+    hydro = (Path(APPLICATIONS) / "_Common_Input_Files/RM3/hydroData/rm3.h5")
+    wec = WEC(f"RM3 {case} source fit", body_to_body=b2b)
+    float_body = wec.body("float", hydro, inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", hydro, inertia=(0, 94_407_091.24, 0))
+    wec.floating_joint(float_body, spar, damping=1_200_000,
+                       radiation_method="state_space")
+    response = wec.run(
+        RegularCICWave(2.5, 8), dt=.1, end_time=400,
+        ramp_time=100, radiation_memory=60,
+    )
+    assert response.case["simulation"]["radiation_method"] == "state_space"
+    reference = Path(REFERENCE)
+    for body_index, name in enumerate(("float", "spar"), start=1):
+        expected = np.loadtxt(
+            reference / f"RM3_B2B_{case}_body{body_index}.csv",
+            delimiter=",",
+        )
+        _max_error(response.time, expected[:, 0], 1e-10, "time")
+        for dof, label, position_limit, velocity_limit in (
+            (0, "surge", .08, .04),
+            (2, "heave", .004, .0035),
+            (4, "pitch", .0025, .0015),
+        ):
+            _max_error(response.bodies[name].position[:, dof],
+                       expected[:, 1 + dof], position_limit,
+                       f"{case} {name} {label} position")
+            _max_error(response.bodies[name].velocity[:, dof],
+                       expected[:, 7 + dof], velocity_limit,
+                       f"{case} {name} {label} velocity")
+    expected_pto = np.loadtxt(reference / f"RM3_B2B_{case}_pto1.csv",
+                              delimiter=",")
+    pto = response.ptos["relative_heave"]
+    _max_error(pto.stroke, expected_pto[:, 3], .006, f"{case} PTO stroke")
+    _max_error(pto.velocity, expected_pto[:, 9], .004, f"{case} PTO speed")
+    _max_error(pto.force, expected_pto[:, 15], 5_000, f"{case} PTO force")
+    _max_error(pto.absorbed_power, -expected_pto[:, 21], 6_000,
+               f"{case} absorbed power")

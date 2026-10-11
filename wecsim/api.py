@@ -780,7 +780,8 @@ class WEC:
             raise ValueError("floating_joint PTO name must be nonempty")
         if hard_stops is not None and not isinstance(hard_stops, LinearHardStops):
             raise TypeError("hard_stops must be LinearHardStops")
-        if radiation_method not in (None, "constant", "convolution", "fir"):
+        if radiation_method not in (None, "constant", "convolution", "fir",
+                                    "state_space"):
             raise ValueError("unsupported floating_joint radiation method")
         if added_mass_scheme not in ("implicit", "simulink_delay"):
             raise ValueError("unsupported floating_joint added-mass scheme")

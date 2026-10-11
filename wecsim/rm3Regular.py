@@ -14,6 +14,7 @@ from .bodyClass import BodyClass
 from .generalDynamics import BodyMotion, DynamicBody, GeneralizedDynamics
 from .hardStops import LinearHardStops
 from .moorDyn import MoorDyn
+from .radiation import RadiationStateSpace
 
 
 @dataclass(frozen=True)
@@ -113,6 +114,10 @@ def solve_rm3_regular(
     feedback for numerical comparison. The delay is not a WEC property.
     ``radiation_method="fir"`` instead samples the same kernel as a discrete
     FIR filter and holds its force through each RK4 step.
+    ``radiation_method="state_space"`` advances the pinned HDF5 fitted
+    radiation states with the body in RK4. The source sets direct term D to
+    zero. This fit is nonpassive in active RM3 modes and is opt-in for
+    numerical source comparison; convolution remains the physical default.
     A supplied ``pto_hard_stops`` adds unilateral stroke limits to the linear
     PTO and selects adaptive integration with implicit added mass. This path
     currently supports constant-frequency radiation only.
@@ -149,8 +154,12 @@ def solve_rm3_regular(
     if radiation_method is None:
         radiation_method = ("convolution" if radiation_memory is not None
                             else "constant")
-    if radiation_method not in ("constant", "convolution", "fir"):
+    if radiation_method not in ("constant", "convolution", "fir", "state_space"):
         raise ValueError("unsupported RM3 radiation method")
+    if radiation_method == "state_space" and radiation_memory is None:
+        # BodyClass still needs a small CIC grid for A_inf and excitation;
+        # the fitted state evolution itself does not use that memory length.
+        radiation_memory = dt
     if added_mass_scheme not in ("implicit", "simulink_delay"):
         raise ValueError("added_mass_scheme must be implicit or simulink_delay")
     if added_mass_scheme == "simulink_delay" and radiation_method != "convolution":
@@ -250,7 +259,7 @@ def solve_rm3_regular(
             added_mass[index - 1] = np.asarray(hydro["fAddedMass"])
             if radiation_memory is None:
                 damping[index - 1] = np.asarray(hydro["fDamping"])
-        if radiation_memory is None:
+        if radiation_method in ("constant", "state_space"):
             kernel = None
         else:
             raw_kernel = np.asarray(hydro["irkb"])
@@ -329,6 +338,10 @@ def solve_rm3_regular(
         nonlinear_force=(stop_generalized_force
                          if pto_hard_stops is not None else None),
     )
+    fitted_radiation = (
+        RadiationStateSpace.from_rm3_hdf5(h5_file, body_to_body=b2b)
+        if radiation_method == "state_space" else None
+    )
     connection_position = connection_velocity = connection_force = None
     if moordyn is not None:
         connection_position = np.zeros((steps + 1, 6))
@@ -381,6 +394,7 @@ def solve_rm3_regular(
             dt=dt, end_time=end_time,
             initial_coordinate=initial_coordinate, initial_speed=initial_speed,
             adaptive_regular=pto_hard_stops is not None,
+            radiation_state_space=fitted_radiation,
         )
     q = solved.coordinate
     v = solved.speed
