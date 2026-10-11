@@ -8,7 +8,8 @@ import pytest
 
 from wecsim import RegularWave, WEC
 from wecsim.morison import (
-    MorisonElement, regular_wave_normal_tangential_morison_terms,
+    MorisonElement, regular_morison_source_force,
+    regular_wave_normal_tangential_morison_terms,
 )
 
 
@@ -97,3 +98,21 @@ def test_sphere_moving_normal_tangential_trajectory():
         _max_error(on_source_state[100:, dof],
                    -source[100:, 25 + dof], limit,
                    f"physical force on source states DOF {dof}")
+
+    # The source-convention diagnostic reconstructs the logged force much
+    # more closely; the remaining physical gap comes from its different
+    # rotation and point-velocity kinematics. At this 8 s period, 200 m
+    # uses the same deep-water branch as the source's infinite depth.
+    source_replay = np.stack([
+        regular_morison_source_force(
+            [element], time=row[0], position=row[1:7],
+            velocity=row[7:13], acceleration=row[31:37],
+            wave_height=1, wave_period=8, direction=0,
+            water_depth=200, ramp_time=10, rho=1000,
+            body_morison=2, element_axes=[(0, 1, 0)],
+        ) for row in source
+    ])
+    for dof, limit in ((0, 2), (2, 12), (4, 3)):
+        _max_error(source_replay[100:, dof],
+                   -source[100:, 25 + dof], limit,
+                   f"source-convention force replay DOF {dof}")
