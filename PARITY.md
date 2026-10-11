@@ -380,6 +380,29 @@ file paths, plus 17 other or dynamic cases. Generate the CSV with
 `python tools/build_reference_case_inventory.py CORE_CHECKOUT APPLICATIONS_CHECKOUT`.
 This is a source inventory, not a claim that every case runs in Python.
 
+`tests/reference_case_status.csv` audits those same 63 inputs against the
+paired evidence documented here. Its categories refer only to the published
+case's active body motion, not every output or the generality of the Python
+API:
+
+| Motion evidence | Cases | Meaning |
+| --- | ---: | --- |
+| `independent_motion` | 47 | A full-duration Python motion run using the published case inputs has an explicit MATLAB gate. Source wave phases or external stochastic input may be replayed; source body trajectories and forces are not advanced as inputs. The detailed rows above record output and physical-model limits. |
+| `stationary_force` | 2 | Published bodies are fixed; wave and force histories have paired gates. |
+| `qualified_motion` | 8 | A full-duration comparison needs a refined MATLAB step or a source-specific force route, or the published-step motion remains unpaired despite related motion or VTP gates. |
+| `mixed_modes` | 2 | Some published settings have independent motion gates and another material setting remains open. |
+| `open_motion` | 4 | No full-duration independent Python gate for the published moving case. Component replays or shorter derived runs may exist. |
+
+These counts are **not a WEC-Sim feature-parity percentage**. One input can
+exercise several radiation or wave modes, and even a gated trajectory can
+leave reactions, raw component states, or general layouts unpaired. The CSV
+names each qualified, mixed, and open case's specific remaining gap. The
+highest-impact native-motion gaps are the nonpassive RM3 state-space radiation
+fit, held-heading irregular OSWEC yaw, and WaveStar full closed-loop NMPC;
+published-step RM3 MoorDyn visualization motion and nonlinear-hydro timing
+also remain qualified. The Python dynamics API still lacks arbitrary Simscape
+joints and general six-DOF mooring and moving Morison layouts.
+
 The [latest full reference-model sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/38121025199)
 completed all 40 MATLAB/Python jobs successfully on `8651a682`. It includes
 the current-profile comparison. The three-seed

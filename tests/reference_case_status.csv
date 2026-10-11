@@ -1,0 +1,64 @@
+case,motion_evidence,remaining_gap
+examples/OSWEC,independent_motion,
+examples/RM3,independent_motion,
+Body-to-Body_Interactions/B2B_Case1,independent_motion,
+Body-to-Body_Interactions/B2B_Case2,independent_motion,
+Body-to-Body_Interactions/B2B_Case3,independent_motion,
+Body-to-Body_Interactions/B2B_Case4,independent_motion,
+Body-to-Body_Interactions/B2B_Case5,open_motion,State-space radiation trajectory unpaired; pinned fit has negative low-frequency damping.
+Body-to-Body_Interactions/B2B_Case6,open_motion,State-space radiation trajectory unpaired; pinned fit has negative low-frequency damping.
+Cable,independent_motion,
+Controls/Declutching,independent_motion,
+Controls/Latching,independent_motion,
+Controls/MPC,independent_motion,
+Controls/Passive (P),independent_motion,
+Controls/Reactive (PI),independent_motion,
+Controls/ReactiveWithPTO,independent_motion,
+Desalination,independent_motion,
+End_Stops,qualified_motion,Full-duration motion gated against derived fine-step MATLAB; published-step source is step-sensitive.
+Free_Decay/0m,independent_motion,
+Free_Decay/1m,independent_motion,
+Free_Decay/1m-ME,independent_motion,
+Free_Decay/3m,independent_motion,
+Free_Decay/5m,independent_motion,
+Full_Directional_Waves,independent_motion,
+Generalized_Body_Modes,independent_motion,
+Load_Mitigating_Controls/CalcImpedance,independent_motion,
+Load_Mitigating_Controls/ControlTests,independent_motion,
+MOST,independent_motion,
+Mean_Drift,independent_motion,
+Mooring/MoorDyn,independent_motion,
+Mooring/MooringMatrix,independent_motion,
+Morison_Element/monopile,stationary_force,Fixed-body wave and force histories paired; no body motion in source.
+Morison_Element/morisonElement,stationary_force,Fixed-body wave and force histories paired; no body motion in source.
+Multiple_Condition_Runs/RM3_MCROPT1,independent_motion,
+Multiple_Condition_Runs/RM3_MCROPT2,independent_motion,
+Multiple_Condition_Runs/RM3_MCROPT3,independent_motion,
+Multiple_Condition_Runs/RM3_MCROPT3_SeaState,independent_motion,
+Multiple_Wave_Spectra,independent_motion,
+Nonhydro_Body,independent_motion,
+Nonlinear_Hydro/ode4/Regular,independent_motion,
+Nonlinear_Hydro/ode4/RegularCIC,independent_motion,
+Nonlinear_Hydro/ode45/Regular,qualified_motion,Full-duration motion gated against derived fine-step MATLAB; published-step force timing differs.
+Nonlinear_Hydro/ode45/RegularCIC,qualified_motion,Full-duration motion gated against derived fine-step MATLAB; published-step force timing differs.
+OWC/FloatingOWC,independent_motion,
+OWC/OrificeModel,qualified_motion,Physical coupled path diverges; opt-in source-convention route has a full-duration gate.
+PTO-Sim/OSWEC/OSWEC_Hydraulic_Crank_PTO,independent_motion,
+PTO-Sim/OSWEC/OSWEC_Hydraulic_PTO,independent_motion,
+PTO-Sim/RM3/RM3_DD_PTO,independent_motion,
+PTO-Sim/RM3/RM3_cHydraulic_PTO,independent_motion,
+Paraview_Visualization/OSWEC_NonLinear_Viz,qualified_motion,Published-step independent flap motion is unpaired; refined-step motion and source-pose VTP are gated.
+Paraview_Visualization/RM3_MoorDyn_Viz,qualified_motion,Published-step independent MoorDyn motion is unpaired; refined-step motion and source-pose VTP are gated.
+Passive_Yaw/PassiveYawOFF,independent_motion,
+Passive_Yaw/PassiveYawON,independent_motion,
+Passive_Yaw/PassiveYawRegression,open_motion,Native held-heading irregular yaw and PTO-work trajectories diverge at sensitive heading events.
+RM3_PTO_Extension/float,qualified_motion,Finest-step free-decay motion is gated; published-step source is step-sensitive.
+RM3_PTO_Extension/spar,qualified_motion,Finest-step free-decay motion is gated; published-step source is step-sensitive.
+Radiation_Force_Options,mixed_modes,"Constant, convolution, and FIR motion are gated; state-space motion is unpaired and its pinned fit is nonpassive."
+Variable_Hydro/Passive_Yaw,mixed_modes,Published regular-wave yaw motion is gated; native 600 s irregular yaw trajectory remains unpaired.
+Variable_Hydro/Variable_Mass,independent_motion,
+WECCCOMP/WECCCOMP,independent_motion,
+WECCCOMP/WECCCOMP_Fault_Implementation,independent_motion,
+WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive,open_motion,Controller components and derived startup motion pair; published full closed-loop trajectory is unpaired.
+Wave_Markers/OSWEC,independent_motion,
+Wave_Markers/RM3,independent_motion,
