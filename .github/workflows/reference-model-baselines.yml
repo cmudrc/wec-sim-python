@@ -276,7 +276,7 @@ jobs:
         env:
           WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
           WEC_SIM_MONOPILE_H5: applications/Morison_Element/hydroData/monopile.h5
-      - run: python -m pytest -q tests/test_cable_source.py tests/test_mbari_cable_parity.py
+      - run: python -m pytest -q tests/test_cable_source.py tests/test_mbari_cable_parity.py tests/test_mbari_cable_step_parity.py
         if: matrix.model == 'CABLE_SOURCE'
         env:
           WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
