@@ -326,6 +326,10 @@ switch string(model)
                 'simu.dt             = 1/1000;');
             contents = strrep(contents, char(oldSolver), ...
                 "simu.solver         = 'ode4';");
+            if string(model) == "WECCCOMP_NMPC_SPLIT_STEP_FULL"
+                contents = strrep(contents, 'simu.dt             = 1/1000;', ...
+                    sprintf('simu.dt             = 1/1000;\nsimu.dtOut = 0.05;'));
+            end
             if string(model) == "WECCCOMP_NMPC_FINE_DIAG"
                 endTime = 9.95;
             elseif any(string(model) == ["WECCCOMP_NMPC_FINE_ACTIVE_DIAG", ...
@@ -1519,7 +1523,7 @@ for iCase = 1:numel(cases)
     end
     if string(model) == "WECCCOMP_NMPC_SPLIT_STEP_FULL"
         assert(strcmp(simu.solver, 'ode4') && simu.dt == 0.001 && ...
-            simu.dtOut == 0.001 && simu.endTime == 225 && ...
+            simu.dtOut == 0.05 && simu.endTime == 225 && ...
             numel(simu.time) == 225001 && simu.rampTime == 25 && ...
             simu.stateSpace == 1 && waves.phaseSeed == 1 && ...
             waves.height == 0.1042 && waves.period == 1.836 && ...
@@ -1529,9 +1533,9 @@ for iCase = 1:numel(cases)
             numel(output.bodies) == 5 && numel(output.ptos) == 1, ...
             'The derived full split-step WaveStar settings changed');
         outputTime = output.bodies(1).time(:);
-        assert(numel(outputTime) == 225001 && ...
-            max(abs(outputTime - (0:0.001:225)')) < 1e-9, ...
-            'The full WaveStar plant did not output at 1 ms');
+        assert(numel(outputTime) == 4501 && ...
+            max(abs(outputTime - (0:0.05:225)')) < 1e-9, ...
+            'The full WaveStar output grid did not decimate to 50 ms');
         writematrix([waves.omega(:), waves.amplitude(:), ...
             waves.dOmega(:), waves.phase(:)], ...
             fullfile(outDir, 'WECCCOMP_NMPC_SPLIT_STEP_FULL_components.csv'));
@@ -2519,9 +2523,6 @@ for iCase = 1:numel(cases)
             else
                 forceSample = 1:10:numel(response.time);
             end
-            if string(model) == "WECCCOMP_NMPC_SPLIT_STEP_FULL"
-                forceSample = 1:50:numel(response.time);
-            end
             writematrix(forceValues(forceSample, :), fullfile(outDir, ...
                 sprintf('%s_body1_forces.csv', model)));
             writematrix([body(iBody).mass, body(iBody).inertia], ...
@@ -2720,8 +2721,6 @@ for iCase = 1:numel(cases)
             values = values(1:10:end, :);
         elseif string(model) == "RM3_DD_PTO"
             values = values(1:20:end, :);
-        elseif string(model) == "WECCCOMP_NMPC_SPLIT_STEP_FULL"
-            values = values(1:50:end, :);
         end
         filename = sprintf('%s_%s_body%d.csv', model, cases(iCase), iBody);
         writematrix(values, fullfile(outDir, filename));
@@ -2775,8 +2774,6 @@ for iCase = 1:numel(cases)
                 values = values(1:10:end, :);
             elseif string(model) == "RM3_DD_PTO"
                 values = values(1:20:end, :);
-            elseif string(model) == "WECCCOMP_NMPC_SPLIT_STEP_FULL"
-                values = values(1:50:end, :);
             end
             filename = sprintf('%s_%s_pto%d.csv', model, cases(iCase), iPto);
             writematrix(values, fullfile(outDir, filename));
