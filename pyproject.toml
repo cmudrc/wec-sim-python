@@ -25,7 +25,6 @@ Repository = "https://github.com/cmudrc/wec-sim-python"
 
 [project.scripts]
 wecsim = "wecsim.cli:main"
-wecsim-reference = "wecsim.reference:main"
 
 [tool.setuptools]
 packages = ["wecsim"]
