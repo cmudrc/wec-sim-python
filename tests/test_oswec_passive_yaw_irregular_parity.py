@@ -229,7 +229,7 @@ def test_published_irregular_passive_yaw_heading_threshold(tmp_path):
     "seed,end_time,yaw_limit",
     ((1, 53.44, 5e-6), (2, 86.73, 3e-4), (3, 67.39, 2e-5)),
 )
-def test_published_held_heading_before_first_event_timing_split(
+def test_published_irregular_held_heading_before_first_event_timing_split(
     tmp_path, seed, end_time, yaw_limit,
 ):
     """Gate native motion up to the first differing heading-update sample."""
