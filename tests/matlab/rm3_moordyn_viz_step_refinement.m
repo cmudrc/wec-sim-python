@@ -5,8 +5,9 @@ addpath(genpath(fullfile(repoRoot, 'matlab-ref', 'source')));
 caseDir = fullfile(repoRoot, 'applications', 'Paraview_Visualization', ...
     'RM3_MoorDyn_Viz');
 outDir = fullfile(repoRoot, 'matlab-rm3-moordyn-viz');
-steps = [0.005, 0.0025, 0.00125, 0.000625];
-labels = {'step005', 'step0025', 'step00125', 'step000625'};
+steps = [0.005, 0.0025, 0.00125, 0.000625, 0.0003125];
+labels = {'step005', 'step0025', 'step00125', 'step000625', ...
+    'step0003125'};
 
 for iStep = 1:numel(steps)
     step = steps(iStep);
@@ -27,7 +28,7 @@ for iStep = 1:numel(steps)
     contents = fileread(inputFile);
     changes = {
         'simu.endTime = 80;', 'simu.endTime = 10;';
-        'simu.dt = 0.01;', sprintf('simu.dt = %.6f;', step);
+        'simu.dt = 0.01;', sprintf('simu.dt = %.7f;', step);
         'simu.dtOut = 0.1;', 'simu.dtOut = 0.01;';
         'simu.paraview.option = 1;', 'simu.paraview.option = 0;';
         'waves.period = 8;', ...

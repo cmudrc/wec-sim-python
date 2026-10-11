@@ -229,7 +229,7 @@ def test_seeded_full_case_shares_short_source_prefix():
 
 
 @pytest.mark.parametrize("prefix", ["step005", "step0025", "step00125",
-                                    "step000625"])
+                                    "step000625", "step0003125"])
 def test_source_maximum_step_refinement_preserves_sea(prefix):
     """Keep one sea while refining source MaxStep and MoorDyn coupling."""
     _bound(_read(f"{prefix}_phase.csv"), _read("dense_phase.csv"),
@@ -257,7 +257,8 @@ def test_source_refined_motion_change_diagnostic():
     """Report source motion and mooring changes across coupling steps."""
     for number, name in ((1, "float"), (2, "spar")):
         records = [_read(f"{prefix}_body{number}.csv") for prefix in
-                   ("step005", "step0025", "step00125", "step000625")]
+                   ("step005", "step0025", "step00125", "step000625",
+                    "step0003125")]
         assert all(record.shape == (1001, 25) for record in records)
         for column, unit, channel in ((1, "m", "surge"),
                                       (3, "m", "heave"),
@@ -267,17 +268,20 @@ def test_source_refined_motion_change_diagnostic():
                                       (11, "rad/s", "pitch speed")):
             for left, right, step in zip(records[:-1], records[1:],
                                          ("0.005->0.0025", "0.0025->0.00125",
-                                          "0.00125->0.000625")):
+                                          "0.00125->0.000625",
+                                          "0.000625->0.0003125")):
                 delta = right[:, column] - left[:, column]
                 print(f"source {name} {channel} {step} step-change {unit}: "
                       f"max {np.max(np.abs(delta)):.8g}, "
                       f"final {delta[-1]:.8g}")
     moorings = [_read(f"{prefix}_mooring.csv") for prefix in
-                ("step005", "step0025", "step00125", "step000625")]
+                ("step005", "step0025", "step00125", "step000625",
+                 "step0003125")]
     assert all(record.shape == (1001, 19) for record in moorings)
     for left, right, step in zip(moorings[:-1], moorings[1:],
                                  ("0.005->0.0025", "0.0025->0.00125",
-                                  "0.00125->0.000625")):
+                                  "0.00125->0.000625",
+                                  "0.000625->0.0003125")):
         delta = right[:, 17] - left[:, 17]
         print(f"source MoorDyn pitch moment {step} step-change N m: "
               f"max {np.max(np.abs(delta)):.8g}, final {delta[-1]:.8g}")
@@ -285,7 +289,7 @@ def test_source_refined_motion_change_diagnostic():
 
 @pytest.mark.parametrize("prefix", ["dense", "seed2_dense",
                                     "step005", "step0025", "step00125",
-                                    "step000625"])
+                                    "step000625", "step0003125"])
 def test_dense_source_wave_and_force_components(prefix):
     """Check the signed WEC-Sim logging convention before using its forces."""
     hydro = (Path(APPLICATIONS) /
@@ -322,7 +326,7 @@ def test_dense_source_wave_and_force_components(prefix):
 
 @pytest.mark.parametrize("prefix", ["dense", "seed2_dense",
                                     "step005", "step0025", "step00125",
-                                    "step000625"])
+                                    "step000625", "step0003125"])
 def test_dense_source_adjusted_mass_and_joint_force_balance(prefix):
     """Reconstruct source inertia from its body, PTO, and MoorDyn logs."""
     records = [_read(f"{prefix}_body{number}.csv") for number in (1, 2)]
@@ -540,7 +544,8 @@ def test_physical_fine_step_self_convergence(tmp_path):
                f"{name} physical position self-convergence")
         _bound(body_coarse.velocity, body_fine.velocity[::2], 1e-4,
                f"{name} physical velocity self-convergence")
-        for prefix in ("step0025", "step00125", "step000625"):
+        for prefix in ("step0025", "step00125", "step000625",
+                       "step0003125"):
             source = _read(f"{prefix}_body{number}.csv")
             for label, result in (("coarse", coarse), ("fine", fine)):
                 indices = _indices(source[:, 0], dt=result.time[1],
