@@ -24,9 +24,10 @@ SOURCE_LIMITS = {
     "RegularCIC": (.00375, .00425, 5000, 5000),
 }
 PYTHON_LIMITS = {
-    "Regular": (.006, .0065, 8000, 8000),
-    "RegularCIC": (.0075, .0085, 10000, 10000),
+    "Regular": (.003, .004, 5000, 4000),
+    "RegularCIC": (.0035, .0045, 6000, 5000),
 }
+PYTHON_STEP_LIMITS = (.0001, .0001, 100, 100)
 
 
 def _read(step, kind):
@@ -54,6 +55,20 @@ def _motion(actual_position, actual_speed, actual_force, actual_power,
            f"{label} PTO force", failures)
     _check(actual_power, -source_pto[:, 15] * source_pto[:, 9], limits[3],
            f"{label} absorbed power", failures)
+
+
+def _configured_wec(app, geometry):
+    wec = WEC("refined ode45 ellipsoid")
+    ellipsoid = wec.body(
+        "ellipsoid", app / "hydroData/ellipsoid.h5",
+        mass="equilibrium", inertia=(1.375264e6, 1.375264e6, 1.341721e6),
+        geometry_file=geometry, nonlinear_hydro="instantaneous",
+        drag_coefficient=1, drag_area=np.pi * 25,
+    )
+    wec.coordinate("heave", ellipsoid.move("heave"))
+    wec.pto("PTO1", WorldPoint(0, 0, -12.5), ellipsoid.at(0, 0, 0),
+            damping=1_200_000)
+    return wec
 
 
 def test_refined_ode45_ellipsoid_full_trajectory():
@@ -101,32 +116,44 @@ def test_refined_ode45_ellipsoid_full_trajectory():
         print(f"{step} current-state restoring-force mismatch: "
               f"{np.max(np.abs(current + body[samples, 39])):.8g} N")
 
-    wec = WEC("refined ode45 ellipsoid")
-    ellipsoid = wec.body(
-        "ellipsoid", app / "hydroData/ellipsoid.h5",
-        mass="equilibrium", inertia=(1.375264e6, 1.375264e6, 1.341721e6),
-        geometry_file=geometry, nonlinear_hydro="instantaneous",
-        drag_coefficient=1, drag_area=np.pi * 25,
-    )
-    wec.coordinate("heave", ellipsoid.move("heave"))
-    wec.pto("PTO1", WorldPoint(0, 0, -12.5), ellipsoid.at(0, 0, 0),
-            damping=1_200_000)
-    wave = (RegularCICWave(4, 6) if WAVE_CASE == "RegularCIC"
-            else RegularWave(4, 6))
-    result = wec.run(
-        wave, dt=.01, end_time=150, ramp_time=50,
-        radiation_memory=60 if WAVE_CASE == "RegularCIC" else None,
-        rho=1025,
-    )
-    assert result.time.shape == (15001,)
-    _check(result.time, coarse_body[:, 0], 1e-9,
+    def advance(dt):
+        wave = (RegularCICWave(4, 6) if WAVE_CASE == "RegularCIC"
+                else RegularWave(4, 6))
+        return _configured_wec(app, geometry).run(
+            wave, dt=dt, end_time=150, ramp_time=50,
+            radiation_memory=60 if WAVE_CASE == "RegularCIC" else None,
+            rho=1025,
+        )
+
+    coarse_python = advance(.01)
+    fine_python = advance(.005)
+    assert coarse_python.time.shape == (15001,)
+    assert fine_python.time.shape == (30001,)
+    _check(coarse_python.time, fine_python.time[::2], 1e-9,
+           "Python common times", failures)
+    for label, coarse_values, fine_values, limit in (
+        ("heave position", coarse_python.bodies["ellipsoid"].position[:, 2],
+         fine_python.bodies["ellipsoid"].position[::2, 2],
+         PYTHON_STEP_LIMITS[0]),
+        ("heave speed", coarse_python.bodies["ellipsoid"].velocity[:, 2],
+         fine_python.bodies["ellipsoid"].velocity[::2, 2],
+         PYTHON_STEP_LIMITS[1]),
+        ("PTO force", coarse_python.ptos["PTO1"].force,
+         fine_python.ptos["PTO1"].force[::2], PYTHON_STEP_LIMITS[2]),
+        ("absorbed power", coarse_python.ptos["PTO1"].absorbed_power,
+         fine_python.ptos["PTO1"].absorbed_power[::2],
+         PYTHON_STEP_LIMITS[3]),
+    ):
+        _check(coarse_values, fine_values, limit,
+               f"Python step change {label}", failures)
+    _check(fine_python.time, fine_body[:, 0], 1e-9,
            "Python and source time", failures)
-    _check(result.wave_elevation, fine_wave[::2, 1], 1e-10,
+    _check(fine_python.wave_elevation, fine_wave[:, 1], 1e-10,
            "Python and source wave elevation", failures)
-    _motion(result.bodies["ellipsoid"].position[:, 2],
-            result.bodies["ellipsoid"].velocity[:, 2],
-            result.ptos["PTO1"].force,
-            result.ptos["PTO1"].absorbed_power,
-            fine_body[::2], fine_pto[::2], PYTHON_LIMITS[WAVE_CASE],
+    _motion(fine_python.bodies["ellipsoid"].position[:, 2],
+            fine_python.bodies["ellipsoid"].velocity[:, 2],
+            fine_python.ptos["PTO1"].force,
+            fine_python.ptos["PTO1"].absorbed_power,
+            fine_body, fine_pto, PYTHON_LIMITS[WAVE_CASE],
             "Python versus refined source", failures)
     assert not failures, "; ".join(failures)
