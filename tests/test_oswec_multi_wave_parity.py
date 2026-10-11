@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from wecsim import MultiPMWave, PMWave, WEC, WorldPoint
 from wecsim.caseDynamics import run_case
 from wecsim.irregularWave import (
     IrregularComponents, synthesize_multiple_irregular_response,
@@ -125,3 +126,32 @@ def test_multiple_wave_hinge_and_pto_against_matlab(published, tmp_path,
     assert np.max(np.abs(calculated_power - source_power)) < limits[7]
     assert len(response.hydro_files) == 2
     assert len(response.auxiliary_files) == 2
+    if scheme == "simulink_delay":
+        wec = WEC("Published two-sea OSWEC")
+        flap_body = wec.body("flap", hydro, mass=12700,
+                             inertia=(1.85e6,) * 3)
+        base_body = wec.body("base", hydro, mass=999,
+                             inertia=(999,) * 3)
+        wec.fixed_hinge(
+            flap_body, base_body, location=WorldPoint(0, 0, -10),
+            pto_location=WorldPoint(0, 0, -8.9), damping=120000,
+            added_mass_scheme="simulink_delay",
+        )
+        public_wave = MultiPMWave(tuple(
+            PMWave(sea["height"], sea["period"],
+                   direction=sea["direction"], phase_file=sea["phase_file"])
+            for sea in seas
+        ), excitation_interpolation="spline")
+        public = wec.run(public_wave, dt=.1, end_time=100,
+                         ramp_time=.1, radiation_memory=40,
+                         base_dir=tmp_path)
+        np.testing.assert_allclose(public.time, response.time,
+                                   rtol=0, atol=1e-10)
+        np.testing.assert_allclose(public.raw.body_position,
+                                   response.body_position, rtol=0, atol=1e-10)
+        np.testing.assert_allclose(public.raw.body_velocity,
+                                   response.body_velocity, rtol=0, atol=1e-10)
+        np.testing.assert_allclose(public.ptos["hinge"].force,
+                                   response.pto_force, rtol=0, atol=1e-8)
+        np.testing.assert_allclose(public.wave_elevation,
+                                   response.wave_elevation, rtol=0, atol=1e-10)

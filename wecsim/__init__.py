@@ -1,7 +1,7 @@
 """Public Python interface for supported WEC-Sim device dynamics."""
 
 from .api import (
-    Body, BodyPoint, Coordinate, Current, DirectDriveHistory, FlexibleModeHistory, FullDirectionalSpectrumWave, HydroState, ImportedElevationWave, ImportedSpectrumWave, JONSWAPWave, LinearGeneratorHistory, LinearPTO, Motion, MotionHistory, NoWave, PMWave,
+    Body, BodyPoint, Coordinate, Current, DirectDriveHistory, FlexibleModeHistory, FullDirectionalSpectrumWave, HydroState, ImportedElevationWave, ImportedSpectrumWave, JONSWAPWave, LinearGeneratorHistory, LinearPTO, Motion, MotionHistory, MultiPMWave, NoWave, PMWave,
     RotationalPTO,
     PTOHistory, RegularCICWave, RegularWave, SimpleDirectDrive, VariableHydro, WEC, WECResult, WorldPoint,
 )
@@ -68,7 +68,7 @@ from .turbSim import MostConstantWind, MostWindField, TurbSimWind, read_turbsim_
 
 __all__ = [
     "Body", "BodyPoint", "CaseResponse", "Coordinate", "Current", "DeclutchingControl", "DirectDriveHistory", "DirectLinearGenerator", "DirectLinearGeneratorSignals", "FullDirectionalComponents", "IrregularResponse", "LatchingControl", "LinearHardStops", "LinearPTO", "Motion",
-    "MotionHistory", "FlexibleModeHistory", "FullDirectionalSpectrumWave", "ImportedElevationWave", "ImportedSpectrumWave", "JONSWAPWave", "MorisonElement", "MoorDyn", "NoWave", "PMWave", "PTOHistory", "LinearGeneratorHistory", "RotationalPTO", "RegularCICWave",
+    "MotionHistory", "FlexibleModeHistory", "FullDirectionalSpectrumWave", "ImportedElevationWave", "ImportedSpectrumWave", "JONSWAPWave", "MorisonElement", "MoorDyn", "MultiPMWave", "NoWave", "PMWave", "PTOHistory", "LinearGeneratorHistory", "RotationalPTO", "RegularCICWave",
     "RegularWave", "SimpleDirectDrive", "VariableHydro", "HydroState", "WEC",
     "OrificePTO", "OrificeResponse",
     "WECResult", "WorldPoint",
