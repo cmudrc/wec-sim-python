@@ -1,12 +1,12 @@
 function rm3_moordyn_viz_step_refinement
-% Refine only the pinned ode45 maximum step on the seed-1, 10 s RM3 sea.
+% Refine simu.dt (ode45 MaxStep and MoorDyn coupling interval) on one sea.
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 addpath(genpath(fullfile(repoRoot, 'matlab-ref', 'source')));
 caseDir = fullfile(repoRoot, 'applications', 'Paraview_Visualization', ...
     'RM3_MoorDyn_Viz');
 outDir = fullfile(repoRoot, 'matlab-rm3-moordyn-viz');
-steps = [0.005, 0.0025, 0.00125];
-labels = {'step005', 'step0025', 'step00125'};
+steps = [0.005, 0.0025, 0.00125, 0.000625];
+labels = {'step005', 'step0025', 'step00125', 'step000625'};
 
 for iStep = 1:numel(steps)
     step = steps(iStep);
@@ -27,7 +27,7 @@ for iStep = 1:numel(steps)
     contents = fileread(inputFile);
     changes = {
         'simu.endTime = 80;', 'simu.endTime = 10;';
-        'simu.dt = 0.01;', sprintf('simu.dt = %.5f;', step);
+        'simu.dt = 0.01;', sprintf('simu.dt = %.6f;', step);
         'simu.dtOut = 0.1;', 'simu.dtOut = 0.01;';
         'simu.paraview.option = 1;', 'simu.paraview.option = 0;';
         'waves.period = 8;', ...
