@@ -12,7 +12,7 @@ import numpy as np
 from wecsim.components.directLinearGenerator import DirectLinearGenerator
 from wecsim.components.floatingOwc import FloatingOwcChamber, FloatingOwcTurbine
 from wecsim.components.orifice import OrificePTO
-from wecsim.configuration import (
+from wecsim.interface.configuration import (
     Body,
     BodyPoint,
     Coordinate,
@@ -42,7 +42,7 @@ from wecsim.dynamics.caseDynamics import run_case
 from wecsim.dynamics.hardStops import LinearHardStops
 from wecsim.dynamics.moorDyn import MoorDyn
 from wecsim.hydrodynamics.morison import MorisonElement
-from wecsim.results import (
+from wecsim.interface.results import (
     DirectDriveHistory,
     FlexibleModeHistory,
     LinearGeneratorHistory,
@@ -50,7 +50,7 @@ from wecsim.results import (
     PTOHistory,
     WECResult,
 )
-from wecsim.wec_case import _WECCaseMixin
+from wecsim.interface.wec_case import _WECCaseMixin
 
 
 class WEC(_WECCaseMixin):

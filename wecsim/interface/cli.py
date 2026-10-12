@@ -20,7 +20,7 @@ def _sha256(path):
 
 
 def _git_state():
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     try:
         revision = subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=root,

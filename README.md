@@ -48,11 +48,11 @@ The installable code is in `wecsim/`, and runnable cases and bundled RM3
 inputs are in `examples/`. Sungjun Won's early sketches remain available in
 Git history.
 
-The source tree keeps the public builder in `wecsim/api.py` and groups its
-implementation by role:
+The source tree groups the public interfaces and implementation by role:
 
 | Package | Contents |
 | --- | --- |
+| `interface/` | Python WEC builder and configuration, case translation, results, and CLI |
 | `environment/` | Incident waves and wind inputs |
 | `hydrodynamics/` | HDF5 body data, radiation, fluid forces, and platform hydrodynamics |
 | `dynamics/` | Coordinates, joints, integration, moorings, linkages, and coupled motion |
@@ -64,9 +64,8 @@ implementation by role:
 Public names remain importable from `wecsim`. Direct implementation imports
 now use these subpackages, such as `wecsim.hydrodynamics.bodyClass` for the
 body reader.
-At the package root, `configuration.py` defines the Python WEC specifications,
-`api.py` provides the `WEC` builder, `wec_case.py` translates that builder into
-a case, and `results.py` defines the returned histories.
+The package root keeps only `__init__.py` and `__main__.py`; the latter runs the
+CLI with `python -m wecsim`.
 
 ## Goal of WEC-Sim-Python
 **WEC-Sim-Python** aims to help researchers, start-up companies, and enthusiasts without access to MATLAB in order to use the open-source code provided by NREL and Sandia lab. Also, with growing research in the field of machine learning, **WEC-Sim-Python** could be more convenient for those who develop machine learning projects utilizing Python.
