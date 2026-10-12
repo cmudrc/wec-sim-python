@@ -139,7 +139,8 @@ change is `0.00231` rad and PTO work changes by `0.535%`, larger than
 MATLAB's same-step differences above. A further local Python run at
 `dt=0.0025` s needs no fallback and gives `0.000953` rad yaw difference and
 `0.175%` work difference relative to Python `0.005` s. A matching MATLAB
-quarter-step source run has not been checked.
+quarter-step source run now passes the paired gates through 120 s; the
+measured result and its longer-window limit are recorded below.
 
 A [250 s pinned MATLAB step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38127365821)
 extends the same seed-1 irregular sea and 241-heading bank without changing
@@ -556,17 +557,22 @@ maximum yaw changes are 0.01179, 0.02048, and 0.01256 rad as the step halves.
 The last work change is 0.0552%, but yaw has not yet converged pointwise. At
 MATLAB's first coarse/fine heading mismatch (56.44 s), the two yaw states differ by
 only `7.92e-6` rad; their relative headings of 5.375181° and 5.374727°
-straddle the 5.375° bank boundary. The pinned
-MATLAB audit now requests a third step at 0.0025 s through 120 s, reusing the
-pinned 250 s coarse and half-step trajectories. The prior 250 s MATLAB
-0.01 and 0.005 s simulations took about 26 and 102 minutes, respectively;
-their observed scaling puts a 250 s quarter-step run beyond GitHub's six-hour
-job limit. The 120 s run will measure the first heading-switch separation,
-with predeclared source-stability and Python/source gates of 0.0006 rad yaw,
-0.00015 rad/s yaw rate, 20 N m PTO torque, and 0.1% PTO work. Those limits
-exceed the observed 120 s 0.01-to-0.005 s source self-change but reject a
-larger event-driven trajectory split. The 250 s source convergence and
-long-run motion parity remain open.
+straddle the 5.375° bank boundary. A [pinned R2025b quarter-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38279422204)
+reuses checksum-verified 250 s coarse and half-step trajectories and advances
+the same seed-1 sea at `dt=0.0025` s through 120 s. The incident sea agrees
+at all common times. Relative to MATLAB's `0.005` s run, the quarter-step
+source changes yaw by at most `0.0001717` rad, yaw speed by `4.371e-5` rad/s,
+PTO torque by `5.245` N m, and PTO work by `0.0212%`. Independent Python at
+the same quarter-step differs from MATLAB by at most `1.837e-5` rad yaw,
+`4.819e-6` rad/s speed, and `0.5782` N m torque; PTO work differs by
+`0.008%`. Both comparisons pass the predeclared gates of `0.0006` rad yaw,
+`0.00015` rad/s speed, `20` N m torque, and `0.1%` work. The two source runs
+each make 181 heading switches but select different headings at 163 common
+samples, beginning at 43.855 s. This establishes a stable, independently
+paired early 120 s window. MATLAB's own `0.01`-to-`0.005` s source change
+becomes large by 250 s, and a 250 s quarter-step source run remains beyond
+the current GitHub job budget. Neither 250 s source convergence nor native
+600 s motion parity is established.
 
 The [RM3 MoorDyn visualization force export](https://github.com/cmudrc/wec-sim-python/actions/runs/38085085794)
 records acceleration, excitation, radiation, added mass, restoring, Morison,
