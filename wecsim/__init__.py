@@ -1,6 +1,6 @@
 """Public Python interface for supported WEC-Sim device dynamics."""
 
-from .interface.api import (
+from .interface import (
     Body, BodyPoint, Coordinate, Current, DirectDriveHistory, FlexibleModeHistory, FullDirectionalSpectrumWave, HydroState, ImportedElevationWave, ImportedSpectrumWave, JONSWAPWave, LinearGeneratorHistory, LinearPTO, Motion, MotionHistory, MultiPMWave, NoWave, PMWave,
     RotationalPTO,
     PTOHistory, RegularCICWave, RegularWave, SimpleDirectDrive, VariableHydro, WEC, WECResult, WorldPoint,
