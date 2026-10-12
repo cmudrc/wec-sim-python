@@ -1,4 +1,4 @@
-"""Pair RM3 PTO-extension free decay at three pinned MATLAB solver steps."""
+"""Pair RM3 PTO-extension free decay as the source step is refined."""
 
 import os
 from pathlib import Path
@@ -36,12 +36,14 @@ def _python_response(hydro, coordinate, dt):
     })
 
 
-@pytest.mark.parametrize("name,coordinate,active,position_gate,speed_gate", [
-    ("float", {"float_heave": 5}, 0, .016, .030),
-    ("spar", {"spar_heave": -5}, 1, .0025, .0007),
+@pytest.mark.parametrize("name,coordinate,active,position_gate,speed_gate,"
+                         "finer_position_gate,finer_speed_gate", [
+    ("float", {"float_heave": 5}, 0, .016, .030, .009, .017),
+    ("spar", {"spar_heave": -5}, 1, .0025, .0007, .0015, .0004),
 ])
 def test_published_pto_extension_fine_step_pair(
     name, coordinate, active, position_gate, speed_gate,
+    finer_position_gate, finer_speed_gate,
 ):
     hydro = (Path(APPLICATIONS)
              / "_Common_Input_Files/RM3/hydroData/rm3.h5")
@@ -50,7 +52,8 @@ def test_published_pto_extension_fine_step_pair(
                       - np.asarray(h5["body2/properties/cg"]).ravel()[2])
     source = {}
     python = {}
-    for dt, suffix in ((.1, "0p1"), (.05, "0p05"), (.025, "0p025")):
+    for dt, suffix in ((.1, "0p1"), (.05, "0p05"), (.025, "0p025"),
+                       (.0125, "0p0125")):
         source[dt] = np.loadtxt(
             Path(SOURCE) / f"{name}_dt_{suffix}.csv", delimiter=",",
         )
@@ -66,13 +69,17 @@ def test_published_pto_extension_fine_step_pair(
     source_fine_change = np.max(np.abs(
         source[.05][:, 1:7] - source[.025][::2, 1:7]), axis=0,
     )
+    source_finer_change = np.max(np.abs(
+        source[.025][:, 1:7] - source[.0125][::2, 1:7]), axis=0,
+    )
     active_columns = (1, 2, 5, 6) if active == 0 else (3, 4, 5, 6)
     for column in active_columns:
         assert source_fine_change[column - 1] < source_coarse_change[column - 1]
+        assert source_finer_change[column - 1] < .75 * source_fine_change[column - 1]
 
     position_errors = {}
     speed_errors = {}
-    for dt in (.05, .025):
+    for dt in (.05, .025, .0125):
         response = python[dt]
         expected = source[dt]
         position_errors[dt] = np.max(np.abs(
@@ -101,6 +108,9 @@ def test_published_pto_extension_fine_step_pair(
         if dt == .025:
             assert np.max(np.abs(stroke - expected[:, 5])) < position_gate
             assert np.max(np.abs(stroke_speed - expected[:, 6])) < speed_gate
+        elif dt == .0125:
+            assert np.max(np.abs(stroke - expected[:, 5])) < finer_position_gate
+            assert np.max(np.abs(stroke_speed - expected[:, 6])) < finer_speed_gate
         assert np.max(np.abs(response.pto_force - expected[:, 7])) < 1e-7
         assert np.max(np.abs(response.pto_force * stroke_speed
                              - expected[:, 8])) < 1e-7
@@ -109,3 +119,7 @@ def test_published_pto_extension_fine_step_pair(
     assert speed_errors[.025] < speed_gate
     assert position_errors[.025] < .75 * position_errors[.05]
     assert speed_errors[.025] < .75 * speed_errors[.05]
+    assert position_errors[.0125] < finer_position_gate
+    assert speed_errors[.0125] < finer_speed_gate
+    assert position_errors[.0125] < .75 * position_errors[.025]
+    assert speed_errors[.0125] < .75 * speed_errors[.025]
