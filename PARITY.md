@@ -488,6 +488,21 @@ The four README case badges partition that inventory by model family: RM3
 published-input gates. A named system gets its own badge when it has more than
 five inventoried cases; smaller systems stay in the disjoint remainder.
 
+### Current priority
+
+First bring the three core geometry badges to RM3 21/21, OSWEC 13/13, and
+Sphere 12/12. A case earns its gate only when an independent Python run covers
+the published input and duration and passes predeclared MATLAB motion or
+fixed-body force limits. A refined-step comparison, prescribed source events,
+or a component replay remains useful diagnostic evidence, but does not close
+the corresponding published-step gap by itself. The remaining RM3 cases are
+`End_Stops`, `RM3_MoorDyn_Viz`, and both `RM3_PTO_Extension` free decays; the
+remaining OSWEC cases are `OSWEC_NonLinear_Viz`, `PassiveYawRegression`, and
+the irregular mode of `Variable_Hydro/Passive_Yaw`. Their measured blockers
+are recorded below. After the three geometry sets are gated, raise meaningful
+Python line-and-branch test coverage toward 90%, using behavior and numerical
+invariants rather than tests written only to execute lines.
+
 | Other published cases | Gated / inventoried |
 | --- | ---: |
 | OWC | 1/2 |
