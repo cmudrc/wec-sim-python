@@ -230,6 +230,9 @@ radiation where the underlying paired solver supports them. The returned
 `absorbed_power` counts the linear damper; spring energy exchange can be
 computed from `-force * velocity`. The returned stroke is float heave minus
 spar heave, so an initial body offset appears in the first stroke sample.
+A derived 400 s RM3 run pairs a 50 kN/m spring and 5 kN pretension against
+MATLAB WEC-Sim using `equilibrium_position=-0.1` m; the paired power check
+uses total mechanical exchange as well as damper dissipation.
 
 For the published generalized-body-mode barge, generate its HDF5 with the
 Applications `Generalized_Body_Modes/hydroData/bemio.m`, then run:

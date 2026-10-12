@@ -81,6 +81,9 @@ def test_rm3_configured_spring_and_pretension_against_matlab():
     _max_error(history.absorbed_power,
                1_200_000 * history.velocity**2,
                1e-8, "Python damper dissipation")
+    _max_error(pto[:, 15],
+               -1_200_000 * pto[:, 9] - 50_000 * (pto[:, 3] + 0.1),
+               1e-6, "MATLAB spring and damper force law")
     _max_error(pto[:, 21], pto[:, 15] * pto[:, 9],
                1e-6, "MATLAB spring and damper mechanical power")
     _max_error(-history.force * history.velocity, -pto[:, 21],
