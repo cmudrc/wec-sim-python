@@ -65,3 +65,36 @@ The archive SHA-256 is
 `95057bc8d58b1e36243eefb688a184774a557dc63542128efff3eac732095154`.
 The two 1 m source trajectories are identical: the published Morison element
 has surge-only coefficients and does not change heave free decay.
+
+## OSWEC directional irregular wave
+
+`oswec_irregular_wave.npz` keeps all 4,001 samples of the published 400 s
+OSWEC PM sea, both body motions, the flap's six excitation forces, and the
+hinge PTO. The source is the successful [pinned R2025b run](https://github.com/cmudrc/wec-sim-python/actions/runs/37932186068)
+(`matlab-WAVE_MARKERS_OSWEC-baseline` artifact, run commit
+`9872f98ccd65aa57e49f0d7dbd5db8919d87773c`). It checked out WEC-Sim
+core `0753b2e47f2457c078751dcfe5d251d1767b80ab`. The published input
+has three incident directions and no phase seed, so the archive retains its
+500-by-3 phase realization. `examples/data/oswec.h5` is an unchanged copy of
+that pinned core revision's `examples/OSWEC/hydroData/oswec.h5` (SHA-256
+`28aa028d404a88f877924bc435e7ad3a4c50e26f9706c1f39ef7324e5ec60750`).
+
+The archive stores `time`, `wave_elevation`, `wave_components` (frequency,
+amplitude, width, then three phases), `wave_directions` (direction and
+spreading), `body_position` and `body_velocity` (flap/base, time, six degrees
+of freedom), `flap_excitation_force`, and PTO stroke, speed, force, and power.
+The body CSV uses columns 0, 1–6, 7–12, and 19–24; the PTO uses columns 0,
+5, 11, 17, and 23. All source CSV values were loaded as float64 without
+rounding. Their SHA-256 hashes are:
+
+| Source file | SHA-256 |
+| --- | --- |
+| `OSWEC_OSWEC_body1.csv` | `9b005121c637987aff76915f1b0295200970c7e3bec3711956e9cc25b8570edf` |
+| `OSWEC_OSWEC_body2.csv` | `cc8d525d09cc876ae50766f6d1067face24f9a10a823afa19a06d702e99eb33b` |
+| `OSWEC_OSWEC_pto1.csv` | `3a28e1d7dbcff757fb980f35ce828f895fb0b9f1481ca0f22ceb90e149775766` |
+| `OSWEC_wave_components.csv` | `29a5ce24a901c819953da8ed365bc4c22e8b2beb66f2a8529124db6c19191b00` |
+| `OSWEC_wave_directions.csv` | `fb581ce2fe25dcc31394e43c243ff2281627613fe0df5a543f712d4e9343cebf` |
+| `OSWEC_wave_elevation.csv` | `35aae2f59b1b66aa2ab6107bca0eca712f2ffbb8c58bce208d2f9d9fcbfdc62b` |
+
+The archive SHA-256 is
+`070365a8fd15dddab8b4fe89a6000eb8572f291ee6f2068d3520e13612424b01`.
