@@ -53,6 +53,8 @@ class _WECCaseMixin:
         ):
             if value is not None:
                 simulation[key] = value
+        # These joints have their own kinematics; only the remaining layouts
+        # use the generic linear coordinate maps assembled below.
         if self._floating_joint is not None:
             return self._floating_joint_case(
                 wave, simulation, initial_coordinate, initial_speed,
@@ -67,6 +69,8 @@ class _WECCaseMixin:
                 wave, simulation, initial_coordinate, initial_speed,
             )
         bodies = []
+        # Keep builder order: an omitted hydro_body means the matching
+        # one-based body index in the shared HDF5 data.
         for index, body in enumerate(self.bodies, start=1):
             if body.fixed:
                 body_case = {
@@ -135,6 +139,8 @@ class _WECCaseMixin:
                 ]
             bodies.append(body_case)
         constraint = {"kind": "linear_subspace", "coordinates": []}
+        # Fixed nonhydrodynamic bodies have no generalized coordinates;
+        # their Morison forces are evaluated on the prescribed pose.
         if any(body.fixed for body in self.bodies):
             if (not all(body.fixed for body in self.bodies)
                     or self.coordinates or self.ptos or self.rotational_ptos
@@ -160,6 +166,8 @@ class _WECCaseMixin:
                                           **asdict(config["orifice"])}
                 constraint.update({key: value for key, value in config.items()
                                    if key not in ("name", "orifice")})
+        # A named coordinate may contribute motion to several bodies. The
+        # case adapter turns these entries into each body's motion Jacobian.
         for coordinate in self.coordinates:
             motions = []
             for motion in coordinate.motions:
@@ -401,6 +409,8 @@ class _WECCaseMixin:
     @staticmethod
     def _pto_case(pto: LinearPTO) -> dict:
         def endpoint(point):
+            # Retain the body identity and local offset here. The solver uses
+            # the HDF5 center of gravity to form the world attachment arm.
             if isinstance(point, BodyPoint):
                 return {"body": point.body.name, "point": point.coordinates()}
             return {"ground": point.coordinates()}
@@ -410,6 +420,8 @@ class _WECCaseMixin:
             "kind": "linear_actuator",
             "from": endpoint(pto.from_point),
             "to": endpoint(pto.to_point),
+            # A sampled controller supplies its own damping gain; the solver
+            # advances its switching memory separately from passive damping.
             "damping": (pto.control.gain if pto.control is not None
                         else pto.damping),
             "stiffness": pto.stiffness,

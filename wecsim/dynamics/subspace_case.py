@@ -87,6 +87,8 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         if "ramp_time" in sim:
             raise ValueError("ramp_time is inapplicable to no-wave dynamics")
     if wave["type"] != "regular":
+        # Radiation convolution samples the HDF5 impulse response on the
+        # solver grid; its window must end exactly on a time step.
         memory_time = _number(
             sim.get("radiation_memory", 15), "simulation.radiation_memory",
             positive=True,
@@ -150,6 +152,9 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
     )
     n = maps[0].shape[1]
     exact_pitch_motion = None
+    # A pitch coordinate around an offset world pivot also translates the
+    # center of gravity. Use exact hinge kinematics for this one-coordinate
+    # case instead of treating its map as constant.
     if len(bodies) == n == 1 and "coordinates" in constraint:
         definitions = constraint["coordinates"][0]["motions"]
         if len(definitions) == 1:
@@ -177,6 +182,9 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
     if "current" in wave and not moving_morison:
         raise ValueError("regular-wave current needs a moving Morison element")
     if moving_morison:
+        # The verified moving-element force laws use either pure heave or a
+        # fixed surge/heave/pitch basis; arbitrary coordinate maps are not
+        # yet a valid projection for these Morison terms.
         heave_map = np.zeros((6, 1))
         heave_map[2, 0] = 1
         three_dof_map = np.zeros((6, 3))
@@ -402,6 +410,8 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
             time, imported_elevation if imported_elevation is not None
             else np.zeros_like(time),
         ))
+        # BodyClass preprocesses the source HDF5 coefficients for this wave
+        # mode. The resulting force blocks feed the common coordinate solver.
         if wave["type"] == "regular":
             body.hydroForcePre(
                 frequency, [direction], 1, np.array([0.0]), [], dt, rho, g,
@@ -431,6 +441,8 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         physical_mass = float(np.asarray(body.mass).item())
         rigid_mass = np.diag([physical_mass] * 3 + inertia.tolist())
         hydro_force = body.hydroForce
+        # A body-to-body HDF5 contains cross-body added-mass/damping blocks.
+        # Independent bodies instead contribute only their diagonal block.
         if b2b:
             added_mass = tuple(
                 np.asarray(hydro_force["fAddedMass"])[:, 6*j:6*(j+1)]
@@ -473,6 +485,8 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
                            drift=drift):
                 ramp = (1.0 if ramp_time == 0 or at_time >= ramp_time
                         else (1 - np.cos(np.pi * at_time / ramp_time)) / 2)
+                # HDF5 complex excitation follows re*cos(omega*t)
+                # minus im*sin(omega*t); mean drift scales with amplitude squared.
                 return (height / 2 * ramp * (
                     real * np.cos(frequency * at_time)
                     - imaginary * np.sin(frequency * at_time)
@@ -682,6 +696,8 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         ))
     generalized_pto = (-(response.coordinate - equilibrium) @ stiffness.T
                        - response.speed @ damping.T + pto_bias)
+    # Controlled and generator forces are history-dependent, so add their
+    # sampled scalar forces after the passive matrix contribution.
     for connection in controlled_connections:
         generalized_pto += np.outer(
             controlled_forces[connection.name], connection.stroke_jacobian,
@@ -739,6 +755,9 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         )
     morison_outputs = ()
     if moving_elements:
+        # Added mass entered the acceleration solve as inertia. Reconstruct
+        # the reported physical Morison force by removing that acceleration
+        # term from the applied-force part.
         force = np.stack([
             applied - added @ (maps[0] @ a)
             for (applied, added), a in zip(

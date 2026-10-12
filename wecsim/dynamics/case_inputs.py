@@ -183,6 +183,8 @@ def _sampled_elevation(wave, base, time, ramp_time):
     if ramp_time > 0:
         early = time < ramp_time
         ramp[early] = (1 - np.cos(np.pi * time[early] / ramp_time)) / 2
+    # The MAT record has its own sample times. Interpolate onto the solver
+    # grid before applying the same startup ramp used by generated waves.
     elevation = np.interp(time, samples[:, 0], samples[:, 1]) * ramp
     return elevation, ramp, path
 
@@ -221,6 +223,8 @@ def _irregular_components_from_case(wave, hydro_file, base_dir):
     if "seed" in wave and "phase_file" in wave:
         raise ValueError("supply either wave.seed or wave.phase_file")
     auxiliary = ()
+    # A phase file replays a specific MATLAB realization; a seed asks the
+    # selected phase generator to create a reproducible realization instead.
     if "phase_file" in wave:
         if not isinstance(wave["phase_file"], str) or not wave["phase_file"]:
             raise ValueError("wave.phase_file must be a file path")

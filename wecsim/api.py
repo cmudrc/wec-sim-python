@@ -500,6 +500,8 @@ class WEC(_WECCaseMixin):
             radiation_memory=radiation_memory, rho=rho, g=g,
             initial_coordinate=initial_coordinate, initial_speed=initial_speed,
         )
+        # The Python builder and file-driven CLI share the validated case
+        # runner; this layer only restores names and structured histories.
         response = run_case(case, base_dir=base_dir)
         extras = dict(response.extra_outputs)
         bodies = {
@@ -545,6 +547,8 @@ class WEC(_WECCaseMixin):
         if self._fixed_hinge is not None:
             angle = response.body_position[:, 0, 4]
             speed = response.body_velocity[:, 0, 4]
+            # The hinge PTO is rotational, so its stroke and speed are the
+            # flap's pitch angle and angular velocity.
             pto = PTOHistory(
                 angle, speed, response.pto_force,
                 self._fixed_hinge.damping * speed**2,
@@ -637,6 +641,8 @@ def _pto_equilibrium(stiffness: float, equilibrium: float | None,
         raise ValueError(
             f"{layout} PTO nonzero equilibrium or pretension needs positive stiffness"
         )
+    # Force = -k*(stroke - equilibrium). A positive requested pretension
+    # therefore corresponds to a negative equilibrium stroke.
     offset = (-pretension / stiffness if pretension is not None and stiffness
               else equilibrium if equilibrium is not None else 0.0)
     if not np.isfinite(offset):
