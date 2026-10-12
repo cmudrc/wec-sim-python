@@ -812,9 +812,3 @@ class BodyClass:
         verts_out[1] = verts[1] + x[1]
         verts_out[2] = verts[2] + x[2]
         return verts_out
-
-def arange_MATLAB(start, end, step):
-    """
-    Change np.arange to have same sequence as MATLAB when step is float
-    """
-    return step*np.arange(start/step, np.floor(end/step))
