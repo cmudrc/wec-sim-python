@@ -15,10 +15,21 @@ from wecsim.environment.irregularWave import (imported_spectrum_components,
                                   jonswap_equal_energy_components,
                                   pm_equal_energy_components,
                                   synthesize_irregular_response)
+from wecsim.interface import WEC as GroupedWEC
 
 
 ROOT = Path(__file__).resolve().parents[1]
 JSON_EXAMPLE = ROOT / "examples/configurable_rm3_pto.json"
+
+
+def test_grouped_modeling_imports_match_top_level_api():
+    import wecsim
+    import wecsim.interface as interface
+
+    assert GroupedWEC is WEC
+    assert set(interface.__all__) <= set(wecsim.__all__)
+    for name in interface.__all__:
+        assert getattr(interface, name) is getattr(wecsim, name)
 
 
 def test_full_directional_wave_keeps_physical_defaults():

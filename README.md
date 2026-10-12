@@ -61,9 +61,12 @@ The source tree groups the public interfaces and implementation by role:
 | `analysis/` | Sea-state sweeps and power matrices |
 | `visualization/` | ParaView output |
 
-Public names remain importable from `wecsim`. Direct implementation imports
-now use these subpackages, such as `wecsim.hydrodynamics.bodyClass` for the
-body reader.
+For a WEC model, use the concise public import, for example
+`from wecsim import WEC, RegularWave, WorldPoint`. The same builder,
+configuration, and result types are available together from
+`wecsim.interface` when an explicit namespace is helpful. Specialized code
+can be imported from its implementation module, such as
+`wecsim.hydrodynamics.bodyClass` for the body reader.
 The package root keeps only `__init__.py` and `__main__.py`; the latter runs the
 CLI with `python -m wecsim`.
 
