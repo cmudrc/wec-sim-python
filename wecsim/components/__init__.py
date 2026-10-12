@@ -1,1 +1,1 @@
-"""Components used by WEC-Sim Python."""
+"""Power conversion, rotors, turbines, and auxiliary devices."""

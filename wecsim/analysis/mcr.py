@@ -13,7 +13,7 @@ from typing import Callable, Iterable
 import numpy as np
 from scipy.io import loadmat
 
-from wecsim.reference_models.rm3Regular import solve_rm3_regular
+from wecsim.dynamics.rm3Regular import solve_rm3_regular
 from wecsim.environment.irregularWave import imported_spectrum_components, synthesize_irregular_response
 
 

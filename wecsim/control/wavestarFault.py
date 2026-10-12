@@ -3,7 +3,7 @@
 import numpy as np
 
 from wecsim.dynamics.friction import StribeckFriction
-from wecsim.reference_models.wavestar import run_wavestar_published
+from wecsim.dynamics.wavestar import run_wavestar_published
 
 
 class WaveStarFaultController:

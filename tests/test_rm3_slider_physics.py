@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from wecsim.dynamics.generalDynamics import DynamicBody, GeneralizedDynamics
-from wecsim.reference_models.rm3Regular import _rm3_slider_motion
+from wecsim.dynamics.rm3Regular import _rm3_slider_motion
 
 
 @pytest.mark.parametrize("body_index,lever", [(0, 1.7), (1, -2.3)])

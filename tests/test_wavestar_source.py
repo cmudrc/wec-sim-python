@@ -11,7 +11,7 @@ from scipy.signal import StateSpace, lsim
 from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
-from wecsim.reference_models.wavestar import WaveStarLinkage
+from wecsim.dynamics.wavestar import WaveStarLinkage
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

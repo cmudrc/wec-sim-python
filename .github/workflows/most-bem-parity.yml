@@ -12,7 +12,7 @@ on:
       - 'tests/test_most_bem_source.py'
       - 'tests/test_most_wind_bem_source.py'
       - 'tests/test_most_wind_advection.py'
-      - 'wecsim/reference_models/mostBEM.py'
+      - 'wecsim/hydrodynamics/mostBEM.py'
       - 'wecsim/environment/turbSim.py'
       - 'wecsim/__init__.py'
   pull_request:
@@ -25,7 +25,7 @@ on:
       - 'tests/test_most_bem_source.py'
       - 'tests/test_most_wind_bem_source.py'
       - 'tests/test_most_wind_advection.py'
-      - 'wecsim/reference_models/mostBEM.py'
+      - 'wecsim/hydrodynamics/mostBEM.py'
       - 'wecsim/environment/turbSim.py'
       - 'wecsim/__init__.py'
   workflow_dispatch:

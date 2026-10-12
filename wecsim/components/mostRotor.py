@@ -5,9 +5,9 @@ from pathlib import Path
 
 import numpy as np
 
-from wecsim.reference_models.mostBEM import MostBEM
-from wecsim.reference_models.mostController import MostBaselineController
-from wecsim.reference_models.mostMooring import MostStaticMooring
+from wecsim.hydrodynamics.mostBEM import MostBEM
+from wecsim.control.mostController import MostBaselineController
+from wecsim.dynamics.mostMooring import MostStaticMooring
 from wecsim.environment.turbSim import MostConstantWind, MostWindField
 
 

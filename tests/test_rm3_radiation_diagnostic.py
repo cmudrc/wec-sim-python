@@ -11,7 +11,7 @@ from tools.rm3_radiation_diagnostic import (
     common_surge_feedthrough,
 )
 from wecsim.hydrodynamics.radiation import RadiationStateSpace
-from wecsim.reference_models.rm3Regular import solve_rm3_regular
+from wecsim.dynamics.rm3Regular import solve_rm3_regular
 
 
 RM3 = (Path(__file__).parent / "test_objects" / "test_bodyclass"

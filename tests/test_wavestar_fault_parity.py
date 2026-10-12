@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim.environment.irregularWave import jonswap_equal_energy_components
-from wecsim.reference_models.wavestarFault import run_wavestar_fault_published
+from wecsim.control.wavestarFault import run_wavestar_fault_published
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

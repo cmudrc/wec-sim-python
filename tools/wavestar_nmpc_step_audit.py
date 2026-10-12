@@ -17,7 +17,7 @@ from scipy.io import loadmat
 
 from wecsim import WaveStarNmpcPTO
 from wecsim.environment.irregularWave import jonswap_equal_energy_components
-from wecsim.reference_models.wavestar import run_wavestar_published
+from wecsim.dynamics.wavestar import run_wavestar_published
 
 
 def main() -> None:

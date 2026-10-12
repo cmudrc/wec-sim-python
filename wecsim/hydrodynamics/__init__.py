@@ -1,1 +1,1 @@
-"""Hydrodynamics used by WEC-Sim Python."""
+"""BEM data, radiation, Morison forces, and platform hydrodynamics."""

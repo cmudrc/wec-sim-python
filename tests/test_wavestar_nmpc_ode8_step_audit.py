@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim.environment.irregularWave import jonswap_equal_energy_components
-from wecsim.reference_models.wavestar import run_wavestar_published
+from wecsim.dynamics.wavestar import run_wavestar_published
 
 
 SOURCE = os.environ.get("WEC_SIM_WAVESTAR_ODE8_STEP_DIR")

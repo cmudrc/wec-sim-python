@@ -6,8 +6,8 @@ from pathlib import Path
 import numpy as np
 from scipy.io import loadmat
 
-from wecsim.reference_models.mostBEM import _cross3, _rx, _ry
-from wecsim.reference_models.mostMooring import MostStaticMooring
+from wecsim.hydrodynamics.mostBEM import _cross3, _rx, _ry
+from wecsim.dynamics.mostMooring import MostStaticMooring
 
 
 @dataclass(frozen=True)
