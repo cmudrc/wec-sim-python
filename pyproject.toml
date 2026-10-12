@@ -24,7 +24,7 @@ dependencies = [
 Repository = "https://github.com/cmudrc/wec-sim-python"
 
 [project.scripts]
-wecsim = "wecsim.cli:main"
+wecsim = "wecsim.interface.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["wecsim*"]

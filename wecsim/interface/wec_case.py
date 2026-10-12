@@ -8,7 +8,7 @@ from typing import Mapping, Sequence
 
 import numpy as np
 
-from wecsim.configuration import (
+from wecsim.interface.configuration import (
     BodyPoint,
     FullDirectionalSpectrumWave,
     ImportedElevationWave,

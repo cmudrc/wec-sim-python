@@ -11,7 +11,7 @@ from scipy.interpolate import CubicSpline
 from scipy.signal import fftconvolve
 
 from wecsim import RegularCICWave, WEC
-from wecsim.cli import main as cli_main
+from wecsim.interface.cli import main as cli_main
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

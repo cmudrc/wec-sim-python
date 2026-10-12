@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from scipy.signal import fftconvolve
 
-from wecsim.api import RegularCICWave, RegularWave, WEC, WorldPoint
+from wecsim import RegularCICWave, RegularWave, WEC, WorldPoint
 from wecsim.hydrodynamics.bodyClass import BodyClass
 from wecsim.hydrodynamics.nonlinearHydro import HeaveMeshHydro
 
