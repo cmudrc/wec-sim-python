@@ -911,8 +911,32 @@ switch string(model)
         assert(fid ~= -1, 'Could not write the configured PTO input');
         fprintf(fid, '%s', contents);
         fclose(fid);
-        cases = caseName;
-        caseDirs = string(caseDir);
+        if movingMorison
+            cases = caseName;
+            caseDirs = string(caseDir);
+        else
+            pretensionCase = "ConfiguredPretension";
+            pretensionDir = fullfile(repoRoot, 'applications', 'Controls', ...
+                "Passive_" + pretensionCase);
+            [copied, copyMessage] = copyfile(caseDir, pretensionDir);
+            assert(copied, copyMessage);
+            pretensionInput = fullfile(pretensionDir, 'wecSimInputFile.m');
+            pretensionContents = fileread(pretensionInput);
+            oldLocation = 'pto(1).location = [1 0 0];';
+            assert(contains(pretensionContents, oldLocation) && ...
+                ~contains(pretensionContents, 'pto(1).pretension'), ...
+                'The configured Sphere PTO input changed');
+            pretensionContents = strrep(pretensionContents, oldLocation, ...
+                sprintf('%s\npto(1).pretension = 5000;', oldLocation));
+            fid = fopen(pretensionInput, 'w');
+            assert(fid ~= -1, 'Could not write the pretension PTO input');
+            fprintf(fid, '%s', pretensionContents);
+            fclose(fid);
+            % Run the new case first; the existing unsuffixed controller
+            % export continues to represent the original Configured case.
+            cases = [pretensionCase, caseName];
+            caseDirs = [string(pretensionDir), string(caseDir)];
+        end
     case "Sphere_Reactive_PI"
         hydroDir = fullfile(repoRoot, 'applications', '_Common_Input_Files', ...
             'Sphere', 'hydroData');
@@ -1069,6 +1093,14 @@ for iCase = 1:numel(cases)
     end
     assert(exist('output', 'var') == 1 && ~isempty(output.bodies), ...
         'The MATLAB case produced no body output');
+    if string(model) == "Sphere_PTO_Config" && ...
+            cases(iCase) == "ConfiguredPretension"
+        assert(pto(1).pretension == 5000 && ...
+            abs(pto(1).equilibriumPosition + 0.1) < 1e-12, ...
+            'The source PTO did not apply the requested pretension');
+        writematrix([pto(1).pretension, pto(1).equilibriumPosition], ...
+            fullfile(outDir, 'Sphere_PTO_Config_pretension_parameters.csv'));
+    end
     if string(model) == "RM3_B2B_STATE_SPACE" || ...
             (string(model) == "RM3_B2B" && iCase >= 5)
         assert(simu.stateSpace == 1 && simu.dt == 0.1 && ...
@@ -2736,7 +2768,13 @@ for iCase = 1:numel(cases)
             'Expected six force and six power components from Sphere controller');
         assert(all(isfinite(controllerValues), 'all'), ...
             'The passive controller output contains nonfinite values');
-        writematrix(controllerValues, fullfile(outDir, string(model) + "_controller.csv"));
+        controllerName = string(model) + "_controller.csv";
+        if string(model) == "Sphere_PTO_Config" && ...
+                cases(iCase) == "ConfiguredPretension"
+            controllerName = string(model) + ...
+                "_ConfiguredPretension_controller.csv";
+        end
+        writematrix(controllerValues, fullfile(outDir, controllerName));
     end
     if isstruct(output.ptos) && isfield(output.ptos, 'time')
         for iPto = 1:numel(output.ptos)
