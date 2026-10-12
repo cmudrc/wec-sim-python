@@ -1161,6 +1161,14 @@ published closed-loop parity remain unestablished. The previous quarter-step
 full-duration audit used the old force-hold implementation and is superseded
 for the current Python solver; a new full-duration quarter-step run has not
 been claimed.
+On the [fixed-fit published source run](https://github.com/cmudrc/wec-sim-python/actions/runs/38155596820),
+the independent 1 ms Python run differs from MATLAB's 50 ms `ode8` output by
+3.62% pitch RMS, 7.62% peak pitch, 6.30% pitch-speed RMS, and 5.91% signed
+PTO work. Axial-force and torque-request RMS differences are 0.179% and
+0.0686%. Two MATLAB processes on that same HDF5 fit and sea have identical
+saved motion, force, and request histories; fixed-fit repeatability does not
+explain the Python gap. These aggregate differences are diagnostics, not a
+published closed-loop parity gate.
 
 A separate source-input diagnostic prescribed the MATLAB PTO force saved
 every 50 ms. Holding those samples between Python plant steps leaves a
