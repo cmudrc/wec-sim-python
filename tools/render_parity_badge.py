@@ -1,4 +1,4 @@
-"""Render disjoint reference-model and additional-system parity badges."""
+"""Render disjoint parity badges for each published model family."""
 
 import argparse
 import csv
@@ -9,11 +9,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "tests/reference_cases.csv"
 STATUS = ROOT / "tests/reference_case_status.csv"
-REFERENCE_FAMILIES = {"RM3", "OSWEC", "Sphere"}
-ADDITIONAL_FAMILY = "Other or dynamic"
 BADGES = (
-    (ROOT / "docs/reference-model-cases.json", "RM3 / OSWEC / Sphere", REFERENCE_FAMILIES),
-    (ROOT / "docs/additional-system-cases.json", "Additional systems", {ADDITIONAL_FAMILY}),
+    ("RM3", ROOT / "docs/rm3-cases.json", "RM3 cases"),
+    ("OSWEC", ROOT / "docs/oswec-cases.json", "OSWEC cases"),
+    ("Sphere", ROOT / "docs/sphere-cases.json", "Sphere cases"),
+    (
+        "Other or dynamic",
+        ROOT / "docs/additional-system-cases.json",
+        "Additional systems",
+    ),
 )
 EVIDENCE = {
     "independent_motion", "stationary_force", "qualified_motion",
@@ -44,11 +48,11 @@ def render():
     if unknown:
         raise ValueError(f"unknown motion evidence categories: {unknown}")
     status_by_case = {row["case"]: row["motion_evidence"] for row in statuses}
-    if {row["family"] for row in cases} != REFERENCE_FAMILIES | {ADDITIONAL_FAMILY}:
+    if {row["family"] for row in cases} != {family for family, _, _ in BADGES}:
         raise ValueError("inventory families differ from badge groups")
     rendered = {}
-    for path, label, families in BADGES:
-        names = [row["case"] for row in cases if row["family"] in families]
+    for family, path, label in BADGES:
+        names = [row["case"] for row in cases if row["family"] == family]
         gated = sum(status_by_case[name] in GATED for name in names)
         payload = {
             "schemaVersion": 1,
