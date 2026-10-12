@@ -483,6 +483,10 @@ identifies 21 RM3, 13 OSWEC, and 12 Sphere cases by explicit hydrodynamic
 file paths, plus 17 other or dynamic cases. Generate the CSV with
 `python tools/build_reference_case_inventory.py CORE_CHECKOUT APPLICATIONS_CHECKOUT`.
 This is a source inventory, not a claim that every case runs in Python.
+The two README case badges partition that inventory: both core examples have
+published-input gates (2/2), and 50 of 61 application inputs have gates.
+The 42-job MATLAB source sweep below is a separate check of selected source
+runs and variants, not 42 more case files.
 
 `tests/reference_case_status.csv` audits those same 63 inputs against the
 paired evidence documented here. Its categories refer only to the published
