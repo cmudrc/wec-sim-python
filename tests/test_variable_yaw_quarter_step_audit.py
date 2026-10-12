@@ -20,8 +20,7 @@ pytestmark = pytest.mark.skipif(
 def test_irregular_250s_quarter_step_diagnostic():
     source = Path(SOURCE)
     quarter_file = source / "quarter_trajectory.csv"
-    if not quarter_file.exists():
-        pytest.skip("quarter-step source run is absent")
+    assert quarter_file.is_file(), "quarter-step source run is absent"
     fine = np.loadtxt(source / "fine_trajectory.csv", delimiter=",")
     quarter = np.loadtxt(quarter_file, delimiter=",")
     fine_wave = np.loadtxt(source / "fine_wave.csv", delimiter=",")

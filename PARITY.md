@@ -527,11 +527,11 @@ establishes that WEC-Sim ran; it does not establish Python parity.
 
 An ARM64 Python self-audit of the 250 s irregular selected-heading case uses
 the source-matched OSWEC HDF5 (`591f9a32f18c1a9b1b1dd05ab9afe104cefc20cc7a11c3e0d7f66d74d450b0a2`)
-and the published phase seed. With `dt=0.01`, `0.005`, and `0.0025` s, PTO
-work is 1959.71, 1890.23, and 1914.14 J. At common times, maximum yaw
-changes are 0.01179 then 0.02048 rad as the step halves. The smaller step
-does not yet establish a converged native Python trajectory. At MATLAB's
-first coarse/fine heading mismatch (56.44 s), the two yaw states differ by
+and the published phase seed. With `dt=0.01`, `0.005`, `0.0025`, and `0.00125`
+s, PTO work is 1959.71, 1890.23, 1914.14, and 1913.08 J. At common times,
+maximum yaw changes are 0.01179, 0.02048, and 0.01256 rad as the step halves.
+The last work change is 0.0552%, but yaw has not yet converged pointwise. At
+MATLAB's first coarse/fine heading mismatch (56.44 s), the two yaw states differ by
 only `7.92e-6` rad; their relative headings of 5.375181° and 5.374727°
 straddle the 5.375° bank boundary. The pinned
 MATLAB audit now requests a third step at 0.0025 s; source self-change and
