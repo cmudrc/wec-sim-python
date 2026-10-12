@@ -16,6 +16,27 @@ from wecsim.passiveYaw import (
 )
 
 
+def _source_heading_schedule(source_heading, dt, headings):
+    """Prescribe only the source's discrete coefficient choices to Python."""
+    class SourceHeadingSchedule:
+        def __init__(self, model, bank_headings):
+            self.model = model
+            np.testing.assert_array_equal(bank_headings, headings)
+
+        def __call__(self, at_time, coordinate, speed):
+            return self.force(at_time, float(coordinate[0]))
+
+        def force(self, at_time, yaw):
+            index = min(max(round(at_time / dt), 0), len(source_heading) - 1)
+            coefficient_yaw = np.deg2rad(
+                self.model.incident_directions[0] - source_heading[index]
+            )
+            return self.model.force(at_time, 0.0,
+                                    coefficient_yaw=coefficient_yaw)
+
+    return SourceHeadingSchedule
+
+
 def _model():
     headings = np.arange(0.0, 360.0, 10.0)
     real = np.zeros((6, len(headings)))
@@ -337,6 +358,33 @@ def test_irregular_250s_selected_bank_step_diagnostic():
         f"work={source_work_change:.3%}"
     )
 
+    # Reuse source heading events but advance Python motion, radiation, and PTO.
+    with patch.object(
+        case_dynamics, "NearestSampledHeadingExcitation",
+        _source_heading_schedule(fine[:, 4], .005, np.arange(-30, 30.25, .25)),
+    ):
+        replay = wec.run(
+            PMWave(2.5, 8, direction=10, seed=1, phase_generator="matlab"),
+            dt=.005, end_time=250, ramp_time=100, radiation_memory=40,
+        )
+    replay_yaw_error = np.max(np.abs(replay.bodies["flap"].position[:, 5]
+                                     - fine[:, 1]))
+    replay_speed_error = np.max(np.abs(replay.bodies["flap"].velocity[:, 5]
+                                       - fine[:, 2]))
+    replay_torque_error = np.max(np.abs(replay.ptos["hinge"].force - fine[:, 5]))
+    replay_work = np.trapezoid(replay.ptos["hinge"].absorbed_power, replay.time)
+    replay_work_error = abs(replay_work - source_work) / source_work
+    assert replay_yaw_error < .0005
+    assert replay_speed_error < 2e-5
+    assert replay_torque_error < 2.5
+    assert replay_work_error < .001
+    print(
+        f"250 s prescribed-heading diagnostic: yaw={replay_yaw_error:.6g} rad, "
+        f"speed={replay_speed_error:.6g} rad/s, "
+        f"torque={replay_torque_error:.6g} Nm, "
+        f"work={replay_work_error:.3%}"
+    )
+
 
 @pytest.mark.skipif(
     not (os.environ.get("WEC_SIM_APPLICATIONS_DIR")
@@ -406,19 +454,6 @@ def test_irregular_600s_prescribed_heading_dynamics_diagnostic():
     assert flap.shape == pto.shape == (60001, 25)
     assert selected.shape == (60001, 3)
 
-    class SourceHeadingSchedule:
-        def __init__(self, model, bank_headings):
-            self.model = model
-            np.testing.assert_array_equal(bank_headings, headings)
-
-        def force(self, at_time, yaw):
-            index = min(max(round(at_time / .01), 0), 60000)
-            coefficient_yaw = np.deg2rad(
-                self.model.incident_directions[0] - selected[index, 2]
-            )
-            return self.model.force(at_time, 0.0,
-                                    coefficient_yaw=coefficient_yaw)
-
     wec = WEC("OSWEC variable yaw: prescribed heading diagnostic")
     moving = wec.body(
         "flap", hydro, mass=12700, inertia=(1.85e6,) * 3,
@@ -428,7 +463,8 @@ def test_irregular_600s_prescribed_heading_dynamics_diagnostic():
     yaw = wec.coordinate("yaw", moving.move("yaw", pivot=WorldPoint(0, 0, -8.9)))
     wec.rotational_pto("hinge", yaw, damping=120000)
     with patch.object(case_dynamics, "NearestSampledHeadingExcitation",
-                      SourceHeadingSchedule):
+                      _source_heading_schedule(selected[:, 2], .01,
+                                               headings)):
         result = wec.run(
             PMWave(2.5, 8, direction=10, seed=1,
                    phase_generator="matlab"),

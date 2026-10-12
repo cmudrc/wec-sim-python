@@ -168,6 +168,14 @@ own coarse-to-half-step yaw change to exceed 0.01 rad and work change to
 exceed 2% of half-step work. These broad diagnostic limits make the
 long-window discrepancy reproducible; they do not promote the case to
 independent-motion parity.
+When only the 50,001 MATLAB half-step coefficient-heading choices are
+prescribed, Python still independently advances yaw, radiation, and PTO.
+Its local maximum yaw, speed, and torque differences shrink to `0.0003255`
+rad, `1.05e-5` rad/s, and `1.26` N m; PTO work differs by `0.0285%`.
+Explicit replay limits are `0.0005` rad, `2e-5` rad/s, `2.5` N m, and
+`0.1%` work. This isolates heading-event feedback as the main 250 s gap;
+the prescribed event sequence is source input, so native trajectory parity
+remains open.
 
 A physical continuous-heading control keeps the same pinned HDF5, seed-1 PM
 sea, PTO, and 120 s duration, but evaluates interpolated excitation at the
