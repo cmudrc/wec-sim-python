@@ -85,6 +85,7 @@ on:
       - 'tests/test_sphere_mpc_source.py'
       - 'tests/test_oswec_hinge_dynamics_parity.py'
       - 'tests/test_oswec_nonhydro_parity.py'
+      - 'tests/test_oswec_hinge_pretension_parity.py'
       - 'tests/test_oswec_irregular_wave_parity.py'
       - 'tests/test_oswec_multi_wave_source.py'
       - 'tests/test_oswec_multi_wave_parity.py'
@@ -589,6 +590,11 @@ jobs:
           WEC_SIM_MATLAB_CORE_DIR: matlab-ref
           WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
       - run: python -m pytest -q tests/test_oswec_nonhydro_parity.py
+        if: matrix.model == 'OSWEC_Nonhydro'
+        env:
+          WEC_SIM_APPLICATIONS_DIR: applications
+          WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
+      - run: python -m pytest -q -s tests/test_oswec_hinge_pretension_parity.py
         if: matrix.model == 'OSWEC_Nonhydro'
         env:
           WEC_SIM_APPLICATIONS_DIR: applications
