@@ -7,7 +7,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-import wecsim.dynamics.caseDynamics as case_dynamics
+import wecsim.dynamics.subspace_case as subspace_case
 from wecsim import PMWave, RegularWave, WEC, WorldPoint
 from wecsim.environment.irregularWave import pm_equal_energy_components
 from wecsim.hydrodynamics.passiveYaw import (
@@ -360,7 +360,7 @@ def test_irregular_250s_selected_bank_step_diagnostic():
 
     # Reuse source heading events but advance Python motion, radiation, and PTO.
     with patch.object(
-        case_dynamics, "NearestSampledHeadingExcitation",
+        subspace_case, "NearestSampledHeadingExcitation",
         _source_heading_schedule(fine[:, 4], .005, np.arange(-30, 30.25, .25)),
     ):
         replay = wec.run(
@@ -462,7 +462,7 @@ def test_irregular_600s_prescribed_heading_dynamics_diagnostic():
     wec.body("base", hydro, mass=999, inertia=(999,) * 3)
     yaw = wec.coordinate("yaw", moving.move("yaw", pivot=WorldPoint(0, 0, -8.9)))
     wec.rotational_pto("hinge", yaw, damping=120000)
-    with patch.object(case_dynamics, "NearestSampledHeadingExcitation",
+    with patch.object(subspace_case, "NearestSampledHeadingExcitation",
                       _source_heading_schedule(selected[:, 2], .01,
                                                headings)):
         result = wec.run(
