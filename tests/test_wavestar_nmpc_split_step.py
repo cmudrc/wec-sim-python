@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from scipy.integrate import trapezoid
 from scipy.io import loadmat
 
 from wecsim import (
@@ -286,9 +287,8 @@ def test_full_split_step_prescribed_command_plant():
         assert errors[name] < limit, f"{name}: {errors[name]} >= {limit}"
 
 
-@pytest.mark.skipif(not HYDRO, reason="pinned WaveStar hydrodynamics are absent")
-@pytest.mark.xfail(strict=True, reason="full autonomous NMPC motion diverges after activation")
-def test_full_split_step_independent_motion():
+@pytest.fixture(scope="module")
+def full_autonomous_trace():
     source = Path(REFERENCE)
     prefix = "WECCCOMP_NMPC_SPLIT_STEP_FULL_"
     body = np.loadtxt(
@@ -313,6 +313,53 @@ def test_full_split_step_independent_motion():
         g=9.80665, pto_controller=controller, output_stride=50,
     )
     np.testing.assert_allclose(response.time, body[:, 0], rtol=0, atol=1e-9)
+    return body, pto, source_command.reshape(-1), response, np.asarray(
+        controller.commands,
+    )
+
+
+@pytest.mark.skipif(not HYDRO, reason="pinned WaveStar hydrodynamics are absent")
+def test_full_split_step_aggregate_response(full_autonomous_trace):
+    body, pto, source_command, response, python_command = full_autonomous_trace
+
+    def rms(values):
+        return np.sqrt(np.mean(np.square(values)))
+
+    source = {
+        "pitch_rms": rms(body[:, 5]),
+        "pitch_peak": np.max(np.abs(body[:, 5])),
+        "pitch_speed_rms": rms(body[:, 11]),
+        "axial_force_rms": rms(pto[:, 33]),
+        "axial_force_peak": np.max(np.abs(pto[:, 33])),
+        "requested_torque_rms": rms(source_command),
+        "pto_work_J": trapezoid(
+            pto[:, 33] * pto[:, 9], response.time,
+        ),
+    }
+    python = {
+        "pitch_rms": rms(response.angle),
+        "pitch_peak": np.max(np.abs(response.angle)),
+        "pitch_speed_rms": rms(response.angular_speed),
+        "axial_force_rms": rms(response.pto_force),
+        "axial_force_peak": np.max(np.abs(response.pto_force)),
+        "requested_torque_rms": rms(python_command),
+        "pto_work_J": trapezoid(
+            response.pto_force * response.pto_speed, response.time,
+        ),
+    }
+    relative_errors = {
+        name: abs(python[name] - value) / abs(value)
+        for name, value in source.items()
+    }
+    print("full split-step aggregate relative errors:", relative_errors)
+    for name, error in relative_errors.items():
+        assert np.isfinite(error) and error < .005, f"{name}: {error} >= 0.005"
+
+
+@pytest.mark.skipif(not HYDRO, reason="pinned WaveStar hydrodynamics are absent")
+@pytest.mark.xfail(strict=True, reason="full autonomous NMPC motion diverges after activation")
+def test_full_split_step_independent_motion(full_autonomous_trace):
+    body, pto, source_command, response, python_command = full_autonomous_trace
     errors = {
         "pitch_rad": np.max(np.abs(response.angle - body[:, 5])),
         "pitch_speed_rad_s": np.max(np.abs(
@@ -320,7 +367,7 @@ def test_full_split_step_independent_motion():
         "stroke_m": np.max(np.abs(response.pto_stroke - pto[:, 3])),
         "axial_force_N": np.max(np.abs(response.pto_force - pto[:, 33])),
         "requested_torque_Nm": np.max(np.abs(
-            np.asarray(controller.commands) - source_command.reshape(-1))),
+            python_command - source_command)),
     }
     limits = {
         "pitch_rad": 5e-4,

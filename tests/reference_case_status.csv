@@ -59,6 +59,6 @@ Variable_Hydro/Passive_Yaw,mixed_modes,Published regular-wave yaw motion is gate
 Variable_Hydro/Variable_Mass,independent_motion,
 WECCCOMP/WECCCOMP,independent_motion,
 WECCCOMP/WECCCOMP_Fault_Implementation,independent_motion,
-WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive,open_motion,Derived full-duration source-command plant motion pairs; autonomous NMPC feedback and the published full closed-loop trajectory remain unpaired.
+WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive,open_motion,Derived full-duration source-command plant motion and autonomous aggregate outputs are gated; pointwise NMPC feedback and the published full closed-loop trajectory remain unpaired.
 Wave_Markers/OSWEC,independent_motion,
 Wave_Markers/RM3,independent_motion,
