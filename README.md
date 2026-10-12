@@ -1,9 +1,11 @@
 # wec-sim-python
 
-[![Published WEC-Sim case motion: 50 of 63 inputs independently gated](https://img.shields.io/badge/published%20case%20motion-50%2F63%20gated-blue)](PARITY.md#reference-model-and-case-inventory)
+[![WEC-Sim published-case motion alignment](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fparity-motion.json)](PARITY.md#reference-model-and-case-inventory)
 [![Selected MATLAB reference-model checks](https://github.com/cmudrc/wec-sim-python/actions/workflows/reference-model-baselines.yml/badge.svg?branch=master&event=push)](https://github.com/cmudrc/wec-sim-python/actions/workflows/reference-model-baselines.yml)
 
-The badge counts pinned published inputs with full-duration independent
+The motion badge is generated from the pinned 63-case inventory and its
+evidence ledger with `python tools/render_parity_badge.py`; CI checks that its
+count stays current. It counts published inputs with full-duration independent
 body-motion gates. See the [case inventory](PARITY.md#reference-model-and-case-inventory)
 for stationary, qualified, and open cases; this is not a measure of overall
 WEC-Sim feature parity. The workflow badge shows the latest selected MATLAB
