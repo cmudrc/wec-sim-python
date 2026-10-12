@@ -146,3 +146,55 @@ def test_configured_hinge_spring_and_pretension_against_matlab():
                                - control_result.bodies["flap"].velocity[:, dof])
         _max_error(python_speed_effect, source_speed_effect, speed_limit,
                    f"spring-induced {label} speed")
+
+
+def test_general_coordinate_hinge_and_rotational_pto_against_matlab():
+    """The public coordinate route must use the same nonlinear hinge motion."""
+    source = Path(REFERENCE)
+    flap_source = np.loadtxt(
+        source / "OSWEC_Nonhydro_Pretension_body1.csv", delimiter=",",
+    )
+    pto_source = np.loadtxt(
+        source / "OSWEC_Nonhydro_Pretension_pto1.csv", delimiter=",",
+    )
+    hydro = (Path(APPLICATIONS)
+             / "_Common_Input_Files/OSWEC/hydroData/oswec.h5").resolve()
+    wec = WEC("OSWEC coordinate hinge")
+    flap = wec.body("flap", hydro, mass=127_000,
+                    inertia=(0, 1.85e6, 0))
+    pitch = wec.coordinate(
+        "pitch", flap.move("pitch", pivot=WorldPoint(0, 0, -8.9)),
+    )
+    wec.rotational_pto(
+        "hinge", pitch, damping=12_000, stiffness=50_000,
+        pretension=5_000 * np.pi / 180,
+    )
+    result = wec.run(
+        RegularWave(2.5, 8), dt=0.1, end_time=400, ramp_time=100,
+    )
+    assert flap_source.shape == pto_source.shape == (4001, 25)
+    np.testing.assert_allclose(
+        result.case["ptos"][0]["equilibrium_position"],
+        -np.deg2rad(0.1), rtol=0, atol=1e-15,
+    )
+    _max_error(result.bodies["flap"].position, flap_source[:, 1:7],
+               0.03, "coordinate-hinge flap position")
+    _max_error(result.bodies["flap"].velocity, flap_source[:, 7:13],
+               0.02, "coordinate-hinge flap velocity")
+    history = result.ptos["hinge"]
+    _max_error(history.stroke, pto_source[:, 5],
+               0.006, "coordinate-hinge PTO angle")
+    _max_error(history.velocity, pto_source[:, 11],
+               0.005, "coordinate-hinge PTO speed")
+    _max_error(history.force, pto_source[:, 17],
+               350, "coordinate-hinge PTO torque")
+    _max_error(-history.force * history.velocity, -pto_source[:, 23],
+               120, "coordinate-hinge PTO mechanical power")
+    lever = result.bodies["flap"].position[0, 2] + 8.9
+    angle = result.coordinates["pitch"].position
+    _max_error(result.bodies["flap"].position[:, 0],
+               lever * np.sin(angle), 1e-10,
+               "exact pivot surge position")
+    _max_error(result.bodies["flap"].position[:, 2],
+               -8.9 + lever * np.cos(angle), 1e-10,
+               "exact pivot heave position")

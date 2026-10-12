@@ -140,6 +140,42 @@ def test_reduced_pto_builders_accept_pretension():
                                rtol=0, atol=1e-10)
 
 
+def test_named_pitch_pivot_uses_exact_motion_and_physical_pretension():
+    hydro = ROOT / "tests/test_objects/test_bodyclass/testData/hydroData/oswec.h5"
+    wec = WEC("Named hinged pitch")
+    flap = wec.body("flap", hydro, mass=127_000,
+                    inertia=(0, 1.85e6, 0))
+    pitch = wec.coordinate(
+        "pitch", flap.move("pitch", pivot=WorldPoint(0, 0, -8.9)),
+    )
+    with pytest.raises(ValueError, match="either equilibrium or pretension"):
+        wec.rotational_pto("hinge", pitch, stiffness=500,
+                           equilibrium_angle=0, pretension=-50)
+    wec.rotational_pto("hinge", pitch, stiffness=500,
+                       damping=12_000, pretension=-50)
+    result = wec.run(
+        RegularWave(0, 8), dt=.1, end_time=.2, ramp_time=0,
+        initial_coordinate={"pitch": .3},
+    )
+    assert result.case["ptos"][0]["equilibrium_position"] == .1
+    angle = result.coordinates["pitch"].position
+    speed = result.coordinates["pitch"].velocity
+    center = result.bodies["flap"]
+    lever = 5.0  # Pinned OSWEC HDF5 CG is 5 m above this PTO pivot.
+    np.testing.assert_allclose(center.position[:, 0], lever * np.sin(angle),
+                               rtol=0, atol=1e-12)
+    np.testing.assert_allclose(center.position[:, 2],
+                               -8.9 + lever * np.cos(angle),
+                               rtol=0, atol=1e-12)
+    np.testing.assert_allclose(center.velocity[:, 0],
+                               lever * np.cos(angle) * speed,
+                               rtol=0, atol=1e-12)
+    pto = result.ptos["hinge"]
+    np.testing.assert_allclose(pto.force,
+                               -12_000 * speed - 500 * (angle - .1),
+                               rtol=0, atol=1e-10)
+
+
 def test_python_builder_supports_ground_anchor_and_named_initial_state():
     wec = WEC("Anchored float")
     body = wec.body("float", HYDRO)

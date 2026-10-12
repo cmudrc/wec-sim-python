@@ -30,6 +30,30 @@ class HingePitchResponse:
     excitation_force: np.ndarray | None = None
 
 
+def hinged_pitch_motion(lever: float):
+    """Exact center motion for one pitch angle about a fixed horizontal hinge."""
+    if not np.isfinite(lever):
+        raise ValueError("hinge lever must be finite")
+
+    def motion(q, v):
+        angle, speed = q[0], v[0]
+        jacobian = np.array([
+            lever * np.cos(angle), 0.0, -lever * np.sin(angle),
+            0.0, 1.0, 0.0,
+        ])[:, None]
+        bias = np.array([
+            -lever * np.sin(angle), 0.0, -lever * np.cos(angle),
+            0.0, 0.0, 0.0,
+        ]) * speed**2
+        displacement = np.array([
+            lever * np.sin(angle), 0.0,
+            lever * (np.cos(angle) - 1.0), 0.0, angle, 0.0,
+        ])
+        return BodyMotion(displacement, jacobian, bias)
+
+    return motion
+
+
 def solve_hinged_pitch_from_excitation(
     h5_file: str | Path,
     excitation_force: np.ndarray,
@@ -114,21 +138,7 @@ def solve_hinged_pitch_from_excitation(
         0.0, 0.0, (rho * displaced_volume - body_mass) * g, 0.0, 0.0, 0.0,
     ])
 
-    def motion(q, v):
-        angle, speed = q[0], v[0]
-        j = np.array([
-            lever * np.cos(angle), 0.0, -lever * np.sin(angle),
-            0.0, 1.0, 0.0,
-        ])[:, None]
-        bias = np.array([
-            -lever * np.sin(angle), 0.0, -lever * np.cos(angle),
-            0.0, 0.0, 0.0,
-        ]) * speed**2
-        displacement = np.array([
-            lever * np.sin(angle), 0.0,
-            lever * (np.cos(angle) - 1.0), 0.0, angle, 0.0,
-        ])
-        return BodyMotion(displacement, j, bias)
+    motion = hinged_pitch_motion(lever)
 
     def excitation(at_time):
         index = round(at_time / dt)
@@ -236,21 +246,7 @@ def solve_hinged_pitch_regular(
     re = np.asarray(hydro["fExt"]["re"])
     im = np.asarray(hydro["fExt"]["im"])
 
-    def motion(q, v):
-        angle, speed = q[0], v[0]
-        jacobian = np.array([
-            lever * np.cos(angle), 0.0, -lever * np.sin(angle),
-            0.0, 1.0, 0.0,
-        ])[:, None]
-        bias = np.array([
-            -lever * np.sin(angle), 0.0, -lever * np.cos(angle),
-            0.0, 0.0, 0.0,
-        ]) * speed**2
-        displacement = np.array([
-            lever * np.sin(angle), 0.0,
-            lever * (np.cos(angle) - 1.0), 0.0, angle, 0.0,
-        ])
-        return BodyMotion(displacement, jacobian, bias)
+    motion = hinged_pitch_motion(lever)
 
     def excitation(at_time):
         ramp = (1.0 if ramp_time == 0 or at_time >= ramp_time
@@ -375,21 +371,7 @@ def solve_hinged_pitch_nonlinear_regular(
     re = np.asarray(hydro["fExt"]["re"])
     im = np.asarray(hydro["fExt"]["im"])
 
-    def motion(q, v):
-        angle, speed = q[0], v[0]
-        jacobian = np.array([
-            lever * np.cos(angle), 0.0, -lever * np.sin(angle),
-            0.0, 1.0, 0.0,
-        ])[:, None]
-        bias = np.array([
-            -lever * np.sin(angle), 0.0, -lever * np.cos(angle),
-            0.0, 0.0, 0.0,
-        ]) * speed**2
-        displacement = np.array([
-            lever * np.sin(angle), 0.0,
-            lever * (np.cos(angle) - 1), 0.0, angle, 0.0,
-        ])
-        return BodyMotion(displacement, jacobian, bias)
+    motion = hinged_pitch_motion(lever)
 
     def forces(at_time, angle):
         pose = np.array([[
