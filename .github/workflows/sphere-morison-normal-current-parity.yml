@@ -6,8 +6,8 @@ on:
       - '.github/workflows/sphere-morison-normal-current-parity.yml'
       - 'tests/matlab/reference_model_baseline.m'
       - 'tests/test_sphere_normal_current_parity.py'
-      - 'wecsim/morison.py'
-      - 'wecsim/caseDynamics.py'
+      - 'wecsim/hydrodynamics/morison.py'
+      - 'wecsim/dynamics/caseDynamics.py'
       - 'wecsim/api.py'
   workflow_dispatch:
 

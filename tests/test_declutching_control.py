@@ -2,7 +2,7 @@
 
 import pytest
 
-from wecsim.controls import DeclutchingControl, DeclutchingState
+from wecsim.control.controls import DeclutchingControl, DeclutchingState
 
 
 def test_declutch_after_reversal_and_reengage_after_duration():

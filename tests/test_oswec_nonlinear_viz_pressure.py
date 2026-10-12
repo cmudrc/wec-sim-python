@@ -9,8 +9,8 @@ from scipy.io import loadmat
 from scipy.optimize import brentq
 import trimesh
 
-from wecsim.bodyClass import BodyClass
-from wecsim.nonlinearHydro import (
+from wecsim.hydrodynamics.bodyClass import BodyClass
+from wecsim.hydrodynamics.nonlinearHydro import (
     mesh_pressure_wrenches,
     regular_wave_mesh_pressures,
 )

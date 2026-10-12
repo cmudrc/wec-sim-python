@@ -7,14 +7,14 @@ on:
       - '.github/workflows/most-mooring-parity.yml'
       - 'tests/matlab/most_mooring_baseline.m'
       - 'tests/test_most_mooring_source.py'
-      - 'wecsim/mostMooring.py'
+      - 'wecsim/reference_models/mostMooring.py'
       - 'wecsim/__init__.py'
   pull_request:
     paths:
       - '.github/workflows/most-mooring-parity.yml'
       - 'tests/matlab/most_mooring_baseline.m'
       - 'tests/test_most_mooring_source.py'
-      - 'wecsim/mostMooring.py'
+      - 'wecsim/reference_models/mostMooring.py'
       - 'wecsim/__init__.py'
   workflow_dispatch:
 

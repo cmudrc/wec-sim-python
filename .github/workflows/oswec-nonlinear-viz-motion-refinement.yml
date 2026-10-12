@@ -7,9 +7,9 @@ on:
       - 'tests/matlab/oswec_nonlinear_viz_motion_refinement.m'
       - 'tests/test_oswec_nonlinear_viz_motion.py'
       - 'wecsim/api.py'
-      - 'wecsim/caseDynamics.py'
-      - 'wecsim/hingePitch.py'
-      - 'wecsim/nonlinearHydro.py'
+      - 'wecsim/dynamics/caseDynamics.py'
+      - 'wecsim/dynamics/hingePitch.py'
+      - 'wecsim/hydrodynamics/nonlinearHydro.py'
   workflow_dispatch:
 
 jobs:

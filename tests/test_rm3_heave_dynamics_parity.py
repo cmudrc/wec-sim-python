@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from wecsim.linearHeave import solve_two_body_regular_heave  # noqa: E402
+from wecsim.dynamics.linearHeave import solve_two_body_regular_heave  # noqa: E402
 
 CORE = os.environ.get("WEC_SIM_MATLAB_CORE_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

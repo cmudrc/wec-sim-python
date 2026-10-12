@@ -10,7 +10,7 @@ from wecsim import (
     MostBaselineController, MostPlatformHydrodynamics, MostStaticMooring,
     MostTowerReaction, MostWindField, read_turbsim_bts,
 )
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
 

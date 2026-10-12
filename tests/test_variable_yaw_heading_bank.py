@@ -7,10 +7,10 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-import wecsim.caseDynamics as case_dynamics
+import wecsim.dynamics.caseDynamics as case_dynamics
 from wecsim import PMWave, RegularWave, WEC, WorldPoint
-from wecsim.irregularWave import pm_equal_energy_components
-from wecsim.passiveYaw import (
+from wecsim.environment.irregularWave import pm_equal_energy_components
+from wecsim.hydrodynamics.passiveYaw import (
     NearestHeadingExcitation, NearestSampledHeadingExcitation,
     PassiveYawExcitation, SampledPassiveYawExcitation,
 )
@@ -537,7 +537,7 @@ def _check_bank_against_pinned_matlab(prefix, case, headings):
 
 
 def _hydro_data(path):
-    from wecsim.bodyClass import BodyClass
+    from wecsim.hydrodynamics.bodyClass import BodyClass
 
     body = BodyClass(str(path))
     body.bodyNumber = 1

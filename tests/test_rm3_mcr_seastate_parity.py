@@ -11,7 +11,7 @@ from scipy.signal import fftconvolve
 
 from wecsim import (ImportedSpectrumWave, WEC, mcr_spectrum_files,
                     run_rm3_spectrum_mcr)
-from wecsim.irregularWave import imported_spectrum_components, synthesize_irregular_response
+from wecsim.environment.irregularWave import imported_spectrum_components, synthesize_irregular_response
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

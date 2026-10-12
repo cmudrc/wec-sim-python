@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from scipy.integrate import solve_ivp
 
-from wecsim.generalDynamics import (
+from wecsim.dynamics.generalDynamics import (
     BodyMotion, DynamicBody, GeneralizedDynamics,
 )
 

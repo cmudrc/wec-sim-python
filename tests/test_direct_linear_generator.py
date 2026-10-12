@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 from scipy.integrate import solve_ivp
 
-from wecsim.directLinearGenerator import (
+from wecsim.components.directLinearGenerator import (
     DirectLinearGenerator, run_rm3_direct_linear_generator,
 )
 

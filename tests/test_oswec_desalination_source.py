@@ -7,10 +7,10 @@ import numpy as np
 import pytest
 
 from wecsim import PitchRodLinkage
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     pm_equal_energy_components, synthesize_irregular_response,
 )
-from wecsim.morison import MorisonElement, irregular_morison_source_drag
+from wecsim.hydrodynamics.morison import MorisonElement, irregular_morison_source_drag
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

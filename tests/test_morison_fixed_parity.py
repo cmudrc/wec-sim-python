@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 
 from wecsim import Current, PMWave, WEC
-from wecsim.irregularWave import IrregularComponents, pm_equal_energy_components
-from wecsim.morison import (
+from wecsim.environment.irregularWave import IrregularComponents, pm_equal_energy_components
+from wecsim.hydrodynamics.morison import (
     MorisonElement, finite_depth_wavenumber, solve_fixed_morison_irregular,
 )
 

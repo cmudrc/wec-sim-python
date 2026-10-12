@@ -10,8 +10,8 @@ from scipy.io import loadmat
 from wecsim import (
     WaveStarNmpcActuator, WaveStarNmpcController, WaveStarNmpcObserver,
 )
-from wecsim.irregularWave import jonswap_equal_energy_components
-from wecsim.wavestar import run_wavestar_published
+from wecsim.environment.irregularWave import jonswap_equal_energy_components
+from wecsim.reference_models.wavestar import run_wavestar_published
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

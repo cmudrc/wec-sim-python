@@ -11,8 +11,8 @@ from scipy.io import loadmat
 from scipy.signal import fftconvolve
 
 from wecsim import OrificePTO, PMWave, WEC
-from wecsim.bodyClass import BodyClass
-from wecsim.irregularWave import (
+from wecsim.hydrodynamics.bodyClass import BodyClass
+from wecsim.environment.irregularWave import (
     pm_equal_energy_components, synthesize_irregular_response,
 )
 

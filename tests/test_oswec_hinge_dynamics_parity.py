@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from wecsim.hingePitch import solve_hinged_pitch_from_excitation  # noqa: E402
+from wecsim.dynamics.hingePitch import solve_hinged_pitch_from_excitation  # noqa: E402
 
 CORE = os.environ.get("WEC_SIM_MATLAB_CORE_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

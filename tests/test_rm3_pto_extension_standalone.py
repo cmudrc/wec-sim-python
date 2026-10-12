@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.caseDynamics import run_case
+from wecsim.dynamics.caseDynamics import run_case
 
 
 HYDRO = (Path(__file__).resolve().parents[1] / "examples/data/rm3.h5")

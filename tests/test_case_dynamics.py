@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 from scipy.io import savemat
 
-from wecsim.caseDynamics import run_case
+from wecsim.dynamics.caseDynamics import run_case
 
 
 ROOT = Path(__file__).resolve().parents[1]

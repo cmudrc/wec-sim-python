@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim import RegularWave, WEC
-from wecsim.morison import (
+from wecsim.hydrodynamics.morison import (
     MorisonElement, regular_morison_source_force,
     regular_wave_normal_tangential_morison_terms,
 )

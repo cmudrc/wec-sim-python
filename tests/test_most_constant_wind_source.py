@@ -11,7 +11,7 @@ from wecsim import (
     MostBaselineController, MostConstantWind, MostCoupled,
     MostPlatformHydrodynamics, MostRotor, MostTowerReaction,
 )
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
 

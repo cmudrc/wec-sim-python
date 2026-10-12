@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from wecsim.linearHeave import solve_heave_free_decay  # noqa: E402
+from wecsim.dynamics.linearHeave import solve_heave_free_decay  # noqa: E402
 
 SPHERE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

@@ -7,10 +7,10 @@ import numpy as np
 import pytest
 from scipy.io import loadmat
 
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     pm_equal_energy_components, synthesize_irregular_response,
 )
-from wecsim.wavebotControl import (
+from wecsim.reference_models.wavebotControl import (
     WaveBotPIController, WaveBotPowerAutotuner, run_wavebot_power_control,
 )
 

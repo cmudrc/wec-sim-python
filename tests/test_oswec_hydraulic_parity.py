@@ -13,7 +13,7 @@ from wecsim import (
     RectifiedHydraulicPTO, RectifyingCheckValve,
     run_oswec_rectified_hydraulic,
 )
-from wecsim.irregularWave import pm_equal_energy_components
+from wecsim.environment.irregularWave import pm_equal_energy_components
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim import LinearHardStops, solve_rm3_regular
-from wecsim.caseDynamics import run_case
+from wecsim.dynamics.caseDynamics import run_case
 
 
 ROOT = Path(__file__).resolve().parents[1]

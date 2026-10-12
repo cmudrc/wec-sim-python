@@ -6,12 +6,12 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
-from wecsim.friction import StribeckFriction
-from wecsim.wavestar import WaveStarLinkage
-from wecsim.wavestarFault import WaveStarFaultController
+from wecsim.dynamics.friction import StribeckFriction
+from wecsim.reference_models.wavestar import WaveStarLinkage
+from wecsim.reference_models.wavestarFault import WaveStarFaultController
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

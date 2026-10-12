@@ -14,14 +14,14 @@ from typing import Mapping, Sequence
 
 import numpy as np
 
-from .caseDynamics import CaseResponse, run_case
-from .controls import DeclutchingControl, LatchingControl
-from .directLinearGenerator import DirectLinearGenerator
-from .floatingOwc import FloatingOwcChamber, FloatingOwcTurbine
-from .hardStops import LinearHardStops
-from .morison import MorisonElement, finite_depth_wavenumber
-from .moorDyn import MoorDyn
-from .orifice import OrificePTO
+from wecsim.dynamics.caseDynamics import CaseResponse, run_case
+from wecsim.control.controls import DeclutchingControl, LatchingControl
+from wecsim.components.directLinearGenerator import DirectLinearGenerator
+from wecsim.components.floatingOwc import FloatingOwcChamber, FloatingOwcTurbine
+from wecsim.dynamics.hardStops import LinearHardStops
+from wecsim.hydrodynamics.morison import MorisonElement, finite_depth_wavenumber
+from wecsim.dynamics.moorDyn import MoorDyn
+from wecsim.components.orifice import OrificePTO
 
 
 @dataclass(frozen=True)

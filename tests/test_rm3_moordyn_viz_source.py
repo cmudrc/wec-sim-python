@@ -12,11 +12,11 @@ import trimesh
 from scipy.spatial import cKDTree
 
 from wecsim import JONSWAPWave, MoorDyn, WEC
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
-from wecsim.paraviewClass import ParaviewClass
-from wecsim.waveClass import WaveClass
+from wecsim.visualization.paraviewClass import ParaviewClass
+from wecsim.environment.waveClass import WaveClass
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

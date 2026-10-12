@@ -8,7 +8,7 @@ import subprocess
 
 import numpy as np
 
-from .caseDynamics import AXES, run_case
+from wecsim.dynamics.caseDynamics import AXES, run_case
 
 
 def _sha256(path):

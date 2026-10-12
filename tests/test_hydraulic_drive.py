@@ -3,10 +3,10 @@
 import numpy as np
 import pytest
 
-from wecsim.electricGenerator import (
+from wecsim.components.electricGenerator import (
     DiscretePILoadController, EquivalentCircuitGenerator,
 )
-from wecsim.hydraulic import ConstantEfficiencyHydraulicMotor
+from wecsim.components.hydraulic import ConstantEfficiencyHydraulicMotor
 
 
 def test_motor_power_ratio_matches_both_efficiencies():

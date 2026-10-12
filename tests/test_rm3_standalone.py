@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.rm3Regular import solve_rm3_regular
+from wecsim.reference_models.rm3Regular import solve_rm3_regular
 
 
 @pytest.mark.parametrize("b2b", [False, True])

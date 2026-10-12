@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 
 from wecsim import Current, PMWave, WEC
-from wecsim.irregularWave import pm_equal_energy_components
-from wecsim.morison import finite_depth_wavenumber
+from wecsim.environment.irregularWave import pm_equal_energy_components
+from wecsim.hydrodynamics.morison import finite_depth_wavenumber
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

@@ -14,7 +14,7 @@ from wecsim import (
     RectifiedHydraulicPTO, RectifyingCheckValve,
     run_oswec_rectified_hydraulic,
 )
-from wecsim.irregularWave import pm_equal_energy_components
+from wecsim.environment.irregularWave import pm_equal_energy_components
 
 
 def build_pto(*, fixed_crank: bool = False) -> RectifiedHydraulicPTO:

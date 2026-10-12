@@ -9,8 +9,8 @@ import pytest
 from scipy.interpolate import CubicSpline
 from scipy.signal import fftconvolve
 
-from wecsim.caseDynamics import run_case
-from wecsim.radiation import replay_rm3_fitted_radiation
+from wecsim.dynamics.caseDynamics import run_case
+from wecsim.hydrodynamics.radiation import replay_rm3_fitted_radiation
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

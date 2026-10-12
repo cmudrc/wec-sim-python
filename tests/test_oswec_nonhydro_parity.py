@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 
 from wecsim import RegularWave, WEC, WorldPoint
-from wecsim.caseDynamics import run_case
-from wecsim.hingePitch import solve_hinged_pitch_regular
+from wecsim.dynamics.caseDynamics import run_case
+from wecsim.dynamics.hingePitch import solve_hinged_pitch_regular
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

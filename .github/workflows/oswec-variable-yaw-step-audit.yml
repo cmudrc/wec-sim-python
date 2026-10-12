@@ -6,9 +6,9 @@ on:
       - '.github/workflows/oswec-variable-yaw-step-audit.yml'
       - 'tests/matlab/oswec_variable_yaw_step_audit.m'
       - 'tests/test_variable_yaw_heading_bank.py'
-      - 'wecsim/generalDynamics.py'
-      - 'wecsim/passiveYaw.py'
-      - 'wecsim/caseDynamics.py'
+      - 'wecsim/dynamics/generalDynamics.py'
+      - 'wecsim/hydrodynamics/passiveYaw.py'
+      - 'wecsim/dynamics/caseDynamics.py'
   workflow_dispatch:
 
 jobs:

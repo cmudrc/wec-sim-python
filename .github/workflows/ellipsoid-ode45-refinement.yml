@@ -6,8 +6,8 @@ on:
       - '.github/workflows/ellipsoid-ode45-refinement.yml'
       - 'tests/matlab/ellipsoid_ode45_refinement.m'
       - 'tests/test_ellipsoid_ode45_refinement.py'
-      - 'wecsim/nonlinearHydro.py'
-      - 'wecsim/caseDynamics.py'
+      - 'wecsim/hydrodynamics/nonlinearHydro.py'
+      - 'wecsim/dynamics/caseDynamics.py'
   workflow_dispatch:
 
 jobs:

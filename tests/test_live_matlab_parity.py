@@ -9,8 +9,8 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from wecsim.waveClass import WaveClass  # noqa: E402
-from wecsim.irregularWave import (  # noqa: E402
+from wecsim.environment.waveClass import WaveClass  # noqa: E402
+from wecsim.environment.irregularWave import (  # noqa: E402
     jonswap_equal_energy_components, pm_equal_energy_components,
     synthesize_irregular_response,
 )

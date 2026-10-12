@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 
 from wecsim import FullDirectionalSpectrumWave, WEC, WorldPoint
-from wecsim.caseDynamics import run_case
-from wecsim.irregularWave import (
+from wecsim.dynamics.caseDynamics import run_case
+from wecsim.environment.irregularWave import (
     imported_full_directional_components, synthesize_full_directional_response,
 )
 

@@ -7,7 +7,7 @@ from xml.etree import ElementTree
 import numpy as np
 import pytest
 
-from wecsim.paraviewClass import ParaviewClass
+from wecsim.visualization.paraviewClass import ParaviewClass
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_PARAVIEW_BODY_DIR")

@@ -8,10 +8,10 @@ import pytest
 import h5py
 from scipy.signal import StateSpace, lsim
 
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
-from wecsim.wavestar import WaveStarLinkage
+from wecsim.reference_models.wavestar import WaveStarLinkage
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

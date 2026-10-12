@@ -10,8 +10,8 @@ on:
       - 'tests/test_rm3_moordyn_viz_source.py'
       - 'tools/analyze_rm3_moordyn_feedback.py'
       - 'wecsim/api.py'
-      - 'wecsim/caseDynamics.py'
-      - 'wecsim/irregularWave.py'
+      - 'wecsim/dynamics/caseDynamics.py'
+      - 'wecsim/environment/irregularWave.py'
   workflow_dispatch:
 
 jobs:

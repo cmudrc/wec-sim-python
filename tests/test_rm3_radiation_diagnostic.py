@@ -10,8 +10,8 @@ from tools.rm3_radiation_diagnostic import (
     active_mode_minimum_damping, common_surge_curves,
     common_surge_feedthrough,
 )
-from wecsim.radiation import RadiationStateSpace
-from wecsim.rm3Regular import solve_rm3_regular
+from wecsim.hydrodynamics.radiation import RadiationStateSpace
+from wecsim.reference_models.rm3Regular import solve_rm3_regular
 
 
 RM3 = (Path(__file__).parent / "test_objects" / "test_bodyclass"

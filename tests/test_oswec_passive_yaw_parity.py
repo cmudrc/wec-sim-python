@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 
 from wecsim import RegularWave, WEC, WorldPoint
-from wecsim.bodyClass import BodyClass
-from wecsim.passiveYaw import PassiveYawExcitation
+from wecsim.hydrodynamics.bodyClass import BodyClass
+from wecsim.hydrodynamics.passiveYaw import PassiveYawExcitation
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

@@ -8,10 +8,10 @@ import numpy as np
 import pytest
 from scipy.io import loadmat
 
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
-from wecsim.wavestar import WaveStarLinkage, run_wavestar_published
+from wecsim.reference_models.wavestar import WaveStarLinkage, run_wavestar_published
 from wecsim import (
     WaveStarNmpcActuator, WaveStarNmpcController,
     WaveStarNmpcObserver, WaveStarNmpcPredictor, WaveStarNmpcPTO,

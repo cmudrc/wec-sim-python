@@ -7,8 +7,8 @@ from xml.etree import ElementTree
 import numpy as np
 import pytest
 
-from wecsim.paraviewClass import ParaviewClass
-from wecsim.waveClass import WaveClass
+from wecsim.visualization.paraviewClass import ParaviewClass
+from wecsim.environment.waveClass import WaveClass
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_PARAVIEW_WAVE_DIR")

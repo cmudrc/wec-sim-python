@@ -7,7 +7,7 @@ import h5py
 import numpy as np
 import pytest
 
-from wecsim.caseDynamics import run_case
+from wecsim.dynamics.caseDynamics import run_case
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

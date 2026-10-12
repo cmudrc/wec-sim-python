@@ -10,14 +10,14 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.electricGenerator import (
+from wecsim.components.electricGenerator import (
     DiscretePILoadController, EquivalentCircuitGenerator,
 )
-from wecsim.hydraulic import (
+from wecsim.components.hydraulic import (
     CompressibleCylinder, ConstantEfficiencyHydraulicMotor,
     GasChargedAccumulator, RectifyingCheckValve,
 )
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     pm_equal_energy_components, synthesize_irregular_response,
 )
 

@@ -8,8 +8,8 @@ import pytest
 from scipy.signal import fftconvolve
 
 from wecsim.api import RegularCICWave, RegularWave, WEC, WorldPoint
-from wecsim.bodyClass import BodyClass
-from wecsim.nonlinearHydro import HeaveMeshHydro
+from wecsim.hydrodynamics.bodyClass import BodyClass
+from wecsim.hydrodynamics.nonlinearHydro import HeaveMeshHydro
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
