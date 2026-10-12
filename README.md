@@ -440,7 +440,7 @@ Supported combinations are:
 | `floating_joint` | `regular` or `regularCIC` | Two equilibrium-mass bodies, pitch inertias, relative-heave PTO; optional `body_to_body` | Constant-frequency radiation, impulse-response convolution, or sampled FIR radiation |
 | `floating_joint` | `elevationImport` | Two equilibrium-mass bodies, relative-heave PTO, optional joint surge spring | Imported MAT elevation and radiation convolution |
 | `floating_joint` | `none` | Two equilibrium-mass bodies, named initial coordinates and speeds, relative-heave PTO | Radiation convolution for paired free decay; sampled FIR is also available |
-| `linear_subspace` | `regular`, `regularCIC`, `pm`, `jonswap`, `spectrumImport`, `elevationImport`, or `none` | Any number of six-DOF hydrodynamic bodies; named motions or 6-by-N maps; optional linear or rotational PTOs; selected mean-drift coefficients for regular waves | Constant-frequency radiation or convolution |
+| `linear_subspace` | `regular`, `regularCIC`, `pm`, `jonswap`, `spectrumImport`, `elevationImport`, or `none` | Any number of six-DOF hydrodynamic bodies; named motions or 6-by-N maps; optional linear or rotational PTOs; selected mean-drift coefficients for regular waves | Constant-frequency radiation or convolution; one body with one unscaled pitch coordinate about a world pivot directly below or above its CG uses exact hinge kinematics |
 
 The canonical OSWEC pitch hinge also has a direct Python configuration:
 
@@ -1149,6 +1149,22 @@ The same physical spring in Python uses
 pretension=5000 * pi / 180)`; the literal source pretension would impose a
 different torque. This conversion is specific to the pinned rotational
 source path and does not change Python's force law.
+
+The same regular-wave hinge can be configured with a named coordinate and a
+rotational PTO. For one body and one pitch coordinate with a world pivot on
+the CG's vertical axis, the runner uses exact circular center motion rather
+than a small-angle map:
+
+```python
+pitch = wec.coordinate("pitch", flap.move("pitch", pivot=WorldPoint(0, 0, -8.9)))
+wec.rotational_pto("hinge", pitch, damping=12000, stiffness=50000,
+                   pretension=5000 * pi / 180)
+```
+
+Here `flap` is the hydrodynamic OSWEC body and `wec` has no separately
+moving base. The pinned source's effective pitch pivot is its PTO location
+at `z=-8.9` m. Other multi-coordinate rotations still use the documented
+linearized coordinate map; exact arbitrary 3D joint motion remains open.
 
 The `linear_subspace` layout uses `pto.stiffness_matrix` and
 `pto.damping_matrix`, with optional `pto.equilibrium_coordinate` (N values).

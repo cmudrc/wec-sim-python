@@ -968,19 +968,23 @@ class WEC:
 
     def rotational_pto(self, name: str, coordinate: Coordinate, *,
                        damping: float = 0.0, stiffness: float = 0.0,
-                       equilibrium_angle: float = 0.0) -> RotationalPTO:
+                       equilibrium_angle: float | None = None,
+                       pretension: float | None = None) -> RotationalPTO:
         """Attach a torsional PTO to a named rotation coordinate.
 
         Damping is in N m s/rad, stiffness in N m/rad, and equilibrium angle
-        in radians. The returned PTO history reports angle as ``stroke``.
+        in radians. Physical pretension is in N m and sets equilibrium to
+        ``-pretension / stiffness``. The returned history reports angle as
+        ``stroke``.
         """
         if not any(coordinate is item for item in self.coordinates):
             raise ValueError("rotational PTO coordinate must belong to this WEC")
         if any(existing.name == name for existing in
                (*self.ptos, *self.rotational_ptos)):
             raise ValueError(f"PTO name already exists: {name}")
-        pto = RotationalPTO(name, coordinate, damping, stiffness,
-                            equilibrium_angle)
+        equilibrium = _pto_equilibrium(stiffness, equilibrium_angle,
+                                       pretension, "rotational")
+        pto = RotationalPTO(name, coordinate, damping, stiffness, equilibrium)
         self.rotational_ptos.append(pto)
         return pto
 

@@ -24,6 +24,7 @@ from .gbmFloating import (
 )
 from .hardStops import LinearHardStops
 from .hingePitch import (
+    hinged_pitch_motion,
     solve_hinged_pitch_from_excitation,
     solve_hinged_pitch_nonlinear_regular,
     solve_hinged_pitch_regular,
@@ -1554,6 +1555,25 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         constraint, bodies, body_names, centers,
     )
     n = maps[0].shape[1]
+    exact_pitch_motion = None
+    if len(bodies) == n == 1 and "coordinates" in constraint:
+        definitions = constraint["coordinates"][0]["motions"]
+        if len(definitions) == 1:
+            definition = definitions[0]
+            pivot = definition.get("pivot", {})
+            if (definition["dof"] == "pitch"
+                    and float(definition.get("scale", 1)) == 1
+                    and "world" in pivot
+                    and np.allclose(centers[0][:2], pivot["world"][:2],
+                                    rtol=0, atol=1e-12)):
+                if any(pto.get("kind") == "linear_actuator"
+                       for pto in case.get("ptos", [])):
+                    raise ValueError(
+                        "exact pitch-pivot motion currently supports rotational PTOs only"
+                    )
+                exact_pitch_motion = hinged_pitch_motion(
+                    centers[0][2] - pivot["world"][2],
+                )
     moving_morison = tuple(
         index for index, spec in enumerate(bodies)
         if spec.get("morison_elements")
@@ -1844,8 +1864,11 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
             kernel = None
         center = centers[index - 1]
 
-        def motion(q, v, *, mapping=mapping):
-            return BodyMotion(mapping @ q, mapping, np.zeros(6))
+        if exact_pitch_motion is not None:
+            motion = exact_pitch_motion
+        else:
+            def motion(q, v, *, mapping=mapping):
+                return BodyMotion(mapping @ q, mapping, np.zeros(6))
 
         if wave["type"] in ("regular", "regularCIC"):
             real = np.asarray(hydro_force["fExt"]["re"])
