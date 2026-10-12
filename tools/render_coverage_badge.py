@@ -19,7 +19,7 @@ def render():
              else "yellow" if percent < 80 else "green")
     return json.dumps({
         "schemaVersion": 1,
-        "label": "coverage",
+        "label": "Test coverage",
         "message": f"{percent}%",
         "color": color,
     }, indent=2) + "\n"

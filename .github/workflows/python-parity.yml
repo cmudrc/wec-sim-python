@@ -1,4 +1,4 @@
-name: Python parity
+name: Python tests
 
 on:
   push:
