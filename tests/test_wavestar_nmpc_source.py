@@ -11,7 +11,7 @@ from scipy.io import loadmat
 from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
-from wecsim.reference_models.wavestar import WaveStarLinkage, run_wavestar_published
+from wecsim.dynamics.wavestar import WaveStarLinkage, run_wavestar_published
 from wecsim import (
     WaveStarNmpcActuator, WaveStarNmpcController,
     WaveStarNmpcObserver, WaveStarNmpcPredictor, WaveStarNmpcPTO,

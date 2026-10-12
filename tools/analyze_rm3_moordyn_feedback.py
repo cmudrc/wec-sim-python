@@ -14,7 +14,7 @@ import numpy as np
 
 from wecsim import MoorDyn
 from wecsim.dynamics.generalDynamics import GeneralizedDynamics
-from wecsim.reference_models.rm3Regular import solve_rm3_regular
+from wecsim.dynamics.rm3Regular import solve_rm3_regular
 
 
 parser = argparse.ArgumentParser(description=__doc__)

@@ -1,1 +1,1 @@
-"""Visualization used by WEC-Sim Python."""
+"""ParaView output for waves, bodies, moorings, and collections."""

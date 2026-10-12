@@ -8,8 +8,8 @@ import numpy as np
 from scipy.interpolate import CubicSpline
 
 from wecsim.dynamics.generalDynamics import BodyMotion, DynamicBody, GeneralizedDynamics
-from wecsim.reference_models.mostMooring import MostStaticMooring
-from wecsim.reference_models.mostTower import MostTowerReaction
+from wecsim.dynamics.mostMooring import MostStaticMooring
+from wecsim.dynamics.mostTower import MostTowerReaction
 
 
 @dataclass(frozen=True)

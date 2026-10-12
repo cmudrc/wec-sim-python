@@ -54,16 +54,19 @@ implementation by role:
 | Package | Contents |
 | --- | --- |
 | `environment/` | Incident waves and wind inputs |
-| `hydrodynamics/` | HDF5 body data, radiation, and fluid forces |
-| `dynamics/` | Coordinates, joints, integration, and mechanical constraints |
-| `components/` | PTO, hydraulic, electric, and air devices |
-| `control/` | Sampled controls and MPC building blocks |
-| `reference_models/` | Runners for published WEC-Sim applications |
+| `hydrodynamics/` | HDF5 body data, radiation, fluid forces, and platform hydrodynamics |
+| `dynamics/` | Coordinates, joints, integration, moorings, linkages, and coupled motion |
+| `components/` | PTO, hydraulic, electric, air, rotor, and desalination devices |
+| `control/` | Sampled controls, impedance control, faults, and MPC |
+| `analysis/` | Sea-state sweeps and power matrices |
 | `visualization/` | ParaView output |
 
 Public names remain importable from `wecsim`. Direct implementation imports
 now use these subpackages, such as `wecsim.hydrodynamics.bodyClass` for the
 body reader.
+At the package root, `configuration.py` defines the Python WEC specifications,
+`api.py` provides the `WEC` builder, `wec_case.py` translates that builder into
+a case, and `results.py` defines the returned histories.
 
 ## Goal of WEC-Sim-Python
 **WEC-Sim-Python** aims to help researchers, start-up companies, and enthusiasts without access to MATLAB in order to use the open-source code provided by NREL and Sandia lab. Also, with growing research in the field of machine learning, **WEC-Sim-Python** could be more convenient for those who develop machine learning projects utilizing Python.
@@ -1424,7 +1427,7 @@ frequency. The coupled RM3 reference model also predicts both body surge
 motions and their shared pitch:
 
 ```python
-from wecsim.reference_models.rm3Regular import solve_rm3_regular
+from wecsim.dynamics.rm3Regular import solve_rm3_regular
 
 response = solve_rm3_regular("path/to/rm3.h5")
 # response.body_position and response.body_velocity have shape
@@ -1733,7 +1736,7 @@ sampled PTO to the WaveStar runner:
 import numpy as np
 from wecsim import WaveStarNmpcPTO
 from wecsim.environment.irregularWave import jonswap_equal_energy_components
-from wecsim.reference_models.wavestar import run_wavestar_published
+from wecsim.dynamics.wavestar import run_wavestar_published
 
 hydro = "applications/WECCCOMP/hydroData/wavestar.h5"
 sea = jonswap_equal_energy_components(

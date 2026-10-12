@@ -3,7 +3,7 @@
 import numpy as np
 from scipy.optimize import OptimizeResult
 
-import wecsim.reference_models.wavestarNmpc as nmpc
+import wecsim.control.wavestarNmpc as nmpc
 
 
 def test_nmpc_qp_recovers_after_primary_line_search_failure(monkeypatch):

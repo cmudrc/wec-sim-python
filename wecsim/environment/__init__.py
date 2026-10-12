@@ -1,1 +1,1 @@
-"""Environment used by WEC-Sim Python."""
+"""Wave spectra, wave kinematics, and wind inputs."""

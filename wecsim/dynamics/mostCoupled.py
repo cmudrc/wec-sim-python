@@ -4,10 +4,10 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from wecsim.reference_models.mostMooring import MostStaticMooring
-from wecsim.reference_models.mostPlatform import MostPlatformHydrodynamics, MostPlatformResponse
-from wecsim.reference_models.mostRotor import MostRotor, MostRotorResponse
-from wecsim.reference_models.mostTower import MostTowerReaction
+from wecsim.dynamics.mostMooring import MostStaticMooring
+from wecsim.hydrodynamics.mostPlatform import MostPlatformHydrodynamics, MostPlatformResponse
+from wecsim.components.mostRotor import MostRotor, MostRotorResponse
+from wecsim.dynamics.mostTower import MostTowerReaction
 from wecsim.environment.turbSim import MostConstantWind, MostWindField
 
 

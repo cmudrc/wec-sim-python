@@ -25,45 +25,45 @@ from wecsim.components.hydraulic import (
     RectifyingCheckValve,
 )
 from wecsim.components.electricGenerator import DiscretePILoadController, EquivalentCircuitGenerator
-from wecsim.reference_models.fixedHydroMonopile import FixedHydroMonopileResponse, run_fixed_hydro_monopile
+from wecsim.hydrodynamics.fixedHydroMonopile import FixedHydroMonopileResponse, run_fixed_hydro_monopile
 from wecsim.components.floatingOwc import (
     FloatingOwcChamber, FloatingOwcColumnJoint, FloatingOwcTurbine,
     FloatingOwcTurbineResponse,
 )
 from wecsim.dynamics.floatingOwcDynamics import FloatingOwcResponse, solve_floating_owc
 from wecsim.dynamics.friction import StribeckFriction
-from wecsim.reference_models.mbariCable import MBARICableResponse, run_mbari_cable
-from wecsim.reference_models.wavebotImpedance import WaveBotImpedanceResponse, run_wavebot_impedance
-from wecsim.reference_models.wavestar import WaveStarLinkage, WaveStarResponse, run_wavestar_published
-from wecsim.reference_models.wavestarFault import WaveStarFaultController, run_wavestar_fault_published
-from wecsim.reference_models.wavestarNmpc import (
+from wecsim.dynamics.mbariCable import MBARICableResponse, run_mbari_cable
+from wecsim.control.wavebotImpedance import WaveBotImpedanceResponse, run_wavebot_impedance
+from wecsim.dynamics.wavestar import WaveStarLinkage, WaveStarResponse, run_wavestar_published
+from wecsim.control.wavestarFault import WaveStarFaultController, run_wavestar_fault_published
+from wecsim.control.wavestarNmpc import (
     WaveStarNmpcActuator, WaveStarNmpcController,
     WaveStarNmpcObserver, WaveStarNmpcPredictor, WaveStarNmpcPTO,
 )
 from wecsim.hydrodynamics.morison import MorisonElement
 from wecsim.dynamics.moorDyn import MoorDyn
 from wecsim.components.orifice import OrificePTO, OrificeResponse
-from wecsim.reference_models.oswecHydraulic import OSWECHydraulicResponse, run_oswec_rectified_hydraulic
-from wecsim.reference_models.oswecDesalination import OSWECDesalinationResponse, run_oswec_desalination
+from wecsim.components.oswecHydraulic import OSWECHydraulicResponse, run_oswec_rectified_hydraulic
+from wecsim.components.oswecDesalination import OSWECDesalinationResponse, run_oswec_desalination
 from wecsim.environment.irregularWave import (
     FullDirectionalComponents, IrregularResponse,
     imported_full_directional_components, synthesize_full_directional_response,
 )
-from wecsim.reference_models.mcr import (
+from wecsim.analysis.mcr import (
     MCRCondition, MCRPowerMatrix, MCRResult, MCRSeaStateResult, MCRTrace,
     mcr_grid, mcr_mat_file, mcr_spectrum_files, mcr_wave_statistics,
     run_mcr, run_rm3_mcr, run_rm3_spectrum_mcr,
 )
-from wecsim.reference_models.rm3Regular import solve_rm3_regular
-from wecsim.reference_models.rm3Hydraulic import RM3HydraulicResponse, run_rm3_rectified_hydraulic
-from wecsim.reference_models.sphereMpc import SphereMPCResult, run_sphere_mpc
-from wecsim.reference_models.mostMooring import MostStaticMooring
-from wecsim.reference_models.mostPlatform import MostPlatformHydrodynamics, MostPlatformResponse
-from wecsim.reference_models.mostBEM import MostBEM
-from wecsim.reference_models.mostController import MostBaselineController
-from wecsim.reference_models.mostRotor import MostRotor, MostRotorResponse
-from wecsim.reference_models.mostTower import MostTowerReaction
-from wecsim.reference_models.mostCoupled import MostCoupled, MostCoupledResponse
+from wecsim.dynamics.rm3Regular import solve_rm3_regular
+from wecsim.components.rm3Hydraulic import RM3HydraulicResponse, run_rm3_rectified_hydraulic
+from wecsim.control.sphereMpc import SphereMPCResult, run_sphere_mpc
+from wecsim.dynamics.mostMooring import MostStaticMooring
+from wecsim.hydrodynamics.mostPlatform import MostPlatformHydrodynamics, MostPlatformResponse
+from wecsim.hydrodynamics.mostBEM import MostBEM
+from wecsim.control.mostController import MostBaselineController
+from wecsim.components.mostRotor import MostRotor, MostRotorResponse
+from wecsim.dynamics.mostTower import MostTowerReaction
+from wecsim.dynamics.mostCoupled import MostCoupled, MostCoupledResponse
 from wecsim.environment.turbSim import MostConstantWind, MostWindField, TurbSimWind, read_turbsim_bts
 
 __all__ = [

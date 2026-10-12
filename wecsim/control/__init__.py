@@ -1,1 +1,1 @@
-"""Control used by WEC-Sim Python."""
+"""Feedback, impedance, fault, and predictive controllers."""

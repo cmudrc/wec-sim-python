@@ -6,7 +6,7 @@ on:
       - '.github/workflows/wavestar-nmpc-ode8-step-audit.yml'
       - 'tests/matlab/reference_model_baseline.m'
       - 'tests/test_wavestar_nmpc_ode8_step_audit.py'
-      - 'wecsim/reference_models/wavestar.py'
+      - 'wecsim/dynamics/wavestar.py'
   workflow_dispatch:
 
 jobs:

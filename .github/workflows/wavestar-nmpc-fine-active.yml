@@ -8,8 +8,8 @@ on:
       - 'tests/matlab/wavestar_nmpc_forecast_probe.m'
       - 'tests/test_wavestar_nmpc_fine_active.py'
       - 'tests/test_wavestar_nmpc_split_step.py'
-      - 'wecsim/reference_models/wavestarNmpc.py'
-      - 'wecsim/reference_models/wavestar.py'
+      - 'wecsim/control/wavestarNmpc.py'
+      - 'wecsim/dynamics/wavestar.py'
   workflow_dispatch:
 
 jobs:
