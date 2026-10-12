@@ -2,6 +2,7 @@ name: Python parity
 
 on:
   push:
+    branches: [master]
   pull_request:
 
 jobs:
