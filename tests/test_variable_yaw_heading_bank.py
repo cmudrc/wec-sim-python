@@ -260,6 +260,86 @@ def test_continuous_irregular_120s_step_stability():
 
 @pytest.mark.skipif(
     not (os.environ.get("WEC_SIM_APPLICATIONS_DIR")
+         and os.environ.get("WEC_SIM_MATLAB_250S_AUDIT_DIR")),
+    reason="fresh 250 s variable-yaw MATLAB step audit not provided",
+)
+def test_irregular_250s_selected_bank_step_diagnostic():
+    """Pair the long native run without calling its divergent motion parity."""
+    hydro = (Path(os.environ["WEC_SIM_APPLICATIONS_DIR"])
+             / "_Common_Input_Files/OSWEC/hydroData/oswec.h5")
+    source = Path(os.environ["WEC_SIM_MATLAB_250S_AUDIT_DIR"])
+    coarse = np.loadtxt(source / "coarse_trajectory.csv", delimiter=",")
+    fine = np.loadtxt(source / "fine_trajectory.csv", delimiter=",")
+    coarse_wave = np.loadtxt(source / "coarse_wave.csv", delimiter=",")
+    fine_wave = np.loadtxt(source / "fine_wave.csv", delimiter=",")
+    realization = np.loadtxt(source / "components.csv", delimiter=",")
+    assert coarse.shape == (25001, 7)
+    assert fine.shape == (50001, 7)
+    assert coarse_wave.shape == (25001, 2)
+    assert fine_wave.shape == (50001, 2)
+    assert realization.shape == (500, 4)
+    assert all(np.isfinite(values).all() for values in
+               (coarse, fine, coarse_wave, fine_wave, realization))
+    np.testing.assert_allclose(coarse[:, 0], fine[::2, 0], rtol=0, atol=1e-10)
+    np.testing.assert_allclose(coarse_wave, fine_wave[::2], rtol=0, atol=1e-12)
+
+    components = pm_equal_energy_components(
+        hydro, significant_height=2.5, peak_period=8,
+        directions=[10], spreading=[1], seed=1, phase_generator="matlab",
+    )
+    for actual, expected in (
+        (components.omega, realization[:, 0]),
+        (components.spectral_amplitude, realization[:, 1]),
+        (components.d_omega, realization[:, 2]),
+        (components.phase[:, 0], realization[:, 3]),
+    ):
+        np.testing.assert_allclose(actual, expected, rtol=0, atol=1e-12)
+
+    wec = WEC("OSWEC 250 s selected-heading diagnostic")
+    flap = wec.body(
+        "flap", hydro, mass=12700, inertia=(1.85e6,) * 3,
+        passive_yaw=True, yaw_heading_bank=np.arange(-30, 30.25, .25),
+    )
+    wec.body("base", hydro, mass=999, inertia=(999,) * 3)
+    yaw = wec.coordinate("yaw", flap.move("yaw", pivot=WorldPoint(0, 0, -8.9)))
+    wec.rotational_pto("hinge", yaw, damping=120000)
+    result = wec.run(
+        PMWave(2.5, 8, direction=10, seed=1, phase_generator="matlab"),
+        dt=.005, end_time=250, ramp_time=100, radiation_memory=40,
+    )
+    np.testing.assert_allclose(result.time, fine[:, 0], rtol=0, atol=1e-10)
+    np.testing.assert_allclose(result.wave_elevation, fine_wave[:, 1],
+                               rtol=0, atol=1e-12)
+    motion = result.bodies["flap"]
+    torque = result.ptos["hinge"].force
+    yaw_error = np.max(np.abs(motion.position[:, 5] - fine[:, 1]))
+    speed_error = np.max(np.abs(motion.velocity[:, 5] - fine[:, 2]))
+    torque_error = np.max(np.abs(torque - fine[:, 5]))
+    assert yaw_error < .025
+    assert speed_error < .005
+    assert torque_error < 600
+    source_work = -np.trapezoid(fine[:, 6], fine[:, 0])
+    python_work = np.trapezoid(result.ptos["hinge"].absorbed_power, result.time)
+    assert source_work > 0
+    work_error = abs(python_work - source_work) / source_work
+    assert work_error < .04
+
+    # A tighter trajectory gate would exceed MATLAB's own step stability.
+    coarse_work = -np.trapezoid(coarse[:, 6], coarse[:, 0])
+    source_yaw_change = np.max(np.abs(coarse[:, 1] - fine[::2, 1]))
+    source_work_change = abs(coarse_work - source_work) / source_work
+    assert source_yaw_change > .01
+    assert source_work_change > .02
+    print(
+        f"250 s selected-bank diagnostic: Python/source yaw={yaw_error:.6g} rad, "
+        f"speed={speed_error:.6g} rad/s, torque={torque_error:.6g} Nm, "
+        f"work={work_error:.3%}; source step yaw={source_yaw_change:.6g} rad, "
+        f"work={source_work_change:.3%}"
+    )
+
+
+@pytest.mark.skipif(
+    not (os.environ.get("WEC_SIM_APPLICATIONS_DIR")
          and os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")),
     reason="fresh variable-yaw MATLAB output not provided",
 )

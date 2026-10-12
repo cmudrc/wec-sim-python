@@ -159,6 +159,15 @@ nonmonotonic over 250 s: the `0.00125`-to-`0.000625` s yaw change reaches
 `0.01966` rad. This establishes substantial long-window source and Python
 step sensitivity, not convergence or 250/600 s native trajectory parity.
 No force coefficient or physical default was adjusted to reduce this gap.
+The 250 s source-audit workflow now runs the independent Python half-step
+trajectory against its freshly generated MATLAB half-step output. Its
+diagnostic limits are 0.025 rad yaw, 0.005 rad/s yaw speed, 600 N m PTO
+torque, and 4% PTO work; the local pinned-artifact maxima are 0.0195034 rad,
+0.00428131 rad/s, 513.757 N m, and 3.590%. The same gate requires MATLAB's
+own coarse-to-half-step yaw change to exceed 0.01 rad and work change to
+exceed 2% of half-step work. These broad diagnostic limits make the
+long-window discrepancy reproducible; they do not promote the case to
+independent-motion parity.
 
 A physical continuous-heading control keeps the same pinned HDF5, seed-1 PM
 sea, PTO, and 120 s duration, but evaluates interpolated excitation at the
