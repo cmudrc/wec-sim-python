@@ -1,9 +1,17 @@
 # wec-sim-python
 
-[![Core example alignment](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fcore-cases.json)](PARITY.md#reference-model-and-case-inventory)
-[![Extended application alignment](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fextended-cases.json)](PARITY.md#reference-model-and-case-inventory)
+[![RM3, OSWEC, and Sphere case parity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Freference-model-cases.json)](PARITY.md#reference-model-and-case-inventory)
+[![Additional system case parity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fadditional-system-cases.json)](PARITY.md#reference-model-and-case-inventory)
+
+[![Pinned MATLAB source sweep](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fmatlab-baselines.json)](https://github.com/cmudrc/wec-sim-python/actions/runs/38282150325)
 [![Python tests and coverage](https://github.com/cmudrc/wec-sim-python/actions/workflows/python-parity.yml/badge.svg?branch=master)](https://github.com/cmudrc/wec-sim-python/actions/workflows/python-parity.yml)
 [![Combined line and branch coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fcoverage.json)](https://github.com/cmudrc/wec-sim-python/actions/workflows/python-parity.yml)
+
+The first two badges partition 63 published inputs: 46 RM3, OSWEC, and Sphere
+cases, plus 17 other systems including OWC, WaveBot/WaveStar, cable, and
+Morison applications. Together, 52 have independent Python motion or
+fixed-body force gates. The MATLAB badge counts 42 selected source workflow
+jobs, which may cover several inputs or focused variants.
 
 A Python library for configuring and simulating wave energy converters, with
 paired checks against MATLAB [WEC-Sim](https://github.com/WEC-Sim/WEC-Sim).
@@ -77,11 +85,8 @@ coverage, verifies the displayed percentage, and uploads `coverage.xml` and
 assets. [Bundled RM3, OSWEC, and Sphere fixtures](tests/fixtures/matlab/README.md)
 run in ordinary CI.
 Code coverage measures executed Python paths; the [parity ledger](PARITY.md)
-measures agreement with WEC-Sim. The two case badges partition the 63
-published inputs: 2 core examples and 61 extended applications. The separate
-[MATLAB source sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/38282150325)
-passed 42 selected workflow jobs; jobs can cover multiple inputs or focused
-variants, so that count does not add to the case badges.
+measures agreement with WEC-Sim. The pinned MATLAB sweep counts jobs, not
+additional case files.
 
 ## License
 

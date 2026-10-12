@@ -1,4 +1,4 @@
-"""Render separate core-example and application-case alignment badges."""
+"""Render disjoint reference-model and additional-system parity badges."""
 
 import argparse
 import csv
@@ -9,10 +9,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "tests/reference_cases.csv"
 STATUS = ROOT / "tests/reference_case_status.csv"
-BADGES = {
-    "WEC-Sim": (ROOT / "docs/core-cases.json", "Core examples"),
-    "WEC-Sim_Applications": (ROOT / "docs/extended-cases.json", "Extended applications"),
-}
+REFERENCE_FAMILIES = {"RM3", "OSWEC", "Sphere"}
+ADDITIONAL_FAMILY = "Other or dynamic"
+BADGES = (
+    (ROOT / "docs/reference-model-cases.json", "RM3 / OSWEC / Sphere", REFERENCE_FAMILIES),
+    (ROOT / "docs/additional-system-cases.json", "Additional systems", {ADDITIONAL_FAMILY}),
+)
 EVIDENCE = {
     "independent_motion", "stationary_force", "qualified_motion",
     "mixed_modes", "open_motion",
@@ -42,11 +44,11 @@ def render():
     if unknown:
         raise ValueError(f"unknown motion evidence categories: {unknown}")
     status_by_case = {row["case"]: row["motion_evidence"] for row in statuses}
-    if set(row["source"] for row in cases) != set(BADGES):
-        raise ValueError("inventory sources differ from badge groups")
+    if {row["family"] for row in cases} != REFERENCE_FAMILIES | {ADDITIONAL_FAMILY}:
+        raise ValueError("inventory families differ from badge groups")
     rendered = {}
-    for source, (path, label) in BADGES.items():
-        names = [row["case"] for row in cases if row["source"] == source]
+    for path, label, families in BADGES:
+        names = [row["case"] for row in cases if row["family"] in families]
         gated = sum(status_by_case[name] in GATED for name in names)
         payload = {
             "schemaVersion": 1,
