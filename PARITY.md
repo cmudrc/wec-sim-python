@@ -359,6 +359,18 @@ and 0.583 m. A paired source gate checks these distinctions using fresh
 BEMIO hydrodynamics. The fitted-case displacement is therefore chiefly a
 difference between MATLAB's two radiation options, not evidence that the
 Python convolution path should be tuned toward the fitted trajectory.
+
+![MATLAB and Python RM3 float-surge trajectories for Cases 3–6](docs/figures/rm3-b2b-surge.png)
+
+The solid eight-second moving means are the pinned MATLAB trajectories; dashed
+means are independent Python runs with the corresponding radiation option.
+[Cases 3/4](https://github.com/cmudrc/wec-sim-python/actions/runs/38282150325)
+use the latest convolution sweep and
+[Cases 5/6](https://github.com/cmudrc/wec-sim-python/actions/runs/37936907603)
+use the fitted-radiation source export. Faint curves show unsmoothed motion.
+Maximum float-surge differences within each matched case are 0.0569, 0.0483,
+0.0580, and 0.0468 m, respectively.
+
 Over an 8 s window ending at 392 s, MATLAB float-surge means are 0.465 m
 and 0.597 m for Cases 5 and 6, compared with 0.101 m and 0.047 m for
 Cases 3 and 4. Repeating Cases 5 and 6 with a 0.05 s step gives means of
@@ -484,8 +496,8 @@ Published-step RM3 MoorDyn visualization motion and nonlinear-hydro timing
 also remain qualified. The Python dynamics API still lacks arbitrary Simscape
 joints and general six-DOF mooring and moving Morison layouts.
 
-The [latest full reference-model sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/38212367776)
-completed all 42 selected baseline jobs successfully on `dbcd62bf`. Its
+The [latest full reference-model sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/38282150325)
+completed all 42 selected baseline jobs successfully on `7c403d3e`. Its
 conditional full-duration end-stops comparison job was skipped because this
 was a push sweep, not the `RM3_END_STOPS_FULL_PAIR` dispatch. The passing
 matrix includes the current-profile comparison, moving normal/tangential
