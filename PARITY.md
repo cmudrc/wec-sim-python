@@ -1448,15 +1448,12 @@ attachment geometry.
 supported dynamics configuration. The case declares wave, body, constraint,
 PTO, and time settings; the result includes all six body position and
 velocity coordinates, applicable wave and PTO signals, and a JSON record of
-the case and HDF5 hashes, NumPy version, and Git state. The older
-`referenceRunner` remains as a preset CLI for the three model families.
-Neither command parses an arbitrary WEC-Sim or Simscape input file.
-Expanded application cases remain inventoried. The manually dispatched
-`MATLAB reference application regression`
-workflow can run the upstream test suites for all 18 application folders
-containing the 46 explicit RM3, OSWEC, and Sphere cases. This checks the
-pinned MATLAB reference for those cases, but there is no Python time-series
-comparison yet.
+the case and HDF5 hashes, NumPy version, and Git state. The CLI accepts
+supported case files; it does not parse arbitrary WEC-Sim or Simscape inputs.
+The manually dispatched `MATLAB reference application regression` workflow
+runs the pinned upstream tests across 18 application folders. Paired Python
+motion and output comparisons are recorded case by case in the inventory
+above; an upstream MATLAB test passing alone does not establish parity.
 
 The [first full application sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/37472556454)
 recorded 42 passed methods, two failed Passive Yaw assertions, two MoorDyn
