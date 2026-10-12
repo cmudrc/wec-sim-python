@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from wecsim import RegularWave, WEC
+from wecsim.dynamics.linearHeave import solve_two_body_regular_heave
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,3 +65,36 @@ def test_published_rm3_regular_wave_body_and_pto_motion():
             ("absorbed power", pto.absorbed_power, -source["pto_power"], 7_000),
         ):
             _max_error(actual, expected, limit, f"RM3 PTO {label}")
+
+
+def test_published_rm3_heave_excitation_and_relative_pto():
+    """Pair the reduced heave solver's independent wave and PTO force paths."""
+    response = solve_two_body_regular_heave(
+        HYDRO, wave_height=2.5, wave_period=8,
+        pto_damping=1_200_000,
+    )
+    with np.load(REFERENCE, allow_pickle=False) as source:
+        np.testing.assert_allclose(response.time, source["time"], rtol=0,
+                                   atol=1e-10)
+        expected_excitation = source["body_heave_excitation_force"]
+        assert expected_excitation.shape == (2, 4001)
+        for body in range(2):
+            _max_error(response.position[:, body],
+                       source["body_position"][body, :, 2], 0.0065,
+                       f"heave body {body + 1} position")
+            _max_error(response.velocity[:, body],
+                       source["body_velocity"][body, :, 2], 0.0065,
+                       f"heave body {body + 1} speed")
+            np.testing.assert_allclose(
+                response.excitation_force[:, body], expected_excitation[body],
+                rtol=0, atol=1e-5,
+            )
+
+        stroke = response.displacement[:, 0] - response.displacement[:, 1]
+        speed = response.velocity[:, 0] - response.velocity[:, 1]
+        _max_error(stroke, source["pto_stroke"], 0.009, "heave PTO stroke")
+        _max_error(speed, source["pto_speed"], 0.0075, "heave PTO speed")
+        _max_error(response.pto_force, source["pto_force"], 9_000,
+                   "heave PTO force")
+        _max_error(response.pto_force * speed, source["pto_power"], 12_000,
+                   "heave PTO mechanical power")

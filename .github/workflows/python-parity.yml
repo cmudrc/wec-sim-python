@@ -2,7 +2,12 @@ name: Python parity
 
 on:
   push:
+    branches: [master]
   pull_request:
+
+concurrency:
+  group: python-parity-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   parity:
@@ -37,6 +42,8 @@ jobs:
           --cov-report=term
           --cov-report=xml:coverage.xml
           --cov-report=json:coverage.json
+      - name: Verify coverage badge percentage
+        run: python tools/render_coverage_badge.py --check
       - name: Summarize coverage
         if: always()
         run: |
