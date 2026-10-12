@@ -9,10 +9,12 @@ The workflow checks out WEC-Sim core
 `0753b2e47f2457c078751dcfe5d251d1767b80ab`. Inputs are a 2.5 m,
 8 s regular wave, 0.1 s output step, 100 s ramp, and a 1.2 MN s/m linear PTO.
 
-The archive contains `time`, `body_position`, `body_velocity`, `pto_stroke`,
-`pto_speed`, `pto_force`, and `pto_power`. Body arrays are ordered float/spar,
-then time, then surge/sway/heave/roll/pitch/yaw. These are source CSV columns
-0, 1–6, and 7–12 for bodies, and columns 3, 9, 15, and 21 for the PTO.
+The archive contains `time`, `body_position`, `body_velocity`,
+`body_heave_excitation_force`, `pto_stroke`, `pto_speed`, `pto_force`, and
+`pto_power`. Body arrays are ordered float/spar, then time; position and
+velocity add surge/sway/heave/roll/pitch/yaw as the last axis. These are
+source CSV columns 0, 1–6, 7–12, and 21 for bodies, and columns 3, 9, 15,
+and 21 for the PTO.
 The source files in the artifact have these SHA-256 hashes:
 
 | Source file | SHA-256 |
@@ -24,7 +26,7 @@ The source files in the artifact have these SHA-256 hashes:
 To regenerate, load each CSV with `numpy.loadtxt(..., delimiter=",")`, check
 that all three time columns match, and save those columns using
 `numpy.savez_compressed` under the names and ordering above. The archive SHA-256
-is `5516644b19eb28e346ebeb8ac0274462c52b9ed74577557b1e30f42b8193c27e`.
+is `bc8db627eb710b002e6ed91b0a352999ea62a56c09baf5e859677fa1f1442ba5`.
 
 The always-on test uses the bundled `examples/data/rm3.h5` (SHA-256
 `3bdfdcfa3dcd2db1851ab2026eb6b4fdc565ad86be8503e09b42231feee429fb`).
