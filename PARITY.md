@@ -539,7 +539,11 @@ pinned 250 s coarse and half-step trajectories. The prior 250 s MATLAB
 0.01 and 0.005 s simulations took about 26 and 102 minutes, respectively;
 their observed scaling puts a 250 s quarter-step run beyond GitHub's six-hour
 job limit. The 120 s run will measure the first heading-switch separation,
-while 250 s source convergence and long-run motion parity remain open.
+with predeclared source-stability and Python/source gates of 0.0006 rad yaw,
+0.00015 rad/s yaw rate, 20 N m PTO torque, and 0.1% PTO work. Those limits
+exceed the observed 120 s 0.01-to-0.005 s source self-change but reject a
+larger event-driven trajectory split. The 250 s source convergence and
+long-run motion parity remain open.
 
 The [RM3 MoorDyn visualization force export](https://github.com/cmudrc/wec-sim-python/actions/runs/38085085794)
 records acceleration, excitation, radiation, added mass, restoring, Morison,

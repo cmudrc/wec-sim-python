@@ -1,4 +1,4 @@
-"""Audit early selected-heading step sensitivity before long-run parity."""
+"""Gate the early selected-heading motion against a refined source path."""
 
 import os
 from pathlib import Path
@@ -17,7 +17,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def test_irregular_120s_quarter_step_diagnostic():
+def test_irregular_120s_quarter_step_pair():
     source = Path(SOURCE)
     quarter_file = source / "quarter_trajectory.csv"
     assert quarter_file.is_file(), "quarter-step source run is absent"
@@ -66,16 +66,33 @@ def test_irregular_120s_quarter_step_diagnostic():
     python_work = np.trapezoid(result.ptos["hinge"].absorbed_power, result.time)
     assert source_work > 0 and python_work > 0
     source_step_yaw = np.max(np.abs(fine120[:, 1] - quarter[::2, 1]))
+    source_step_speed = np.max(np.abs(fine120[:, 2] - quarter[::2, 2]))
+    source_step_torque = np.max(np.abs(fine120[:, 5] - quarter[::2, 5]))
     source_step_work = -np.trapezoid(fine120[:, 6], fine120[:, 0])
-    python_source_yaw = np.max(np.abs(
-        result.bodies["flap"].position[:, 5] - quarter[:, 1]
+    motion = result.bodies["flap"]
+    python_source_yaw = np.max(np.abs(motion.position[:, 5] - quarter[:, 1]))
+    python_source_speed = np.max(np.abs(motion.velocity[:, 5] - quarter[:, 2]))
+    python_source_torque = np.max(np.abs(
+        result.ptos["hinge"].force - quarter[:, 5]
     ))
-    # The discontinuous heading bank can amplify one-sample switch timing.
-    # Record source self-change and cross-language difference separately;
-    # neither is a trajectory parity gate until source convergence is shown.
+    source_step_work_error = abs(source_work - source_step_work) / source_work
+    python_work_error = abs(python_work - source_work) / source_work
+
+    # These limits exceed the measured 120 s 0.01-to-0.005 s source
+    # self-change but still reject a new event-driven trajectory split.
+    limits = (.0006, .00015, 20, .001)
     print(
         f"120 s quarter-step source self-change: yaw={source_step_yaw:.6g} rad, "
-        f"work={abs(source_work - source_step_work) / source_work:.3%}; "
+        f"speed={source_step_speed:.6g} rad/s, "
+        f"torque={source_step_torque:.6g} Nm, work={source_step_work_error:.3%}; "
         f"Python/source yaw={python_source_yaw:.6g} rad, "
-        f"work={abs(python_work - source_work) / source_work:.3%}"
+        f"speed={python_source_speed:.6g} rad/s, "
+        f"torque={python_source_torque:.6g} Nm, work={python_work_error:.3%}"
     )
+    for measured in (
+        (source_step_yaw, source_step_speed, source_step_torque,
+         source_step_work_error),
+        (python_source_yaw, python_source_speed, python_source_torque,
+         python_work_error),
+    ):
+        assert all(value < limit for value, limit in zip(measured, limits))
