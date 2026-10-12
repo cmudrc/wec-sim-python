@@ -1247,6 +1247,51 @@ This is a short derived multirate motion gate with its timing difference
 explicitly reproduced. The published 225 s single-rate NMPC trajectory
 remains unpaired; no Python physical default was changed for this diagnostic.
 
+A [225 s extension of that split-step comparison](https://github.com/cmudrc/wec-sim-python/pull/228)
+keeps the 1 ms `ode4` plant and 50 ms sampled controller while setting
+`simu.dtOut = 0.05` for saved body and PTO output. The source runs 225,001
+integration times and exports 4,501 motion samples; its first 15.2 s
+matches the earlier source trajectory, including applied PTO force. With
+the saved MATLAB torque request as the only prescribed controller input,
+Python independently advances the plant and actuator over all 225 s. On
+the matched HDF5 fit, its maximum differences are `0.000239` rad pitch,
+`0.00143` rad/s pitch speed, `47.7` μm PTO stroke, and `0.00428` N axial
+force, below respective gates of `0.0005` rad, `0.003` rad/s, `100` μm,
+and `0.02` N. This is full-duration **source-command plant parity**, not an
+autonomous NMPC motion claim.
+
+The independent closed-loop run starts from the same sea and hydrodynamics
+but computes its own observer, AR forecast, and NMPC request. Its first
+pitch gate crossing occurs after activation, around 17.55 s on ARM64.
+Across two fresh 225 s Linux comparisons, maximum gaps range from
+`0.00589` to `0.00815` rad pitch, `0.0321` to `0.0522` rad/s speed,
+`1.18` to `1.63` mm stroke, `2.65` to `3.75` N axial force, and
+`0.554` to `0.763` N m request. The predeclared closed-loop limits were `0.0005` rad,
+`0.005` rad/s, `0.1` mm, `1` N, and `0.1` N m, so this test is an
+explicit expected failure and the case remains open. Replaying the source
+stroke and prior source request through Python reconstructs the observer
+within `1e-12` across all 4,501 controller samples; after activation,
+the 40-step AR forecast differs by less than `2e-11` N m. The resulting
+source-input torque replay differs by at most `0.00892` N m and has
+`0.000151` N m RMS error on ARM64. Those component checks and the
+prescribed-command plant gate are consistent with feedback amplification
+of small trajectory differences; they do not establish
+published 50 ms `ode8` NMPC parity.
+
+The [first](https://github.com/cmudrc/wec-sim-python/actions/runs/38186635325)
+and [second](https://github.com/cmudrc/wec-sim-python/actions/runs/38189284882)
+fresh R2025b source runs also expose a MATLAB repeatability limit for this
+autonomous case. Their sea components are identical and their motion through
+15.2 s agrees to about `3e-15` rad pitch. Regenerating `wavestar.h5` changes
+entries of its fitted radiation state matrix by at most `3.28e-12`, while
+the two subsequent MATLAB feedback trajectories differ by up to `0.00753`
+rad pitch, `0.0511` rad/s speed, `1.50` mm PTO stroke, `3.70` N axial force,
+and `0.753` N m torque request. The small fit variation and large trajectory
+spread co-occur; these runs do not isolate every source of numerical
+sensitivity. This source-to-source spread is comparable to the Python/source
+autonomous gap, so a single fresh MATLAB trajectory is not a stable
+pointwise full-duration target at the stated tight limits.
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001

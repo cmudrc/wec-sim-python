@@ -66,7 +66,19 @@ jobs:
       - uses: matlab-actions/run-command@v3
         with:
           command: addpath('tests/matlab'); reference_model_baseline('WECCCOMP_NMPC_SPLIT_STEP_DIAG')
-      - run: python -m pytest -q -s tests/test_wavestar_nmpc_split_step.py
+      - run: python -m pytest -q -s tests/test_wavestar_nmpc_split_step.py -k 'not full'
+        env:
+          WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
+          WEC_SIM_WAVESTAR_H5: applications/WECCCOMP/hydroData/wavestar.h5
+      - name: Restore pinned WaveStar inputs for the full run
+        run: |
+          cp "$RUNNER_TEMP/wecSimInputFile.m" applications/WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive/wecSimInputFile.m
+          cp "$RUNNER_TEMP/controller_init.m" applications/WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive/controller_init.m
+          cp "$RUNNER_TEMP/userDefinedFunctions.m" applications/WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive/userDefinedFunctions.m
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); reference_model_baseline('WECCCOMP_NMPC_SPLIT_STEP_FULL')
+      - run: python -m pytest -q -s tests/test_wavestar_nmpc_split_step.py -k full
         env:
           WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
           WEC_SIM_WAVESTAR_H5: applications/WECCCOMP/hydroData/wavestar.h5
@@ -77,4 +89,5 @@ jobs:
           path: |
             matlab-reference-model-output/WECCCOMP_NMPC_FINE_ACTIVE_DIAG_*
             matlab-reference-model-output/WECCCOMP_NMPC_SPLIT_STEP_DIAG_*
+            matlab-reference-model-output/WECCCOMP_NMPC_SPLIT_STEP_FULL_*
             applications/WECCCOMP/hydroData/wavestar.h5
