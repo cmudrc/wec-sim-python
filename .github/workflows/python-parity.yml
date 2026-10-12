@@ -15,7 +15,7 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: pyproject.toml
-      - run: python -m pip install -e . pytest
+      - run: python -m pip install -e ".[test]"
       - run: cd /tmp && python -c 'from wecsim import WEC; print(WEC.__module__)'
       - name: Verify built wheel outside the checkout
         run: |
@@ -31,4 +31,34 @@ jobs:
           cp "$GITHUB_WORKSPACE/examples/data/rm3.h5" "$RUNNER_TEMP/"
           "$RUNNER_TEMP/wecsim-wheel-venv/bin/python" wheel_install_smoke.py rm3.h5
       - run: python -m compileall -q wecsim
-      - run: python -m pytest -q
+      - name: Test and measure coverage
+        run: >-
+          python -m pytest -q --cov=wecsim --cov-branch
+          --cov-report=term
+          --cov-report=xml:coverage.xml
+          --cov-report=json:coverage.json
+      - name: Summarize coverage
+        if: always()
+        run: |
+          if test -f coverage.json; then
+            python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          totals = json.loads(Path("coverage.json").read_text())["totals"]
+          print("## Python test coverage\n")
+          print(f"Combined line and branch coverage: **{totals['percent_covered_display']}%**")
+          print(f"Line coverage: {totals['percent_statements_covered_display']}%")
+          print(f"Branch coverage: {totals['percent_branches_covered_display']}%")
+          print("\nFull XML and JSON reports are attached to this run.")
+          PY
+          fi
+      - name: Save coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage
+          path: |
+            coverage.xml
+            coverage.json
+          if-no-files-found: ignore
