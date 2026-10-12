@@ -1130,7 +1130,8 @@ The `linear_subspace` layout uses `pto.stiffness_matrix` and
 `pto.damping_matrix`, with optional `pto.equilibrium_coordinate` (N values).
 Its force law is `F = -K @ (q - q_eq) - C @ q_dot`. A nonzero offset must
 produce a spring force. The zero-offset cases have paired MATLAB checks;
-nonzero offsets have analytical and case-level tests. Each actuator in `ptos`
+the configured Sphere case also pairs a nonzero PTO pretension over 400 s.
+Each actuator in `ptos`
 can instead set `damping`, `stiffness`, and either `equilibrium_position` or
 `pretension`. Connection geometry and nonzero offsets have case-level and
 analytical checks. A paired MATLAB Sphere case covers nonzero stiffness,
