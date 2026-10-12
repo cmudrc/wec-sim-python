@@ -479,7 +479,6 @@ class BodyClass:
     def plotStl(self):
         """
         Plots the body's mesh
-        networkx is required if you want to use this function
 
         """
         # Plots the body's mesh

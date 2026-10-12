@@ -12,16 +12,14 @@ dependencies = [
     "numpy>=1.26",
     "randomgen>=2.3,<3",
     "scipy",
-    "matplotlib",
     "h5py",
     "trimesh",
-    "networkx",
-    "control",
-    "openpyxl",
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8", "pytest-cov>=5"]
+excel = ["openpyxl"]
+plot = ["matplotlib"]
+test = ["pytest>=8", "pytest-cov>=5", "openpyxl"]
 
 [project.urls]
 Repository = "https://github.com/cmudrc/wec-sim-python"

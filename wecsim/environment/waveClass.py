@@ -31,7 +31,6 @@ Note: "RuntimeWarning: overflow encountered in sinh"
 
 """
 from scipy import integrate
-import matplotlib.pyplot as plt
 import numpy as np
 import warnings
 import scipy.io as sio
@@ -277,6 +276,7 @@ class WaveClass:
         rampTime input argument is optional
 
         """
+        import matplotlib.pyplot as plt
         plt.figure(figsize=(10,8))
         plt.plot(self.waveAmpTime[0],self.waveAmpTime[1])
         plt.title('Wave Surfave Elevation')
@@ -293,6 +293,7 @@ class WaveClass:
         Does not get used in any method
 
         """
+        import matplotlib.pyplot as plt
         m0 = integrate.trapezoid(self.S, x=self.w)
         HsTest = 4*np.sqrt(m0)
         I = np.argmax(np.abs(self.S))

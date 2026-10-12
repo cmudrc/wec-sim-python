@@ -3,6 +3,22 @@
 Detailed configuration, device examples, and current case limitations.
 Run the commands below from the repository root.
 
+## Preparing new inputs
+
+For a new geometry, [Capytaine](https://capytaine.org/v2.3/user_manual/export_output.html)
+can export hydrodynamic data as NetCDF; the maintained MATLAB WEC-Sim
+[BEMIO `readCAPYTAINE` path](https://wec-sim.github.io/WEC-Sim/dev/user/advanced_features.html#bemio)
+converts it to the HDF5 input read by `wecsim`. The older Python BEMIO package
+is no longer supported by WEC-Sim. For new mooring layouts, the official
+[MoorDyn Python binding](https://moordyn.readthedocs.io/en/master/drivers.html#python)
+is an option to evaluate. The existing `wecsim.MoorDyn` bridge calls the
+legacy native API used by the pinned MATLAB parity cases; use that bridge for
+those comparisons. Neither Capytaine nor the current MoorDyn binding is a
+runtime dependency of this package.
+The current VTP writer preserves MATLAB's file layout for parity checks;
+[PyVista](https://docs.pyvista.org/api/core/_autosummary/pyvista.polydata.save)
+is a possible future route for general mesh export, not a current dependency.
+
 ## Current status
 
 Wave generation, RM3 and OSWEC hydrodynamic input, force preprocessing, and
