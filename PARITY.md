@@ -530,7 +530,10 @@ the source-matched OSWEC HDF5 (`591f9a32f18c1a9b1b1dd05ab9afe104cefc20cc7a11c3e0
 and the published phase seed. With `dt=0.01`, `0.005`, and `0.0025` s, PTO
 work is 1959.71, 1890.23, and 1914.14 J. At common times, maximum yaw
 changes are 0.01179 then 0.02048 rad as the step halves. The smaller step
-does not yet establish a converged native Python trajectory. The pinned
+does not yet establish a converged native Python trajectory. At MATLAB's
+first coarse/fine heading mismatch (56.44 s), the two yaw states differ by
+only `7.92e-6` rad; their relative headings of 5.375181° and 5.374727°
+straddle the 5.375° bank boundary. The pinned
 MATLAB audit now requests a third step at 0.0025 s; source self-change and
 cross-language motion will remain separate diagnostics until that run is
 verified.
