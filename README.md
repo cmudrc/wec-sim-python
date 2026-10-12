@@ -4,6 +4,7 @@
 [![Python tests and coverage](https://github.com/cmudrc/wec-sim-python/actions/workflows/python-parity.yml/badge.svg?branch=master)](https://github.com/cmudrc/wec-sim-python/actions/workflows/python-parity.yml)
 [![Combined line and branch coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fcoverage.json)](https://github.com/cmudrc/wec-sim-python/actions/workflows/python-parity.yml)
 [![Selected MATLAB checks](https://github.com/cmudrc/wec-sim-python/actions/workflows/reference-model-baselines.yml/badge.svg?branch=master&event=push)](https://github.com/cmudrc/wec-sim-python/actions/workflows/reference-model-baselines.yml)
+[![Selected MATLAB baseline sweep](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fmatlab-baselines.json)](https://github.com/cmudrc/wec-sim-python/actions/runs/38259283148)
 
 A Python library for configuring and simulating wave energy converters, with
 paired checks against MATLAB [WEC-Sim](https://github.com/WEC-Sim/WEC-Sim).
@@ -78,6 +79,9 @@ assets. [Bundled RM3, OSWEC, and Sphere fixtures](tests/fixtures/matlab/README.m
 run in ordinary CI.
 Code coverage measures executed Python paths; the [parity ledger](PARITY.md)
 measures agreement with WEC-Sim.
+The MATLAB fraction records a pinned full selected-baseline sweep: 42 of 42
+jobs passed. Its conditional end-stops comparison was skipped; the adjacent
+workflow badge shows current run status.
 
 ## License
 
