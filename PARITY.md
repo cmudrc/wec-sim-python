@@ -383,6 +383,17 @@ diagnostic transfer calculation reduces the negative zero-frequency values
 to −3.01 and −3.45 kN s/m, but does not make the fits passive. This is a
 low-frequency fit problem consistent with the drift, not proof that the
 full nonlinear trajectory has only one cause.
+
+![RM3 source BEM and fitted common-surge radiation damping](docs/figures/rm3-common-surge-damping.png)
+
+This plot uses the fresh pinned BEMIO hydrodynamics from the
+[latest Cases 3/4 source sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/38282150325)
+and the repository's [radiation diagnostic](tools/rm3_radiation_diagnostic.py).
+The dashed curve adds the HDF5 direct term for diagnosis; the published
+MATLAB state-space block omits it. The vertical line marks the 8 s wave
+frequency. Negative low-frequency damping in the fit is consistent with
+surge drift, but the plot alone does not establish its sole cause.
+
 The saved MATLAB radiation-force and velocity histories also constrain that
 interpretation: integrating the logged resisting-force dot velocity over all
 12 body coordinates gives **positive** 71.7 MJ in Case 5 and 70.7 MJ in
