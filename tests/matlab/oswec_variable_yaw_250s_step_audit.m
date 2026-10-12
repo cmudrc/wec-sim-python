@@ -62,10 +62,31 @@ assert(max(abs(fine(1:2:end, 1) - coarse(:, 1))) < 1e-10 && ...
 writematrix(fine, fullfile(outDir, 'fine_trajectory.csv'));
 writematrix(fineWave, fullfile(outDir, 'fine_wave.csv'));
 
+fineInput = fileread(inputFile);
+assert(contains(fineInput, 'simu.dt = 0.005;'), ...
+    'The half-step input changed before quarter-step refinement');
+write_input(inputFile, strrep(fineInput, 'simu.dt = 0.005;', ...
+    'simu.dt = 0.0025;'));
+wecSim;
+check_run(simu, waves, bemDirections, output, 0.0025, 100001);
+quarter = trajectory(output, bemDirections);
+quarterWave = waves.waveAmpTime;
+quarterComponents = [waves.omega(:), waves.amplitude(:), ...
+    waves.dOmega(:), waves.phase(:)];
+assert(max(abs(quarter(1:2:end, 1) - fine(:, 1))) < 1e-10 && ...
+    max(abs(quarterWave(1:2:end, :) - fineWave), [], 'all') < 1e-12 && ...
+    max(abs(quarterComponents - coarseComponents), [], 'all') < 1e-12, ...
+    'Quarter-step refinement changed the time grid or incident sea');
+writematrix(quarter, fullfile(outDir, 'quarter_trajectory.csv'));
+writematrix(quarterWave, fullfile(outDir, 'quarter_wave.csv'));
+
 coarseWork = -trapz(coarse(:, 1), coarse(:, 7));
 fineWork = -trapz(fine(:, 1), fine(:, 7));
+quarterWork = -trapz(quarter(:, 1), quarter(:, 7));
 mismatch = coarse(:, 4) ~= fine(1:2:end, 4);
 firstMismatch = find(mismatch, 1);
+quarterMismatch = fine(:, 4) ~= quarter(1:2:end, 4);
+firstQuarterMismatch = find(quarterMismatch, 1);
 metrics = struct( ...
     'maxWaveErrorM', max(abs(fineWave(1:2:end, 2) - coarseWave(:, 2))), ...
     'maxYawErrorRad', max(abs(fine(1:2:end, 2) - coarse(:, 2))), ...
@@ -76,10 +97,27 @@ metrics = struct( ...
     'coarseHeadingSwitches', nnz(diff(coarse(:, 4))), ...
     'fineHeadingSwitches', nnz(diff(fine(:, 4))), ...
     'headingMismatchSamples', nnz(mismatch));
+metrics.fineToQuarterMaxYawErrorRad = ...
+    max(abs(fine(:, 2) - quarter(1:2:end, 2)));
+metrics.fineToQuarterMaxYawRateErrorRadPerS = ...
+    max(abs(fine(:, 3) - quarter(1:2:end, 3)));
+metrics.fineToQuarterMaxPtoTorqueErrorNm = ...
+    max(abs(fine(:, 6) - quarter(1:2:end, 6)));
+metrics.quarterPtoWorkJ = quarterWork;
+metrics.fineToQuarterRelativePtoWorkChange = ...
+    (quarterWork - fineWork) / fineWork;
+metrics.quarterHeadingSwitches = nnz(diff(quarter(:, 4)));
+metrics.fineToQuarterHeadingMismatchSamples = nnz(quarterMismatch);
 if isempty(firstMismatch)
     metrics.firstHeadingMismatchS = -1;
 else
     metrics.firstHeadingMismatchS = coarse(firstMismatch, 1);
+end
+if isempty(firstQuarterMismatch)
+    metrics.firstFineToQuarterHeadingMismatchS = -1;
+else
+    metrics.firstFineToQuarterHeadingMismatchS = ...
+        fine(firstQuarterMismatch, 1);
 end
 fid = fopen(fullfile(outDir, 'metrics.json'), 'w');
 assert(fid ~= -1, 'Could not write source step metrics');
