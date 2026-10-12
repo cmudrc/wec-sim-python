@@ -50,11 +50,12 @@ def test_rm3_configured_spring_and_pretension_against_matlab():
                     inertia=(0, 94_407_091.24, 0))
     wec.floating_joint(
         float_body, spar, damping=1_200_000, stiffness=50_000,
-        equilibrium_position=-0.1,
+        pretension=5_000,
     )
     result = wec.run(
         RegularWave(2.5, 8), dt=0.1, end_time=400, ramp_time=100,
     )
+    assert result.case["pto"]["equilibrium_position"] == -0.1
     _max_error(result.time, pto[:, 0], 1e-10, "time")
     for name, expected, position_limits, speed_limits in (
         ("float", bodies[0], (0.035, 0.006, 0.001), (0.025, 0.005, 0.001)),
