@@ -32,6 +32,26 @@ switch string(model)
     case "RM3"
         cases = string(model);
         caseDirs = string(fullfile(repoRoot, 'matlab-ref', 'examples', model));
+    case "RM3_PTO_PRETENSION"
+        sourceDir = fullfile(repoRoot, 'matlab-ref', 'examples', 'RM3');
+        caseDir = fullfile(repoRoot, 'matlab-ref', 'examples', ...
+            'RM3_PTO_PRETENSION');
+        [copied, copyMessage] = copyfile(sourceDir, caseDir);
+        assert(copied, copyMessage);
+        inputFile = fullfile(caseDir, 'wecSimInputFile.m');
+        contents = fileread(inputFile);
+        oldSetting = 'pto(1).stiffness = 0;';
+        assert(contains(contents, oldSetting) && ...
+            ~contains(contents, 'pto(1).pretension'), ...
+            'The pinned RM3 PTO input changed');
+        contents = strrep(contents, oldSetting, ...
+            sprintf('pto(1).stiffness = 50000;\npto(1).pretension = 5000;'));
+        fid = fopen(inputFile, 'w');
+        assert(fid ~= -1, 'Could not write the configured RM3 PTO input');
+        fprintf(fid, '%s', contents);
+        fclose(fid);
+        cases = "Pretension";
+        caseDirs = string(caseDir);
     case "OSWEC"
         cases = string(model);
         caseDirs = string(fullfile(repoRoot, 'matlab-ref', 'examples', model));
@@ -1093,6 +1113,14 @@ for iCase = 1:numel(cases)
     end
     assert(exist('output', 'var') == 1 && ~isempty(output.bodies), ...
         'The MATLAB case produced no body output');
+    if string(model) == "RM3_PTO_PRETENSION"
+        assert(pto(1).stiffness == 50000 && pto(1).pretension == 5000 && ...
+            abs(pto(1).equilibriumPosition + 0.1) < 1e-12, ...
+            'The source RM3 PTO did not apply the configured pretension');
+        writematrix([pto(1).stiffness, pto(1).pretension, ...
+                     pto(1).equilibriumPosition], ...
+            fullfile(outDir, 'RM3_PTO_PRETENSION_parameters.csv'));
+    end
     if string(model) == "Sphere_PTO_Config" && ...
             cases(iCase) == "ConfiguredPretension"
         assert(pto(1).pretension == 5000 && ...
