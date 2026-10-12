@@ -16,7 +16,7 @@ BADGES = (
     (
         "Other or dynamic",
         ROOT / "docs/additional-system-cases.json",
-        "Additional systems",
+        "Other published cases",
     ),
 )
 EVIDENCE = {

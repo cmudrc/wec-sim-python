@@ -3,7 +3,7 @@
 [![RM3 case parity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Frm3-cases.json)](PARITY.md#reference-model-and-case-inventory)
 [![OSWEC case parity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Foswec-cases.json)](PARITY.md#reference-model-and-case-inventory)
 [![Sphere case parity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fsphere-cases.json)](PARITY.md#reference-model-and-case-inventory)
-[![Additional system case parity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fadditional-system-cases.json)](PARITY.md#reference-model-and-case-inventory)
+[![Other published case parity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fadditional-system-cases.json)](PARITY.md#reference-model-and-case-inventory)
 
 [![Pinned MATLAB source sweep](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fmatlab-baselines.json)](https://github.com/cmudrc/wec-sim-python/actions/runs/38282150325)
 [![Python tests](https://github.com/cmudrc/wec-sim-python/actions/workflows/python-parity.yml/badge.svg?branch=master)](https://github.com/cmudrc/wec-sim-python/actions/workflows/python-parity.yml)
@@ -11,8 +11,9 @@
 
 The four case badges partition 63 published inputs by model family. A gated
 case has full-duration independent Python motion or fixed-body force paired
-to MATLAB; 52/63 currently meet that standard. The additional systems cover OWC,
-WaveBot/WaveStar, cable, Morison, and other applications. The MATLAB badge
+to MATLAB; 52/63 currently meet that standard. The other published cases include
+OWC, WaveBot, WaveStar, Morison, and nonlinear hydrodynamics; see the parity
+ledger for the full breakdown. The MATLAB badge
 counts 42 selected source workflow jobs, not additional cases.
 Python tests reports CI; Test coverage measures Python line and branch
 execution. Neither is a WEC-Sim parity fraction.

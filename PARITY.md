@@ -484,9 +484,20 @@ file paths, plus 17 other or dynamic cases. Generate the CSV with
 `python tools/build_reference_case_inventory.py CORE_CHECKOUT APPLICATIONS_CHECKOUT`.
 This is a source inventory, not a claim that every case runs in Python.
 The four README case badges partition that inventory by model family: RM3
-17/21, OSWEC 10/13, Sphere 12/12, and additional systems 13/17 have
-published-input gates. The last group adds cable, generalized-body-mode,
-OWC, WaveBot/WaveStar, Morison, nonlinear-hydro, and variable-mass inputs.
+17/21, OSWEC 10/13, Sphere 12/12, and other published cases 13/17 have
+published-input gates. A named system gets its own badge when it has more than
+five inventoried cases; smaller systems stay in the disjoint remainder.
+
+| Other published cases | Gated / inventoried |
+| --- | ---: |
+| OWC | 1/2 |
+| WaveBot (`Load_Mitigating_Controls`) | 2/2 |
+| WaveStar (`WECCCOMP`) | 2/3 |
+| Nonlinear hydrodynamics | 2/4 |
+| Morison elements | 2/2 |
+| Cable, generalized body modes, MOST, and variable mass | 4/4 |
+| **Total** | **13/17** |
+
 The 42-job MATLAB source sweep below is a separate check of selected source
 runs and variants, not 42 more case files.
 
