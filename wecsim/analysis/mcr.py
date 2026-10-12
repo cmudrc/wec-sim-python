@@ -162,6 +162,7 @@ def mcr_wave_statistics(
     The first row contains periods, the first column heights. A positive
     interior value selects that sea state, as in ``wecSimMCR.m``. The value is
     not a weight in the published postprocessing.
+    Workbook paths require the ``excel`` install extra; an in-memory grid does not.
     """
     if isinstance(matrix_or_file, (str, Path)):
         from openpyxl import load_workbook

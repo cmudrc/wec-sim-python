@@ -44,6 +44,8 @@ python -m pip install "git+https://github.com/cmudrc/wec-sim-python.git"
 ```
 
 Both methods provide the `wecsim` Python package and command.
+For Excel MCR workbooks or legacy wave plots, install the optional `excel` or
+`plot` extra, respectively (for example, `pip install -e ".[excel]"`).
 
 ## Quick start
 
