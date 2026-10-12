@@ -9,17 +9,17 @@ import pytest
 from scipy.io import loadmat
 
 from wecsim import JONSWAPWave, run_sphere_mpc
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
-from wecsim.mpcControl import (
+from wecsim.control.mpcControl import (
     integrate_sphere_mpc_force, predict_sphere_excitation,
     solve_sphere_mpc_qp,
 )
-from wecsim.mpcPlant import (
+from wecsim.control.mpcPlant import (
     build_sphere_mpc_matrices, replay_sphere_mpc_plant,
 )
-from wecsim.waveClass import WaveClass
+from wecsim.environment.waveClass import WaveClass
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

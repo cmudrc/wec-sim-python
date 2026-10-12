@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from wecsim.crank import AdjustableRodCrank, FixedRodCrank, PitchRodLinkage
+from wecsim.components.crank import AdjustableRodCrank, FixedRodCrank, PitchRodLinkage
 
 
 @pytest.mark.parametrize("linkage", [

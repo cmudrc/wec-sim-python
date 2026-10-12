@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.hardStops import LinearHardStops
+from wecsim.dynamics.hardStops import LinearHardStops
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

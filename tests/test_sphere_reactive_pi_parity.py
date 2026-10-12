@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.caseDynamics import run_case
+from wecsim.dynamics.caseDynamics import run_case
 
 
 SPHERE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")

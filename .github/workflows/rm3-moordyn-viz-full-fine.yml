@@ -7,8 +7,8 @@ on:
       - 'tests/matlab/rm3_moordyn_viz_full_fine.m'
       - 'tests/test_rm3_moordyn_viz_full_fine.py'
       - 'wecsim/api.py'
-      - 'wecsim/caseDynamics.py'
-      - 'wecsim/moorDyn.py'
+      - 'wecsim/dynamics/caseDynamics.py'
+      - 'wecsim/dynamics/moorDyn.py'
   workflow_dispatch:
 
 jobs:

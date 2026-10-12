@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from wecsim.hydraulic import CompressibleCylinder
+from wecsim.components.hydraulic import CompressibleCylinder
 
 
 def test_equal_chambers_exchange_pressure_under_piston_motion():

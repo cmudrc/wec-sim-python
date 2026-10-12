@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 
 from wecsim import RegularCICWave, WEC
-from wecsim.caseDynamics import run_case
-from wecsim.rm3Regular import solve_rm3_regular
+from wecsim.dynamics.caseDynamics import run_case
+from wecsim.reference_models.rm3Regular import solve_rm3_regular
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

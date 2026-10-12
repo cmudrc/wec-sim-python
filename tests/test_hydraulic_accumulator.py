@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from wecsim.hydraulic import GasChargedAccumulator
+from wecsim.components.hydraulic import GasChargedAccumulator
 
 
 def test_inflow_compresses_gas_and_outflow_expands_it():

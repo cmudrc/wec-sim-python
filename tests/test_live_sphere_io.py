@@ -5,7 +5,7 @@ import os
 import numpy as np
 import pytest
 
-from wecsim.bodyClass import BodyClass
+from wecsim.hydrodynamics.bodyClass import BodyClass
 
 SPHERE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")
 pytestmark = pytest.mark.skipif(not SPHERE_H5, reason="MATLAB BEMIO Sphere file not provided")

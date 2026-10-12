@@ -12,7 +12,7 @@ from wecsim import MostWindField, read_turbsim_bts
 
 def test_most_wind_advection_sample_order_and_bounds():
     # One component carries its time index so X-plane shifts are observable.
-    from wecsim.turbSim import TurbSimWind
+    from wecsim.environment.turbSim import TurbSimWind
 
     velocity = np.broadcast_to(np.arange(30)[:, None, None, None],
                                (30, 3, 2, 2)).copy()

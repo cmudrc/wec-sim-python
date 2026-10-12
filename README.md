@@ -48,6 +48,23 @@ The installable code is in `wecsim/`, and runnable cases and bundled RM3
 inputs are in `examples/`. Sungjun Won's early sketches remain available in
 Git history.
 
+The source tree keeps the public builder in `wecsim/api.py` and groups its
+implementation by role:
+
+| Package | Contents |
+| --- | --- |
+| `environment/` | Incident waves and wind inputs |
+| `hydrodynamics/` | HDF5 body data, radiation, and fluid forces |
+| `dynamics/` | Coordinates, joints, integration, and mechanical constraints |
+| `components/` | PTO, hydraulic, electric, and air devices |
+| `control/` | Sampled controls and MPC building blocks |
+| `reference_models/` | Runners for published WEC-Sim applications |
+| `visualization/` | ParaView output |
+
+Public names remain importable from `wecsim`. Direct implementation imports
+now use these subpackages, such as `wecsim.hydrodynamics.bodyClass` for the
+body reader.
+
 ## Goal of WEC-Sim-Python
 **WEC-Sim-Python** aims to help researchers, start-up companies, and enthusiasts without access to MATLAB in order to use the open-source code provided by NREL and Sandia lab. Also, with growing research in the field of machine learning, **WEC-Sim-Python** could be more convenient for those who develop machine learning projects utilizing Python.
 
@@ -631,7 +648,7 @@ both fixed-joint reactions:
 
 ```python
 from wecsim import run_fixed_hydro_monopile
-from wecsim.irregularWave import pm_equal_energy_components
+from wecsim.environment.irregularWave import pm_equal_energy_components
 
 hydro = "applications/Morison_Element/hydroData/monopile.h5"
 sea = pm_equal_energy_components(
@@ -836,7 +853,7 @@ Threefry substream without a saved phase file. A supplied `phaseData` matrix
 still replays a specific frequency-by-direction realization:
 
 ```python
-from wecsim.waveClass import WaveClass
+from wecsim.environment.waveClass import WaveClass
 
 wave = WaveClass("irregular")
 wave.T, wave.H = 8, 2.5
@@ -881,7 +898,7 @@ those numerical gates do not establish a physically valid radiation model.
 The paired Cases 3 and 4 tests continue to check convolution separately.
 
 For a prescribed two-body velocity history, the diagnostic
-`wecsim.radiation.replay_rm3_fitted_radiation` reproduces the pinned MATLAB
+`wecsim.hydrodynamics.radiation.replay_rm3_fitted_radiation` reproduces the pinned MATLAB
 fit's force convention on saved motion. The opt-in coupled runner above
 advances its own motion and uses the same zero-direct-term source convention.
 
@@ -1277,7 +1294,7 @@ Run `python -m examples.rm3_hydraulic` for a complete example, or use its
 ```python
 from examples.rm3_hydraulic import HYDRO, build_pto
 from wecsim import run_rm3_rectified_hydraulic
-from wecsim.irregularWave import pm_equal_energy_components
+from wecsim.environment.irregularWave import pm_equal_energy_components
 
 sea = pm_equal_energy_components(
     HYDRO, significant_height=2.5, peak_period=8,
@@ -1378,7 +1395,7 @@ range in which linear BEM coefficients can be trusted.
 The published Sphere free-decay cases can also be calculated with the focused solver:
 
 ```python
-from wecsim.linearHeave import solve_heave_free_decay
+from wecsim.dynamics.linearHeave import solve_heave_free_decay
 
 response = solve_heave_free_decay("path/to/sphere.h5", initial_displacement=1.0)
 # response.time, response.position, response.velocity, response.force_total
@@ -1391,7 +1408,7 @@ WEC-Sim_Applications Sphere `bemio.m`, or download the HDF5 artifact from the
 The RM3 regular-wave heave subsystem can be calculated with the same module:
 
 ```python
-from wecsim.linearHeave import solve_two_body_regular_heave
+from wecsim.dynamics.linearHeave import solve_two_body_regular_heave
 
 response = solve_two_body_regular_heave(
     "path/to/rm3.h5", wave_height=2.5, wave_period=8.0,
@@ -1407,7 +1424,7 @@ frequency. The coupled RM3 reference model also predicts both body surge
 motions and their shared pitch:
 
 ```python
-from wecsim.rm3Regular import solve_rm3_regular
+from wecsim.reference_models.rm3Regular import solve_rm3_regular
 
 response = solve_rm3_regular("path/to/rm3.h5")
 # response.body_position and response.body_velocity have shape
@@ -1421,8 +1438,8 @@ The OSWEC reference can generate a seeded Python wave realization and pass
 its six-component excitation history to the hinge-pitch solver:
 
 ```python
-from wecsim.hingePitch import solve_hinged_pitch_from_excitation
-from wecsim.irregularWave import (
+from wecsim.dynamics.hingePitch import solve_hinged_pitch_from_excitation
+from wecsim.environment.irregularWave import (
     pm_equal_energy_components, synthesize_irregular_response,
 )
 
@@ -1525,7 +1542,7 @@ and Morison elements:
 
 ```python
 from wecsim import MorisonElement, PitchRodLinkage, run_oswec_desalination
-from wecsim.irregularWave import pm_equal_energy_components
+from wecsim.environment.irregularWave import pm_equal_energy_components
 
 hydro_file = "path/to/oswec.h5"
 sea = pm_equal_energy_components(
@@ -1634,7 +1651,7 @@ generating `WECCCOMP/hydroData/wavestar.h5` with its `bemio.m`:
 ```python
 import numpy as np
 from wecsim import run_wavestar_published
-from wecsim.irregularWave import jonswap_equal_energy_components
+from wecsim.environment.irregularWave import jonswap_equal_energy_components
 
 hydro = "applications/WECCCOMP/hydroData/wavestar.h5"
 sea = jonswap_equal_energy_components(
@@ -1715,8 +1732,8 @@ sampled PTO to the WaveStar runner:
 ```python
 import numpy as np
 from wecsim import WaveStarNmpcPTO
-from wecsim.irregularWave import jonswap_equal_energy_components
-from wecsim.wavestar import run_wavestar_published
+from wecsim.environment.irregularWave import jonswap_equal_energy_components
+from wecsim.reference_models.wavestar import run_wavestar_published
 
 hydro = "applications/WECCCOMP/hydroData/wavestar.h5"
 sea = jonswap_equal_energy_components(
@@ -1855,8 +1872,8 @@ For a regular-wave ParaView surface, the legacy wave object can write numbered
 VTP wave meshes and `ground.txt` using WEC-Sim's grid layout:
 
 ```python
-from wecsim.waveClass import WaveClass
-from wecsim.paraviewClass import ParaviewClass
+from wecsim.environment.waveClass import WaveClass
+from wecsim.visualization.paraviewClass import ParaviewClass
 
 waves = WaveClass("regular")
 waves.H, waves.T, waves.waveDir = 2.5, 8, [0]
@@ -1877,7 +1894,7 @@ numbered line VTP files. After writing the frames,
 writes the `.pvd` time-series collection and `bodies.txt` display settings;
 each body entry supplies its name, RGB color, and opacity. Wave, body,
 mooring, and collection serialization have focused MATLAB source gates. For a regular-wave body with logged world-CG poses,
-`wecsim.nonlinearHydro.regular_wave_mesh_pressures(...)` calculates the three
+`wecsim.hydrodynamics.nonlinearHydro.regular_wave_mesh_pressures(...)` calculates the three
 face-pressure arrays from its STL mesh, wave settings, and output times; pass
 its `hydrostatic`, `nonlinear_wave`, and `linear_wave` fields to the body VTP
 writer. The actual published OSWEC nonlinear visualization flap pressures

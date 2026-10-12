@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim import RegularWave, SimpleDirectDrive, WEC, WorldPoint
-from wecsim.bodyClass import BodyClass
+from wecsim.hydrodynamics.bodyClass import BodyClass
 
 
 SPHERE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")

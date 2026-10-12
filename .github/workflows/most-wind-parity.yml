@@ -9,7 +9,7 @@ on:
       - 'tests/matlab/most_wind_advection_baseline.m'
       - 'tests/test_turbsim_wind.py'
       - 'tests/test_most_wind_advection.py'
-      - 'wecsim/turbSim.py'
+      - 'wecsim/environment/turbSim.py'
       - 'wecsim/__init__.py'
   pull_request:
     paths:
@@ -18,7 +18,7 @@ on:
       - 'tests/matlab/most_wind_advection_baseline.m'
       - 'tests/test_turbsim_wind.py'
       - 'tests/test_most_wind_advection.py'
-      - 'wecsim/turbSim.py'
+      - 'wecsim/environment/turbSim.py'
       - 'wecsim/__init__.py'
   workflow_dispatch:
 

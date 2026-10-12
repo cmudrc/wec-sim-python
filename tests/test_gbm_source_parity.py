@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.bodyClass import BodyClass
+from wecsim.hydrodynamics.bodyClass import BodyClass
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

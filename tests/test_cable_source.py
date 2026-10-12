@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim import PlanarCableAttachment, WecSimCableTension
-from wecsim.bodyClass import BodyClass
+from wecsim.hydrodynamics.bodyClass import BodyClass
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

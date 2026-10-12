@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.radiation import replay_rm3_fitted_radiation
+from wecsim.hydrodynamics.radiation import replay_rm3_fitted_radiation
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

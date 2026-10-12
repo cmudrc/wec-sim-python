@@ -9,7 +9,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from wecsim.bodyClass import BodyClass  # noqa: E402
+from wecsim.hydrodynamics.bodyClass import BodyClass  # noqa: E402
 
 MODEL = os.environ.get("WEC_SIM_REFERENCE_MODEL")
 CORE = os.environ.get("WEC_SIM_MATLAB_CORE_DIR")

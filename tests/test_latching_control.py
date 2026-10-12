@@ -3,7 +3,7 @@
 import pytest
 
 from wecsim import LatchingControl
-from wecsim.controls import LatchingState
+from wecsim.control.controls import LatchingState
 
 
 def test_reversal_switches_to_finite_dissipative_latch():

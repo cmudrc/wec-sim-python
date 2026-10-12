@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 
 from wecsim import MultiPMWave, PMWave, WEC, WorldPoint
-from wecsim.caseDynamics import run_case
-from wecsim.irregularWave import (
+from wecsim.dynamics.caseDynamics import run_case
+from wecsim.environment.irregularWave import (
     IrregularComponents, synthesize_multiple_irregular_response,
 )
 

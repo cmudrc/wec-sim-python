@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim import PMWave
-from wecsim.irregularWave import _random_phases
+from wecsim.environment.irregularWave import _random_phases
 
 
 @pytest.mark.parametrize("substream", (1, 2, 3))

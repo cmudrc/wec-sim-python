@@ -11,7 +11,7 @@ on:
       - 'tests/test_paraview_wave_source.py'
       - 'tests/test_paraview_body_source.py'
       - 'tests/test_paraview_mooring_source.py'
-      - 'wecsim/paraviewClass.py'
+      - 'wecsim/visualization/paraviewClass.py'
   pull_request:
     paths:
       - '.github/workflows/paraview-wave-parity.yml'
@@ -21,7 +21,7 @@ on:
       - 'tests/test_paraview_wave_source.py'
       - 'tests/test_paraview_body_source.py'
       - 'tests/test_paraview_mooring_source.py'
-      - 'wecsim/paraviewClass.py'
+      - 'wecsim/visualization/paraviewClass.py'
   workflow_dispatch:
 
 jobs:

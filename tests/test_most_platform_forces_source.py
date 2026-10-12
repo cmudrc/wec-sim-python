@@ -7,7 +7,7 @@ import pytest
 from scipy.io import loadmat
 
 from wecsim import MostPlatformHydrodynamics, MostStaticMooring, MostTowerReaction
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
 

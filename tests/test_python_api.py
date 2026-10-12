@@ -8,10 +8,10 @@ import pytest
 from scipy.io import loadmat
 
 from examples.configurable_rm3_pto import HYDRO, build_wec
-from wecsim.caseDynamics import run_case
+from wecsim.dynamics.caseDynamics import run_case
 from wecsim import (FullDirectionalSpectrumWave, ImportedElevationWave, ImportedSpectrumWave, JONSWAPWave, LatchingControl, MultiPMWave, NoWave, PMWave,
                     RegularWave, WEC, WorldPoint)
-from wecsim.irregularWave import (imported_spectrum_components,
+from wecsim.environment.irregularWave import (imported_spectrum_components,
                                   jonswap_equal_energy_components,
                                   pm_equal_energy_components,
                                   synthesize_irregular_response)

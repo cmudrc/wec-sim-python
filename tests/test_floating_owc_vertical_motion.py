@@ -6,8 +6,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.bodyClass import BodyClass
-from wecsim.generalDynamics import BodyMotion, DynamicBody, GeneralizedDynamics
+from wecsim.hydrodynamics.bodyClass import BodyClass
+from wecsim.dynamics.generalDynamics import BodyMotion, DynamicBody, GeneralizedDynamics
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

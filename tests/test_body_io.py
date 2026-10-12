@@ -9,7 +9,7 @@ import scipy.io
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from wecsim.bodyClass import BodyClass  # noqa: E402
+from wecsim.hydrodynamics.bodyClass import BodyClass  # noqa: E402
 
 
 def test_rm3_hydrodynamic_bodies_load():

@@ -10,9 +10,9 @@ from scipy.interpolate import CubicSpline
 from scipy.signal import fftconvolve
 
 from wecsim import PMWave, WEC, WorldPoint
-from wecsim.bodyClass import BodyClass
-from wecsim.irregularWave import pm_equal_energy_components
-from wecsim.passiveYaw import (
+from wecsim.hydrodynamics.bodyClass import BodyClass
+from wecsim.environment.irregularWave import pm_equal_energy_components
+from wecsim.hydrodynamics.passiveYaw import (
     HeldPassiveYawExcitation, SampledPassiveYawExcitation,
 )
 

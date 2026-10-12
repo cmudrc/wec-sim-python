@@ -10,8 +10,8 @@ from scipy.io import loadmat
 from scipy.spatial import cKDTree
 import trimesh
 
-from wecsim.paraviewClass import ParaviewClass
-from wecsim.waveClass import WaveClass
+from wecsim.visualization.paraviewClass import ParaviewClass
+from wecsim.environment.waveClass import WaveClass
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_OSWEC_PRESSURE_DIR")

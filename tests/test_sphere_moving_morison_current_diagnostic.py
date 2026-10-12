@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim import Current, RegularWave
-from wecsim.morison import MorisonElement, regular_morison_source_force
+from wecsim.hydrodynamics.morison import MorisonElement, regular_morison_source_force
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

@@ -13,7 +13,7 @@ from wecsim import (
     MorisonElement, PitchRodLinkage, ReverseOsmosisHydraulicNetwork,
     ReverseOsmosisMembrane, run_oswec_desalination,
 )
-from wecsim.irregularWave import pm_equal_energy_components
+from wecsim.environment.irregularWave import pm_equal_energy_components
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

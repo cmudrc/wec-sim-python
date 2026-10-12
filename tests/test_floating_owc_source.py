@@ -7,7 +7,7 @@ import h5py
 import numpy as np
 import pytest
 
-from wecsim.bodyClass import BodyClass
+from wecsim.hydrodynamics.bodyClass import BodyClass
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

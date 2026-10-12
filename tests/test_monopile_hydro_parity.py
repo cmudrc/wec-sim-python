@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim import run_fixed_hydro_monopile
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     pm_equal_energy_components,
 )
 

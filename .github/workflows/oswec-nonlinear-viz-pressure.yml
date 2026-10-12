@@ -8,16 +8,16 @@ on:
       - 'tests/matlab/oswec_nonlinear_viz_pressure_baseline.m'
       - 'tests/test_oswec_nonlinear_viz_pressure.py'
       - 'tests/test_oswec_nonlinear_viz_vtp.py'
-      - 'wecsim/nonlinearHydro.py'
-      - 'wecsim/paraviewClass.py'
+      - 'wecsim/hydrodynamics/nonlinearHydro.py'
+      - 'wecsim/visualization/paraviewClass.py'
   pull_request:
     paths:
       - '.github/workflows/oswec-nonlinear-viz-pressure.yml'
       - 'tests/matlab/oswec_nonlinear_viz_pressure_baseline.m'
       - 'tests/test_oswec_nonlinear_viz_pressure.py'
       - 'tests/test_oswec_nonlinear_viz_vtp.py'
-      - 'wecsim/nonlinearHydro.py'
-      - 'wecsim/paraviewClass.py'
+      - 'wecsim/hydrodynamics/nonlinearHydro.py'
+      - 'wecsim/visualization/paraviewClass.py'
   workflow_dispatch:
 
 jobs:

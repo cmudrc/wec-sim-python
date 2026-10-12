@@ -6,10 +6,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.irregularWave import (
+from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, synthesize_irregular_response,
 )
-from wecsim.wavestar import run_wavestar_published
+from wecsim.reference_models.wavestar import run_wavestar_published
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")

@@ -8,9 +8,9 @@ import sys
 import numpy as np
 import pytest
 
-from wecsim.ptoConnections import build_linear_ptos
-from wecsim.caseDynamics import run_case
-from wecsim.linearCoordinates import build_coordinate_maps
+from wecsim.dynamics.ptoConnections import build_linear_ptos
+from wecsim.dynamics.caseDynamics import run_case
+from wecsim.dynamics.linearCoordinates import build_coordinate_maps
 
 
 ROOT = Path(__file__).resolve().parents[1]

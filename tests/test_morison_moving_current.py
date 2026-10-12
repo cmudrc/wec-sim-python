@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from wecsim import Current, RegularWave, WEC
-from wecsim.morison import MorisonElement, regular_wave_axial_morison_terms
+from wecsim.hydrodynamics.morison import MorisonElement, regular_wave_axial_morison_terms
 
 
 ELEMENT = MorisonElement(

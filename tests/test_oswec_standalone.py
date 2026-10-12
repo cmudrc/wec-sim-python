@@ -5,9 +5,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim.hingePitch import solve_hinged_pitch_from_excitation
-from wecsim.caseDynamics import run_case
-from wecsim.irregularWave import (
+from wecsim.dynamics.hingePitch import solve_hinged_pitch_from_excitation
+from wecsim.dynamics.caseDynamics import run_case
+from wecsim.environment.irregularWave import (
     pm_equal_energy_components, synthesize_irregular_response,
 )
 

@@ -12,7 +12,7 @@ from wecsim import (
     GasChargedAccumulator, RectifiedHydraulicPTO, RectifyingCheckValve,
     run_rm3_rectified_hydraulic,
 )
-from wecsim.irregularWave import pm_equal_energy_components
+from wecsim.environment.irregularWave import pm_equal_energy_components
 
 
 HYDRO = Path(__file__).resolve().parent / "data/rm3.h5"

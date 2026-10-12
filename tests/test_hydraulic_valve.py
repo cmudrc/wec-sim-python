@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from wecsim.hydraulic import RectifyingCheckValve
+from wecsim.components.hydraulic import RectifyingCheckValve
 
 
 def _valve():

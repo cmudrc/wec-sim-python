@@ -13,8 +13,8 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from wecsim.waveClass import WaveClass  # noqa: E402
-from wecsim.paraviewClass import ParaviewClass  # noqa: E402
+from wecsim.environment.waveClass import WaveClass  # noqa: E402
+from wecsim.visualization.paraviewClass import ParaviewClass  # noqa: E402
 
 
 def test_regular_wave_matches_matlab_fixture():

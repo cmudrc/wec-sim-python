@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim import RegularCICWave, RegularWave, WEC, WorldPoint
-from wecsim.nonlinearHydro import HeaveMeshHydro
+from wecsim.hydrodynamics.nonlinearHydro import HeaveMeshHydro
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")

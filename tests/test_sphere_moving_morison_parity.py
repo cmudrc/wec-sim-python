@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from wecsim import NoWave, WEC
-from wecsim.morison import MorisonElement, no_wave_heave_morison_terms
+from wecsim.hydrodynamics.morison import MorisonElement, no_wave_heave_morison_terms
 
 
 SPHERE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")
