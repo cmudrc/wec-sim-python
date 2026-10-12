@@ -1,4 +1,4 @@
-"""Render the published-case motion badge from the pinned evidence ledger."""
+"""Render the published-case alignment badge from the pinned evidence ledger."""
 
 import argparse
 import csv
@@ -9,11 +9,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "tests/reference_cases.csv"
 STATUS = ROOT / "tests/reference_case_status.csv"
-BADGE = ROOT / "docs/parity-motion.json"
+BADGE = ROOT / "docs/parity-cases.json"
 EVIDENCE = {
     "independent_motion", "stationary_force", "qualified_motion",
     "mixed_modes", "open_motion",
 }
+GATED = {"independent_motion", "stationary_force"}
 
 
 def rows(path):
@@ -37,10 +38,10 @@ def render():
     unknown = sorted({row["motion_evidence"] for row in statuses} - EVIDENCE)
     if unknown:
         raise ValueError(f"unknown motion evidence categories: {unknown}")
-    gated = sum(row["motion_evidence"] == "independent_motion" for row in statuses)
+    gated = sum(row["motion_evidence"] in GATED for row in statuses)
     payload = {
         "schemaVersion": 1,
-        "label": "WEC-Sim case motion",
+        "label": "WEC-Sim cases",
         "message": f"{gated}/{len(cases)} gated",
         "color": "blue",
     }
