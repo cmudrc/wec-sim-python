@@ -293,7 +293,7 @@ class WaveClass:
         Does not get used in any method
 
         """
-        m0 = np.trapezoid(self.S, x=self.w)
+        m0 = integrate.trapezoid(self.S, x=self.w)
         HsTest = 4*np.sqrt(m0)
         I = np.argmax(np.abs(self.S))
         wp = self.w[I]
@@ -605,7 +605,7 @@ class WaveClass:
             # Full Wave Power Equation
             self.Pw = np.sum((1/2)*rho*g*power_spectrum*self.dw*np.sqrt(g/self.k*np.tanh(self.k*self.waterDepth))*(1 + 2*self.k*self.waterDepth/np.sinh(2*self.k*self.waterDepth)))
         if self.freqDisc == 'EqualEnergy':
-            m0 = np.trapezoid(np.abs(S_f),freq)
+            m0 = integrate.trapezoid(np.abs(S_f),freq)
             numBins = self.numFreq+1
             a_targ = m0/numBins
             SF = integrate.cumulative_trapezoid(S_f, freq, initial=0) # MATLAB cumtrapz equivalent

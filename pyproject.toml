@@ -9,7 +9,7 @@ description = "Python WEC dynamics with MATLAB WEC-Sim parity checks"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "numpy",
+    "numpy>=1.26",
     "randomgen>=2.3,<3",
     "scipy",
     "matplotlib",
