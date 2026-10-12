@@ -1152,15 +1152,20 @@ active predictor. The new fixed-source-input regression gate requires the 30 s
 `1e-5` rad, `0.001` N m, and `0.01` N, respectively; it also requires an
 active command above 1 N m.
 
-Over the full 225 s, the same 1 ms-versus-0.5 ms Python pair differs by up to
-`0.007413` rad pitch, `0.04573` rad/s pitch speed, and `0.5106` N m command.
-Feedback still amplifies small numerical differences over the long horizon;
-the published MATLAB-versus-1 ms Python gaps remain larger at `0.04110` rad,
-`0.4356` rad/s, and `2.825` N m. Full-duration pointwise convergence and
-published closed-loop parity remain unestablished. The previous quarter-step
-full-duration audit used the old force-hold implementation and is superseded
-for the current Python solver; a new full-duration quarter-step run has not
-been claimed.
+Over the full 225 s, a fresh fixed-fit audit on `dbcd62bf` runs the corrected
+torque-hold actuator with 1, 0.5, and 0.25 ms Python plant steps and the same
+50 ms controller step. It uses the checksum-verified HDF5 and saved phases from
+the fixed-fit source run below, with all 4,501 output times aligned. The
+1-to-0.5 ms and 0.5-to-0.25 ms maximum Python differences are respectively
+`0.007413` and `0.005893` rad pitch, `0.04573` and `0.03115` rad/s pitch speed,
+and `0.5106` and `0.6578` N m torque request. The force step difference also
+grows from `2.501` to `3.155` N, so pointwise feedback convergence is not
+established. Against the same published MATLAB `ode8` trajectory, the 1 ms
+and 0.25 ms Python peak pitch gaps are `0.04110` and `0.04027` rad, and both
+torque-request gaps are `2.825` N m. Refining the Python plant alone does not
+close the published closed-loop gap. This local step audit supersedes the
+earlier quarter-step run made before the actuator correction; it changes no
+physical default and is not an independent NMPC parity gate.
 On the [fixed-fit published source run](https://github.com/cmudrc/wec-sim-python/actions/runs/38155596820),
 the independent 1 ms Python run differs from MATLAB's 50 ms `ode8` output by
 3.62% pitch RMS, 7.62% peak pitch, 6.30% pitch-speed RMS, and 5.91% signed
