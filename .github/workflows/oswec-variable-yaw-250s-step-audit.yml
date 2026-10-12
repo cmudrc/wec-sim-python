@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/oswec-variable-yaw-250s-step-audit.yml'
       - 'tests/matlab/oswec_variable_yaw_250s_step_audit.m'
+      - 'tests/test_variable_yaw_heading_bank.py'
   workflow_dispatch:
 
 jobs:
@@ -37,6 +38,14 @@ jobs:
       - uses: matlab-actions/run-command@v3
         with:
           command: addpath('tests/matlab'); oswec_variable_yaw_250s_step_audit()
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e . pytest
+      - run: python -m pytest -q -s tests/test_variable_yaw_heading_bank.py::test_irregular_250s_selected_bank_step_diagnostic
+        env:
+          WEC_SIM_APPLICATIONS_DIR: applications
+          WEC_SIM_MATLAB_250S_AUDIT_DIR: matlab-oswec-variable-yaw-250s-audit
       - uses: actions/upload-artifact@v4
         if: always()
         with:
