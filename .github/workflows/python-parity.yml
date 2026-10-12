@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - run: python3 tools/render_parity_badge.py --check
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
