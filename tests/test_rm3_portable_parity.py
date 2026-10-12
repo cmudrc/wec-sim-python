@@ -1,0 +1,66 @@
+"""Keep a published MATLAB RM3 trajectory paired in ordinary Python CI."""
+
+from pathlib import Path
+
+import numpy as np
+
+from wecsim import RegularWave, WEC
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REFERENCE = ROOT / "tests/fixtures/matlab/rm3_regular_wave.npz"
+HYDRO = ROOT / "examples/data/rm3.h5"
+
+
+def _max_error(actual, expected, limit, label):
+    assert actual.shape == expected.shape, f"{label}: mismatched shape"
+    assert np.isfinite(actual).all() and np.isfinite(expected).all(), label
+    error = float(np.max(np.abs(actual - expected)))
+    assert error < limit, f"{label}: {error:.6g} exceeds {limit:.6g}"
+
+
+def test_published_rm3_regular_wave_body_and_pto_motion():
+    """Compare every saved sample, including inactive axes and PTO power."""
+    wec = WEC("RM3 published regular wave")
+    float_body = wec.body("float", HYDRO, inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", HYDRO, inertia=(0, 94_407_091.24, 0))
+    wec.floating_joint(float_body, spar, damping=1_200_000,
+                       radiation_method="constant")
+    result = wec.run(RegularWave(2.5, 8), dt=0.1, end_time=400,
+                     ramp_time=100)
+
+    with np.load(REFERENCE, allow_pickle=False) as source:
+        assert source["time"].shape == (4001,)
+        assert source["body_position"].shape == (2, 4001, 6)
+        assert source["body_velocity"].shape == (2, 4001, 6)
+        np.testing.assert_allclose(result.time, source["time"], rtol=0,
+                                   atol=1e-10)
+        body_position = source["body_position"]
+        body_velocity = source["body_velocity"]
+
+        # Source columns follow [surge, sway, heave, roll, pitch, yaw].
+        # The published joint has no sway, roll, or yaw motion.
+        position_limits = (0.04, 1e-10, 0.006, 1e-10, 0.001, 1e-10)
+        velocity_limits = (0.03, 1e-10, 0.004, 1e-10, 0.001, 1e-10)
+        for body_index, name in enumerate(("float", "spar")):
+            for dof, (position_limit, velocity_limit) in enumerate(
+                zip(position_limits, velocity_limits)
+            ):
+                motion = result.bodies[name]
+                _max_error(motion.position[:, dof],
+                           body_position[body_index, :, dof],
+                           position_limit, f"{name} position DOF {dof}")
+                _max_error(motion.velocity[:, dof],
+                           body_velocity[body_index, :, dof],
+                           velocity_limit, f"{name} velocity DOF {dof}")
+
+        pto = result.ptos["relative_heave"]
+        for label, actual, expected, limit in (
+            ("stroke", pto.stroke, source["pto_stroke"], 0.006),
+            ("speed", pto.velocity, source["pto_speed"], 0.005),
+            ("force", pto.force, source["pto_force"], 6_000),
+            # MATLAB logs mechanical power with the opposite sign from
+            # Python's absorbed-power convention for this linear damper.
+            ("absorbed power", pto.absorbed_power, -source["pto_power"], 7_000),
+        ):
+            _max_error(actual, expected, limit, f"RM3 PTO {label}")
