@@ -1559,8 +1559,7 @@ using the source body poses and line histories. The published OSWEC
 nonlinear wave, flap, and base VTP histories are paired over all 1,201
 frames using source body poses and pressures. Other application-specific
 geometry and pressure histories remain open.
-The older object tests import duplicate copies of classes inside test folders.
-The parity tests here import the production files instead.
-Six inherited files under `tests/test_simulink` still contain unfinished
-MATLAB-like Python and do not parse; they are outside the collected pytest
-suite. The `wecsim` package compiles, and the scoped production parity suite runs.
+The inherited uncollected object and Simulink test code, including six files
+that did not parse as Python, has been removed. The data fixtures still used
+by current parity tests remain under `tests/test_objects`. Current tests import
+the production `wecsim` package.
