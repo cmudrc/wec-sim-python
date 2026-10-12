@@ -125,6 +125,29 @@ class _DelayedSampledPTO:
         return self.actuator.force_at(stroke)
 
 
+class _PrescribedDelayedPTO:
+    """Apply MATLAB's saved request, retaining the derived one-tick delay."""
+
+    def __init__(self, commands):
+        self.commands = np.asarray(commands).reshape(-1)
+        self.actuator = WaveStarNmpcActuator()
+        self.sample = 0
+
+    def step(self, stroke, *, noise=0., dropout=False):
+        assert noise == 0. and not dropout
+        if self.sample % 50 == 0:
+            force = self.actuator.step(
+                self.commands[max(0, self.sample // 50 - 1)], stroke,
+            )
+        else:
+            force = self.actuator.force_at(stroke)
+        self.sample += 1
+        return force
+
+    def force_at_stroke(self, stroke):
+        return self.actuator.force_at(stroke)
+
+
 @pytest.mark.skipif(not HYDRO, reason="pinned WaveStar hydrodynamics are absent")
 def test_split_step_independent_short_motion():
     source = Path(REFERENCE)
@@ -220,6 +243,51 @@ def test_full_split_step_source_consistency():
 
 
 @pytest.mark.skipif(not HYDRO, reason="pinned WaveStar hydrodynamics are absent")
+def test_full_split_step_prescribed_command_plant():
+    source = Path(REFERENCE)
+    prefix = "WECCCOMP_NMPC_SPLIT_STEP_FULL_"
+    body = np.loadtxt(
+        source / f"{prefix}WECCCOMP_Nonlinear_Model_Predictive_body1.csv",
+        delimiter=",", ndmin=2,
+    )
+    pto = np.loadtxt(
+        source / f"{prefix}WECCCOMP_Nonlinear_Model_Predictive_pto1.csv",
+        delimiter=",", ndmin=2,
+    )
+    components = np.loadtxt(source / f"{prefix}components.csv", delimiter=",")
+    log = loadmat(source / f"{prefix}controller.mat", simplify_cells=True)
+    _, command = _trace(log, "cmd_ptoM")
+    sea = jonswap_equal_energy_components(
+        HYDRO, significant_height=.1042, peak_period=1.836,
+        directions=np.array([0.]), spreading=np.array([1.]),
+        gamma=3.3, phase=components[:, 3, None],
+    )
+    response = run_wavestar_published(
+        HYDRO, sea, dt=.001, end_time=225., ramp_time=25,
+        g=9.80665, pto_controller=_PrescribedDelayedPTO(command),
+        output_stride=50,
+    )
+    np.testing.assert_allclose(response.time, body[:, 0], rtol=0, atol=1e-9)
+    errors = {
+        "pitch_rad": np.max(np.abs(response.angle - body[:, 5])),
+        "pitch_speed_rad_s": np.max(np.abs(
+            response.angular_speed - body[:, 11])),
+        "stroke_m": np.max(np.abs(response.pto_stroke - pto[:, 3])),
+        "axial_force_N": np.max(np.abs(response.pto_force - pto[:, 33])),
+    }
+    limits = {
+        "pitch_rad": 5e-4,
+        "pitch_speed_rad_s": 3e-3,
+        "stroke_m": 1e-4,
+        "axial_force_N": .02,
+    }
+    print("full split-step prescribed-command plant errors:", errors)
+    for name, limit in limits.items():
+        assert errors[name] < limit, f"{name}: {errors[name]} >= {limit}"
+
+
+@pytest.mark.skipif(not HYDRO, reason="pinned WaveStar hydrodynamics are absent")
+@pytest.mark.xfail(strict=True, reason="full autonomous NMPC motion diverges after activation")
 def test_full_split_step_independent_motion():
     source = Path(REFERENCE)
     prefix = "WECCCOMP_NMPC_SPLIT_STEP_FULL_"
