@@ -46,6 +46,8 @@ class LinearPTOConnection:
                  else np.asarray(force_override, dtype=float))
         if force.shape != stroke_speed.shape:
             raise ValueError("controlled PTO force must match the time grid")
+        # Passive absorbed power counts damping loss, not spring energy.
+        # For a controlled force, use minus force times stroke speed.
         absorbed_power = ((self.damping + self.velocity_control_gain) * stroke_speed**2
                           if force_override is None else -force * stroke_speed)
         output = (
@@ -115,6 +117,8 @@ def _endpoint(spec, name, maps, centers, names):
         raise ValueError(f"{name}.body must identify a body")
     offset = _vector(spec["point"], f"{name}.point")
     mapping = maps[index]
+    # Linearize the attachment point about its reference pose:
+    # delta_position = delta_CG + delta_rotation cross body_local_offset.
     point_jacobian = mapping[:3] + np.cross(mapping[3:].T, offset).T
     return centers[index] + offset, point_jacobian
 
@@ -156,6 +160,8 @@ def build_linear_ptos(specs, maps, centers, names, coordinate_names=None, *,
                                        maps, centers, names)
             second, second_j = _endpoint(spec["to"], f"ptos[{position}].to",
                                          maps, centers, names)
+            # The line of action is fixed at the neutral geometry. An
+            # explicit axis overrides the line between neutral endpoints.
             direction = (_vector(spec["axis"], f"ptos[{position}].axis")
                          if "axis" in spec else second - first)
             norm = np.linalg.norm(direction)
@@ -257,6 +263,8 @@ def build_linear_ptos(specs, maps, centers, names, coordinate_names=None, *,
                                          spring, equilibrium, control,
                                          control_gain)
         connections.append(connection)
+        # Stroke = jacobian @ q. Virtual work maps the scalar PTO force back
+        # to coordinates through the same jacobian, giving outer-product K/C.
         stiffness += spring * np.outer(jacobian, jacobian)
         if control is None:
             damping += (coefficient + control_gain) * np.outer(jacobian, jacobian)

@@ -220,6 +220,8 @@ class GeneralizedDynamics:
             if added.shape != (n,) or not np.isfinite(added).all():
                 raise ValueError("applied PTO force must be a finite generalized vector")
             force += added
+        # Each body moves in six dimensions, but only the independent q
+        # coordinates are solved. J maps q_dot into body velocity.
         velocities = tuple(motion.jacobian @ speed for motion in motions)
         for i, body in enumerate(self.bodies):
             motion = motions[i]
@@ -240,6 +242,8 @@ class GeneralizedDynamics:
             body_force = (body.static_force + excitation
                           - body.restoring @ motion.displacement
                           - rigid_mass @ motion.bias_acceleration)
+            # x_ddot = J q_ddot + bias_acceleration. Move the bias term to
+            # the force side, then project body inertia into q coordinates.
             mass += j.T @ rigid_mass @ j
             if body.state_inertia is not None:
                 extra_force, extra_mass = body.state_inertia(
@@ -253,6 +257,8 @@ class GeneralizedDynamics:
                     raise ValueError("state inertia needs a finite force and 6x6 mass")
                 body_force += extra_force - extra_mass @ motion.bias_acceleration
                 mass += j.T @ extra_mass @ j
+            # Added-mass and radiation blocks can couple this body to every
+            # other body; the column body contributes its own Jacobian.
             for k, other in enumerate(motions):
                 if self.added_mass_delay is None:
                     a = body.added_mass[k]
@@ -266,8 +272,11 @@ class GeneralizedDynamics:
                 body_force -= known_radiation[i]
                 if (body.radiation_kernel is not None
                         and self.radiation_discretization == "trapezoid"):
+                    # History excludes the current endpoint. Its kernel[0]
+                    # contribution has half weight in the trapezoidal rule.
                     current_velocity = np.concatenate(velocities)
                     body_force -= dt / 2 * (body.radiation_kernel[0] @ current_velocity)
+            # Virtual work gives generalized force J.T @ body_force.
             force += j.T @ body_force
         try:
             answer = np.linalg.solve(mass, force)
@@ -361,6 +370,8 @@ class GeneralizedDynamics:
             )
         else:
             self._integrate_regular(time, q, v, a, dt)
+        # Constraints are enforced by construction: reconstruct body motion
+        # from solved coordinates instead of projecting a drifting body state.
         positions = np.zeros((steps + 1, len(self.bodies), 6))
         velocities = np.zeros_like(positions)
         for step in range(steps + 1):

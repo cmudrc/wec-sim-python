@@ -122,6 +122,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
     if "mooring" in case and kind not in ("floating_joint", "floating_owc"):
         raise ValueError("the configured mooring requires a floating_joint or floating_owc")
 
+    # Layout-specific adapters retain their own joint or fluid mechanics;
+    # mapped coordinates are handled by the shared subspace solver below.
     if kind == "floating_owc":
         return _run_floating_owc(case, sim, wave, constraint, bodies, hydro,
                                  b2b, dt, end_time, ramp_time, rho, g)
@@ -273,6 +275,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         )
 
     if kind == "linear_subspace":
+        # Named coordinate maps define the body kinematics and PTO stroke
+        # projections without integrating redundant six-DOF body states.
         return _run_linear_subspace(
             case, sim, wave, constraint, bodies, hydro, b2b,
             dt, end_time, ramp_time, rho, g, base,
@@ -312,6 +316,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         )
 
     if kind == "fixed_hinge":
+        # The hinge solver follows the flap's curved center-of-gravity path;
+        # a constant pitch coordinate map would miss that translation.
         if (len(bodies) not in (1, 2)
                 or wave["type"] not in ("pm", "pm_multi", "regular",
                                         "spectrumImportFullDir")
@@ -610,6 +616,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 wave, base, hydro[0], time, dt, ramp_time, rho, g,
             )
             auxiliary_files = (wave_path,)
+            # The solver still requires nominal regular-wave arguments, but
+            # the supplied excitation history drives this imported case.
             height, period, direction = 0.0, 8.0, 0.0
         elif wave["type"] in ("pm", "jonswap"):
             components, auxiliary_files = _irregular_components_from_case(
@@ -638,6 +646,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 raise ValueError("floating-joint dynamics currently support 0-degree waves")
         if wave["type"] == "regular" and "radiation_memory" in sim:
             raise ValueError("regular-wave floating-joint dynamics use constant radiation")
+        # This joint path defaults to constant damping for regular waves;
+        # broad-band and prescribed-elevation cases use radiation memory.
         radiation_method = sim.get(
             "radiation_method",
             "constant" if wave["type"] == "regular" else "convolution",
