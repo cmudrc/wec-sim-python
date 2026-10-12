@@ -1,4 +1,4 @@
-"""Audit selected-heading step sensitivity before claiming long-run parity."""
+"""Audit early selected-heading step sensitivity before long-run parity."""
 
 import os
 from pathlib import Path
@@ -17,7 +17,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def test_irregular_250s_quarter_step_diagnostic():
+def test_irregular_120s_quarter_step_diagnostic():
     source = Path(SOURCE)
     quarter_file = source / "quarter_trajectory.csv"
     assert quarter_file.is_file(), "quarter-step source run is absent"
@@ -26,13 +26,15 @@ def test_irregular_250s_quarter_step_diagnostic():
     fine_wave = np.loadtxt(source / "fine_wave.csv", delimiter=",")
     quarter_wave = np.loadtxt(source / "quarter_wave.csv", delimiter=",")
     assert fine.shape == (50001, 7)
-    assert quarter.shape == (100001, 7)
+    assert quarter.shape == (48001, 7)
     assert fine_wave.shape == (50001, 2)
-    assert quarter_wave.shape == (100001, 2)
+    assert quarter_wave.shape == (48001, 2)
     assert all(np.isfinite(array).all() for array in
                (fine, quarter, fine_wave, quarter_wave))
-    np.testing.assert_allclose(quarter[::2, 0], fine[:, 0], rtol=0, atol=1e-10)
-    np.testing.assert_allclose(quarter_wave[::2], fine_wave, rtol=0,
+    fine120 = fine[:24001]
+    fine120_wave = fine_wave[:24001]
+    np.testing.assert_allclose(quarter[::2, 0], fine120[:, 0], rtol=0, atol=1e-10)
+    np.testing.assert_allclose(quarter_wave[::2], fine120_wave, rtol=0,
                                atol=1e-12)
 
     headings = np.arange(-30, 30.25, .25)
@@ -54,7 +56,7 @@ def test_irregular_250s_quarter_step_diagnostic():
     wec.rotational_pto("hinge", yaw, damping=120000)
     result = wec.run(
         PMWave(2.5, 8, direction=10, seed=1, phase_generator="matlab"),
-        dt=.0025, end_time=250, ramp_time=100, radiation_memory=40,
+        dt=.0025, end_time=120, ramp_time=100, radiation_memory=40,
     )
     np.testing.assert_allclose(result.time, quarter[:, 0], rtol=0, atol=1e-10)
     np.testing.assert_allclose(result.wave_elevation, quarter_wave[:, 1],
@@ -63,8 +65,8 @@ def test_irregular_250s_quarter_step_diagnostic():
     source_work = -np.trapezoid(quarter[:, 6], quarter[:, 0])
     python_work = np.trapezoid(result.ptos["hinge"].absorbed_power, result.time)
     assert source_work > 0 and python_work > 0
-    source_step_yaw = np.max(np.abs(fine[:, 1] - quarter[::2, 1]))
-    source_step_work = -np.trapezoid(fine[:, 6], fine[:, 0])
+    source_step_yaw = np.max(np.abs(fine120[:, 1] - quarter[::2, 1]))
+    source_step_work = -np.trapezoid(fine120[:, 6], fine120[:, 0])
     python_source_yaw = np.max(np.abs(
         result.bodies["flap"].position[:, 5] - quarter[:, 1]
     ))
@@ -72,7 +74,7 @@ def test_irregular_250s_quarter_step_diagnostic():
     # Record source self-change and cross-language difference separately;
     # neither is a trajectory parity gate until source convergence is shown.
     print(
-        f"250 s quarter-step source self-change: yaw={source_step_yaw:.6g} rad, "
+        f"120 s quarter-step source self-change: yaw={source_step_yaw:.6g} rad, "
         f"work={abs(source_work - source_step_work) / source_work:.3%}; "
         f"Python/source yaw={python_source_yaw:.6g} rad, "
         f"work={abs(python_work - source_work) / source_work:.3%}"

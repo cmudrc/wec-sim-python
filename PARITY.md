@@ -534,9 +534,12 @@ The last work change is 0.0552%, but yaw has not yet converged pointwise. At
 MATLAB's first coarse/fine heading mismatch (56.44 s), the two yaw states differ by
 only `7.92e-6` rad; their relative headings of 5.375181° and 5.374727°
 straddle the 5.375° bank boundary. The pinned
-MATLAB audit now requests a third step at 0.0025 s; source self-change and
-cross-language motion will remain separate diagnostics until that run is
-verified.
+MATLAB audit now requests a third step at 0.0025 s through 120 s, reusing the
+pinned 250 s coarse and half-step trajectories. The prior 250 s MATLAB
+0.01 and 0.005 s simulations took about 26 and 102 minutes, respectively;
+their observed scaling puts a 250 s quarter-step run beyond GitHub's six-hour
+job limit. The 120 s run will measure the first heading-switch separation,
+while 250 s source convergence and long-run motion parity remain open.
 
 The [RM3 MoorDyn visualization force export](https://github.com/cmudrc/wec-sim-python/actions/runs/38085085794)
 records acceleration, excitation, radiation, added mass, restoring, Morison,
