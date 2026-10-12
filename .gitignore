@@ -7,5 +7,5 @@ build/
 dist/
 .coverage
 coverage.xml
-coverage.json
+/coverage.json
 matlab-reference-output/
