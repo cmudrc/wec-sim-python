@@ -1292,6 +1292,17 @@ sensitivity. This source-to-source spread is comparable to the Python/source
 autonomous gap, so a single fresh MATLAB trajectory is not a stable
 pointwise full-duration target at the stated tight limits.
 
+For the derived 225 s split-step case, an additional full-duration gate now
+compares seven aggregate closed-loop outputs: RMS and peak float pitch, RMS
+pitch speed, RMS and peak axial PTO force, RMS requested torque, and signed
+PTO work (the integral of axial force times rod speed). Each Python value
+must be within `0.5%` of its paired MATLAB value. Against two independently
+regenerated R2025b fits, the largest observed relative aggregate gap is
+`0.239%` (requested torque RMS); the strict pointwise motion test remains
+an expected failure. This gate checks the overall response and energy
+exchange for the derived 1 ms `ode4` plant and 50 ms controller; the
+published single-rate `ode8` NMPC case remains `open_motion`.
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001
