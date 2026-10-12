@@ -753,7 +753,8 @@ class WEC:
                        location: WorldPoint = WorldPoint(0, 0, 0),
                        pto_name: str = "relative_heave",
                        damping: float = 0.0, stiffness: float = 0.0,
-                       equilibrium_position: float = 0.0,
+                       equilibrium_position: float | None = None,
+                       pretension: float | None = None,
                        mooring_surge_stiffness: float = 0.0,
                        moordyn: MoorDyn | None = None,
                        moordyn_point: BodyPoint | None = None,
@@ -764,6 +765,7 @@ class WEC:
 
         The PTO acts on float heave minus spar heave. The reduced joint does
         not model off-axis PTO endpoints or arbitrary Simscape constraints.
+        Pretension is in newtons and sets equilibrium to -pretension/stiffness.
         A native MoorDyn model can attach to one spar-local ``BodyPoint``;
         it is advanced once per time step with convolution radiation.
         """
@@ -795,9 +797,11 @@ class WEC:
                 raise ValueError("MoorDyn and the joint surge spring cannot be combined")
         elif moordyn_point is not None:
             raise ValueError("a MoorDyn attachment point needs a MoorDyn session")
+        equilibrium = _pto_equilibrium(stiffness, equilibrium_position,
+                                       pretension, "floating_joint")
         self._floating_joint = _FloatingJoint(
             float_body, spar_body, location, pto_name, damping, stiffness,
-            equilibrium_position, mooring_surge_stiffness, hard_stops,
+            equilibrium, mooring_surge_stiffness, hard_stops,
             radiation_method, added_mass_scheme, moordyn, moordyn_point,
         )
 
@@ -854,12 +858,16 @@ class WEC:
                     location: WorldPoint = WorldPoint(0, 0, -10),
                     pto_location: WorldPoint = WorldPoint(0, 0, -8.9),
                     pto_name: str = "hinge", damping: float = 0.0,
-                    stiffness: float = 0.0, equilibrium_angle: float = 0.0,
+                    stiffness: float = 0.0,
+                    equilibrium_angle: float | None = None,
+                    pretension: float | None = None,
                     added_mass_scheme: str = "implicit") -> None:
         """Select the published OSWEC pitch hinge and torsional PTO.
 
         The flap moves in surge, heave, and pitch about a fixed base. Both
-        joint and PTO points currently lie on the world z axis.
+        joint and PTO points currently lie on the world z axis. Pretension
+        is in newton meters and sets equilibrium to -pretension/stiffness
+        radians when stiffness is in newton meters per radian.
         """
         if (len(self.bodies) != (1 if base is None else 2)
                 or self.bodies[0] is not flap
@@ -879,15 +887,16 @@ class WEC:
             raise ValueError("fixed_hinge points need finite world locations on the z axis")
         if not isinstance(pto_name, str) or not pto_name:
             raise ValueError("fixed_hinge PTO name must be nonempty")
-        if (not np.isfinite([damping, stiffness, equilibrium_angle]).all()
-                or damping < 0 or stiffness < 0
-                or equilibrium_angle and not stiffness):
+        equilibrium = _pto_equilibrium(stiffness, equilibrium_angle,
+                                       pretension, "fixed_hinge")
+        if (not isinstance(damping, Real) or isinstance(damping, bool)
+                or not np.isfinite(damping) or damping < 0):
             raise ValueError("fixed_hinge PTO needs finite nonnegative damping and stiffness")
         if added_mass_scheme not in ("implicit", "simulink_delay"):
             raise ValueError("unsupported fixed_hinge added-mass scheme")
         self._fixed_hinge = _FixedHinge(
             flap, base, location, pto_location, pto_name,
-            damping, stiffness, equilibrium_angle, added_mass_scheme,
+            damping, stiffness, equilibrium, added_mass_scheme,
         )
 
     def coordinate(self, name: str, *motions: Motion) -> Coordinate:
@@ -1530,6 +1539,29 @@ class WEC:
             "stiffness": pto.stiffness,
             "equilibrium_position": pto.equilibrium_angle,
         }
+
+
+def _pto_equilibrium(stiffness: float, equilibrium: float | None,
+                     pretension: float | None, layout: str) -> float:
+    if equilibrium is not None and pretension is not None:
+        raise ValueError(f"{layout} PTO accepts either equilibrium or pretension")
+    for name, value in (("stiffness", stiffness), ("equilibrium", equilibrium),
+                        ("pretension", pretension)):
+        if value is not None and (not isinstance(value, Real)
+                                  or isinstance(value, bool)
+                                  or not np.isfinite(value)):
+            raise ValueError(f"{layout} PTO {name} must be finite")
+    if stiffness < 0:
+        raise ValueError(f"{layout} PTO stiffness must be nonnegative")
+    if (equilibrium or pretension) and not stiffness:
+        raise ValueError(
+            f"{layout} PTO nonzero equilibrium or pretension needs positive stiffness"
+        )
+    offset = (-pretension / stiffness if pretension is not None and stiffness
+              else equilibrium if equilibrium is not None else 0.0)
+    if not np.isfinite(offset):
+        raise ValueError(f"{layout} PTO equilibrium is outside its supported range")
+    return float(offset)
 
 
 def _state(value: Mapping[str, float] | Sequence[float]) -> dict | list:

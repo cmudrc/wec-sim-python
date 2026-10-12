@@ -114,6 +114,32 @@ def test_public_fixed_hinge_reports_named_motion_and_dissipated_power():
                                   np.full(11, -10.9))
 
 
+def test_reduced_pto_builders_accept_pretension():
+    rm3 = WEC("RM3 PTO pretension")
+    float_body = rm3.body("float", HYDRO, inertia=(0, 21_306_090.66, 0))
+    spar = rm3.body("spar", HYDRO, inertia=(0, 94_407_091.24, 0))
+    rm3.floating_joint(float_body, spar, stiffness=50_000, pretension=5_000)
+    case = rm3.to_case(RegularWave(2.5, 8), dt=0.1, end_time=0.2)
+    assert case["pto"]["equilibrium_position"] == -0.1
+
+    oswec = WEC("OSWEC PTO pretension")
+    flap = oswec.body(
+        "flap", ROOT / "tests/test_objects/test_bodyclass/testData/hydroData/oswec.h5",
+        mass=127_000, inertia=(0, 1.85e6, 0),
+    )
+    base = oswec.fixed_body("base", center_gravity=(0, 0, -10.9),
+                            mass=999, inertia=(1, 1, 1))
+    with pytest.raises(ValueError, match="either equilibrium or pretension"):
+        oswec.fixed_hinge(flap, base, stiffness=500,
+                          equilibrium_angle=0, pretension=-50)
+    oswec.fixed_hinge(flap, base, stiffness=500, pretension=-50)
+    result = oswec.run(RegularWave(2.5, 8), dt=0.1, end_time=0.2)
+    assert result.case["pto"]["equilibrium_position"] == 0.1
+    pto = result.ptos["hinge"]
+    np.testing.assert_allclose(pto.force, -500 * (pto.stroke - 0.1),
+                               rtol=0, atol=1e-10)
+
+
 def test_python_builder_supports_ground_anchor_and_named_initial_state():
     wec = WEC("Anchored float")
     body = wec.body("float", HYDRO)

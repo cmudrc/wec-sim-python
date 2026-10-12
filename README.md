@@ -1130,6 +1130,12 @@ requires positive stiffness. These fields default to zero, preserving the
 paired reference cases. For example, add
 `"stiffness": 100000, "equilibrium_position": 0.1` to the RM3 example's
 `pto` object to shift its neutral relative heave by 0.1 m.
+The Python builder accepts the same choice directly: use
+`wec.floating_joint(float_body, spar, stiffness=50000, pretension=5000)`
+for an equilibrium stroke of −0.1 m, or
+`wec.fixed_hinge(flap, base, stiffness=500, pretension=-50)` for an
+equilibrium pitch angle of 0.1 rad. Pass an equilibrium offset or pretension,
+not both.
 
 The `linear_subspace` layout uses `pto.stiffness_matrix` and
 `pto.damping_matrix`, with optional `pto.equilibrium_coordinate` (N values).
