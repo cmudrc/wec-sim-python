@@ -71,9 +71,11 @@ python -m pytest -q --cov=wecsim --cov-branch --cov-report=term-missing
 
 [Python CI](https://github.com/cmudrc/wec-sim-python/actions/workflows/python-parity.yml)
 runs the suite on each push and pull request, summarizes line and branch
-coverage, and uploads `coverage.xml` and `coverage.json`. Many MATLAB-dependent tests
-skip without their reference assets; code coverage measures executed Python
-paths, while the [parity ledger](PARITY.md) measures agreement with WEC-Sim.
+coverage, and uploads `coverage.xml` and `coverage.json`. Many MATLAB-dependent
+tests skip without their reference assets. The bundled
+[RM3 MATLAB trajectory](tests/fixtures/matlab/README.md) runs in ordinary CI.
+Code coverage measures executed Python paths; the [parity ledger](PARITY.md)
+measures agreement with WEC-Sim.
 
 ## License
 
