@@ -5,4 +5,7 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+.coverage
+coverage.xml
+coverage.json
 matlab-reference-output/

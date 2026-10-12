@@ -20,6 +20,9 @@ dependencies = [
     "openpyxl",
 ]
 
+[project.optional-dependencies]
+test = ["pytest>=8", "pytest-cov>=5"]
+
 [project.urls]
 Repository = "https://github.com/cmudrc/wec-sim-python"
 
