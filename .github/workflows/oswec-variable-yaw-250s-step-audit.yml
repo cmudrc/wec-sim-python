@@ -6,12 +6,17 @@ on:
       - '.github/workflows/oswec-variable-yaw-250s-step-audit.yml'
       - 'tests/matlab/oswec_variable_yaw_250s_step_audit.m'
       - 'tests/test_variable_yaw_heading_bank.py'
+      - 'tests/test_variable_yaw_quarter_step_audit.py'
   workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
 
 jobs:
   source:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v7
       - uses: actions/checkout@v7
@@ -31,6 +36,21 @@ jobs:
           sparse-checkout: |
             _Common_Input_Files/OSWEC
             Variable_Hydro/Passive_Yaw
+      - uses: actions/download-artifact@v4
+        with:
+          name: matlab-oswec-variable-yaw-250s-step-audit
+          run-id: 38127365821
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: matlab-oswec-variable-yaw-250s-audit
+      - name: Verify pinned coarse and half-step source artifact
+        run: |
+          cd matlab-oswec-variable-yaw-250s-audit
+          echo '5e5ef313a39a9747d63c36ca7257f597de12029e2170a34086278603fd9f021e  coarse_trajectory.csv' | sha256sum --check
+          echo 'be5906bf1e1a0dfc8d5ec5075473202fe72239b1727cd849869847863163a507  coarse_wave.csv' | sha256sum --check
+          echo '053265841734b875d53129e3dd5de92961a43f890a6004f3c68401ae5dcdb384  components.csv' | sha256sum --check
+          echo '2276cace8ac5254002ff9e939ff3db51eeba417b1b6aa5f64003f9219802039d  fine_trajectory.csv' | sha256sum --check
+          echo 'f430c5813c1f616711b1c4974f4c9ad9b81471b9d23fa4b9e02942fec9781df6  fine_wave.csv' | sha256sum --check
+          echo '694c34da63b0fbf057e03436dec51a64f190cbcf4af9c02368b7f1bb24c24726  metrics.json' | sha256sum --check
       - uses: matlab-actions/setup-matlab@v3
         with:
           release: R2025b
@@ -42,7 +62,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e . pytest
-      - run: python -m pytest -q -s tests/test_variable_yaw_heading_bank.py::test_irregular_250s_selected_bank_step_diagnostic
+      - run: python -m pytest -q -s tests/test_variable_yaw_heading_bank.py::test_irregular_250s_selected_bank_step_diagnostic tests/test_variable_yaw_quarter_step_audit.py
         env:
           WEC_SIM_APPLICATIONS_DIR: applications
           WEC_SIM_MATLAB_250S_AUDIT_DIR: matlab-oswec-variable-yaw-250s-audit
