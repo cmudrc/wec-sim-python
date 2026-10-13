@@ -54,6 +54,22 @@ That HDF5 is not byte-identical to the current WEC-Sim example; its regular-wave
 hydrodynamic data still reproduce this source trajectory within the stated
 per-channel gates. The live paired tests continue to use pinned MATLAB inputs.
 
+## RM3 end-stop force transition
+
+`rm3_end_stops_force_samples.csv` retains six rows from the successful
+[full-duration 0.0125 s R2025b run](https://github.com/cmudrc/wec-sim-python/actions/runs/37698235851)
+(`matlab-RM3_END_STOPS_FULL_FINER-baseline` artifact, run commit
+`ae9a0a8e0959b95a9489b61ea9c6f161ae184e7e`). The workflow pins core
+`0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. Source rows
+`0, 5166, 8627, 8948, 22725, 28451` retain CSV columns `0, 3, 9, 15`
+as time, stroke, speed, and total PTO force. The source CSV SHA-256 is
+`898147eeac1bc62746dfb84a71dec9d640bbcafb9da63129ef9040467398f7d0`;
+the compact fixture SHA-256 is
+`a409f621d21825366dc1f11b13c12fc9c88f07beb6f86a4670a709253c7f3c20`.
+Two selected rows are inside the effective 0.1 mm spring transition and
+distinguish the source's smooth force from a sharp stop.
+
 ## Sphere free decay
 
 `sphere_free_decay.npz` retains every sample of the five published Sphere
