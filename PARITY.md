@@ -555,7 +555,7 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. In parallel, raise meaningful combined
-Python line-and-branch coverage from the measured 73% toward 90% with behavior
+Python line-and-branch coverage from the measured 74% toward 90% with behavior
 and numerical invariants, not tests written only to execute lines.
 
 | Other published cases | Gated / inventoried |
