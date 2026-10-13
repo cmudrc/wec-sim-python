@@ -1,0 +1,54 @@
+name: OSWEC held-yaw source solver path
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/oswec-passive-yaw-solver-path.yml'
+      - 'tests/test_oswec_passive_yaw_solver_path.py'
+  workflow_dispatch:
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: |
+            _Common_Input_Files/OSWEC
+            Passive_Yaw/PassiveYawRegression
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); reference_model_baseline('OSWEC_PASSIVE_YAW_IRR')
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e . pytest
+      - run: python -m pytest -q -s tests/test_oswec_passive_yaw_solver_path.py
+        env:
+          WEC_SIM_APPLICATIONS_DIR: applications
+          WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: oswec-held-yaw-source-solver-path
+          path: |
+            matlab-reference-model-output/OSWEC_PASSIVE_YAW_IRR*
+            applications/_Common_Input_Files/OSWEC/hydroData/oswec.h5

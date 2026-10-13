@@ -220,6 +220,30 @@ small preceding state offset can produce a large instantaneous force
 difference; they do not prove that every later trajectory difference has the
 same cause or make either full-duration result a converged target.
 
+An independent [source-numerics audit](tests/test_oswec_passive_yaw_solver_path.py)
+uses the published wave phases and pinned BEMIO HDF5 without source body
+states or forces as inputs. It advances the single moving yaw coordinate with
+the input's `ode4` RK4 step and the source's
+[`convolutionIntegralInterp`](https://github.com/WEC-Sim/WEC-Sim/blob/0753b2e47f2457c078751dcfe5d251d1767b80ab/source/functions/simulink/model/convolutionIntegralInterp.m)
+and [`extrapFrad`](https://github.com/WEC-Sim/WEC-Sim/blob/0753b2e47f2457c078751dcfe5d251d1767b80ab/source/functions/simulink/model/extrapFrad.m)
+three-sample radiation extrapolation. The source excitation block also feeds
+its previous heading and coefficients through [Simulink Memory blocks](https://www.mathworks.com/help/simulink/slref/memory.html),
+which hold their input for one major integration step. Keeping that previous
+heading through all four RK4 stages is essential: committing the current
+heading before the stages reproduces the early motion but separates later.
+Using the [three-seed R2025b
+output](https://github.com/cmudrc/wec-sim-python/actions/runs/38024726665)
+and [pinned HDF5 artifact](https://github.com/cmudrc/wec-sim-python/actions/runs/38096514222),
+all `141`, `52`, and `91` heading-update samples agree for seeds 1–3 over
+the full 250 s. Maximum independent yaw errors are `8.45e-11`, `4.67e-14`,
+and `8.64e-14` rad; yaw-speed errors stay below `1.45e-11` rad/s, torque
+below `1.74e-6` N m, and relative PTO-work error below `1.46e-10`. The
+predeclared gates are `1e-6` rad yaw, `1e-7` rad/s speed, `0.01` N m torque,
+and `1e-6` relative work. This isolates the source's numerical route for the
+published one-coordinate case. The public `WEC.run` path still uses the
+physical implicit-radiation default; the test-only source solver does not
+advance the published-case badge or establish step-converged physical behavior.
+
 The seed-2 Python held-heading result is also sensitive to time step: with
 the same sea phases and configuration, PTO damper work is `2,795`, `3,188`,
 and `2,681` J at `dt = 0.01`, `0.005`, and `0.0025` s. For comparison, the
