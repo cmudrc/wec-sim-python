@@ -92,7 +92,10 @@ class MoorDyn:
                                          ctypes.byref(native_dt))
         if code != 0:
             raise RuntimeError(f"MoorDynStep failed with code {code}")
-        return np.asarray(force[:], dtype=float)
+        load = np.asarray(force[:], dtype=float)
+        if not np.isfinite(load).all():
+            raise RuntimeError("MoorDynStep returned a nonfinite connection load")
+        return load
 
     def close(self):
         """Close the native model; repeated calls are harmless."""
