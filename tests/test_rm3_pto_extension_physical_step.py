@@ -1,0 +1,98 @@
+"""Separate RM3 PTO-extension source step sensitivity from Python motion."""
+
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+from wecsim import NoWave, WEC
+
+
+ROOT = Path(__file__).resolve().parents[1]
+# This pinned common-RM3 BEMIO file has the same active convolution,
+# added-mass, restoring, volume, and CG data as the PTO-extension baseline.
+HYDRO = ROOT / "examples/data/rm3_end_stops.h5"
+MATLAB = ROOT / "tests/fixtures/matlab/rm3_pto_extension_step.npz"
+
+
+def _run(name, dt, scheme):
+    wec = WEC(f"RM3 PTO extension {name}")
+    float_body = wec.body("float", HYDRO,
+                          inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", HYDRO, inertia=(0, 94_407_091.24, 0))
+    wec.floating_joint(float_body, spar, added_mass_scheme=scheme)
+    initial = {"float_heave": 5} if name == "float" else {"spar_heave": -5}
+    return wec.run(NoWave(), dt=dt, end_time=30, radiation_memory=60,
+                   initial_coordinate=initial)
+
+
+@pytest.mark.parametrize("name,column,position_limit,speed_limit", (
+    ("float", 1, .012, .03),
+    ("spar", 3, .003, .001),
+))
+def test_physical_pto_extension_step_refines_faster_than_matlab(
+    name, column, position_limit, speed_limit,
+):
+    """Bound the physical path, then pair the opt-in source convention."""
+    with np.load(MATLAB, allow_pickle=False) as source:
+        samples = {suffix: source[f"{name}_{suffix}"]
+                   for suffix in ("0p1", "0p05", "0p025", "0p0125")}
+        for suffix, dt in (("0p1", .1), ("0p05", .05),
+                           ("0p025", .025), ("0p0125", .0125)):
+            assert samples[suffix].shape == (round(30 / dt) + 1, 9)
+            np.testing.assert_allclose(samples[suffix][:, 0],
+                                       np.arange(len(samples[suffix])) * dt,
+                                       rtol=0, atol=1e-10)
+        source_step = np.max(np.abs(
+            samples["0p025"][:, column:column + 2]
+            - samples["0p0125"][::2, column:column + 2],
+        ), axis=0)
+        prior_source_step = np.max(np.abs(
+            samples["0p05"][:, column:column + 2]
+            - samples["0p025"][::2, column:column + 2],
+        ), axis=0)
+        first_source_step = np.max(np.abs(
+            samples["0p1"][:, column:column + 2]
+            - samples["0p05"][::2, column:column + 2],
+        ), axis=0)
+        assert np.all(prior_source_step < first_source_step)
+        assert np.all(source_step > .45 * prior_source_step)
+
+        coarse = _run(name, .025, "implicit")
+        fine = _run(name, .0125, "implicit")
+        body = fine.bodies[name]
+        coarse_body = coarse.bodies[name]
+        physical_step = np.array([
+            np.max(np.abs(coarse_body.position[:, 2]
+                          - body.position[::2, 2])),
+            np.max(np.abs(coarse_body.velocity[:, 2]
+                          - body.velocity[::2, 2])),
+        ])
+        assert np.all(source_step > 5 * physical_step), (
+            name, source_step, physical_step,
+        )
+        physical_gap = np.array([
+            np.max(np.abs(body.position[:, 2]
+                          - samples["0p0125"][:, column])),
+            np.max(np.abs(body.velocity[:, 2]
+                          - samples["0p0125"][:, column + 1])),
+        ])
+        print(f"{name}: physical self-change {physical_step}; "
+              f"MATLAB self-change {source_step}; "
+              f"physical/source gap {physical_gap}")
+        assert physical_gap[0] < position_limit
+        assert physical_gap[1] < speed_limit
+        assert fine.wave_elevation is None
+        assert np.max(np.abs(fine.ptos["relative_heave"].force)) < 1e-8
+
+        source_scheme = _run(name, .0125, "simulink_delay")
+        source_body = source_scheme.bodies[name]
+        source_gap = np.array([
+            np.max(np.abs(source_body.position[:, 2]
+                          - samples["0p0125"][:, column])),
+            np.max(np.abs(source_body.velocity[:, 2]
+                          - samples["0p0125"][:, column + 1])),
+        ])
+        print(f"{name}: opt-in source-delay gap {source_gap}")
+        limits = (.009, .017) if name == "float" else (.0015, .0004)
+        assert np.all(source_gap < limits), (name, source_gap)
