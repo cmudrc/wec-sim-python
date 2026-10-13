@@ -545,9 +545,9 @@ the published-motion case remains qualified: its unchanged original-step
 limits still fail. Do not rerun the same source audit or alter the physical
 default to reproduce that coarse-step trajectory.
 
-The fresh OSWEC selected-heading 140 s audit and its full-duration opt-in
-public-path gate passed; both are recorded below, while the irregular
-published case remains qualified. For each other
+The fresh OSWEC selected-heading 140 s physical-default audit and separate
+full-duration opt-in numerical gate passed; both are recorded below, while
+the irregular published case remains qualified. For each other
 qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
@@ -670,8 +670,9 @@ Python at `0.0025` s differs from that quarter-step source by at most
 heading switches but select different headings at 320 common samples.
 This establishes a stable, independently paired early 140 s window.
 The [fresh PR gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38411600082)
-reproduced that result for the now-merged public source-ode4 path: the 120 s and
-140 s MATLAB self-changes and independent Python/source errors passed all
+reproduced that result with the physical-default public `WEC.run` path at
+`dt=0.0025` s: the 120 s and 140 s MATLAB self-changes and independent
+Python/source errors passed all
 four unchanged yaw, speed, PTO-torque, and relative-work limits. Its uploaded
 quarter-step artifact contains all 56,001 samples through 140 s.
 MATLAB's own `0.01`-to-`0.005` s source change becomes large by 250 s, and a
