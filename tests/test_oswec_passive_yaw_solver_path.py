@@ -72,8 +72,11 @@ def _source_numerical_path(hydro, phases, *, end_time=250):
         radiation[step] = dt * np.dot(kernel[:memory + 1] * weights, history)
         radiation_times = np.r_[radiation_times[1:], at_time]
         radiation_values = np.r_[radiation_values[1:], radiation[step]]
-        held.commit(at_time, np.array([yaw[step]]))
-        heading[step] = held.last_heading
+        # The source's Memory block still exposes the preceding major-step
+        # heading throughout this step's minor RK4 stages. Publish this
+        # major-step selection only after all four stages have completed.
+        current_heading = held._heading(yaw[step])
+        heading[step] = current_heading
         if step == len(time) - 1:
             break
 
@@ -98,13 +101,14 @@ def _source_numerical_path(hydro, phases, *, end_time=250):
                         speed[step] + dt * k3[1])
         yaw[step + 1] = yaw[step] + dt * (k1[0] + 2*k2[0] + 2*k3[0] + k4[0]) / 6
         speed[step + 1] = speed[step] + dt * (k1[1] + 2*k2[1] + 2*k3[1] + k4[1]) / 6
+        held.last_heading = current_heading
 
     return time, yaw, speed, heading, sampled
 
 
-@pytest.mark.parametrize("seed,first_event_limit", ((1, 90), (2, 88), (3, 140)))
-def test_published_held_yaw_source_numerics_prefix(seed, first_event_limit):
-    """Gate the early independent solve and report the later event split."""
+@pytest.mark.parametrize("seed", (1, 2, 3))
+def test_published_held_yaw_source_numerics_full_duration(seed):
+    """Gate independent ode4 motion, heading events, and PTO work for 250 s."""
     reference = Path(REFERENCE)
     hydro = (Path(APPLICATIONS)
              / "_Common_Input_Files/OSWEC/hydroData/oswec.h5")
@@ -127,10 +131,14 @@ def test_published_held_yaw_source_numerics_prefix(seed, first_event_limit):
                                rtol=0, atol=1e-11)
     np.testing.assert_allclose(pto[:, 17], -120000 * pto[:, 11],
                                rtol=0, atol=1e-5)
-    # Before any threshold event, the independent ode4/PCHIP path resolves
-    # the small drift seen with the physical implicit-radiation solver.
-    assert np.max(np.abs(yaw[:5001] - source[:5001, 6])) < 1e-9
-    assert np.max(np.abs(speed[:5001] - source[:5001, 12])) < 1e-9
+    # The source's major-step Memory latency is material: committing the
+    # heading before the RK4 stages agrees early but separates by 250 s.
+    yaw_gap = np.max(np.abs(yaw - source[:, 6]))
+    speed_gap = np.max(np.abs(speed - source[:, 12]))
+    torque_gap = np.max(np.abs(-120000 * speed - pto[:, 17]))
+    assert yaw_gap < 1e-6
+    assert speed_gap < 1e-7
+    assert torque_gap < 0.01
 
     replay = HeldPassiveYawExcitation(sampled, threshold=1)
     source_heading = np.empty(len(time))
@@ -139,20 +147,14 @@ def test_published_held_yaw_source_numerics_prefix(seed, first_event_limit):
         source_heading[step] = replay.last_heading
     source_events = np.flatnonzero(np.abs(np.diff(source_heading)) > 1e-5)
     python_events = np.flatnonzero(np.abs(np.diff(heading)) > 1e-5)
-    mismatch = next(
-        (index for index, (left, right) in
-         enumerate(zip(source_events, python_events)) if left != right),
-        None,
-    )
-    assert mismatch is not None, "full published event sequence needs review"
-    first_split = min(source_events[mismatch], python_events[mismatch]) * 0.01
-    assert first_split > first_event_limit
+    np.testing.assert_array_equal(python_events, source_events)
 
     source_work = -np.trapezoid(pto[:, 23], time)
     python_work = 120000 * np.trapezoid(speed**2, time)
-    yaw_gap = np.max(np.abs(yaw - source[:, 6]))
     work_gap = abs(python_work - source_work) / source_work
     assert source_work > 0 and np.isfinite((yaw, speed)).all()
     assert np.isfinite((yaw_gap, work_gap)).all()
-    print(f"seed {seed}: first heading-event split {first_split:.2f} s; "
-          f"250 s yaw gap {yaw_gap:.6g} rad; PTO-work gap {work_gap:.3%}")
+    assert work_gap < 1e-6
+    print(f"seed {seed}: {len(source_events)} heading updates paired; "
+          f"250 s yaw {yaw_gap:.6g} rad, speed {speed_gap:.6g} rad/s, "
+          f"PTO torque {torque_gap:.6g} N m, work {work_gap:.6g} relative")
