@@ -53,7 +53,7 @@ def _report(duration, source_step, python_source):
     )
 
 
-def test_irregular_160s_quarter_step_audit():
+def test_irregular_140s_quarter_step_audit():
     source = Path(SOURCE)
     quarter_file = source / "quarter_trajectory.csv"
     assert quarter_file.is_file(), "quarter-step source run is absent"
@@ -62,15 +62,16 @@ def test_irregular_160s_quarter_step_audit():
     fine_wave = np.loadtxt(source / "fine_wave.csv", delimiter=",")
     quarter_wave = np.loadtxt(source / "quarter_wave.csv", delimiter=",")
     assert fine.shape == (50001, 7)
-    assert quarter.shape == (64001, 7)
+    assert quarter.shape == (56001, 7)
     assert fine_wave.shape == (50001, 2)
-    assert quarter_wave.shape == (64001, 2)
+    assert quarter_wave.shape == (56001, 2)
     assert all(np.isfinite(array).all() for array in
                (fine, quarter, fine_wave, quarter_wave))
-    fine160 = fine[:32001]
-    fine160_wave = fine_wave[:32001]
-    np.testing.assert_allclose(quarter[::2, 0], fine160[:, 0], rtol=0, atol=1e-10)
-    np.testing.assert_allclose(quarter_wave[::2], fine160_wave, rtol=0,
+    fine140 = fine[:28001]
+    fine140_wave = fine_wave[:28001]
+    np.testing.assert_allclose(quarter[::2, 0], fine140[:, 0],
+                               rtol=0, atol=1e-10)
+    np.testing.assert_allclose(quarter_wave[::2], fine140_wave, rtol=0,
                                atol=1e-12)
 
     headings = np.arange(-30, 30.25, .25)
@@ -84,7 +85,7 @@ def test_irregular_160s_quarter_step_audit():
 
     hydro = (Path(APPLICATIONS) /
              "_Common_Input_Files/OSWEC/hydroData/oswec.h5")
-    wec = WEC("OSWEC 160 s selected-heading diagnostic")
+    wec = WEC("OSWEC 140 s selected-heading diagnostic")
     flap = wec.body("flap", hydro, mass=12700, inertia=(1.85e6,) * 3,
                     passive_yaw=True, yaw_heading_bank=headings)
     wec.body("base", hydro, mass=999, inertia=(999,) * 3)
@@ -92,7 +93,7 @@ def test_irregular_160s_quarter_step_audit():
     wec.rotational_pto("hinge", yaw, damping=120000)
     result = wec.run(
         PMWave(2.5, 8, direction=10, seed=1, phase_generator="matlab"),
-        dt=.0025, end_time=160, ramp_time=100, radiation_memory=40,
+        dt=.0025, end_time=140, ramp_time=100, radiation_memory=40,
     )
     np.testing.assert_allclose(result.time, quarter[:, 0], rtol=0, atol=1e-10)
     np.testing.assert_allclose(result.wave_elevation, quarter_wave[:, 1],
@@ -106,11 +107,12 @@ def test_irregular_160s_quarter_step_audit():
     for measured in (source120, python120):
         assert all(value < limit for value, limit in zip(measured, limits))
 
-    source160, python160 = _errors(fine, quarter, result)
-    _report(160, source160, python160)
-    source_stable = all(value < limit for value, limit in zip(source160, limits))
-    print(f"160 s MATLAB step stability under 120 s limits: {source_stable}")
-    # A source run outside its own limits cannot serve as a pointwise parity
-    # target. If it is stable, Python must meet those same predeclared limits.
-    if source_stable:
-        assert all(value < limit for value, limit in zip(python160, limits))
+    # The pinned 0.01-to-0.005 s source pair stays within these same limits
+    # through 140 s, then exceeds the yaw limit by 145 s. The quarter-step
+    # pair must establish its own stability before extending the gate.
+    source140, python140 = _errors(fine, quarter, result)
+    _report(140, source140, python140)
+    source_stable = all(value < limit for value, limit in zip(source140, limits))
+    print(f"140 s MATLAB step stability under 120 s limits: {source_stable}")
+    assert source_stable, "140 s MATLAB source is step-sensitive"
+    assert all(value < limit for value, limit in zip(python140, limits))

@@ -1,5 +1,5 @@
 function oswec_variable_yaw_250s_step_audit()
-% Refine the first 160 s of the pinned 250 s two-step artifact without
+% Refine the first 140 s of the pinned 250 s two-step artifact without
 % rerunning its costly simulations. Do not infer full-duration parity.
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 addpath(genpath(fullfile(repoRoot, 'matlab-ref', 'source')));
@@ -30,7 +30,7 @@ end
 sourceDir = fullfile(repoRoot, 'applications', ...
     'Variable_Hydro', 'Passive_Yaw');
 caseDir = fullfile(repoRoot, 'applications', 'Variable_Hydro', ...
-    'paired_Passive_Yaw_irregular_160s');
+    'paired_Passive_Yaw_irregular_140s');
 [copied, copyMessage] = copyfile(sourceDir, caseDir);
 assert(copied, copyMessage);
 bankScript = fullfile(caseDir, 'hydroData', 'bemio.m');
@@ -49,22 +49,22 @@ assert(contains(original, 'simu.dt = 0.01;') && ...
     contains(original, 'waves.phaseSeed = 1;'), ...
     'The pinned irregular variable-yaw input changed');
 quarterInput = strrep(original, 'simu.endTime = 600;', ...
-    'simu.endTime = 160;');
+    'simu.endTime = 140;');
 quarterInput = strrep(quarterInput, 'simu.dt = 0.01;', ...
     'simu.dt = 0.0025;');
 write_input(inputFile, quarterInput);
 cd(caseDir);
 waveFlag = 'irregular';
 wecSim;
-check_run(simu, waves, bemDirections, output, 0.0025, 64001);
+check_run(simu, waves, bemDirections, output, 0.0025, 56001);
 quarter = trajectory(output, bemDirections);
 quarterWave = waves.waveAmpTime;
 quarterComponents = [waves.omega(:), waves.amplitude(:), ...
     waves.dOmega(:), waves.phase(:)];
-fine160 = fine(1:32001, :);
-fine160Wave = fineWave(1:32001, :);
-assert(max(abs(quarter(1:2:end, 1) - fine160(:, 1))) < 1e-10 && ...
-    max(abs(quarterWave(1:2:end, :) - fine160Wave), [], 'all') < 1e-12 && ...
+fine140 = fine(1:28001, :);
+fine140Wave = fineWave(1:28001, :);
+assert(max(abs(quarter(1:2:end, 1) - fine140(:, 1))) < 1e-10 && ...
+    max(abs(quarterWave(1:2:end, :) - fine140Wave), [], 'all') < 1e-12 && ...
     max(abs(quarterComponents - coarseComponents), [], 'all') < 1e-12, ...
     'Quarter-step refinement changed the time grid or incident sea');
 writematrix(quarter, fullfile(outDir, 'quarter_trajectory.csv'));
@@ -73,10 +73,10 @@ writematrix(quarterWave, fullfile(outDir, 'quarter_wave.csv'));
 coarseWork = -trapz(coarse(:, 1), coarse(:, 7));
 fineWork = -trapz(fine(:, 1), fine(:, 7));
 quarterWork = -trapz(quarter(:, 1), quarter(:, 7));
-fine160Work = -trapz(fine160(:, 1), fine160(:, 7));
+fine140Work = -trapz(fine140(:, 1), fine140(:, 7));
 mismatch = coarse(:, 4) ~= fine(1:2:end, 4);
 firstMismatch = find(mismatch, 1);
-quarterMismatch = fine160(:, 4) ~= quarter(1:2:end, 4);
+quarterMismatch = fine140(:, 4) ~= quarter(1:2:end, 4);
 firstQuarterMismatch = find(quarterMismatch, 1);
 metrics = struct( ...
     'maxWaveErrorM', max(abs(fineWave(1:2:end, 2) - coarseWave(:, 2))), ...
@@ -89,17 +89,17 @@ metrics = struct( ...
     'fineHeadingSwitches', nnz(diff(fine(:, 4))), ...
     'headingMismatchSamples', nnz(mismatch));
 metrics.fineToQuarterMaxYawErrorRad = ...
-    max(abs(fine160(:, 2) - quarter(1:2:end, 2)));
+    max(abs(fine140(:, 2) - quarter(1:2:end, 2)));
 metrics.fineToQuarterMaxYawRateErrorRadPerS = ...
-    max(abs(fine160(:, 3) - quarter(1:2:end, 3)));
+    max(abs(fine140(:, 3) - quarter(1:2:end, 3)));
 metrics.fineToQuarterMaxPtoTorqueErrorNm = ...
-    max(abs(fine160(:, 6) - quarter(1:2:end, 6)));
-metrics.quarterDurationS = 160;
-metrics.fine160PtoWorkJ = fine160Work;
+    max(abs(fine140(:, 6) - quarter(1:2:end, 6)));
+metrics.quarterDurationS = 140;
+metrics.fine140PtoWorkJ = fine140Work;
 metrics.quarterPtoWorkJ = quarterWork;
 metrics.fineToQuarterRelativePtoWorkChange = ...
-    (quarterWork - fine160Work) / fine160Work;
-metrics.fine160HeadingSwitches = nnz(diff(fine160(:, 4)));
+    (quarterWork - fine140Work) / fine140Work;
+metrics.fine140HeadingSwitches = nnz(diff(fine140(:, 4)));
 metrics.quarterHeadingSwitches = nnz(diff(quarter(:, 4)));
 metrics.fineToQuarterHeadingMismatchSamples = nnz(quarterMismatch);
 if isempty(firstMismatch)
@@ -111,13 +111,13 @@ if isempty(firstQuarterMismatch)
     metrics.firstFineToQuarterHeadingMismatchS = -1;
 else
     metrics.firstFineToQuarterHeadingMismatchS = ...
-        fine160(firstQuarterMismatch, 1);
+        fine140(firstQuarterMismatch, 1);
 end
 fid = fopen(fullfile(outDir, 'metrics.json'), 'w');
 assert(fid ~= -1, 'Could not write source step metrics');
 fprintf(fid, '%s\n', jsonencode(metrics));
 fclose(fid);
-fprintf('Variable-yaw 250 s source with 160 s quarter-step audit: %s\n', ...
+fprintf('Variable-yaw 250 s source with 140 s quarter-step audit: %s\n', ...
     jsonencode(metrics));
 end
 
@@ -130,7 +130,7 @@ end
 
 function check_run(simu, waves, bemDirections, output, expectedDt, expectedSamples)
 assert(strcmp(simu.solver, 'ode4') && simu.dt == expectedDt && ...
-    simu.endTime == 160 && simu.rampTime == 100 && ...
+    simu.endTime == 140 && simu.rampTime == 100 && ...
     strcmp(waves.type, 'irregular') && waves.phaseSeed == 1 && ...
     waves.height == 2.5 && waves.period == 8 && ...
     isequal(bemDirections, -30:0.25:30), ...
