@@ -894,12 +894,17 @@ surge, `0.262` mm heave, `0.522` mm/s surge speed, and `0.240` mm/s heave
 speed. The paired gates are `0.0002` rad, `0.00015` rad/s, `1` mm,
 `0.4` mm, `0.8` mm/s, and `0.35` mm/s in that order. Reducing Python's
 output step from 0.1 to 0.05 s changes pitch by at most `1.1e-6` rad.
-In a local comparison against the untouched published 0.1 s source output,
+In an independent comparison against the untouched published 0.1 s source output,
 the same independent Python run differs by `0.007301` rad pitch,
-`0.005409` rad/s pitch speed, and 33.66 mm surge. MATLAB's own published-
-to-0.0125 s changes are `0.007192` rad, `0.005308` rad/s, and 33.16 mm
-on those channels. These nearly equal gaps implicate the source step path;
-they are a diagnostic, not a published-step motion gate.
+`0.005409` rad/s pitch speed, 33.66 mm surge, and 14.19 mm heave.
+MATLAB's own published-to-0.0125 s changes are `0.007192` rad pitch,
+`0.005308` rad/s pitch speed, 33.16 mm surge, and 13.98 mm heave.
+Across all 1,201 samples, the signed Python-minus-published and
+finest-MATLAB-minus-published error histories correlate above `0.99998`
+for pitch, surge, and heave. The paired test now requires direct
+published-step gaps and correlation above `0.9999` on these channels.
+This supports source step sensitivity as the dominant numerical gap;
+it is a diagnostic, not a published-step motion gate.
 This establishes independent motion parity for this fixed-hinge regular-wave
 case against a refined MATLAB path. The published coarse-step motion and
 other nonlinear six-DOF layouts have separate numerical and feature limits.
