@@ -11,7 +11,7 @@ metrics = struct();
 metrics.channels = {'floatHeaveM', 'floatHeaveSpeedMPerS', ...
     'sparHeaveM', 'sparHeaveSpeedMPerS', 'ptoStrokeM', ...
     'ptoStrokeSpeedMPerS', 'ptoForceN', 'ptoPowerW'};
-metrics.stepsS = [0.1, 0.05, 0.025];
+metrics.stepsS = [0.1, 0.05, 0.025, 0.0125];
 
 for caseName = ["float", "spar"]
     label = char(caseName);
@@ -28,12 +28,13 @@ for caseName = ["float", "spar"]
         'The published PTO-extension baseline is incomplete');
     writematrix(coarse, fullfile(outDir, label + "_dt_0p1.csv"));
     previous = coarse;
-    levelNames = ["coarseToMid", "midToFine"];
-    steps = [0.05, 0.025];
+    levelNames = ["coarseToMid", "midToFine", "fineToFiner"];
+    steps = [0.05, 0.025, 0.0125];
+    suffixes = ["0p05", "0p025", "0p0125"];
     for level = 1:numel(steps)
         dt = steps(level);
         write_input(inputFile, strrep(original, 'simu.dt = 0.1;', ...
-            sprintf('simu.dt = %.3f;', dt)));
+            sprintf('simu.dt = %.4f;', dt)));
         cd(caseDir);
         wecSim;
         assert(strcmp(simu.solver, 'ode4') && simu.dt == dt && ...
@@ -45,13 +46,8 @@ for caseName = ["float", "spar"]
         assert(isequal(size(current), [round(30 / dt) + 1, 9]) && ...
             max(abs(current(1:2:end, 1) - previous(:, 1))) < 1e-10, ...
             'The refined PTO-extension output is incomplete');
-        if dt == 0.05
-            suffix = '0p05';
-        else
-            suffix = '0p025';
-        end
         writematrix(current, fullfile(outDir, ...
-            label + "_dt_" + suffix + ".csv"));
+            label + "_dt_" + suffixes(level) + ".csv"));
         delta = current(1:2:end, 2:9) - previous(:, 2:9);
         metrics.(label).(char(levelNames(level))) = max(abs(delta), [], 1);
         previous = current;
