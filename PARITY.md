@@ -940,6 +940,14 @@ reduction is `1 - sum(residual²) / sum((fully refined - published)²)`.
 | MoorDyn pitch moment | 41.60 kN m | 2.313 kN m | 99.691% |
 | Spar heave | 0.8005 mm | 0.5820 mm | 47.139% |
 
+A [portable source-step gate](tests/test_rm3_moordyn_source_step_portable.py)
+now checks the pinned 801-frame MATLAB traces in ordinary Python CI. It
+requires identical phases and waves within `2e-14` m, a substantial
+published-to-refined gap in float/spar surge, shared pitch, and MoorDyn pitch
+moment, and over 99% squared-gap reduction from refining MaxStep alone in
+those four channels. It also checks that spar heave remains below 60%
+reduction, so the attribution is not generalized to every output.
+
 MaxStep alone explains nearly all of the *source* surge and pitch discrepancy
 on this seeded sea, but not every channel. This is a controlled numerical
 attribution, not an independent Python published-step gate. The original
