@@ -1662,6 +1662,15 @@ the published 0.1 s run has 78 such samples and absorbs 60.941 MJ. The
 source convergence gate also checks both bodies' active positions and
 velocities. These are numerical step checks, not altered WEC settings.
 
+A [published-step 400 s source comparison](https://github.com/cmudrc/wec-sim-python/actions/runs/38324036229)
+now runs independent Python at the same `0.1` s output step. Before the first
+saved source stop contact at 68.1 s, maximum PTO-stroke difference is
+`3.24` mm; after that contact it reaches `285` mm. Ordinary damper energy
+is `60.941` MJ in MATLAB and `54.725` MJ in Python, a `10.2%` difference
+relative to MATLAB. A diagnostic test requires the small pre-contact gap and
+the large full-duration gap to remain visible. It is not a passing
+published-step motion gate.
+
 The Python hard-stop model instead applies added mass implicitly and resolves
 contact forces between output samples. Its 0.025 and 0.0125 s output settings
 change PTO stroke by less than 1 µm over 400 s. This physical dynamics
