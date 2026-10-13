@@ -94,6 +94,31 @@ but its full-duration motion passes the same per-channel source limits. The
 external paired test still checks the exact generated HDF5; this portable
 gate keeps the measured published trajectory in ordinary Python CI.
 
+## GBM Barge
+
+`gbm_barge.h5` is the exact generated ten-DOF HDF5 from the successful
+[400 s R2025b baseline run](https://github.com/cmudrc/wec-sim-python/actions/runs/38282150325)
+(`matlab-GBM_BARGE-baseline` artifact, run commit
+`7c403d3e2e07b9940e4a2a280d375000b8985fea`). Its SHA-256 is
+`0d98003d54f007f1c50966bb10df723f5bbbf22aa70579360e4ef991a2ceff68`.
+The workflow pins WEC-Sim core
+`0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`.
+
+`gbm_barge.npz` keeps all 8,001 source samples of rigid body time, pose,
+speed, and acceleration (CSV columns 0–12 and 43–48), the 40-channel
+`Flex_out` signal, and the wave, mass, stiffness, damping, and hydrodynamic
+matrices used by the existing full-duration gate. Arrays were
+loaded from the source CSV and MAT files as float64 without interpolation or
+rounding. The `Flex_out` MAT SHA-256 is
+`2487a21c2e8760bea072f39ec9205c7992927593c7c1704714f907c9fbd59709`,
+the rigid body CSV SHA-256 is
+`666e42a9c6ce0e01e12dc6a35b20d542f7531682a2882b41b29b209f98721ecf`,
+and the compact archive SHA-256 is
+`e9c8cddf5f10c9d60ddf26348082a36cd436fbdaf59decac4e4a2870797df1c9`.
+Ordinary Python CI uses these files when live MATLAB output is unavailable;
+the same test uses fresh generated files when both source directories are set.
+
 ## MBARI Cable
 
 `mbari_cable.npz` keeps all 12,001 samples of the published 120 s three-body
