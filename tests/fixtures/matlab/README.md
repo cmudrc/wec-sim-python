@@ -235,6 +235,8 @@ interpolated or rounded. The archive SHA-256 is
 The portable test gates source input identity and the channel-specific effect
 of ode45 MaxStep on the MATLAB trajectories. It is a source-numerics diagnostic,
 not an independent Python published-step motion gate.
+The same archived phases also drive an independent Python reconstruction of
+the published 80 s incident sea in ordinary CI, without using saved motion.
 
 ## RM3 End Stops full-duration trajectory
 

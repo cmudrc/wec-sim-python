@@ -4,9 +4,14 @@ from pathlib import Path
 
 import numpy as np
 
+from wecsim.environment.irregularWave import (
+    jonswap_equal_energy_components, synthesize_irregular_response,
+)
+
 
 FIXTURE = (Path(__file__).parent / "fixtures/matlab"
            / "rm3_moordyn_source_step.npz")
+HYDRO = Path(__file__).resolve().parents[1] / "examples/data/rm3.h5"
 
 
 def _squared_gap_reduction(published, maxstep_only, refined):
@@ -55,3 +60,24 @@ def test_published_rm3_moordyn_surge_gap_is_source_maxstep_sensitive():
         # near-complete MaxStep explanation observed for surge and pitch.
         heave = source["body2_position"][:, :, 2]
         assert _squared_gap_reduction(*heave) < .6
+
+
+def test_published_rm3_moordyn_incident_sea_from_pinned_phases():
+    """Rebuild the 80 s sea independently of the saved body trajectories."""
+    with np.load(FIXTURE, allow_pickle=False) as source:
+        phase = source["phase"][0, :, None]
+        elevation = source["wave"][0]
+    components = jonswap_equal_energy_components(
+        HYDRO, significant_height=2, peak_period=8,
+        directions=np.array([0.]), spreading=np.array([1.]),
+        phase=phase, discretization="traditional",
+    )
+    assert components.omega.shape == (1000,)
+    wave = synthesize_irregular_response(
+        HYDRO, components, dt=.1, end_time=80, ramp_time=0,
+        rho=1025, g=9.81,
+    )
+    np.testing.assert_allclose(wave.time, np.arange(801) * .1,
+                               rtol=0, atol=1e-12)
+    np.testing.assert_allclose(wave.elevation, elevation,
+                               rtol=0, atol=2e-14)
