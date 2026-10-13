@@ -555,7 +555,7 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. In parallel, raise meaningful combined
-Python line-and-branch coverage from the measured 70% toward 90% with behavior
+Python line-and-branch coverage from the measured 71% toward 90% with behavior
 and numerical invariants, not tests written only to execute lines.
 
 | Other published cases | Gated / inventoried |
@@ -1537,6 +1537,36 @@ regenerated R2025b fits, the largest observed relative aggregate gap is
 an expected failure. This gate checks the overall response and energy
 exchange for the derived 1 ms `ode4` plant and 50 ms controller; the
 published single-rate `ode8` NMPC case remains `open_motion`.
+
+A full-duration published-input aggregate audit uses the archived
+[225 s `ode8` source](https://github.com/cmudrc/wec-sim-python/actions/runs/37876181993)
+and its pinned HDF5 fit, then independently advances the public Python
+WaveStar plant and NMPC at 1 and 0.5 ms with a 50 ms controller. The
+[fixed-fit MATLAB repeatability run](https://github.com/cmudrc/wec-sim-python/actions/runs/38155596820)
+has exactly identical sea, body, PTO, and controller-command samples across
+two source invocations; its traces also match the archived published run.
+The existing [step-audit tool](tools/wavestar_nmpc_step_audit.py) now reports
+seven whole-run quantities for both Python step sizes:
+
+| Published source quantity | Python relative gap at 1 ms | Python relative gap at 0.5 ms |
+| --- | ---: | ---: |
+| Float pitch RMS | 3.62% | 3.52% |
+| Float pitch peak | 7.62% | 7.62% |
+| Pitch-speed RMS | 6.30% | 6.19% |
+| PTO axial-force RMS | 0.179% | 0.259% |
+| PTO axial-force peak | 1.15% | 1.15% |
+| Requested-torque RMS | 0.0686% | 0.156% |
+| Signed PTO work | 5.91% | 5.93% |
+
+The published-source pitch already differs from both Python runs by
+`0.003416` rad before PTO control starts, while the two Python plant steps
+differ by less than `1e-12` rad in that window. Halving the Python step does
+not remove the whole-run motion or work gap. This is a measured **failed**
+aggregate comparison, not a parity gate or evidence that the full difference
+comes from one solver component. The published closed-loop case remains open;
+its derived fine-step aggregate gate above is separate.
+
+![Published WaveStar NMPC float pitch and controller-command differences](docs/figures/wavestar-nmpc-published-gap.png)
 
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local

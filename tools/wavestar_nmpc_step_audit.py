@@ -72,6 +72,7 @@ def main() -> None:
             "speed": response.angular_speed,
             "command": pto.command_torque,
             "force": response.pto_force,
+            "pto_speed": response.pto_speed,
         }
 
     time = source_float[:, 0]
@@ -102,6 +103,46 @@ def main() -> None:
                     "matlab_difference_quarter_ms": float(np.max(np.abs(
                         results[.00025][name][selected] - target[selected]))),
                 })
+
+    if args.duration == 225:
+        # The published feedback trajectory is not pointwise repeatable
+        # across regenerated radiation fits. These whole-run quantities test
+        # whether its overall motion and energy exchange are closer than the
+        # pointwise traces, without treating a diagnostic as a passing gate.
+        rms = lambda values: float(np.sqrt(np.mean(np.square(values))))
+        source_aggregate = {
+            "pitch_rms": rms(source_float[:, 5]),
+            "pitch_peak": float(np.max(np.abs(source_float[:, 5]))),
+            "pitch_speed_rms": rms(source_float[:, 11]),
+            "axial_force_rms": rms(source_pto[:, 33]),
+            "axial_force_peak": float(np.max(np.abs(source_pto[:, 33]))),
+            "requested_torque_rms": rms(source_command),
+            "pto_work_J": float(np.trapezoid(
+                source_pto[:, 33] * source_pto[:, 9], time,
+            )),
+        }
+        summary["published_aggregate"] = {"source": source_aggregate}
+        for dt in steps:
+            trial = results[dt]
+            measured = {
+                "pitch_rms": rms(trial["pitch"]),
+                "pitch_peak": float(np.max(np.abs(trial["pitch"]))),
+                "pitch_speed_rms": rms(trial["speed"]),
+                "axial_force_rms": rms(trial["force"]),
+                "axial_force_peak": float(np.max(np.abs(trial["force"]))),
+                "requested_torque_rms": rms(trial["command"]),
+                "pto_work_J": float(np.trapezoid(
+                    trial["force"] * trial["pto_speed"], time,
+                )),
+            }
+            summary["published_aggregate"][f"python_{dt:g}"] = {
+                "values": measured,
+                "relative_error": {
+                    name: abs(value - source_aggregate[name])
+                    / abs(source_aggregate[name])
+                    for name, value in measured.items()
+                },
+            }
 
     fig, axes = plt.subplots(3, 1, figsize=(9, 9), sharex=True,
                              constrained_layout=True)
