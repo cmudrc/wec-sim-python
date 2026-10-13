@@ -220,6 +220,26 @@ small preceding state offset can produce a large instantaneous force
 difference; they do not prove that every later trajectory difference has the
 same cause or make either full-duration result a converged target.
 
+An independent [source-numerics diagnostic](tests/test_oswec_passive_yaw_solver_path.py)
+uses the published wave phases and pinned BEMIO HDF5 without source body
+states or forces as inputs. It advances the single moving yaw coordinate with
+the input's `ode4` RK4 step and the source's
+[`convolutionIntegralInterp`](https://github.com/WEC-Sim/WEC-Sim/blob/0753b2e47f2457c078751dcfe5d251d1767b80ab/source/functions/simulink/model/convolutionIntegralInterp.m)
+and [`extrapFrad`](https://github.com/WEC-Sim/WEC-Sim/blob/0753b2e47f2457c078751dcfe5d251d1767b80ab/source/functions/simulink/model/extrapFrad.m)
+three-sample radiation extrapolation. The source excitation block also feeds
+its previous heading and coefficients through [Simulink Memory blocks](https://www.mathworks.com/help/simulink/slref/memory.html),
+which hold their input for one major integration step. Using the [three-seed R2025b
+output](https://github.com/cmudrc/wec-sim-python/actions/runs/38024726665)
+and [pinned HDF5 artifact](https://github.com/cmudrc/wec-sim-python/actions/runs/38096514222),
+the reconstructed 0–50 s yaw and speed differ from MATLAB by less than
+`1e-9` rad and rad/s for every seed. The first differing heading-update times
+move to `94.47`, `89.03`, and `152.59` s, compared with `53.45`, `86.74`, and
+`67.40` s on the normal Python path. Yet full 250 s maximum yaw gaps are
+`0.195`, `0.283`, and `0.145` rad; PTO-work gaps are `34.3%`, `14.2%`, and
+`8.29%`. Matching the early source solver path therefore narrows the initial
+numerical cause without establishing full published-case parity. This
+diagnostic does not change the Python physical default or badge count.
+
 The seed-2 Python held-heading result is also sensitive to time step: with
 the same sea phases and configuration, PTO damper work is `2,795`, `3,188`,
 and `2,681` J at `dt = 0.01`, `0.005`, and `0.0025` s. For comparison, the
