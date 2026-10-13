@@ -1022,9 +1022,27 @@ excitation pitch moment. Independent Python still passes its unchanged
 motion gates against the fine/fine source arm; its maximum pitch gap to the
 fine-solver/coarse-force arm is `0.002168` rad. This narrows the leading
 published-motion mechanism to the `simu.dt`-driven path rather than the
-nonlinear-force interval alone. The split does not isolate Simulink's fixed
-solver step from every other `simu.dt`-driven grid. The published-step case
-remains qualified and its badge count is unchanged.
+nonlinear-force interval alone. The solver-only audit below separates its
+fixed step from the other `simu.dt`-driven grids.
+
+In a [separate fixed-step-only R2025b run](https://github.com/cmudrc/wec-sim-python/actions/runs/38454235604),
+the published `simu.dt`, `dtOut`, `cicDt`, and `nonlinearDt` all stay at
+`0.1` s. After WEC-Sim initializes its wave and force grids, the audit
+changes only Simulink `ode4` `FixedStep` to `0.0125` s. At all 1,201
+common samples, its body pose, velocity, and acceleration match the prior
+`simu.dt=0.0125`/`nonlinearDt=0.1` arm within `2.9e-15` in their units;
+all logged excitation, radiation, added-mass, and restoring-force components
+match within `2.0e-8` N or N m. Its maximum pitch, surge, and heave changes
+from the published coarse run are `0.007688` rad, `35.65` mm, and `14.59`
+mm, respectively. Thus, for this pinned case, refining the fixed solver
+step alone reproduces the source motion and force histories previously
+obtained by reducing `simu.dt` while retaining coarse nonlinear sampling.
+Nonlinear sampling still changes the fully refined arm's instantaneous forces
+and leaves a `0.002067` rad maximum pitch difference between the two fine
+solver arms. The published-step motion remains qualified: the independent
+physical Python trajectory pairs the fully refined source, while the
+published `0.1` s solver path is materially step-sensitive. Badge counts
+are unchanged.
 
 This establishes independent motion parity for this fixed-hinge regular-wave
 case against a refined MATLAB path. The published coarse-step motion and
