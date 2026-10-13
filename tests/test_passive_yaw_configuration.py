@@ -70,6 +70,6 @@ def test_source_ode4_rejects_devices_without_held_passive_yaw():
     body = wec.body("flap", HYDRO, mass=12700,
                     inertia=(1.85e6,) * 3)
     wec.coordinate("yaw", body.move("yaw"))
-    with pytest.raises(ValueError, match="PM held passive yaw"):
+    with pytest.raises(ValueError, match="PM held yaw or a heading bank"):
         wec.run(PMWave(2.5, 8, direction=10), dt=.1,
                 end_time=.1, ramp_time=0, solver="wecsim_ode4")

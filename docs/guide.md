@@ -503,7 +503,10 @@ For the published 250 s held-yaw numerical path, use
 `wec.run(..., radiation_memory=40, solver="wecsim_ode4")`. This opt-in solver
 samples the wave force at half steps, extrapolates three major-step radiation
 loads with PCHIP through RK4, and delays the selected heading by one major
-step. It accepts only a pure-yaw PM case with a positive heading threshold.
+step. It accepts a pure-yaw PM case with either a positive heading threshold
+or `yaw_heading_bank`. For the heading bank, the source selects the nearest
+heading from each RK4 stage's current yaw instead of holding the previous
+major-step choice.
 The default implicit solver is unchanged. Direct public-API gates reproduce
 all three published 250 s yaw, PTO, and heading-event histories; see
 [PARITY.md](../PARITY.md).
