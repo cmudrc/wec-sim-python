@@ -1664,6 +1664,20 @@ Python body's largest surge and heave position errors are 1.08 and 0.936 mm;
 the largest pitch error is `6.74e-5` rad. Ordinary damper energy is 54.747 MJ,
 0.0762 MJ (0.139%) below the refined source. General nonlinear stop damping
 and arbitrary WEC layouts remain outside this RM3 validation.
+
+For the separate RM3 PTO-extension free decays, the [pinned BEMIO
+HDF5](https://github.com/cmudrc/wec-sim-python/actions/runs/38282150325)
+and [four-step source artifact](https://github.com/cmudrc/wec-sim-python/actions/runs/38324343546)
+allow a linear two-step extrapolation diagnostic. At shared 0.025 s times,
+`2 * trajectory(0.0125 s) - trajectory(0.025 s)` reduces the maximum
+MATLAB/Python float-heave difference from 5.69 mm at the matched finest step
+to 0.256 mm; spar heave falls from 0.861 to 0.0065 mm. The extrapolated
+speed histories still differ by up to 7.59 mm/s for the float and 0.212
+mm/s for the spar during startup. After 0.5 s those maxima fall to 0.254
+and 0.0013 mm/s. This cancellation is consistent with a shared fine-step
+trajectory after startup, but is not a published-step gate or proof of
+asymptotic convergence; both published 0.1 s cases remain qualified.
+
 Further dynamics targets include other published OSWEC and Sphere
 configurations. The Sphere free-decay cases already have direct Python motion
 comparisons. A comparison must
