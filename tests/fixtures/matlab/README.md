@@ -1,5 +1,44 @@
 # Portable MATLAB reference data
 
+## Fixed hydrodynamic monopile
+
+`monopile_hydro.h5` is the exact generated six-DOF HDF5 from the successful
+[400 s R2025b source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37858193863)
+(`matlab-MONOPILE_HYDRO-baseline`, commit
+`94892a712e28c9243c6e7d60545800eb6136869d`). Its SHA-256 is
+`927748f615f5e84e325e4d4ed96a01297dc5af40066f8c2c131e7e8d94930471`.
+The workflow pins WEC-Sim core `0753b2e47f2457c078751dcfe5d251d1767b80ab`
+and Applications `d53d4d4c9eda2581f04204f5d394a6ef84bb099e`.
+
+`monopile_hydro.npz` retains all 40,001 published samples of wave elevation,
+both bodies' positions, velocities, and total forces, the hydro body's
+excitation, and both fixed-joint reactions. It also keeps all 500 equal-energy
+wave components. Arrays were loaded as float64 from the source CSVs without
+rounding or interpolation; the archive SHA-256 is
+`de4293b4e00a54a9bf72eba495b3a9af2273a9058810356dea5250fdd99a538d`.
+Its source CSV SHA-256 hashes are:
+
+| Source CSV suffix | SHA-256 |
+| --- | --- |
+| `components` | `df04a7be1b4516cdf7e686a4d528212e1cf3de525e592dd4ef69898d4882bc14` |
+| `wave` | `d3ef951bde17a24fa47c22b7ce9bb34f90c1e34628520130c9a4e10c2c4381ab` |
+| `monopile_body1` | `137d917ebd8b513d8d1b5471a5040df479d5d6e22c7b1a2e730c779dd8d7227f` |
+| `monopile_body2` | `25aa640398864c7800b2a05e612aee9289161a1568e52bb4429e7987a5a152ad` |
+| `constraint1` | `43520af1187b99bcce8c6af6ba7483f660ef826e002d1c3b496c0b1bb5aabce4` |
+| `constraint2` | `07f081b62f722c82b3dd8046089b26d5473c9905c63bbf755e295ac48481fc06` |
+| `body1_forces` | `f32e9da4f3fa2eb670dad15048df1f4679813cf5ea7a561fe2e97a7421afc98a` |
+| `body2_forces` | `1c6675983839239d85436b6579d7c6356684d2a15faf7e848287b8ab56868ee4` |
+
+To regenerate, load those CSVs with `numpy.loadtxt(..., delimiter=",")`.
+Use wave columns 0–1, body columns 1–6, 7–12, and 13–18, hydro-body
+excitation columns 19–24, and fixed-joint columns 19–24. Stack body and joint
+arrays with body 1 before body 2; save them with `numpy.savez_compressed` under
+the keys used by `test_monopile_hydro_portable.py`. The two `body*_forces`
+files are not stored: the source test checks their stationary radiation,
+added-mass, drag, damping, and acceleration channels are zero before packing.
+The portable gate regenerates the sea from the pinned HDF5 and source phases,
+then independently computes all 400 s of excitation and fixed-body loads.
+
 ## OSWEC nonlinear visualization motion
 
 `oswec_nonlinear_viz_published_motion.npz` keeps all 1,201 samples of the
