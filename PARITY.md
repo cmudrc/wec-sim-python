@@ -1003,6 +1003,29 @@ for pitch, surge, and heave. The paired test now requires direct
 published-step gaps and correlation above `0.9999` on these channels.
 This supports source step sensitivity as the dominant numerical gap;
 it is a diagnostic, not a published-step motion gate.
+
+A [focused R2025b sample-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38451747995)
+separates the fixed-step `ode4` interval from nonlinear-force sampling over
+the same 120 s published input. Both new MATLAB arms use `simu.dt=0.0125` s;
+one uses `simu.nonlinearDt=0.0125` s and the other restores the published
+`0.1` s nonlinear interval. They otherwise share wave, hinge, mesh,
+radiation, and output settings. The prior published `0.1` s trajectory is
+the third comparison arm. At all 1,201 common samples, the maximum
+published-to-fine versus published-to-coarse-force pitch gaps are `0.007192`
+and `0.007688` rad; the two fine-solver arms differ by up to `0.002067` rad.
+The fine-solver arms' RMS difference is 25.5% of the published-to-fine RMS
+pitch gap, 26.2% for surge, and 19.3% for heave. Thus restoring the coarse
+nonlinear-force interval does not restore the published coarse-solver motion.
+It does materially change instantaneous force logs: the two fine-solver
+arms differ by up to `543.4` kN m restoring pitch moment and `542.8` kN m
+excitation pitch moment. Independent Python still passes its unchanged
+motion gates against the fine/fine source arm; its maximum pitch gap to the
+fine-solver/coarse-force arm is `0.002168` rad. This narrows the leading
+published-motion mechanism to the `simu.dt`-driven path rather than the
+nonlinear-force interval alone. The split does not isolate Simulink's fixed
+solver step from every other `simu.dt`-driven grid. The published-step case
+remains qualified and its badge count is unchanged.
+
 This establishes independent motion parity for this fixed-hinge regular-wave
 case against a refined MATLAB path. The published coarse-step motion and
 other nonlinear six-DOF layouts have separate numerical and feature limits.
