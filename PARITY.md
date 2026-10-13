@@ -534,17 +534,25 @@ RM3 cases are `End_Stops`, `RM3_MoorDyn_Viz`, and both `RM3_PTO_Extension`
 free decays; the remaining OSWEC cases are `OSWEC_NonLinear_Viz`,
 `PassiveYawRegression`, and the irregular mode of
 `Variable_Hydro/Passive_Yaw`. Their measured blockers are recorded below.
-Start with `RM3_MoorDyn_Viz`: review the existing 80 s published, MaxStep-only,
-and fine-step artifacts together. They already isolate the leading surge gap
-to MATLAB's coarse solver step and gate the independent fine-step motion and
-published scene output. Keep the published-motion label qualified unless an
-independent original-step trajectory passes its existing limits; do not rerun
-the same audit or alter the physical default to follow that step artifact.
-Apply the same evidence-based closeout to the remaining RM3 and OSWEC cases,
-reporting a source-limited case as qualified when no supported correction
-remains. In parallel, raise meaningful combined Python line-and-branch coverage
-from the measured 67% toward 90% with behavior and numerical invariants,
-not tests written only to execute lines.
+The existing 80 s `RM3_MoorDyn_Viz` records isolate the leading surge gap:
+refining only MATLAB's ode45 MaxStep changes float surge by up to `203.37` mm,
+while the original-to-fully-refined change is `203.4` mm. The independent
+Python run agrees with the MaxStep-only source within `3.44` mm in float
+surge, and its finer comparison meets the full-duration active-motion gates.
+The published 801-frame scene and saved-pose native line response also pass
+their separate gates. This is enough to close the current *diagnosis*, while
+the published-motion case remains qualified: its unchanged original-step
+limits still fail. Do not rerun the same source audit or alter the physical
+default to reproduce that coarse-step trajectory.
+
+Next, finish the pending OSWEC selected-heading step audit and merge its
+stacked public-path work only if the predeclared gates pass. For each other
+qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
+that could support an independent published-input gate. If the existing
+evidence instead isolates a source numerical artifact, record the limit and
+stop repeating that comparison. In parallel, raise meaningful combined
+Python line-and-branch coverage from the measured 69% toward 90% with behavior
+and numerical invariants, not tests written only to execute lines.
 
 | Other published cases | Gated / inventoried |
 | --- | ---: |
