@@ -123,3 +123,36 @@ def test_published_pto_extension_fine_step_pair(
     assert speed_errors[.0125] < finer_speed_gate
     assert position_errors[.0125] < .75 * position_errors[.025]
     assert speed_errors[.0125] < .75 * speed_errors[.025]
+
+    # The published 0.1 s trajectory remains a distinct source path.
+    published_position_error = np.max(np.abs(
+        python[.1].body_position[:, active, 2]
+        - source[.1][:, 1 + 2 * active],
+    ))
+    published_speed_error = np.max(np.abs(
+        python[.1].body_velocity[:, active, 2]
+        - source[.1][:, 2 + 2 * active],
+    ))
+    assert published_position_error > (.04 if active == 0 else .005)
+    assert published_speed_error > (.08 if active == 0 else .0015)
+
+    # Extrapolate both independently advanced trajectories to remove their
+    # leading step error. This is a convergence diagnostic, not a gate for
+    # either published 0.1 s free decay.
+    position_column = 1 + 2 * active
+    speed_column = 2 + 2 * active
+    source_position = (2 * source[.0125][::2, position_column]
+                       - source[.025][:, position_column])
+    python_position = (2 * python[.0125].body_position[::2, active, 2]
+                       - python[.025].body_position[:, active, 2])
+    source_speed = (2 * source[.0125][::2, speed_column]
+                    - source[.025][:, speed_column])
+    python_speed = (2 * python[.0125].body_velocity[::2, active, 2]
+                    - python[.025].body_velocity[:, active, 2])
+    assert np.max(np.abs(source_position - python_position)) < (
+        .0004 if active == 0 else .00002
+    )
+    # The first half-second still contains a source startup transient.
+    assert np.max(np.abs(source_speed[20:] - python_speed[20:])) < (
+        .0004 if active == 0 else .000003
+    )

@@ -1695,7 +1695,11 @@ MATLAB/Python float-heave difference from 5.69 mm at the matched finest step
 to 0.256 mm; spar heave falls from 0.861 to 0.0065 mm. The extrapolated
 speed histories still differ by up to 7.59 mm/s for the float and 0.212
 mm/s for the spar during startup. After 0.5 s those maxima fall to 0.254
-and 0.0013 mm/s. This cancellation is consistent with a shared fine-step
+and 0.0013 mm/s. The paired test now requires the direct published-step
+heave gaps to exceed 40/5 mm and speed gaps to exceed 80/1.5 mm/s for
+float/spar. Separately, it bounds both extrapolated heave gaps below
+0.4/0.02 mm and their post-startup speed gaps below 0.4/0.003 mm/s.
+This cancellation is consistent with a shared fine-step
 trajectory after startup, but is not a published-step gate or proof of
 asymptotic convergence; both published 0.1 s cases remain qualified.
 
