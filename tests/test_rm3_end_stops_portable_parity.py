@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from wecsim import LinearHardStops, solve_rm3_regular
+from wecsim import LinearHardStops, RegularWave, WEC
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,11 +64,19 @@ def test_full_duration_refined_matlab_end_stops_are_stable():
 
 
 def test_independent_full_duration_rm3_end_stops_motion():
-    """Advance 400 s from HDF5 and stop law, never source motion or force."""
-    response = solve_rm3_regular(
-        HYDRO, pto_hard_stops=LinearHardStops(-.6, .6, 1e8, 1e8),
-        dt=.0125, end_time=400,
-    )
+    """Advance public WEC.run from HDF5 and stops, never source state."""
+    stops = LinearHardStops(-.6, .6, 1e8, 1e8)
+    wec = WEC("RM3 with linear end stops")
+    float_body = wec.body("float", HYDRO,
+                          inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", HYDRO, inertia=(0, 94_407_091.24, 0))
+    wec.floating_joint(float_body, spar, damping=1_200_000,
+                       hard_stops=stops)
+    response = wec.run(RegularWave(2.5, 8), dt=.0125, end_time=400,
+                       ramp_time=100)
+    assert response.case["pto"]["hard_stops"]["lower_bound"] == -.6
+    assert response.case["pto"]["hard_stops"]["upper_bound"] == .6
+    pto_result = response.ptos["relative_heave"]
     with np.load(MATLAB, allow_pickle=False) as source:
         np.testing.assert_allclose(response.time, source["dt00125_time"],
                                    rtol=0, atol=1e-10)
@@ -76,7 +84,10 @@ def test_independent_full_duration_rm3_end_stops_motion():
             ("body_position", (.005, .006, 1e-4)),
             ("body_velocity", (.005, .03, 1e-4)),
         ):
-            actual = getattr(response, kind)[:, :, AXES]
+            actual = np.stack([
+                getattr(response.bodies[name], kind.removeprefix("body_"))[:, AXES]
+                for name in ("float", "spar")
+            ], axis=1)
             expected = source[f"dt00125_{kind}"]
             for body in range(2):
                 for axis, limit in enumerate(limits):
@@ -84,13 +95,19 @@ def test_independent_full_duration_rm3_end_stops_motion():
                            limit, f"Python body {body + 1} {kind} {AXES[axis]}")
         pto = source["dt00125_pto"]
         for actual, axis, limit, label in (
-            (response.pto_stroke, 0, .006, "PTO stroke"),
-            (response.pto_velocity, 1, .035, "PTO speed"),
-            (response.pto_force, 2, 450_000, "PTO force"),
+            (pto_result.stroke, 0, .006, "PTO stroke"),
+            (pto_result.velocity, 1, .035, "PTO speed"),
+            (pto_result.force, 2, 450_000, "PTO force"),
         ):
             _bound(actual, pto[:, axis], limit, label)
+        stop_force = dict(response.raw.extra_outputs)["pto_stop_force"]
+        assert np.max(np.abs(stop_force)) > 1_000_000
+        np.testing.assert_allclose(
+            pto_result.force, -1_200_000 * pto_result.velocity + stop_force,
+            rtol=0, atol=1e-8,
+        )
         python_energy = np.trapezoid(
-            response.pto_dissipated_power, response.time,
+            pto_result.absorbed_power, response.time,
         )
         matlab_energy = np.trapezoid(1_200_000 * pto[:, 1]**2,
                                      source["dt00125_time"])

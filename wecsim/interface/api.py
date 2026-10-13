@@ -254,6 +254,8 @@ class WEC(_WECCaseMixin):
         The PTO acts on float heave minus spar heave. The reduced joint does
         not model off-axis PTO endpoints or arbitrary Simscape constraints.
         Pretension is in newtons and sets equilibrium to -pretension/stiffness.
+        ``hard_stops`` limits relative heave stroke with a ``LinearHardStops``
+        law; this path uses adaptive integration and constant radiation.
         A native MoorDyn model can attach to one spar-local ``BodyPoint``;
         it is advanced once per time step with convolution radiation.
         """

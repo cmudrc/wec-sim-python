@@ -169,9 +169,9 @@ samples, each body's surge/heave/pitch position and speed (source columns
 It neither interpolates nor rounds source values. Archive SHA-256:
 `4d21c43c70fc7c213136c73e1450c0480c0739c76d8c2c6910c3ed51f4c858e3`.
 Ordinary Python CI now gates both the two-step MATLAB source stability and an
-independent 400 s Python solve using only the generated HDF5, wave settings,
-and stop law. This is the refined-step case; the published 0.1 s source
-trajectory remains step-sensitive and qualified.
+independent 400 s public `WEC.run` solve using only the generated HDF5, wave
+settings, and configured stop law. This is the refined-step case; the
+published 0.1 s source trajectory remains step-sensitive and qualified.
 
 ## RM3 end-stop force transition
 
