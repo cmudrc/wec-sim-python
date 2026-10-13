@@ -17,6 +17,13 @@ The archive contains `time`, `pose`, `velocity`, `acceleration`,
 `63f3669b192ab271a92f5ea9c4650d1d183ef68f0abc4a6b0faedcd2b4948e4f`.
 The refined-step source job gates its 0.1 s run against these published
 channels before evaluating step sensitivity or independent Python motion.
+The motion archive does not contain hydrodynamic coefficients. The pinned
+[refinement artifact](https://github.com/cmudrc/wec-sim-python/actions/runs/38093454463)
+supplies its matching `oswec.h5` (SHA-256
+`72664d60037698350513d6481d4114db79fe2cf8984247a13ff16e980c52d31f`).
+That HDF5 has 36 excitation headings; `examples/data/oswec.h5` has 10 and
+also differs in added mass. Use the source-matched HDF5 for this motion
+comparison rather than substituting the example file.
 
 ## RM3 regular wave
 
