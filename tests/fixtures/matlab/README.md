@@ -119,6 +119,34 @@ and the compact archive SHA-256 is
 Ordinary Python CI uses these files when live MATLAB output is unavailable;
 the same test uses fresh generated files when both source directories are set.
 
+## OWC OrificeModel physical prefix
+
+`owc_orifice.h5` is the exact seven-DOF BEMIO output from the successful
+[R2025b source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37799665808)
+(`matlab-OWC_ORIFICE-baseline`, commit
+`5dbf0d5fc228bcbd39275ec8c267ef0e43289bb2`). Its SHA-256 is
+`fe702ecf99f10d4cd0bba5d858b588dd37709cd45a5c3727356849e8dc40d676`.
+The workflow pins WEC-Sim core `0753b2e47f2457c078751dcfe5d251d1767b80ab`
+and Applications `d53d4d4c9eda2581f04204f5d394a6ef84bb099e`.
+
+`owc_orifice_prefix.npz` keeps the first 1,201 source samples (0–6 s) of
+rigid-body output, flexible-mode signals, and incident sea, plus all 500 PM
+component rows, the five published orifice parameters, and five unrounded
+internal orifice evaluations. Those evaluations cover both flow signs and
+subthreshold/superthreshold Mach flags; their original row indices are stored.
+The rigid-body CSV SHA-256 is
+`8153820cc0de55b347ca0f7330eea49d1e5c9e71176c8145898c5687b97219b2`,
+the flexible-mode MAT SHA-256 is
+`825ff26839df1fccb5c48533ec71511671240d5693450cf0cb99df1518c6e20c`,
+and the full internal orifice CSV SHA-256 is
+`22314e78887134feebc28f2a54e1e5157d39769ce534229367f44dc22cd43096`.
+The compact archive SHA-256 is
+`d6106f4b14abfed868665f478f2b658346f535f501c5ec533e356620bc79dca7`.
+The ordinary-CI Python run receives only the pinned HDF5 and saved wave
+phases. Its motion is compared after the solve against the same predeclared
+6 s limits as the live source test. This pre-threshold prefix does not gate
+the published 130 s physical coupled trajectory.
+
 ## MBARI Cable
 
 `mbari_cable.npz` keeps all 12,001 samples of the published 120 s three-body

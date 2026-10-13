@@ -102,6 +102,15 @@ This preserves the existing 400 s numerical limits without a fresh MATLAB
 run. It is a durable check for an already counted case; badge counts stay the
 same.
 
+The published OWC OrificeModel's first 6 s now runs in ordinary Python CI
+from the [exact archived seven-DOF HDF5 and source phases](tests/fixtures/matlab/README.md).
+The independent physical coupled path passes the predeclared 12 mm surge,
+25 mm heave, 10 mrad pitch, and 7.5 mm flexible-displacement limits before
+the source Mach flag first rises. Selected source internal solver evaluations
+also gate the orifice force, pressure, flow, power, and Mach flag at both flow
+signs and across the threshold. The published 130 s physical trajectory
+remains unpaired, so this adds no case badge.
+
 The shortened 120 s MATLAB selected-bank baseline reproduces the first 120 s
 of the published 600 s run: its 500 incident-wave components and selected
 headings agree exactly, yaw within `1.1e-15` rad, and PTO torque within
@@ -569,7 +578,7 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. In parallel, raise meaningful combined
-Python line-and-branch coverage from the measured 76% toward 90% with behavior
+Python line-and-branch coverage from the measured 77% toward 90% with behavior
 and numerical invariants, not tests written only to execute lines.
 
 | Other published cases | Gated / inventoried |
