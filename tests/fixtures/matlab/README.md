@@ -61,6 +61,39 @@ That HDF5 is not byte-identical to the current WEC-Sim example; its regular-wave
 hydrodynamic data still reproduce this source trajectory within the stated
 per-channel gates. The live paired tests continue to use pinned MATLAB inputs.
 
+## OSWEC Wave Markers
+
+`oswec_wave_markers.npz` retains every 0.1 s sample of the published 400 s
+OSWEC regular-wave marker, body-motion, and PTO histories. It was copied
+without rounding from the successful
+[R2025b source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37932186068)
+(`matlab-WAVE_MARKERS_OSWEC-baseline` artifact, run commit
+`9872f98ccd65aa57e49f0d7dbd5db8919d87773c`). The workflow pins WEC-Sim
+core `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The source marker CSV hash
+is `90aab5317195b8fcb656089fdd42e2de0ccae2d96b1fb948b5b2a9916acef8c3`;
+the archive SHA-256 is
+`16709146ff26f0d5b971f16a48713af8dd58ea325870802732cd1d4db148c2b1`.
+
+The archive stores time, 25 world-XY marker locations and elevations, origin
+elevation, the seven source wave parameters, both bodies' six position and
+velocity channels, and hinge PTO stroke, speed, force, and source-signed power.
+For each body, position and velocity come from source CSV columns 1–6 and
+7–12. PTO stroke, speed, force, and power come from columns 5, 11, 17, and
+23. The source body CSV SHA-256 hashes are
+`3e6363059307858a8795e2e9390430e8fa753f0dc15ba6eb362c909296cc8b2f`
+(flap) and
+`7c4dec9675b5fd85007259728902aeaf37c463c266ccfdbccd043e77bb38e37d`
+(base); the PTO CSV hash is
+`b297702932cf6147efccb64b462036064d1b26a8e39e9795fd593b3ad62dd4c7`.
+The always-on test uses `examples/data/oswec.h5` (SHA-256
+`28aa028d404a88f877924bc435e7ad3a4c50e26f9706c1f39ef7324e5ec60750`).
+This bundled HDF5 is not byte-identical to the source job's generated HDF5
+(SHA-256 `79d9ab232958f3b3f9ec1bcdcd9a56c9fe8eb54f22e9de2714403860b8a51b32`),
+but its full-duration motion passes the same per-channel source limits. The
+external paired test still checks the exact generated HDF5; this portable
+gate keeps the measured published trajectory in ordinary Python CI.
+
 ## MBARI Cable
 
 `mbari_cable.npz` keeps all 12,001 samples of the published 120 s three-body
