@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import field
 from numbers import Real
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -16,7 +15,6 @@ from wecsim.interface.configuration import (
     Body,
     BodyPoint,
     Coordinate,
-    Current,
     FullDirectionalSpectrumWave,
     HydroState,
     ImportedElevationWave,
@@ -489,15 +487,20 @@ class WEC(_WECCaseMixin):
         dt: float, end_time: float,
         ramp_time: float | None = None,
         radiation_memory: float | None = None,
+        solver: str = "implicit",
         rho: float | None = None, g: float | None = None,
         initial_coordinate: Mapping[str, float] | Sequence[float] | None = None,
         initial_speed: Mapping[str, float] | Sequence[float] | None = None,
         base_dir: str | Path = ".",
     ) -> WECResult:
-        """Simulate the WEC and return named NumPy motion and PTO histories."""
+        """Simulate the WEC and return named NumPy motion and PTO histories.
+
+        ``wecsim_ode4`` is an opt-in source solver for PM held passive yaw;
+        the default remains the implicit physical radiation step.
+        """
         case = self.to_case(
             wave, dt=dt, end_time=end_time, ramp_time=ramp_time,
-            radiation_memory=radiation_memory, rho=rho, g=g,
+            radiation_memory=radiation_memory, solver=solver, rho=rho, g=g,
             initial_coordinate=initial_coordinate, initial_speed=initial_speed,
         )
         # The Python builder and file-driven CLI share the validated case

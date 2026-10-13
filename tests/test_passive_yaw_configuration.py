@@ -63,3 +63,13 @@ def test_heading_bank_accepts_pm_wave_before_hydro_validation():
     with pytest.raises(ValueError, match="full-circle BEM headings"):
         wec.run(PMWave(2.5, 8, direction=10), dt=0.1,
                 end_time=0.1, ramp_time=0)
+
+
+def test_source_ode4_rejects_devices_without_held_passive_yaw():
+    wec = WEC("Unsupported source solver")
+    body = wec.body("flap", HYDRO, mass=12700,
+                    inertia=(1.85e6,) * 3)
+    wec.coordinate("yaw", body.move("yaw"))
+    with pytest.raises(ValueError, match="PM held passive yaw"):
+        wec.run(PMWave(2.5, 8, direction=10), dt=.1,
+                end_time=.1, ramp_time=0, solver="wecsim_ode4")

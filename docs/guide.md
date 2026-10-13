@@ -499,9 +499,14 @@ coefficient hold and snap to a nearby tabulated BEM heading. A zero threshold
 keeps continuous interpolation. The sampled setting is available for PM waves
 with one incident direction; small trajectory differences can change its
 update sample and accumulate over long runs.
-A three-seed paired diagnostic that prescribes only MATLAB's heading-update
-schedule recovers tight yaw and PTO-work agreement while Python advances its
-own motion. Native long-trajectory parity for the one-degree hold remains open.
+For the published 250 s held-yaw numerical path, use
+`wec.run(..., radiation_memory=40, solver="wecsim_ode4")`. This opt-in solver
+samples the wave force at half steps, extrapolates three major-step radiation
+loads with PCHIP through RK4, and delays the selected heading by one major
+step. It accepts only a pure-yaw PM case with a positive heading threshold.
+The default implicit solver is unchanged. Direct public-API gates reproduce
+all three published 250 s yaw, PTO, and heading-event histories; see
+[PARITY.md](../PARITY.md).
 In the pinned irregular case, halving MATLAB's published 0.01 s step changes
 250 s PTO work by 47.8% and 19.2% in two phase realizations, even though the
 incident wave is identical at common times. Halving the step again changes

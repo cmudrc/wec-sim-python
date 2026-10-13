@@ -301,6 +301,13 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
                 "passive yaw currently needs one pure-yaw body, stationary others, "
                 "regular or PM waves, and independent radiation"
             )
+    solver = sim.get("solver", "implicit")
+    if solver not in ("implicit", "wecsim_ode4"):
+        raise ValueError("simulation.solver must be implicit or wecsim_ode4")
+    if solver == "wecsim_ode4" and not (
+            wave["type"] == "pm" and len(passive_indices) == 1
+            and yaw_thresholds[passive_indices[0]] > 0):
+        raise ValueError("wecsim_ode4 currently needs PM held passive yaw")
     nonlinear_indices = [
         index for index, spec in enumerate(bodies)
         if spec.get("nonlinear_hydro") is not None
@@ -531,10 +538,14 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         if body_spec.get("passive_yaw", False):
             if wave["type"] == "pm":
                 passive_model = SampledPassiveYawExcitation.from_hydro_data(
-                    body.hydroData, components, dt=dt, end_time=end_time,
+                    body.hydroData, components,
+                    dt=dt / 2 if solver == "wecsim_ode4" else dt,
+                    end_time=end_time,
                     ramp_time=ramp_time, rho=rho, g=g,
                 )
-                pm_elevation = passive_model.elevation
+                pm_elevation = (passive_model.elevation[::2]
+                                if solver == "wecsim_ode4" else
+                                passive_model.elevation)
                 if yaw_banks[index - 1] is not None:
                     passive_model = NearestSampledHeadingExcitation(
                         passive_model, yaw_banks[index - 1],
@@ -638,6 +649,7 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
     response = system.integrate(
         dt=dt, end_time=end_time,
         initial_coordinate=initial_q, initial_speed=initial_v,
+        solver=solver,
     )
     if wave["type"] in ("regular", "regularCIC"):
         ramp = np.ones(len(response.time))

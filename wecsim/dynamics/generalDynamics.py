@@ -6,6 +6,7 @@ the engine assembles rigid inertia, cross-body added mass, restoring,
 excitation, radiation, and PTO forces. Constant-frequency radiation uses RK4
 or adaptive integration for continuous nonlinear forces; an impulse-response
 kernel uses an implicit trapezoidal step.
+The published held-yaw OSWEC case can opt into its source ode4/PCHIP path.
 """
 
 from dataclasses import dataclass
@@ -193,6 +194,7 @@ class GeneralizedDynamics:
         *,
         known_radiation: tuple[np.ndarray, ...] | None = None,
         dt: float | None = None,
+        complete_radiation: bool = False,
         applied_force: np.ndarray | None = None,
         excitation_overrides: tuple[np.ndarray | None, ...] | None = None,
     ) -> np.ndarray:
@@ -271,7 +273,8 @@ class GeneralizedDynamics:
             if known_radiation is not None:
                 body_force -= known_radiation[i]
                 if (body.radiation_kernel is not None
-                        and self.radiation_discretization == "trapezoid"):
+                        and self.radiation_discretization == "trapezoid"
+                        and not complete_radiation):
                     # History excludes the current endpoint. Its kernel[0]
                     # contribution has half weight in the trapezoidal rule.
                     current_velocity = np.concatenate(velocities)
@@ -297,6 +300,7 @@ class GeneralizedDynamics:
         applied_force_history: np.ndarray | None = None,
         step_force: Callable[[float, float, np.ndarray, np.ndarray], np.ndarray] | None = None,
         radiation_state_space: RadiationStateSpace | None = None,
+        solver: str = "implicit",
     ) -> DynamicsResponse:
         """Integrate the body dynamics with optional sampled external loading.
 
@@ -304,6 +308,8 @@ class GeneralizedDynamics:
         next coordinate and speed. It advances once per radiation-memory
         step; its force acts during the ensuing implicit body solve. The
         initial external force is zero.
+        ``solver='wecsim_ode4'`` is limited to the one-coordinate held-yaw
+        source path; it leaves the implicit default unchanged.
         """
         if not np.isfinite([dt, end_time]).all() or dt <= 0 or end_time < 0:
             raise ValueError("dt must be positive and end_time nonnegative")
@@ -326,6 +332,14 @@ class GeneralizedDynamics:
             raise ValueError("initial state must be finite")
         time = np.arange(steps + 1) * dt
         memory = any(body.radiation_kernel is not None for body in self.bodies)
+        if solver not in ("implicit", "wecsim_ode4"):
+            raise ValueError("solver must be implicit or wecsim_ode4")
+        if solver == "wecsim_ode4" and (
+                not memory or radiation_state_space is not None
+                or adaptive_regular or applied_force_history is not None
+                or step_force is not None or self.added_mass_delay is not None
+                or self.controlled_ptos or self.linear_generators):
+            raise ValueError("wecsim_ode4 needs standalone held-yaw radiation memory")
         if radiation_state_space is not None and (
                 not isinstance(radiation_state_space, RadiationStateSpace)
                 or len(self.bodies) != 2 or memory or self.controlled_ptos
@@ -350,7 +364,10 @@ class GeneralizedDynamics:
         controlled_force = None
         generator_state = None
         generator_force = None
-        if radiation_state_space is not None:
+        if solver == "wecsim_ode4":
+            from wecsim.dynamics.heldYawOde4 import integrate_held_yaw_ode4
+            integrate_held_yaw_ode4(self, time, q, v, a, dt)
+        elif radiation_state_space is not None:
             self._integrate_state_space_radiation(
                 time, q, v, a, dt, radiation_state_space,
             )

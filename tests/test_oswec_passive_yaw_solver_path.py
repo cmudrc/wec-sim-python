@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 from scipy.interpolate import CubicSpline, PchipInterpolator
 
+from wecsim import PMWave, WEC, WorldPoint
 from wecsim.environment.irregularWave import pm_equal_energy_components
 from wecsim.hydrodynamics.bodyClass import BodyClass
 from wecsim.hydrodynamics.passiveYaw import (
@@ -158,3 +159,93 @@ def test_published_held_yaw_source_numerics_full_duration(seed):
     print(f"seed {seed}: {len(source_events)} heading updates paired; "
           f"250 s yaw {yaw_gap:.6g} rad, speed {speed_gap:.6g} rad/s, "
           f"PTO torque {torque_gap:.6g} N m, work {work_gap:.6g} relative")
+
+
+@pytest.mark.parametrize("seed", (1, 2, 3))
+def test_published_held_yaw_through_public_solver(tmp_path, seed):
+    """Gate self-advanced full-duration motion through the public WEC API."""
+    reference = Path(REFERENCE)
+    hydro = (Path(APPLICATIONS)
+             / "_Common_Input_Files/OSWEC/hydroData/oswec.h5")
+    prefix = "OSWEC_PASSIVE_YAW_IRR" + (f"_SEED{seed}" if seed > 1 else "")
+    case = "PassiveYawRegression" + (f"Seed{seed}" if seed > 1 else "")
+    components = np.loadtxt(reference / f"{prefix}_components.csv", delimiter=",")
+    source = np.loadtxt(
+        reference / f"OSWEC_PASSIVE_YAW_IRR_{case}_body1.csv", delimiter=",",
+    )
+    base = np.loadtxt(
+        reference / f"OSWEC_PASSIVE_YAW_IRR_{case}_body2.csv", delimiter=",",
+    )
+    pto = np.loadtxt(
+        reference / f"OSWEC_PASSIVE_YAW_IRR_{case}_pto1.csv", delimiter=",",
+    )
+    wave = np.loadtxt(reference / f"{prefix}_wave.csv", delimiter=",")
+    phases = tmp_path / "phases.csv"
+    np.savetxt(phases, components[:, 3, None], delimiter=",")
+
+    wec = WEC("OSWEC published held yaw")
+    flap = wec.body(
+        "flap", hydro, mass=12700, inertia=(1.85e6,) * 3,
+        passive_yaw=True, passive_yaw_threshold=1,
+    )
+    wec.body("base", hydro, mass=999, inertia=(999,) * 3)
+    yaw = wec.coordinate(
+        "yaw", flap.move("yaw", pivot=WorldPoint(0, 0, -8.9)),
+    )
+    wec.rotational_pto("hinge", yaw, damping=120000)
+    result = wec.run(
+        PMWave(2.5, 8, direction=10, phase_file=phases),
+        dt=.01, end_time=250, ramp_time=100, radiation_memory=40,
+        solver="wecsim_ode4",
+    )
+    np.testing.assert_allclose(result.time, source[:, 0], rtol=0, atol=1e-10)
+    np.testing.assert_allclose(result.wave_elevation, wave[:, 1],
+                               rtol=0, atol=1e-11)
+    np.testing.assert_allclose(result.bodies["base"].position, base[:, 1:7],
+                               rtol=0, atol=1e-10)
+    np.testing.assert_allclose(result.bodies["base"].velocity, base[:, 7:13],
+                               rtol=0, atol=1e-10)
+    force = dict(result.raw.extra_outputs)["body1_excitation_force"]
+    assert np.max(np.abs(force - source[:, 19:25])) < .001
+
+    angle = result.bodies["flap"].position[:, 5]
+    speed = result.bodies["flap"].velocity[:, 5]
+    torque = result.ptos["hinge"].force
+    yaw_gap = np.max(np.abs(angle - source[:, 6]))
+    speed_gap = np.max(np.abs(speed - source[:, 12]))
+    torque_gap = np.max(np.abs(torque - pto[:, 17]))
+    assert yaw_gap < 1e-6
+    assert speed_gap < 1e-7
+    assert torque_gap < .01
+    assert np.isfinite((angle, speed, torque)).all()
+    source_work = -np.trapezoid(pto[:, 23], result.time)
+    python_work = np.trapezoid(result.ptos["hinge"].absorbed_power, result.time)
+    work_gap = abs(python_work - source_work) / source_work
+    assert source_work > 0 and work_gap < 1e-6
+
+    # Both heading histories come from their own motion, never saved source
+    # headings or forces. The event indices must agree at the published step.
+    body = BodyClass(str(hydro))
+    body.bodyNumber = 1
+    body.bodyTotal = 2
+    body.readH5file()
+    components_model = pm_equal_energy_components(
+        hydro, significant_height=2.5, peak_period=8,
+        directions=[10], spreading=[1], phase=components[:, 3, None],
+    )
+    sampled = SampledPassiveYawExcitation.from_hydro_data(
+        body.hydroData, components_model, dt=.01, end_time=250,
+        ramp_time=100, rho=1000, g=9.81,
+    )
+    events = []
+    for motion in (source[:, 6], angle):
+        replay = HeldPassiveYawExcitation(sampled, threshold=1)
+        headings = np.empty(len(motion))
+        for step, at_time in enumerate(result.time):
+            replay.commit(at_time, np.array([motion[step]]))
+            headings[step] = replay.last_heading
+        events.append(np.flatnonzero(np.abs(np.diff(headings)) > 1e-5))
+    np.testing.assert_array_equal(events[1], events[0])
+    print(f"public seed {seed}: {len(events[0])} events paired; "
+          f"yaw {yaw_gap:.6g} rad, speed {speed_gap:.6g} rad/s, "
+          f"torque {torque_gap:.6g} N m, work {work_gap:.6g} relative")
