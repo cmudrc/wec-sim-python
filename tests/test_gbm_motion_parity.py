@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 
 import numpy as np
-import pytest
 from scipy.io import loadmat
 
 from wecsim import RegularWave, WEC
@@ -12,15 +11,20 @@ from wecsim import RegularWave, WEC
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (APPLICATIONS and REFERENCE),
-    reason="generated MATLAB GBM barge output and HDF5 absent",
-)
+LIVE = bool(APPLICATIONS and REFERENCE)
+PORTABLE = Path(__file__).resolve().parent / "fixtures/matlab/gbm_barge.npz"
+PORTABLE_HYDRO = Path(__file__).resolve().parent / "fixtures/matlab/gbm_barge.h5"
 
 
 def _load(name):
-    return np.loadtxt(Path(REFERENCE) / f"GBM_BARGE_{name}.csv",
-                      delimiter=",", ndmin=2)
+    if LIVE:
+        values = np.loadtxt(Path(REFERENCE) / f"GBM_BARGE_{name}.csv",
+                            delimiter=",", ndmin=2)
+        # Retain only the rigid time, pose, speed, and acceleration columns
+        # used by both the live and compact-source checks.
+        return values[:, np.r_[0:13, 43:49]] if name == "Barge_body1" else values
+    with np.load(PORTABLE, allow_pickle=False) as source:
+        return source[name]
 
 
 def _error(actual, expected, limit, label):
@@ -31,14 +35,21 @@ def _error(actual, expected, limit, label):
 
 
 def test_published_barge_rigid_and_flexible_motion():
-    output = Path(REFERENCE)
-    flex = loadmat(output / "GBM_BARGE_Flex_out.mat",
-                   simplify_cells=True)["Flex_out"]
-    time = np.asarray(flex["time"])
-    values = np.asarray(flex["signals"]["values"])
+    if LIVE:
+        flex = loadmat(Path(REFERENCE) / "GBM_BARGE_Flex_out.mat",
+                       simplify_cells=True)["Flex_out"]
+        time = np.asarray(flex["time"])
+        values = np.asarray(flex["signals"]["values"])
+        hydro = (Path(APPLICATIONS)
+                 / "Generalized_Body_Modes/hydroData/barge.h5").resolve()
+    else:
+        with np.load(PORTABLE, allow_pickle=False) as source:
+            time = source["time"]
+            values = source["flex"]
+        hydro = PORTABLE_HYDRO
     rigid = _load("Barge_body1")
     assert values.shape == (8001, 40)
-    assert rigid.shape == (8001, 49)
+    assert rigid.shape == (8001, 19)
     _error(time, rigid[:, 0], 1e-10, "flexible and rigid time")
     mode_q, mode_v, mode_a, total = np.split(values[:, :16], 4, axis=1)
     forces = values[:, 16:].reshape(-1, 6, 4)
@@ -62,15 +73,13 @@ def test_published_barge_rigid_and_flexible_motion():
            "source flexible restoring")
     assert np.max(np.abs(forces[:, 4:])) == 0
     added = _load("added_mass")
-    rigid_acceleration = rigid[:, 43:49]
+    rigid_acceleration = rigid[:, 13:19]
     extrapolated = np.vstack((rigid_acceleration[:1], rigid_acceleration[:1],
                               2 * rigid_acceleration[1:-1]
                               - rigid_acceleration[:-2]))
     _error(forces[:, 2], extrapolated @ added[6:, :6].T, .05,
            "source sampled added-mass feedback")
 
-    hydro = (Path(APPLICATIONS)
-             / "Generalized_Body_Modes/hydroData/barge.h5").resolve()
     wec = WEC("GBM barge")
     barge = wec.body("barge", hydro, mass="equilibrium",
                      inertia=(6.667e7, 2.167e9, 2.167e9))
