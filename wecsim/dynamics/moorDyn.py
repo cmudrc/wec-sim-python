@@ -132,6 +132,7 @@ class MoorDyn:
             )
         with output_file.open(encoding="utf-8") as stream:
             header = stream.readline().split()
+            units = stream.readline().split()
         columns = {name: index for index, name in enumerate(header)}
         node_count = 0
         while f"Node{node_count}px" in columns:
@@ -149,7 +150,11 @@ class MoorDyn:
             ]
         except KeyError as exc:
             raise ValueError("MoorDyn line output needs node positions and segment tensions") from exc
-        values = np.loadtxt(output_file, skiprows=1, ndmin=2)
+        # WriteUnits=1 adds a second header row, including "(s)" for time.
+        values = np.loadtxt(
+            output_file, skiprows=2 if units and units[0] == "(s)" else 1,
+            ndmin=2,
+        )
         if (values.shape[0] == 0 or values.shape[1] != len(header)
                 or not np.isfinite(values).all()):
             raise ValueError("MoorDyn line output has missing or nonfinite samples")

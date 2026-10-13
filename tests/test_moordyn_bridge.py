@@ -143,3 +143,15 @@ def test_native_line_history_can_feed_mooring_vtp(tmp_path):
     np.testing.assert_allclose(points.reshape(2, 3),
                                [[0, 0, -10], [1.5, 0, -5]])
     np.testing.assert_allclose(load, [25])
+
+    # MoorDyn can optionally write a units row before the same samples.
+    output.write_text(
+        output.read_text(encoding="utf-8").replace(
+            "\n0 0 0", "\n(s) (m) (m) (m) (m) (m) (m) (N)\n0 0 0", 1,
+        ),
+        encoding="utf-8",
+    )
+    unit_times, unit_nodes, unit_tensions = model.line_history(1)
+    np.testing.assert_array_equal(unit_times, times)
+    np.testing.assert_array_equal(unit_nodes, nodes)
+    np.testing.assert_array_equal(unit_tensions, tensions)
