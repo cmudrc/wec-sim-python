@@ -61,6 +61,39 @@ That HDF5 is not byte-identical to the current WEC-Sim example; its regular-wave
 hydrodynamic data still reproduce this source trajectory within the stated
 per-channel gates. The live paired tests continue to use pinned MATLAB inputs.
 
+## MBARI Cable
+
+`mbari_cable.npz` keeps all 12,001 samples of the published 120 s three-body
+MBARI Cable motion, incident wave, and cable displacement, speed, and axial
+force. It comes from the successful
+[pinned R2025b MATLAB run](https://github.com/cmudrc/wec-sim-python/actions/runs/37859525482)
+(`matlab-CABLE_SOURCE-baseline` artifact, run commit
+`fc753cf65892553cf3363b496ae7111444b096e5`). The workflow pins WEC-Sim
+core `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The matching generated
+`mbari.h5` was copied unchanged to `examples/data/mbari.h5` (SHA-256
+`29da78db89775f682ba1b50b613f594e4a961195529157967493b3ffb8794422`).
+
+The archive retains body CSV columns 1–6 and 7–12 as position and velocity,
+wave columns 0–1 as time and elevation, and cable columns 3, 9, and 21 as
+displacement, speed, and force. All columns were loaded as float64 without
+rounding. Source SHA-256 hashes are:
+
+| Source file | SHA-256 |
+| --- | --- |
+| `CABLE_SOURCE_Cable_body1.csv` | `ec8bd074a299a0a3bc0e792432495a5b0c26abbc92aa974198853ab21a86f3b0` |
+| `CABLE_SOURCE_Cable_body2.csv` | `42c2b464b93099b57b88a00d0a3f45d2b7f1b8015706db81483ebd37ed1c6e4a` |
+| `CABLE_SOURCE_Cable_body3.csv` | `61f95b211e3d34bbbef0543c6b6f3ec12e0eb110e6ac151d6395a5b625d82561` |
+| `CABLE_SOURCE_cable1.csv` | `aca36883789e40e53476123f10b45b3db91e768f24e657f66add7d5bd9e27859` |
+| `CABLE_SOURCE_wave.csv` | `de635cbf9f60210cdaeab3ce89782e3b657df85a3a682dac809f0af2f17bc925` |
+
+The compact archive SHA-256 is
+`dfbe2cd5d689b32c436d243e0772d6298632bc6221bfe45c40a83a0d6d882e7e`.
+The always-on test independently advances the complete published input and
+applies the established body, wave, cable, force peak/RMS/impulse, and active
+fraction gates. This guards the published planar case, including its brief
+step-sensitive cable snap; it does not establish arbitrary six-DOF cables.
+
 ## RM3 end-stop force transition
 
 `rm3_end_stops_force_samples.csv` retains six rows from the successful
