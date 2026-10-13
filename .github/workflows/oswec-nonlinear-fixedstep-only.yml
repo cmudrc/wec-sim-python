@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/oswec-nonlinear-fixedstep-only.yml'
       - 'tests/matlab/oswec_nonlinear_fixedstep_only.m'
+      - 'tests/matlab/oswec_nonlinear_fixedstep_only_simulate.m'
       - 'tests/test_oswec_nonlinear_fixedstep_only.py'
   workflow_dispatch:
 
