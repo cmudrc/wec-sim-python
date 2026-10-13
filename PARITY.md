@@ -139,7 +139,7 @@ change is `0.00231` rad and PTO work changes by `0.535%`, larger than
 MATLAB's same-step differences above. A further local Python run at
 `dt=0.0025` s needs no fallback and gives `0.000953` rad yaw difference and
 `0.175%` work difference relative to Python `0.005` s. A matching MATLAB
-quarter-step source run now passes the paired gates through 120 s; the
+quarter-step source run now passes the paired gates through 140 s; the
 measured result and its longer-window limit are recorded below.
 
 A [250 s pinned MATLAB step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38127365821)
@@ -600,11 +600,18 @@ the same quarter-step differs from MATLAB by at most `1.837e-5` rad yaw,
 `0.008%`. Both comparisons pass the predeclared gates of `0.0006` rad yaw,
 `0.00015` rad/s speed, `20` N m torque, and `0.1%` work. The two source runs
 each make 181 heading switches but select different headings at 163 common
-samples, beginning at 43.855 s. This establishes a stable, independently
-paired early 120 s window. MATLAB's own `0.01`-to-`0.005` s source change
-becomes large by 250 s, and a 250 s quarter-step source run remains beyond
-the current GitHub job budget. Neither 250 s source convergence nor native
-600 s motion parity is established.
+samples, beginning at 43.855 s. A [bounded 140 s quarter-step source run](https://github.com/cmudrc/wec-sim-python/actions/runs/38344267558)
+passes the same predeclared limits. At 140 s, MATLAB's `0.005`-to-`0.0025` s
+self-change is at most `0.0004019` rad yaw, `6.864e-5` rad/s speed, and
+`8.236` N m PTO torque, with `0.0762%` relative PTO-work change. Independent
+Python at `0.0025` s differs from that quarter-step source by at most
+`8.647e-5` rad yaw, `1.507e-5` rad/s speed, `1.808` N m torque, and
+`0.020%` relative PTO work. The two MATLAB trajectories each make 225
+heading switches but select different headings at 320 common samples.
+This establishes a stable, independently paired early 140 s window.
+MATLAB's own `0.01`-to-`0.005` s source change becomes large by 250 s, and a
+250 s quarter-step source run remains beyond the current GitHub job budget.
+Neither 250 s source convergence nor native 600 s motion parity is established.
 
 The [RM3 MoorDyn visualization force export](https://github.com/cmudrc/wec-sim-python/actions/runs/38085085794)
 records acceleration, excitation, radiation, added mass, restoring, Morison,
