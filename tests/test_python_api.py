@@ -9,7 +9,7 @@ from scipy.io import loadmat
 
 from examples.configurable_rm3_pto import HYDRO, build_wec
 from wecsim.dynamics.caseDynamics import run_case
-from wecsim import (FullDirectionalSpectrumWave, ImportedElevationWave, ImportedSpectrumWave, JONSWAPWave, LatchingControl, MultiPMWave, NoWave, PMWave,
+from wecsim import (FullDirectionalSpectrumWave, ImportedElevationWave, ImportedSpectrumWave, JONSWAPWave, LatchingControl, MoorDyn, MultiPMWave, NoWave, PMWave,
                     RegularWave, WEC, WorldPoint)
 from wecsim.environment.irregularWave import (imported_spectrum_components,
                                   jonswap_equal_energy_components,
@@ -269,6 +269,32 @@ def test_floating_joint_accepts_traditional_jonswap_from_public_wave():
     assert np.max(np.abs(result.bodies["float"].position[:, 2])) > 0
     assert JONSWAPWave(2, 8, discretization="traditional").as_case()[
         "frequency_count"] == 1000
+
+
+def test_rm3_moordyn_attachment_is_spar_local_and_excludes_surge_spring(tmp_path):
+    # Case construction should preserve the user's point on the spar, without
+    # opening the native library or silently combining two mooring models.
+    library = tmp_path / "moordyn.so"
+    lines = tmp_path / "lines.txt"
+    library.touch()
+    lines.touch()
+    mooring = MoorDyn(library, lines)
+    wec = WEC("Attached RM3")
+    float_body = wec.body("float", HYDRO, inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", HYDRO, inertia=(0, 94_407_091.24, 0))
+    with pytest.raises(ValueError, match="spar-local point"):
+        wec.floating_joint(float_body, spar, moordyn=mooring,
+                           moordyn_point=float_body.at(0, 0, 21.5))
+    with pytest.raises(ValueError, match="cannot be combined"):
+        wec.floating_joint(float_body, spar, moordyn=mooring,
+                           moordyn_point=spar.at(0, 0, 21.5),
+                           mooring_surge_stiffness=100_000)
+    wec.floating_joint(float_body, spar, moordyn=mooring,
+                       moordyn_point=spar.at(0, 0, 21.5))
+    case = wec.to_case(RegularWave(2, 8), dt=.1, end_time=.2)
+    assert case["mooring"] == {
+        "kind": "moor_dyn", "session": mooring, "point": [0, 0, 21.5],
+    }
 
 
 def test_hydrodynamic_frequency_range_clamps_to_bem_limits():
