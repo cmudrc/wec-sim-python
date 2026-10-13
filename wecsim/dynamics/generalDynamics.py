@@ -308,7 +308,7 @@ class GeneralizedDynamics:
         next coordinate and speed. It advances once per radiation-memory
         step; its force acts during the ensuing implicit body solve. The
         initial external force is zero.
-        ``solver='wecsim_ode4'`` is limited to the one-coordinate held-yaw
+        ``solver='wecsim_ode4'`` is limited to one-coordinate sampled yaw;
         source path; it leaves the implicit default unchanged.
         """
         if not np.isfinite([dt, end_time]).all() or dt <= 0 or end_time < 0:
@@ -339,7 +339,7 @@ class GeneralizedDynamics:
                 or adaptive_regular or applied_force_history is not None
                 or step_force is not None or self.added_mass_delay is not None
                 or self.controlled_ptos or self.linear_generators):
-            raise ValueError("wecsim_ode4 needs standalone held-yaw radiation memory")
+            raise ValueError("wecsim_ode4 needs standalone sampled-yaw radiation memory")
         if radiation_state_space is not None and (
                 not isinstance(radiation_state_space, RadiationStateSpace)
                 or len(self.bodies) != 2 or memory or self.controlled_ptos
