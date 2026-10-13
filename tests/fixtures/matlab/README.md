@@ -185,6 +185,34 @@ Ordinary Python CI independently integrates the full published base case from
 the HDF5 and sea phases, with the established motion, PTO, and force gates.
 It does not gate the separate fault or NMPC variants.
 
+## WaveStar fault case
+
+`wavestar_fault.h5` is the exact BEMIO-generated HDF5 from the successful
+[141.2 s R2025b fault run](https://github.com/cmudrc/wec-sim-python/actions/runs/37871185462)
+(`matlab-WECCCOMP_FAULT_SOURCE-baseline` artifact, run commit
+`be6678cbd9f029c043dbfc61738534679b60dc21`). Its SHA-256 is
+`a753474c44592684ba6eadac4d01a0e08ef0714f5e58a67383cb0dee9f70914e`.
+The workflow pins WEC-Sim core
+`0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`.
+
+`wavestar_fault.npz` retains all 14,121 saved output samples and all 141,201
+sensor samples. It stores the 500 JONSWAP components, the measured-minus-true
+sensor disturbance and dropout flags, float and arm surge/heave/pitch motion,
+six float excitation and radiation channels, PTO stroke/speed/force, and wave
+elevation. The source CSV columns were loaded as float64 without rounding;
+the Boolean dropout is true exactly where the measured position is zero.
+The original true and measured sensor CSV SHA-256 hashes are
+`e72e091958d164a75dbf07c2d9c6833667700c1f3d2760293cc4fc683d7c2139`
+and `18bd91ac4bb1e986c8c375940fc40cd2b9bb7809700d9c5910eb0df304ff6203`.
+The float body CSV hash is
+`672e9f7db671a3f737970eea4ff3ed9a6c4ef13185290f1f8e8e0766edce106b`;
+the compact archive SHA-256 is
+`9102b671cf31bfa41b6d91789d031beb1b34c95e942f2df62551a0f5ab1ff8d8`.
+The always-on test independently advances the public fault solver from these
+exogenous sensor and sea inputs. Saved MATLAB motion and force histories are
+used only as expected outputs; the live-artifact mode remains available.
+
 ## RM3 MoorDyn visualization source-step audit
 
 `rm3_moordyn_source_step.npz` retains the same-seed 80 s MATLAB source
