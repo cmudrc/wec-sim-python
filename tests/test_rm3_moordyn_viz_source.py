@@ -368,6 +368,23 @@ def test_saved_source_pose_through_pinned_moordyn(tmp_path):
         if mode == "at_step_end":
             _bound(actual[1:], source[1:, 13:19], 0.01,
                    "MoorDyn on saved source connection poses")
+            # The pinned input requests positions and segment tensions for
+            # every line. Check native outputs against the actual MATLAB VTP
+            # inputs, rather than only replaying those inputs through our VTP
+            # writer. This isolates the MoorDyn boundary from coupled motion.
+            for line in (1, 2, 3):
+                native = np.loadtxt(
+                    run_dir / f"lines_Line{line}.out", skiprows=1,
+                )
+                published = _read(f"line{line}_vtp_history.csv")[:101]
+                assert native.shape == (1001, 84)
+                assert published.shape == (101, 84)
+                _bound(native[::10, 0], published[:, 0], 1e-8,
+                       f"line{line} native output time")
+                _bound(native[::10, 1:64], published[:, 1:64], 1e-5,
+                       f"line{line} native node positions")
+                _bound(native[::10, 64:84], published[:, 64:84], 0.1,
+                       f"line{line} native segment tensions")
 
 
 def test_source_output_interval_sensitivity():

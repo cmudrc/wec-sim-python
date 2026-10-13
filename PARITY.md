@@ -899,6 +899,14 @@ The full 801-frame wave, float, spar, and MoorDyn line VTP histories now
 pass the pinned prescribed-state gate above. The original-step independently
 coupled motion remains unpaired.
 
+The pinned native MoorDyn library also independently advances all three lines
+from the saved MATLAB connection poses over the first 10 s. At 101 shared
+samples, its 21 node positions per line differ from the published VTP inputs
+by at most `2.7e-15` m; its 20 segment tensions per line differ by at most
+`0.06` N. This checks the native line dynamics and VTP inputs beyond replaying
+saved line histories. Source poses drive this comparison, so it does not close
+the published coupled-motion gap or change the RM3 badge count.
+
 For the published OSWEC nonlinear visualization case, the pinned source also
 exports flap velocity and all six-component force channels. On all 1,201 saved
 MATLAB poses, Python integrates its independently calculated facet pressures
