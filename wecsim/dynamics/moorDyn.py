@@ -109,6 +109,57 @@ class MoorDyn:
             if code != 0:
                 raise RuntimeError(f"MoorDynClose failed with code {code}")
 
+    def line_history(self, line_number: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Read native line times, node positions, and segment tensions.
+
+        Call after the simulation closes so MoorDyn has flushed its output.
+        The input's ``LineOutputs`` setting must include ``tp`` for this line.
+        Returned arrays have shapes ``(time,)``, ``(time, node, 3)``, and
+        ``(time, node - 1)`` for use with the ParaView mooring writer.
+        """
+        if (isinstance(line_number, bool)
+                or not isinstance(line_number, (int, np.integer))
+                or line_number < 1):
+            raise ValueError("line number must be a positive integer")
+        if self._started:
+            raise RuntimeError("read line history after MoorDyn closes")
+        output_file = self.input_file.with_name(
+            f"{self.input_file.stem}_Line{line_number}.out"
+        )
+        if not output_file.is_file():
+            raise FileNotFoundError(
+                f"{output_file} not found; enable 'tp' in the line's LineOutputs"
+            )
+        with output_file.open(encoding="utf-8") as stream:
+            header = stream.readline().split()
+        columns = {name: index for index, name in enumerate(header)}
+        node_count = 0
+        while f"Node{node_count}px" in columns:
+            node_count += 1
+        if node_count < 2 or "Time" not in columns:
+            raise ValueError("MoorDyn line output needs time and node positions")
+        try:
+            node_columns = [
+                columns[f"Node{node}p{axis}"]
+                for node in range(node_count) for axis in "xyz"
+            ]
+            tension_columns = [
+                columns[f"Seg{segment}Te"]
+                for segment in range(1, node_count)
+            ]
+        except KeyError as exc:
+            raise ValueError("MoorDyn line output needs node positions and segment tensions") from exc
+        values = np.loadtxt(output_file, skiprows=1, ndmin=2)
+        if (values.shape[0] == 0 or values.shape[1] != len(header)
+                or not np.isfinite(values).all()):
+            raise ValueError("MoorDyn line output has missing or nonfinite samples")
+        times = values[:, columns["Time"]]
+        if np.any(np.diff(times) <= 0):
+            raise ValueError("MoorDyn line output times must increase")
+        nodes = values[:, node_columns].reshape(len(times), node_count, 3)
+        tensions = values[:, tension_columns]
+        return times, nodes, tensions
+
     def __enter__(self):
         if not self._started:
             raise RuntimeError("call start before entering the MoorDyn context")

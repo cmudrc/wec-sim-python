@@ -2,11 +2,13 @@
 
 import ctypes
 import os
+from xml.etree import ElementTree
 
 import numpy as np
 import pytest
 
 from wecsim.dynamics.moorDyn import MoorDyn
+from wecsim.visualization.paraviewClass import ParaviewClass
 
 
 class _Function:
@@ -106,3 +108,38 @@ def test_native_failures_are_reported_without_leaking_session(tmp_path, monkeypa
         with pytest.raises(RuntimeError, match="nonfinite connection load"):
             mooring.step(zero, zero, 0, 0.01)
     assert native.calls[-1] == ("close",)
+
+
+def test_native_line_history_can_feed_mooring_vtp(tmp_path):
+    """Use MoorDyn's line output directly to render its geometry and tension."""
+    library_file = tmp_path / "libmoordyn.so"
+    input_file = tmp_path / "lines.txt"
+    library_file.touch()
+    input_file.touch()
+    model = MoorDyn(library_file, input_file)
+    output = tmp_path / "lines_Line1.out"
+    with pytest.raises(FileNotFoundError, match="LineOutputs"):
+        model.line_history(1)
+    output.write_text(
+        "Time Node0px Node0py Node0pz Node1px Node1py Node1pz Seg1Te\n"
+        "0 0 0 -10 1 0 -5 20\n"
+        "1 0 0 -10 2 0 -5 30\n",
+        encoding="utf-8",
+    )
+    times, nodes, tensions = model.line_history(1)
+    np.testing.assert_array_equal(times, [0, 1])
+    assert nodes.shape == (2, 2, 3)
+    assert tensions.shape == (2, 1)
+    paths = ParaviewClass(None).write_paraview_vtp_mooring(
+        times, [0, 0.5, 1], tmp_path / "vtp",
+        lines=[nodes], tensions=[tensions],
+    )
+    middle = ElementTree.parse(paths[1]).find("./PolyData/Piece")
+    points = np.fromstring(middle.findtext("./Points/DataArray"), sep=" ")
+    load = np.fromstring(
+        middle.findtext("./CellData/DataArray[@Name='Segment Tension']"),
+        sep=" ",
+    )
+    np.testing.assert_allclose(points.reshape(2, 3),
+                               [[0, 0, -10], [1.5, 0, -5]])
+    np.testing.assert_allclose(load, [25])
