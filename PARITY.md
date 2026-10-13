@@ -568,9 +568,9 @@ API:
 | --- | ---: | --- |
 | `independent_motion` | 50 | A full-duration Python motion run using the published case inputs has an explicit MATLAB gate. Source wave phases or external stochastic input may be replayed; source body trajectories and forces are not advanced as inputs. The detailed rows above record output and physical-model limits. |
 | `stationary_force` | 2 | Published bodies are fixed; wave and force histories have paired gates. |
-| `qualified_motion` | 8 | A full-duration comparison needs a refined MATLAB step or a source-specific force route, or the published-step motion remains unpaired despite related motion or VTP gates. |
+| `qualified_motion` | 9 | A full-duration comparison needs a refined MATLAB step or a source-specific force route, or the published-step motion remains unpaired despite related motion or VTP gates. |
 | `mixed_modes` | 1 | Some published settings have independent motion gates and another material setting remains open. |
-| `open_motion` | 2 | No full-duration independent Python gate for the published moving case. Component replays or shorter derived runs may exist. |
+| `open_motion` | 1 | No full-duration independent Python gate for the published moving case. Component replays or shorter derived runs may exist. |
 
 These counts are **not a WEC-Sim feature-parity percentage**. One input can
 exercise several radiation or wave modes, and even a gated trajectory can
