@@ -1845,7 +1845,23 @@ and optional face-pressure arrays. It writes numbered body VTP files with the
 source XYZ rotation order. `write_paraview_vtp_mooring(...)` accepts one
 `(time, node, xyz)` position history and one `(time, segment)` tension history
 per MoorDyn line; it interpolates both to the requested frames and writes
-numbered line VTP files. After writing the frames,
+numbered line VTP files. For a native `MoorDyn` session, keep the session
+passed to `WEC.floating_joint(...)`; after `WEC.run(...)` closes it,
+`mooring.line_history(line_number)` returns those three arrays directly from
+MoorDyn's output. Enable `tp` for each line in `lines.txt` to record positions
+and segment tensions. For example, with three lines:
+
+```python
+histories = [mooring.line_history(i) for i in (1, 2, 3)]
+times = histories[0][0]
+ParaviewClass(None).write_paraview_vtp_mooring(
+    times, times[::10], "results/paraview",
+    lines=[history[1] for history in histories],
+    tensions=[history[2] for history in histories],
+)
+```
+
+After writing the frames,
 `write_paraview_response(times, directory, model_name=..., bodies=...)`
 writes the `.pvd` time-series collection and `bodies.txt` display settings;
 each body entry supplies its name, RGB color, and opacity. Wave, body,
