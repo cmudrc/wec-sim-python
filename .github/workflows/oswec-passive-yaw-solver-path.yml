@@ -5,6 +5,12 @@ on:
     paths:
       - '.github/workflows/oswec-passive-yaw-solver-path.yml'
       - 'tests/test_oswec_passive_yaw_solver_path.py'
+      - 'wecsim/dynamics/heldYawOde4.py'
+      - 'wecsim/dynamics/generalDynamics.py'
+      - 'wecsim/dynamics/subspace_case.py'
+      - 'wecsim/dynamics/caseDynamics.py'
+      - 'wecsim/interface/api.py'
+      - 'wecsim/interface/wec_case.py'
   workflow_dispatch:
 
 jobs:

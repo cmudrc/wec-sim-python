@@ -66,7 +66,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
     )
     sim = _section(case["simulation"], "simulation", {"dt", "end_time"},
                    {"dt", "end_time", "ramp_time", "rho", "g",
-                    "radiation_memory", "radiation_method", "added_mass_scheme"})
+                    "radiation_memory", "radiation_method", "added_mass_scheme",
+                    "solver"})
     dt = _number(sim["dt"], "simulation.dt", positive=True)
     end_time = _number(sim["end_time"], "simulation.end_time", nonnegative=True)
     ramp_time = _number(sim.get("ramp_time", 100), "simulation.ramp_time", nonnegative=True)
@@ -107,6 +108,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             raise ValueError("a fixed hydrodynamic body currently requires a two-body fixed_hinge")
     if "radiation_method" in sim and kind != "floating_joint":
         raise ValueError("radiation_method currently applies to floating_joint")
+    if "solver" in sim and kind != "linear_subspace":
+        raise ValueError("simulation.solver currently needs linear_subspace")
     if "added_mass_scheme" in sim and kind not in ("floating_joint", "fixed_hinge"):
         raise ValueError("added_mass_scheme currently applies to floating_joint or fixed_hinge")
     if any(path is None for path in hydro) and not (

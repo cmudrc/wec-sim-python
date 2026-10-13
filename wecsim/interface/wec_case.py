@@ -34,6 +34,7 @@ class _WECCaseMixin:
         dt: float, end_time: float,
         ramp_time: float | None = None,
         radiation_memory: float | None = None,
+        solver: str = "implicit",
         rho: float | None = None, g: float | None = None,
         initial_coordinate: Mapping[str, float] | Sequence[float] | None = None,
         initial_speed: Mapping[str, float] | Sequence[float] | None = None,
@@ -47,6 +48,8 @@ class _WECCaseMixin:
         if isinstance(wave, MultiPMWave) and self._fixed_hinge is None:
             raise ValueError("MultiPMWave currently needs a fixed-hinge WEC")
         simulation = {"dt": dt, "end_time": end_time}
+        if solver != "implicit":
+            simulation["solver"] = solver
         for key, value in (
             ("ramp_time", ramp_time), ("radiation_memory", radiation_memory),
             ("rho", rho), ("g", g),
