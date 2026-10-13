@@ -1,29 +1,33 @@
-"""Published WEC-Sim ode4 path for a single held passive-yaw coordinate.
+"""Published WEC-Sim ode4 path for a single sampled passive-yaw coordinate.
 
 The source samples convolution at major steps, extrapolates its last three
-loads to RK4 minor stages, and delays its selected excitation heading by one
-major step. This opt-in path preserves those numerical details without
-changing the default implicit radiation solver.
+loads to RK4 minor stages. Held excitation delays its selected heading by one
+major step; a nearest-heading bank selects at each RK4 stage. This opt-in path
+preserves those numerical details without changing the implicit default.
 """
 
 import numpy as np
 from scipy.interpolate import PchipInterpolator
 
-from wecsim.hydrodynamics.passiveYaw import HeldPassiveYawExcitation
+from wecsim.hydrodynamics.passiveYaw import (
+    HeldPassiveYawExcitation, NearestSampledHeadingExcitation,
+)
 
 
 def integrate_held_yaw_ode4(system, time, q, v, a, dt):
     """Fill one-coordinate motion arrays using the source's sampled step."""
     moving = [index for index, body in enumerate(system.bodies)
-              if isinstance(body.state_excitation, HeldPassiveYawExcitation)]
+              if isinstance(body.state_excitation, (
+                  HeldPassiveYawExcitation, NearestSampledHeadingExcitation,
+              ))]
     if (system.coordinate_count != 1 or len(moving) != 1
             or system.nonlinear_force is not None
             or system.radiation_discretization != "trapezoid"
             or any(body.state_inertia is not None
                    or body.radiation_kernel is None for body in system.bodies)):
-        raise ValueError("wecsim_ode4 needs one pure held-yaw coordinate")
+        raise ValueError("wecsim_ode4 needs one pure sampled-yaw coordinate")
     moving_index = moving[0]
-    held = system.bodies[moving_index].state_excitation
+    selected = system.bodies[moving_index].state_excitation
     for index, body in enumerate(system.bodies):
         motion = body.motion(np.zeros(1), np.zeros(1))
         expected = np.zeros((6, 1))
@@ -32,9 +36,9 @@ def integrate_held_yaw_ode4(system, time, q, v, a, dt):
         if (not np.array_equal(motion.jacobian, expected)
                 or not np.array_equal(motion.bias_acceleration, np.zeros(6))):
             raise ValueError("wecsim_ode4 needs pure yaw and stationary other bodies")
-    if (len(held.model.time) != 2 * len(time) - 1
+    if (len(selected.model.time) != 2 * len(time) - 1
             or (len(time) > 1 and not np.isclose(
-                held.model.time[1], dt / 2, rtol=0, atol=1e-10))):
+                selected.model.time[1], dt / 2, rtol=0, atol=1e-10))):
         raise ValueError("wecsim_ode4 needs half-step sampled excitation")
 
     # The fixed bodies have zero velocity and zero generalized Jacobian, so
@@ -64,12 +68,14 @@ def integrate_held_yaw_ode4(system, time, q, v, a, dt):
         radiation_times = np.r_[radiation_times[1:], at_time]
         radiation_values = np.r_[radiation_values[1:], radiation]
 
-        # The source's selected heading is logged at the current major step,
-        # but its Memory block exposes the previous selection to RK4 stages.
-        current_heading = held._heading(float(q[step, 0]))
-        held.force_history.append(held._force(
-            at_time, float(q[step, 0]), current_heading,
-        ))
+        # The held-heading source has a Memory block, so only that variant
+        # commits its current selection after the RK4 stages. The direction
+        # bank has no Memory block and selects from each stage's current yaw.
+        if isinstance(selected, HeldPassiveYawExcitation):
+            current_heading = selected._heading(float(q[step, 0]))
+            selected.force_history.append(selected._force(
+                at_time, float(q[step, 0]), current_heading,
+            ))
         a[step, 0] = acceleration(at_time, q[step, 0], v[step, 0], radiation)
         if step == len(time) - 1:
             break
@@ -98,4 +104,5 @@ def integrate_held_yaw_ode4(system, time, q, v, a, dt):
         v[step + 1, 0] = v[step, 0] + dt * (
             k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]
         ) / 6
-        held.last_heading = current_heading
+        if isinstance(selected, HeldPassiveYawExcitation):
+            selected.last_heading = current_heading

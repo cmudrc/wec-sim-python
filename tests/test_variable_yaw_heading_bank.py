@@ -441,6 +441,81 @@ def test_irregular_600s_source_force_against_pinned_matlab():
          and os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")),
     reason="fresh variable-yaw MATLAB output not provided",
 )
+def test_irregular_600s_public_source_ode4_against_pinned_matlab():
+    """Independently advance the published sea and selected bank for 600 s."""
+    applications = Path(os.environ["WEC_SIM_APPLICATIONS_DIR"])
+    source = Path(os.environ["WEC_SIM_MATLAB_MODEL_OUTPUT_DIR"])
+    hydro = applications / "_Common_Input_Files/OSWEC/hydroData/oswec.h5"
+    prefix = "OSWEC_VARIABLE_YAW_IRREGULAR_600S"
+    flap = np.loadtxt(source / f"{prefix}_irregular_600s_body1.csv", delimiter=",")
+    pto = np.loadtxt(source / f"{prefix}_irregular_600s_pto1.csv", delimiter=",")
+    wave = np.loadtxt(source / f"{prefix}_wave.csv", delimiter=",")
+    selected = np.loadtxt(source / f"{prefix}_selected_heading.csv", delimiter=",")
+    headings = np.arange(-30, 30.25, .25)
+    assert flap.shape == pto.shape == (60001, 25)
+    assert selected.shape == (60001, 3)
+
+    wec = WEC("OSWEC published irregular variable yaw")
+    moving = wec.body(
+        "flap", hydro, mass=12700, inertia=(1.85e6,) * 3,
+        passive_yaw=True, yaw_heading_bank=headings,
+    )
+    wec.body("base", hydro, mass=999, inertia=(999,) * 3)
+    yaw = wec.coordinate("yaw", moving.move("yaw", pivot=WorldPoint(0, 0, -8.9)))
+    wec.rotational_pto("hinge", yaw, damping=120000)
+    result = wec.run(
+        PMWave(2.5, 8, direction=10, seed=1, phase_generator="matlab"),
+        dt=.01, end_time=600, ramp_time=100, radiation_memory=40,
+        solver="wecsim_ode4",
+    )
+
+    np.testing.assert_allclose(result.time, flap[:, 0], rtol=0, atol=1e-10)
+    np.testing.assert_allclose(result.wave_elevation, wave[:, 1],
+                               rtol=0, atol=1e-11)
+    angle = result.bodies["flap"].position[:, 5]
+    speed = result.bodies["flap"].velocity[:, 5]
+    torque = result.ptos["hinge"].force
+    yaw_gap = np.max(np.abs(angle - flap[:, 6]))
+    speed_gap = np.max(np.abs(speed - flap[:, 12]))
+    torque_gap = np.max(np.abs(torque - pto[:, 17]))
+    source_work = -np.trapezoid(pto[:, 23], result.time)
+    python_work = np.trapezoid(result.ptos["hinge"].absorbed_power, result.time)
+    work_gap = abs(python_work - source_work) / source_work
+    assert source_work > 0
+    assert yaw_gap < 1e-6
+    assert speed_gap < 1e-7
+    assert torque_gap < .01
+    assert work_gap < 1e-6
+
+    # Both choices are made from their own yaw histories. Source headings,
+    # forces, and body states appear only on the comparison side of the gate.
+    bank = NearestSampledHeadingExcitation(
+        SampledPassiveYawExcitation.from_hydro_data(
+            _hydro_data(hydro), pm_equal_energy_components(
+                hydro, significant_height=2.5, peak_period=8,
+                directions=[10], spreading=[1], seed=1,
+                phase_generator="matlab",
+            ), dt=.01, end_time=600, ramp_time=100, rho=1000, g=9.81,
+        ), headings,
+    )
+    python_headings = np.array([bank.heading(value) for value in angle])
+    source_events = np.flatnonzero(np.diff(selected[:, 2]))
+    python_events = np.flatnonzero(np.diff(python_headings))
+    assert len(source_events) == 624
+    np.testing.assert_array_equal(python_events, source_events)
+    np.testing.assert_array_equal(python_headings, selected[:, 2])
+    force = dict(result.raw.extra_outputs)["body1_excitation_force"]
+    assert np.max(np.abs(force - flap[:, 19:25])) < 1e-6
+    print(f"600 s public bank: {len(python_events)} events; "
+          f"yaw={yaw_gap:.6g} rad, speed={speed_gap:.6g} rad/s, "
+          f"torque={torque_gap:.6g} N m, work={work_gap:.6g} relative")
+
+
+@pytest.mark.skipif(
+    not (os.environ.get("WEC_SIM_APPLICATIONS_DIR")
+         and os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")),
+    reason="fresh variable-yaw MATLAB output not provided",
+)
 def test_irregular_600s_prescribed_heading_dynamics_diagnostic():
     """Advance Python motion with only the source's saved heading events."""
     applications = Path(os.environ["WEC_SIM_APPLICATIONS_DIR"])

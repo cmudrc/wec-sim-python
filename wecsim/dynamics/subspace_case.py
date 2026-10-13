@@ -306,8 +306,9 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         raise ValueError("simulation.solver must be implicit or wecsim_ode4")
     if solver == "wecsim_ode4" and not (
             wave["type"] == "pm" and len(passive_indices) == 1
-            and yaw_thresholds[passive_indices[0]] > 0):
-        raise ValueError("wecsim_ode4 currently needs PM held passive yaw")
+            and (yaw_thresholds[passive_indices[0]] > 0
+                 or yaw_banks[passive_indices[0]] is not None)):
+        raise ValueError("wecsim_ode4 needs PM held yaw or a heading bank")
     nonlinear_indices = [
         index for index, spec in enumerate(bodies)
         if spec.get("nonlinear_hydro") is not None
