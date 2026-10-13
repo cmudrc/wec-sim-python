@@ -94,6 +94,39 @@ applies the established body, wave, cable, force peak/RMS/impulse, and active
 fraction gates. This guards the published planar case, including its brief
 step-sensitive cable snap; it does not establish arbitrary six-DOF cables.
 
+## WaveStar base case
+
+`wavestar_base.npz` retains all 14,121 samples of the published 141.2 s
+`WECCCOMP/WECCCOMP` float, arm, PTO, excitation, radiation, wave, and
+500-component sea. It comes from the successful
+[pinned R2025b MATLAB run](https://github.com/cmudrc/wec-sim-python/actions/runs/37866626954)
+(`matlab-WECCCOMP_SOURCE-baseline` artifact, run commit
+`d4dfb38c230a31e07d4525671e758e49f4365bc9`). The workflow pins WEC-Sim
+core `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. Its generated HDF5 is
+copied unchanged to `examples/data/wavestar.h5` (SHA-256
+`cf61dfada9cf4d177a02dbad8c4f4eaf7c4ac022fbf188faca9ccfb62a6a0faf`).
+
+The archive retains the source component columns, body positions (columns
+1–6) and velocities (7–12), float excitation (19–24), PTO stroke and speed
+(3 and 9), radiation force (1–6), and wave time/elevation (0–1) as float64
+without rounding. Source SHA-256 hashes are:
+
+| Source file | SHA-256 |
+| --- | --- |
+| `WECCCOMP_SOURCE_components.csv` | `80bc9515aa5abcc8de88d01a74737ea9f059f4743cfe18fddb22d2cdd8630f9e` |
+| `WECCCOMP_SOURCE_WECCCOMP_body1.csv` | `5067a2119405ce2cecc5a09ee6ca5ddd01867c4f03cec43740a45f6c4b408c82` |
+| `WECCCOMP_SOURCE_WECCCOMP_body2.csv` | `4439a0a875fd68617efa9d5da41029fe1d15fa471a80a49d72258f5497217ed3` |
+| `WECCCOMP_SOURCE_WECCCOMP_pto1.csv` | `0e0c678eb833b125d3f252a8a382691ac978f7c6559a06ce93690c7d28feb4f6` |
+| `WECCCOMP_SOURCE_wave.csv` | `4c30e47d607abc1b680d26f1c61e8edc1b539b0efb52045eeecafd7583e96e38` |
+| `WECCCOMP_SOURCE_body1_forces.csv` | `c23a085c7b444c90f6f8f5ab574de3bbe94807ad9fa2f040466280f51fd481d5` |
+
+The compact archive SHA-256 is
+`46bf4853f3bb8a5a5572adde2f2871259ee87fdc3f200938f3070e2b26c18f95`.
+Ordinary Python CI independently integrates the full published base case from
+the HDF5 and sea phases, with the established motion, PTO, and force gates.
+It does not gate the separate fault or NMPC variants.
+
 ## RM3 end-stop force transition
 
 `rm3_end_stops_force_samples.csv` retains six rows from the successful
