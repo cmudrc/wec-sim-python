@@ -534,13 +534,17 @@ RM3 cases are `End_Stops`, `RM3_MoorDyn_Viz`, and both `RM3_PTO_Extension`
 free decays; the remaining OSWEC cases are `OSWEC_NonLinear_Viz`,
 `PassiveYawRegression`, and the irregular mode of
 `Variable_Hydro/Passive_Yaw`. Their measured blockers are recorded below.
-The RM3 MoorDyn MaxStep-only audit already isolates the leading published
-surge difference; repeating it unchanged will not advance parity. Work on a
-new physical or solver mechanism only when existing evidence supports one,
-and report any source-limited cases as such. In parallel, raise meaningful
-combined Python line-and-branch coverage from the measured 67% toward 90%
-with behavior and numerical invariants, not tests written only to execute
-lines. Do not change the physical default just to match a source step artifact.
+Start with `RM3_MoorDyn_Viz`: review the existing 80 s published, MaxStep-only,
+and fine-step artifacts together. They already isolate the leading surge gap
+to MATLAB's coarse solver step and gate the independent fine-step motion and
+published scene output. Keep the published-motion label qualified unless an
+independent original-step trajectory passes its existing limits; do not rerun
+the same audit or alter the physical default to follow that step artifact.
+Apply the same evidence-based closeout to the remaining RM3 and OSWEC cases,
+reporting a source-limited case as qualified when no supported correction
+remains. In parallel, raise meaningful combined Python line-and-branch coverage
+from the measured 67% toward 90% with behavior and numerical invariants,
+not tests written only to execute lines.
 
 | Other published cases | Gated / inventoried |
 | --- | ---: |
