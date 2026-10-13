@@ -13,6 +13,29 @@ from wecsim.dynamics.caseDynamics import run_case
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE = ROOT / "examples/rm3.json"
 HYDRO = ROOT / "examples/data/rm3.h5"
+SOURCE_FORCE = (ROOT / "tests/fixtures/matlab"
+                / "rm3_end_stops_force_samples.csv")
+
+
+def test_published_stop_transition_matches_compact_matlab_source():
+    samples = np.loadtxt(SOURCE_FORCE, delimiter=",", skiprows=1)
+    assert samples.shape == (6, 5)
+    np.testing.assert_array_equal(samples[:, 0],
+                                  [0, 5166, 8627, 8948, 22725, 28451])
+    stroke, speed, source_force = samples[:, 2], samples[:, 3], samples[:, 4]
+    stops = LinearHardStops(-0.6, 0.6, 1e8, 1e8)
+    predicted = -1_200_000 * speed + stops.force(stroke, speed)
+    np.testing.assert_allclose(predicted, source_force, rtol=0, atol=1e-5)
+
+    # Two source samples lie inside the 0.1 mm transition. A sharp spring
+    # misses each logged total PTO force by more than 1 kN there.
+    transition = (np.abs(stroke) > 0.6) & (np.abs(stroke) < 0.6001)
+    assert np.count_nonzero(transition) == 2
+    sharp_force = (-1_200_000 * speed
+                   + 1e8 * np.maximum(-0.6 - stroke, 0)
+                   - 1e8 * np.maximum(stroke - 0.6, 0))
+    assert np.min(np.abs(sharp_force[transition]
+                         - source_force[transition])) > 1000
 
 
 def test_opt_in_stops_are_step_stable_and_report_the_reaction():
