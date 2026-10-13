@@ -610,8 +610,13 @@ qualified by source step sensitivity. The RM3 fitted-radiation cases have opt-in
 numerical motion gates but need separate physical validation. The ode45 nonlinear-hydro
 and OWC OrificeModel physical-force paths have source-timing or force-routing
 limits described below. Numerical `Wave_Markers` elevation and body/PTO motion
-are paired, while glyph rendering is not. A passing upstream MATLAB application test only
-establishes that WEC-Sim ran; it does not establish Python parity.
+are paired, while glyph rendering is not. The pinned source defines marker
+location, pixel size, style, and color in `waveClass.marker`; its initialization
+enables a Simulink visualization variant. The current paired artifacts export
+locations and elevation histories, but no rendered glyph scene. A source scene
+or image export is needed before claiming a visual gate. A passing upstream
+MATLAB application test only establishes that WEC-Sim ran; it does not
+establish Python parity.
 
 | Published case(s) | Evidence and remaining work |
 | --- | --- |
