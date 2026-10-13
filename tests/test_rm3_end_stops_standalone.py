@@ -38,6 +38,23 @@ def test_published_stop_transition_matches_compact_matlab_source():
                          - source_force[transition])) > 1000
 
 
+def test_contact_damper_only_removes_energy_and_cannot_pull_on_rebound():
+    plain = LinearHardStops(-.6, .6, 1000, 1000)
+    damped = LinearHardStops(-.6, .6, 1000, 1000,
+                              lower_damping=100, upper_damping=100)
+    stroke = np.linspace(-.8, .8, 101)[:, None]
+    speed = np.linspace(-2, 2, 101)[None, :]
+    damping_force = damped.force(stroke, speed) - plain.force(stroke, speed)
+    assert np.max(damping_force * speed) <= 1e-12
+
+    # Once the damper exceeds the spring on rebound, the contact opens;
+    # neither stop may pull the PTO toward itself.
+    assert damped.force(.61, -1) == 0
+    assert damped.force(-.61, 1) == 0
+    assert damped.force(.61, 1) < 0
+    assert damped.force(-.61, -1) > 0
+
+
 def test_opt_in_stops_are_step_stable_and_report_the_reaction():
     stops = LinearHardStops(-0.6, 0.6, 1e8, 1e8)
     settings = dict(pto_hard_stops=stops, end_time=10, ramp_time=0)
