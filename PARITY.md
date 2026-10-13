@@ -523,10 +523,11 @@ five inventoried cases; smaller systems stay in the disjoint remainder.
 
 ### Current priority
 
-Close every tractable published-input gate for RM3, OSWEC, and Sphere using
-existing artifacts or bounded source runs. A case earns its badge gate only
-when an independent Python run covers the published input and duration and
-passes predeclared MATLAB motion or fixed-body force limits. Keep a case
+Close every feasible published-input gate for RM3, OSWEC, and Sphere using
+existing artifacts or bounded source runs with a distinct, testable mechanism.
+A case earns its badge gate only when an independent Python run covers the
+published input and duration and passes predeclared MATLAB motion or
+fixed-body force limits. Keep a case
 qualified when the source trajectory is strongly step-sensitive, even if an
 opt-in solver reproduces its published numerical path. Refined-step motion,
 source poses, or prescribed events alone do not close that gap. The remaining
@@ -543,7 +544,9 @@ The published 801-frame scene and saved-pose native line response also pass
 their separate gates. This is enough to close the current *diagnosis*, while
 the published-motion case remains qualified: its unchanged original-step
 limits still fail. Do not rerun the same source audit or alter the physical
-default to reproduce that coarse-step trajectory.
+default to reproduce that coarse-step trajectory. Move to the next distinct
+blocker after recording the measured limit; do not keep a case investigation
+open solely to improve its badge count.
 
 The fresh OSWEC selected-heading 140 s physical-default audit and separate
 full-duration opt-in numerical gate passed; both are recorded below, while
@@ -920,6 +923,27 @@ speeds, `2`/`1.5` kN surge/heave force, `15` kN m moment, and `750` N PTO
 force. These are looser than the fully refined pair. This comparison isolates
 the leading source step sensitivity; it does not establish parity with the
 published-step trajectory or prove convergence to a unique 80 s solution.
+
+An offline comparison of the saved 80 s [published-step](https://github.com/cmudrc/wec-sim-python/actions/runs/38403345509),
+[MaxStep-only](https://github.com/cmudrc/wec-sim-python/actions/runs/38117328859),
+and [fully refined](https://github.com/cmudrc/wec-sim-python/actions/runs/38108596566)
+source traces uses all 801 common 0.1 s samples. The 1,000 phases agree
+exactly and the wave elevations agree within `1.3e-14` m. Here, the residual
+is the fully refined trace minus the MaxStep-only trace; the squared-gap
+reduction is `1 - sum(residual²) / sum((fully refined - published)²)`.
+
+| Source channel | Published-to-refined RMS gap | Residual RMS after MaxStep-only refinement | Squared-gap reduction |
+| --- | ---: | ---: | ---: |
+| Float surge | 121.56 mm | 1.994 mm | 99.973% |
+| Spar surge | 124.14 mm | 2.026 mm | 99.973% |
+| Shared pitch | 1.131 mrad | 0.01382 mrad | 99.985% |
+| MoorDyn pitch moment | 41.60 kN m | 2.313 kN m | 99.691% |
+| Spar heave | 0.8005 mm | 0.5820 mm | 47.139% |
+
+MaxStep alone explains nearly all of the *source* surge and pitch discrepancy
+on this seeded sea, but not every channel. This is a controlled numerical
+attribution, not an independent Python published-step gate. The original
+published-step case remains qualified and its badge count is unchanged.
 
 The same pinned run exports actual published ParaView wave surfaces at 0, 10,
 and 80 s. Python independently rebuilds their 2,000-point grids from the
