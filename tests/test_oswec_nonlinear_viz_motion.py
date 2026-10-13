@@ -90,3 +90,12 @@ def test_published_nonlinear_oswec_hinge_against_refined_matlab():
     assert np.max(np.abs(velocity[:, 0] - source_velocity[:, 0])) < 8e-4
     assert np.max(np.abs(velocity[:, 2] - source_velocity[:, 2])) < 3.5e-4
     np.testing.assert_allclose(result.ptos["hinge"].force, 0, rtol=0, atol=0)
+
+    # The original-step trajectory is a distinct numerical path. Check the
+    # independent Python gap against it, rather than counting the refined
+    # comparison as a gate for the published 0.1 s motion.
+    for dof, minimum_gap in ((4, 0.006), (0, 0.03), (2, 0.012)):
+        python_published = position[:, dof] - coarse["pose"][:, dof]
+        source_step_change = source_position[:, dof] - coarse["pose"][:, dof]
+        assert np.max(np.abs(python_published)) > minimum_gap
+        assert np.corrcoef(python_published, source_step_change)[0, 1] > 0.9999
