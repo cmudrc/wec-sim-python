@@ -150,6 +150,29 @@ The portable test gates source input identity and the channel-specific effect
 of ode45 MaxStep on the MATLAB trajectories. It is a source-numerics diagnostic,
 not an independent Python published-step motion gate.
 
+## RM3 End Stops full-duration trajectory
+
+`rm3_end_stops_full.npz` contains all 400 s of the pinned R2025b
+`RM3_END_STOPS_FULL_FINE` and `RM3_END_STOPS_FULL_FINER` jobs in
+[run 37698235851](https://github.com/cmudrc/wec-sim-python/actions/runs/37698235851)
+(repository commit `ae9a0a8e0959b95a9489b61ea9c6f161ae184e7e`). The workflow pins
+WEC-Sim `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The finer job's generated
+`rm3.h5` is copied unchanged to `examples/data/rm3_end_stops.h5` (SHA-256
+`e76bff162db8ab1f93747abf35142e733d9e0c43cb9751aee5bb9e5636b87176`).
+Its fitted radiation data differ from `examples/data/rm3.h5`, so that general
+example file cannot stand in for this source run.
+
+The archive retains the original run/stop settings, all 16,001/32,001 time
+samples, each body's surge/heave/pitch position and speed (source columns
+1/3/5 and 7/9/11), and PTO stroke/speed/force (columns 3/9/15) as float64.
+It neither interpolates nor rounds source values. Archive SHA-256:
+`4d21c43c70fc7c213136c73e1450c0480c0739c76d8c2c6910c3ed51f4c858e3`.
+Ordinary Python CI now gates both the two-step MATLAB source stability and an
+independent 400 s Python solve using only the generated HDF5, wave settings,
+and stop law. This is the refined-step case; the published 0.1 s source
+trajectory remains step-sensitive and qualified.
+
 ## RM3 end-stop force transition
 
 `rm3_end_stops_force_samples.csv` retains six rows from the successful
