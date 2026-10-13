@@ -531,6 +531,12 @@ five inventoried cases; smaller systems stay in the disjoint remainder.
 
 Close every feasible published-input gate for RM3, OSWEC, and Sphere using
 existing artifacts or bounded source runs with a distinct, testable mechanism.
+When a case's remaining gap is traced to source step sensitivity and no
+step-stable physical reference is available, retain its qualified label and
+close that investigation; filling the badge denominator is not itself a
+reason to reproduce a coarse-step numerical artifact. Once those feasible
+gates are exhausted, prioritize meaningful combined Python line-and-branch
+coverage toward 90%.
 A case earns its badge gate only when an independent Python run covers the
 published input and duration and passes predeclared MATLAB motion or
 fixed-body force limits. Keep a case
@@ -546,6 +552,8 @@ refining only MATLAB's ode45 MaxStep changes float surge by up to `203.37` mm,
 while the original-to-fully-refined change is `203.4` mm. The independent
 Python run agrees with the MaxStep-only source within `3.44` mm in float
 surge, and its finer comparison meets the full-duration active-motion gates.
+An always-on test independently rebuilds the published 80 s incident sea
+from the archived MATLAB phases and bundled RM3 HDF5 within `2e-14` m.
 The published 801-frame scene and saved-pose native line response also pass
 their separate gates. This is enough to close the current *diagnosis*, while
 the published-motion case remains qualified: its unchanged original-step
@@ -561,7 +569,7 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. In parallel, raise meaningful combined
-Python line-and-branch coverage from the measured 75% toward 90% with behavior
+Python line-and-branch coverage from the measured 76% toward 90% with behavior
 and numerical invariants, not tests written only to execute lines.
 
 | Other published cases | Gated / inventoried |
