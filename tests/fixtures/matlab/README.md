@@ -127,6 +127,29 @@ Ordinary Python CI independently integrates the full published base case from
 the HDF5 and sea phases, with the established motion, PTO, and force gates.
 It does not gate the separate fault or NMPC variants.
 
+## RM3 MoorDyn visualization source-step audit
+
+`rm3_moordyn_source_step.npz` retains the same-seed 80 s MATLAB source
+trajectories from the [published 0.01 s run](https://github.com/cmudrc/wec-sim-python/actions/runs/38403345509),
+the [MaxStep-only 0.0003125 s run](https://github.com/cmudrc/wec-sim-python/actions/runs/38117328859),
+and the [fully refined 0.0003125 s run](https://github.com/cmudrc/wec-sim-python/actions/runs/38108596566),
+in that order. Their repository commits are `f3f12b342d9f0005a1174013b4e34da34b16f8be`,
+`865d6f8670e3670dded3e6cb38df7ad65216ebfc`, and
+`05a0986d3597c9f67aac5e0733ca96e2fe7ee4ea`. All workflows pin WEC-Sim
+`0753b2e47f2457c078751dcfe5d251d1767b80ab`, Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`, MoorDyn
+`34c0703c9a5b74fd2cc5bb52caaadaaa356d675e`, and MATLAB R2025b.
+
+Each source `phase.csv` supplies all 1,000 phases. `wave.csv`, `body1.csv`,
+`body2.csv`, and `mooring.csv` supply elevation, position columns 1–6, and
+mooring-force columns 13–18. The two 0.01 s exports are sampled every tenth
+row to align with the published 801-row, 0.1 s export. No source data are
+interpolated or rounded. The archive SHA-256 is
+`4f7f747465470caf1693b7a438e2bb40bd0835676c571a0230401bd80fba7db2`.
+The portable test gates source input identity and the channel-specific effect
+of ode45 MaxStep on the MATLAB trajectories. It is a source-numerics diagnostic,
+not an independent Python published-step motion gate.
+
 ## RM3 end-stop force transition
 
 `rm3_end_stops_force_samples.csv` retains six rows from the successful
