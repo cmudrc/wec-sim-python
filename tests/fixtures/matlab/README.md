@@ -189,6 +189,24 @@ the compact fixture SHA-256 is
 Two selected rows are inside the effective 0.1 mm spring transition and
 distinguish the source's smooth force from a sharp stop.
 
+## RM3 PTO extension source-step diagnostic
+
+`rm3_pto_extension_step.npz` retains every 30 s float and spar free-decay
+sample at 0.1, 0.05, 0.025, and 0.0125 s from the successful
+[R2025b step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38324343546)
+(commit `58ade4aa4ba8c4d94827696b6d722a42a5cf91e5`). Each nine-column CSV
+is copied as float64 without interpolation or rounding. The archive SHA-256 is
+`77a28920004ec030b2f34f5047d81848bc9aa8ba09f3d49fd7cefa8564a2060b`.
+
+The portable diagnostic uses `examples/data/rm3_end_stops.h5`, also generated
+from the pinned common RM3 BEM input. Its active infinite-frequency added
+mass, radiation impulse response, restoring, displaced volume, and CG datasets
+match the [archived PTO-extension baseline HDF5](https://github.com/cmudrc/wec-sim-python/actions/runs/38282150325)
+exactly; their fitted state-space groups differ and are unused here. The test
+checks source step sensitivity, public implicit-solver self-refinement, and
+the opt-in delayed-mass numerical comparison. This remains a diagnostic; it
+does not promote either published 0.1 s case.
+
 ## Sphere free decay
 
 `sphere_free_decay.npz` retains every sample of the five published Sphere

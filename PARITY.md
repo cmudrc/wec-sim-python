@@ -1671,6 +1671,23 @@ energy comparison in ordinary Python CI from the exact generated HDF5 and
 all saved source samples. The 0.1 s published case remains qualified, and
 the RM3 badge remains 17/21.
 
+A [portable 30 s PTO-extension step diagnostic](tests/test_rm3_pto_extension_physical_step.py)
+compares both public `WEC.run` free decays with the pinned four-step R2025b
+source audit. It uses the common RM3 HDF5 whose active convolution and mass
+data match the archived PTO-extension baseline. Values below are maximum
+heave-position/speed differences at the 0.0125 s step unless labeled as
+step changes:
+
+| Case | MATLAB 0.025-to-0.0125 s change | Python implicit change | Python implicit/source gap | Opt-in delayed-mass/source gap |
+| --- | ---: | ---: | ---: | ---: |
+| Float | 8.53 mm / 39.14 mm/s | 1.18 mm / 1.44 mm/s | 9.21 mm / 26.61 mm/s | 5.69 mm / 10.69 mm/s |
+| Spar | 1.955 mm / 1.222 mm/s | 0.0284 mm / 0.00326 mm/s | 1.984 mm / 0.816 mm/s | 0.861 mm / 0.233 mm/s |
+
+The physical implicit path changes much less than MATLAB on the final step
+halving but does not meet the existing refined-source limits. The opt-in
+delayed-mass path remains the closer numerical comparison. Neither result
+closes the published 0.1 s gap, so both cases remain qualified.
+
 The `MATLAB reference model baselines` workflow runs the two canonical core
 examples, all five Sphere free-decay cases, RM3 body-to-body Cases 1–4,
 the RM3 MooringMatrix case when selected by workflow dispatch,
