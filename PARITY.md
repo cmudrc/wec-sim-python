@@ -1664,6 +1664,12 @@ motion or forces as inputs.
 
 The published RM3 `End_Stops` trajectory has a separate refined-step gate;
 the pinned 0.1 s output is not treated as a converged motion reference.
+The [full 400 s portable gate](tests/test_rm3_end_stops_portable_parity.py)
+now runs the 0.025-to-0.0125 s MATLAB source-stability check and the
+independent 0.0125 s Python body, PTO, and energy comparison in ordinary
+Python CI from the exact generated HDF5 and all saved source samples. This
+reinforces the qualified refined-step result without promoting the published
+0.1 s case or changing the RM3 badge.
 
 The `MATLAB reference model baselines` workflow runs the two canonical core
 examples, all five Sphere free-decay cases, RM3 body-to-body Cases 1–4,
