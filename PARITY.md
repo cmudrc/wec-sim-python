@@ -1717,6 +1717,27 @@ halving but does not meet the existing refined-source limits. The opt-in
 delayed-mass path remains the closer numerical comparison. Neither result
 closes the published 0.1 s gap, so both cases remain qualified.
 
+Local MATLAB R2025b Update 7, with the same pinned core and Applications
+commits, independently reproduced the archived 0.0125 s float/spar histories
+to numerical precision before halving only `simu.dt` to 0.00625 s. Over the
+complete 30 s runs, MATLAB's new float heave/speed change is `4.56` mm /
+`19.59` mm/s, down from `8.53` mm / `39.14` mm/s on the preceding halving.
+The spar change is `0.989` mm / `0.611` mm/s, down from `1.955` mm /
+`1.222` mm/s. The public physical Python solver at 0.00625 s, using the
+matching common-RM3 hydrodynamic inputs without saved source motion or
+forces, differs from the new MATLAB float/spar heave by at most `4.76` /
+`0.997` mm and speed by `13.32` / `0.408` mm/s. A
+[portable full-duration diagnostic](tests/test_rm3_pto_extension_physical_step.py)
+keeps these source-step and independent-motion comparisons active in ordinary
+Python CI. The source change approximately halves again, but the float still
+exceeds the predeclared `1` mm / `3` mm/s stability screen; this is a
+convergence trend, not a converged reference or published-step parity gate.
+The largest new source speed changes occur at `0.025` s (float) and
+`0.0375` s (spar); after the first second they fall to `4.50` and `0.166`
+mm/s. This timing directs the next local audit toward startup mass feedback,
+while the full-duration screen remains unchanged.
+Both published 0.1 s cases remain qualified, and the RM3 badge stays 17/21.
+
 The `MATLAB reference model baselines` workflow runs the two canonical core
 examples, all five Sphere free-decay cases, RM3 body-to-body Cases 1–4,
 the RM3 MooringMatrix case when selected by workflow dispatch,

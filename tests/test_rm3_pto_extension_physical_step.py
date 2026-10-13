@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # added-mass, restoring, volume, and CG data as the PTO-extension baseline.
 HYDRO = ROOT / "examples/data/rm3_end_stops.h5"
 MATLAB = ROOT / "tests/fixtures/matlab/rm3_pto_extension_step.npz"
+MATLAB_FINER = ROOT / "tests/fixtures/matlab/rm3_pto_extension_00625.npz"
 
 
 def _run(name, dt, scheme):
@@ -96,3 +97,50 @@ def test_physical_pto_extension_step_refines_faster_than_matlab(
         print(f"{name}: opt-in source-delay gap {source_gap}")
         limits = (.009, .017) if name == "float" else (.0015, .0004)
         assert np.all(source_gap < limits), (name, source_gap)
+
+
+@pytest.mark.parametrize("name,column,position_limit,speed_limit", (
+    ("float", 1, .012, .03),
+    ("spar", 3, .003, .001),
+))
+def test_local_matlab_next_step_and_independent_physical_motion(
+    name, column, position_limit, speed_limit,
+):
+    """Keep the new 30 s source refinement and physical pair in regular CI.
+
+    The source comparison tests numerical stability, not the published 0.1 s
+    trajectory. The float remains above the predeclared 1 mm / 3 mm/s screen.
+    """
+    with (np.load(MATLAB, allow_pickle=False) as archived,
+          np.load(MATLAB_FINER, allow_pickle=False) as local):
+        previous = archived[f"{name}_0p0125"]
+        older = archived[f"{name}_0p025"]
+        finer = local[f"{name}_0p00625"]
+        assert previous.shape == (2401, 9)
+        assert finer.shape == (4801, 9)
+        np.testing.assert_allclose(finer[::2, 0], previous[:, 0],
+                                   rtol=0, atol=1e-12)
+        assert np.isfinite(finer).all()
+        prior_change = np.max(np.abs(
+            previous[::2, column:column + 2]
+            - older[:, column:column + 2],
+        ), axis=0)
+        new_change = np.max(np.abs(
+            finer[::2, column:column + 2]
+            - previous[:, column:column + 2],
+        ), axis=0)
+        assert np.all(new_change < prior_change), (
+            name, prior_change, new_change,
+        )
+        if name == "float":
+            assert new_change[0] > .001 and new_change[1] > .003
+
+        physical = _run(name, .00625, "implicit")
+        body = physical.bodies[name]
+        gap = np.max(np.abs(np.column_stack((
+            body.position[:, 2], body.velocity[:, 2],
+        )) - finer[:, column:column + 2]), axis=0)
+        print(f"{name}: source step change {new_change}; "
+              f"independent Python/source gap {gap}")
+        assert gap[0] < position_limit
+        assert gap[1] < speed_limit
