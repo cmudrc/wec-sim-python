@@ -107,6 +107,31 @@ The archive SHA-256 is
 The two 1 m source trajectories are identical: the published Morison element
 has surge-only coefficients and does not change heave free decay.
 
+## Sphere moving-Morison heave
+
+`sphere_moving_morison_heave.npz` keeps all 4,001 samples of the derived 40 s
+`Free_Decay/1m-ME` case with its body-local element changed to axial heave
+coefficients (`Cd=Ca=1`, area 100 m², volume 20 m³). This is the successful
+[pinned R2025b MATLAB run](https://github.com/cmudrc/wec-sim-python/actions/runs/37770321922)
+(`matlab-SPHERE_MOVING_MORISON-baseline` artifact, run commit
+`2c707cf2cd45e144db803a8862485d4845c6d992`). Its workflow pins WEC-Sim
+core `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The bundled
+`examples/data/sphere.h5` is the matching BEMIO output (SHA-256
+`7287c5b02c74616e385f0d582df6a4679d7a4ceb93d8c663833a944838598e06`).
+
+The archive stores source CSV columns 0, 3, and 9 as `time`, `position_heave`,
+and `velocity_heave`; `physical_force_heave` is the negative of column 27,
+because the MATLAB log uses the opposite Morison force sign. Values were
+loaded as float64 without rounding. The source CSV SHA-256 is
+`16788d9ae5d8d3413affadc722f2dc405f6f9cb76cecefa14ab1849a544ae0d8`;
+the compact archive SHA-256 is
+`3a35601b7b34103880082962ec828d64c82f26b710e32dda78e185f524141b7f`.
+The always-on test independently integrates the complete motion and gates
+heave, speed, force after startup, and the full force-impulse difference.
+This derived heave-only experiment supplements the published Sphere cases;
+it does not make a new published-case badge claim.
+
 ## OSWEC directional irregular wave
 
 `oswec_irregular_wave.npz` keeps all 4,001 samples of the published 400 s
