@@ -1,5 +1,23 @@
 # Portable MATLAB reference data
 
+## OSWEC nonlinear visualization motion
+
+`oswec_nonlinear_viz_published_motion.npz` keeps all 1,201 samples of the
+published 120 s, 0.1 s `ode4` flap motion and its principal force channels.
+It was copied without rounding from the untouched R2025b
+[published-case run](https://github.com/cmudrc/wec-sim-python/actions/runs/38259283403)
+(`matlab-oswec-nonlinear-viz-pressure` artifact, run commit
+`1083a1f29725785cbba0cb67f8e389a9cade16fc`). The workflow pins WEC-Sim
+core `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The source `source.mat`
+hash is `f5c2944777f35741a48034e64fb4d3d7ec165466f6f2fc76f7be1f38383ad466`.
+The archive contains `time`, `pose`, `velocity`, `acceleration`,
+`forceExcitation`, `forceRadiationDamping`, `forceAddedMass`, and
+`forceRestoring` for the six flap degrees of freedom. Its SHA-256 is
+`63f3669b192ab271a92f5ea9c4650d1d183ef68f0abc4a6b0faedcd2b4948e4f`.
+The refined-step source job gates its 0.1 s run against these published
+channels before evaluating step sensitivity or independent Python motion.
+
 ## RM3 regular wave
 
 `rm3_regular_wave.npz` contains selected motion and PTO channels at every

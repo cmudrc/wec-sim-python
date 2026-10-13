@@ -870,8 +870,12 @@ separate from Python's default implicit added mass.
 
 A [four-step R2025b refinement](https://github.com/cmudrc/wec-sim-python/actions/runs/38093454463)
 keeps the published 120 s, 2.5 m/8 s regular wave, 40 s ramp, hinge, and mesh
-hydrodynamics. Disabling pressure and VTP output changes the original 0.1 s
-pitch trace by exactly zero. Halving the MATLAB `ode4` and nonlinear-force
+hydrodynamics. Disabling pressure and VTP output leaves all 1,201 samples of
+the original 0.1 s flap pose, velocity, acceleration, excitation, radiation,
+added-mass, and restoring-force histories exactly unchanged. The refined-step
+gate now compares its coarse run against a compact
+[published-case source fixture](tests/fixtures/matlab/README.md) before
+testing Python motion. Halving the MATLAB `ode4` and nonlinear-force
 sample steps from `0.1` to `0.05`, `0.05` to `0.025`, and `0.025` to
 `0.0125` s changes pitch by at most `0.005581`, `0.001295`, and
 `0.000317` rad, respectively. The public `WEC.fixed_hinge` path now

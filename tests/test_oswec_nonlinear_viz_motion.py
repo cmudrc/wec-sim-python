@@ -29,6 +29,17 @@ def test_published_nonlinear_oswec_hinge_against_refined_matlab():
         assert float(source["nonlinearDt"].item()) == dt
         assert str(source["solver"].item()) == "ode4"
         assert len(source["time"].ravel()) == round(120 / dt) + 1
+    # The refinement disables pressure and ParaView output. Its coarse run
+    # must still reproduce the untouched published case before comparisons
+    # with finer source steps can be interpreted as step sensitivity.
+    fixture = (Path(__file__).parent / "fixtures" / "matlab"
+               / "oswec_nonlinear_viz_published_motion.npz")
+    with np.load(fixture) as published:
+        np.testing.assert_array_equal(coarse["time"].ravel(), published["time"])
+        for channel in ("pose", "velocity", "acceleration",
+                        "forceExcitation", "forceRadiationDamping",
+                        "forceAddedMass", "forceRestoring"):
+            np.testing.assert_array_equal(coarse[channel], published[channel])
     np.testing.assert_allclose(coarse["time"].ravel(),
                                medium["time"].ravel()[::2], rtol=0, atol=1e-12)
     np.testing.assert_allclose(medium["time"].ravel(),
