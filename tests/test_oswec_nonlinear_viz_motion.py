@@ -36,10 +36,16 @@ def test_published_nonlinear_oswec_hinge_against_refined_matlab():
                / "oswec_nonlinear_viz_published_motion.npz")
     with np.load(fixture) as published:
         np.testing.assert_array_equal(coarse["time"].ravel(), published["time"])
-        for channel in ("pose", "velocity", "acceleration",
-                        "forceExcitation", "forceRadiationDamping",
+        # MATLAB's repeated run may differ from the archived source fixture
+        # at floating-point roundoff on another host. These bounds cover
+        # only that repeatability check; the motion gates below are unchanged.
+        for channel in ("pose", "velocity", "acceleration"):
+            np.testing.assert_allclose(coarse[channel], published[channel],
+                                       rtol=0, atol=1e-12)
+        for channel in ("forceExcitation", "forceRadiationDamping",
                         "forceAddedMass", "forceRestoring"):
-            np.testing.assert_array_equal(coarse[channel], published[channel])
+            np.testing.assert_allclose(coarse[channel], published[channel],
+                                       rtol=0, atol=1e-7)
     np.testing.assert_allclose(coarse["time"].ravel(),
                                medium["time"].ravel()[::2], rtol=0, atol=1e-12)
     np.testing.assert_allclose(medium["time"].ravel(),
