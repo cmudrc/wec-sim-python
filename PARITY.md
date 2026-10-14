@@ -1817,6 +1817,28 @@ unchanged `1` mm / `3` mm/s source-stability screen, so this does not establish
 a converged MATLAB reference or published-case parity.
 Both published 0.1 s cases remain qualified, and the RM3 badge stays 17/21.
 
+A [further local R2025b source audit](tests/fixtures/matlab/rm3_pto_extension_00078125/README.md)
+halves the same 30 s float and spar no-wave cases to `0.0015625` and
+`0.00078125` s. At the finest step, MATLAB's full-duration self-change is
+`0.610` mm heave and `2.449` mm/s speed for the float, and `0.125` mm and
+`0.0764` mm/s for the spar; both pass the predeclared source-stability screens.
+The successive first-order extrapolations also become more consistent.
+Independent public Python at `0.00078125` s differs from the latest source
+extrapolation by at most `0.00967` mm / `0.168` mm/s (float) and
+`0.000362` mm / `0.0265` mm/s (spar), below the declared limits and the
+remaining source-extrapolation spread. An always-on regression test preserves
+both source-step and independent-motion gates. The comparison grid was
+corrected from `0.003125` to `0.00625` s before evaluating any complete case
+because the oldest source history has no intermediate samples; numerical
+limits were unchanged and both specifications are archived. Directly against
+the finest MATLAB trajectory, without extrapolation, Python's float gaps are
+`0.614` mm heave and `1.665` mm/s speed; the spar gaps are `0.125` mm and
+`0.0510` mm/s. The float's direct heave gap is nearly the same as MATLAB's
+own final step change. These two additional refinements strengthen the
+physical free-decay comparison, but do not prove asymptotic convergence or
+match the published `0.1` s source trajectory. Both published cases remain
+qualified and badges are unchanged.
+
 The `MATLAB reference model baselines` workflow runs the two canonical core
 examples, all five Sphere free-decay cases, RM3 body-to-body Cases 1–4,
 the RM3 MooringMatrix case when selected by workflow dispatch,

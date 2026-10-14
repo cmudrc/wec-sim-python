@@ -409,6 +409,9 @@ The always-on test uses the previously declared decreasing source-step and
 extrapolation-inconsistency screens, then checks independent physical Python
 motion against the latest formal extrapolation. This is a convergence
 diagnostic, not a published-step parity gate.
+The next two local source halvings and their independent physical comparison
+are documented in
+[rm3_pto_extension_00078125/README.md](rm3_pto_extension_00078125/README.md).
 
 ## Sphere reactive PI controller
 

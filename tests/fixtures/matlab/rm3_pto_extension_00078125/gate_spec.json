@@ -1,0 +1,12 @@
+{
+  "source_core_commit": "0753b2e47f2457c078751dcfe5d251d1767b80ab",
+  "applications_commit": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e",
+  "shared_h5_sha256": "b8dd385f5db2a53fa3ffb971b105ea4fe8a2685ffd00bab0ae6050f366f69768",
+  "case": "Both published RM3_PTO_Extension noWaveCIC free decays; change only simu.dt from the archived 0.003125 s to 0.0015625 s and 0.00078125 s",
+  "duration_s": 30,
+  "source_self_change_gate": "For float and spar heave and speed, each of the two new successive full-duration step changes must be strictly less than its preceding halving's maximum difference. The final 0.0015625-to-0.00078125 change must be less than 0.001 m and 0.003 m/s for the float; for the spar, less than 0.0003 m and 0.0002 m/s.",
+  "extrapolation_gate": "Successive first-order extrapolations on the common 0.00625 s grid must become strictly more consistent in both heave and speed for both bodies, compared with the already archived 0.00625/0.003125 extrapolation inconsistency.",
+  "independent_python_gate": "At 0.00078125 s, the physical implicit-mass Python trajectory must differ from the latest source first-order extrapolation by less than the new source-extrapolation inconsistency in both heave and speed for both bodies, and by less than 0.0002 m and 0.001 m/s (float), 0.00002 m and 0.0002 m/s (spar).",
+  "case_badge": "No promotion from this refined-step diagnostic; the published 0.1 s MATLAB source remains distinct and step-sensitive.",
+  "index_correction": "Before evaluating any complete case, corrected the common extrapolation comparison grid from 0.003125 s to 0.00625 s because the oldest 0.00625 s source history has no 0.003125 s samples. Original spec preserved as gate_spec_pre_grid_correction.json. Thresholds and required decreasing trends are unchanged."
+}

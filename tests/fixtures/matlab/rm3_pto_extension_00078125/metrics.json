@@ -1,0 +1,69 @@
+{
+  "float": {
+    "old_source_change_m_mps": [
+      0.002368545378161002,
+      0.009796598607767201
+    ],
+    "middle_source_change_m_mps": [
+      0.0012081229704783009,
+      0.0048984903263243965
+    ],
+    "final_source_change_m_mps": [
+      0.000610213606741199,
+      0.0024491653987897995
+    ],
+    "old_extrapolation_spread_m_mps": [
+      0.0001335989984490027,
+      0.006403840937194066
+    ],
+    "final_extrapolation_spread_m_mps": [
+      3.3413581760989575e-05,
+      0.002970469654478995
+    ],
+    "python_to_extrapolation_m_mps": [
+      9.665993482871338e-06,
+      0.00016780563981794866
+    ],
+    "gates": {
+      "source_change_decreases_twice": true,
+      "source_final_below_limit": true,
+      "extrapolation_consistency_improves": true,
+      "python_within_source_spread": true,
+      "python_below_absolute_limit": true
+    }
+  },
+  "spar": {
+    "old_source_change_m_mps": [
+      0.0004977000474966076,
+      0.00030544182724315987
+    ],
+    "middle_source_change_m_mps": [
+      0.00024961632909992204,
+      0.00015271695682428994
+    ],
+    "final_source_change_m_mps": [
+      0.00012500080480037923,
+      7.635410863920402e-05
+    ],
+    "old_extrapolation_spread_m_mps": [
+      5.035252200968898e-06,
+      0.00028979842951557975
+    ],
+    "final_extrapolation_spread_m_mps": [
+      1.2589779991856176e-06,
+      5.9645341015830255e-05
+    ],
+    "python_to_extrapolation_m_mps": [
+      3.621374844442471e-07,
+      2.6538699392712143e-05
+    ],
+    "gates": {
+      "source_change_decreases_twice": true,
+      "source_final_below_limit": true,
+      "extrapolation_consistency_improves": true,
+      "python_within_source_spread": true,
+      "python_below_absolute_limit": true
+    }
+  },
+  "all_pass": true
+}
