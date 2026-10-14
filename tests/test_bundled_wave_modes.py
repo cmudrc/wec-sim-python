@@ -164,3 +164,45 @@ def test_legacy_imported_spectrum_replays_supplied_phases(tmp_path):
     expected_first = np.sum(np.sqrt(wave.A * wave.dw) * np.cos(phase))
     np.testing.assert_allclose(wave.waveAmpTime[1][0], expected_first,
                                rtol=0, atol=1e-12)
+
+
+def test_finite_depth_regular_wave_gauges_follow_dispersion_and_direction():
+    wave = WaveClass("regular")
+    wave.H = 2.0
+    wave.T = 8.0
+    wave.waveDir = [30.0]
+    wave.wavegauge1loc = [3.0, 4.0]
+    wave.wavegauge2loc = [-2.0, 1.0]
+    wave.wavegauge3loc = [0.0, 0.0]
+    wave.waveSetup([.1, 2.0], 15.0, .2, .05, 8, 9.81, 1025.0, .4)
+
+    omega = 2 * np.pi / wave.T
+    k = float(np.asarray(wave.k))
+    np.testing.assert_allclose(k * np.tanh(15.0 * k), omega**2 / 9.81,
+                               rtol=0, atol=1e-12)
+    time = np.arange(9) * .05
+    ramp = np.ones_like(time)
+    ramp[:4] = (1 - np.cos(np.pi * time[:4] / .2)) / 2
+    heading = np.deg2rad(30.0)
+    for location, output in (
+        ([0.0, 0.0], wave.waveAmpTime),
+        (wave.wavegauge1loc, wave.waveAmpTime1),
+        (wave.wavegauge2loc, wave.waveAmpTime2),
+        (wave.wavegauge3loc, wave.waveAmpTime3),
+    ):
+        distance = location[0] * np.cos(heading) + location[1] * np.sin(heading)
+        expected = ramp * np.cos(omega * time - k * distance)
+        np.testing.assert_allclose(output[0], time, rtol=0, atol=1e-14)
+        np.testing.assert_allclose(output[1], expected, rtol=0, atol=1e-12)
+
+    source = ROOT / "tests/fixtures/matlab/regular_wave_gauges"
+    matlab_elevation = np.loadtxt(source / "elevation.csv", delimiter=",")
+    python_elevation = np.column_stack((
+        wave.waveAmpTime[0], wave.waveAmpTime[1],
+        wave.waveAmpTime1[1], wave.waveAmpTime2[1], wave.waveAmpTime3[1],
+    ))
+    np.testing.assert_allclose(python_elevation, matlab_elevation,
+                               rtol=0, atol=5e-13)
+    matlab_k, matlab_power = np.loadtxt(source / "constants.csv", delimiter=",")
+    np.testing.assert_allclose(k, matlab_k, rtol=0, atol=1e-14)
+    np.testing.assert_allclose(wave.Pw, matlab_power, rtol=0, atol=1e-7)
