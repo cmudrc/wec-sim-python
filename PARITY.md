@@ -108,6 +108,14 @@ body-motion, PTO, and mooring limits; signed integrated PTO work differs by
 replaces an environment-dependent check for an already counted case. The
 badge count does not change.
 
+The derived 40 s Sphere regular-wave moving-Morison heave comparison now has
+an [ordinary-CI public `WEC.run` gate](tests/test_sphere_wave_morison_portable.py)
+from the [exact R2025b HDF5 and 4,001 source samples](tests/fixtures/matlab/sphere_wave_morison/README.md).
+It retains the existing wave, heave, speed, and post-startup force limits and
+independently reconstructs the source law on its projected heave states. The
+MATLAB joint also permits surge and pitch; this reduced-heave derived case
+does not add a published-case badge.
+
 The four published 500 s RM3 `Radiation_Force_Options` coupled-motion and
 PTO gates above now run in ordinary Python CI from the [exact archived
 HDF5 and source traces](tests/fixtures/matlab/rm3_radiation_options/README.md).
