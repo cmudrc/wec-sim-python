@@ -4,6 +4,8 @@ The published 100 s WaveBot adaptive controller input and trajectory are
 documented in [wavebot_control/README.md](wavebot_control/README.md).
 The published 600 s WaveBot impedance experiment is documented in
 [wavebot_impedance/README.md](wavebot_impedance/README.md).
+The two configured 400 s Sphere PTO comparisons are documented in
+[sphere_pto_config/README.md](sphere_pto_config/README.md).
 
 ## Fixed hydrodynamic monopile
 

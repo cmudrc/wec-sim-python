@@ -589,6 +589,9 @@ Both already-gated WaveBot published inputs now have portable full-duration
 ordinary-CI comparisons: the 100 s adaptive controller and the 600 s
 impedance experiment. These strengthen regression coverage without changing
 the WaveBot case count or the physical damping default.
+The two already-paired 400 s Sphere body-local PTO configurations, including
+the spring pretension variant, also run their public-API body, PTO, force,
+and power gates in ordinary CI from a pinned source fixture.
 
 | Other published cases | Gated / inventoried |
 | --- | ---: |

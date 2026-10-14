@@ -4,17 +4,28 @@ import os
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from wecsim import RegularWave, WEC, WorldPoint
 
 
-SPHERE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")
+PORTABLE = Path(__file__).parent / "fixtures/matlab/sphere_pto_config"
+SOURCE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (SPHERE_H5 and REFERENCE),
-    reason="paired MATLAB configured Sphere PTO output not provided",
-)
+if bool(SOURCE_H5) != bool(REFERENCE):
+    raise ValueError("live Sphere PTO comparison needs both HDF5 and source output")
+SPHERE_H5 = SOURCE_H5 or PORTABLE / "sphere.h5"
+
+
+def _source(suffix):
+    name = f"Sphere_PTO_Config_{suffix}"
+    if REFERENCE:
+        values = np.loadtxt(Path(REFERENCE) / f"{name}.csv",
+                            delimiter=",", ndmin=1)
+    else:
+        with np.load(PORTABLE / "published_400s.npz") as saved:
+            values = saved[name].copy()
+    assert np.isfinite(values).all(), name
+    return values
 
 
 def _max_error(actual, expected, limit, label):
@@ -42,16 +53,9 @@ def _run_configured_sphere(*, pretension=None):
 
 
 def test_configured_sphere_pto_against_matlab():
-    reference = Path(REFERENCE)
-    body = np.loadtxt(
-        reference / "Sphere_PTO_Config_Configured_body1.csv", delimiter=",",
-    )
-    pto = np.loadtxt(
-        reference / "Sphere_PTO_Config_Configured_pto1.csv", delimiter=",",
-    )
-    controller = np.loadtxt(
-        reference / "Sphere_PTO_Config_controller.csv", delimiter=",",
-    )
+    body = _source("Configured_body1")
+    pto = _source("Configured_pto1")
+    controller = _source("controller")
     response = _run_configured_sphere()
     np.testing.assert_allclose(response.time, body[:, 0], rtol=0, atol=1e-10)
     np.testing.assert_allclose(response.time, pto[:, 0], rtol=0, atol=1e-10)
@@ -80,28 +84,12 @@ def test_configured_sphere_pto_against_matlab():
 
 
 def test_configured_sphere_pto_pretension_against_matlab():
-    reference = Path(REFERENCE)
-    parameters = np.loadtxt(
-        reference / "Sphere_PTO_Config_pretension_parameters.csv",
-        delimiter=",", ndmin=1,
-    )
+    parameters = _source("pretension_parameters")
     np.testing.assert_allclose(parameters, [5000, -0.1], rtol=0, atol=1e-12)
-    body = np.loadtxt(
-        reference / "Sphere_PTO_Config_ConfiguredPretension_body1.csv",
-        delimiter=",",
-    )
-    pto = np.loadtxt(
-        reference / "Sphere_PTO_Config_ConfiguredPretension_pto1.csv",
-        delimiter=",",
-    )
-    controller = np.loadtxt(
-        reference / "Sphere_PTO_Config_ConfiguredPretension_controller.csv",
-        delimiter=",",
-    )
-    original = np.loadtxt(
-        reference / "Sphere_PTO_Config_Configured_body1.csv",
-        delimiter=",",
-    )
+    body = _source("ConfiguredPretension_body1")
+    pto = _source("ConfiguredPretension_pto1")
+    controller = _source("ConfiguredPretension_controller")
+    original = _source("Configured_body1")
     assert body.shape == pto.shape == original.shape == (20001, 25)
     assert controller.shape == (20001, 13)
     assert np.max(np.abs(body[:, 3] - original[:, 3])) > .001
