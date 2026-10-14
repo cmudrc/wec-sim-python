@@ -50,6 +50,34 @@ def test_two_body_attachment_offsets_create_pitch_moment():
     np.testing.assert_allclose(outputs["pto_main_force"], [100])
     np.testing.assert_allclose(outputs["pto_main_absorbed_power"], [0])
 
+    # An exact small-pitch attachment displacement gives this Jacobian at
+    # the neutral pose. The same Jacobian must map line force back to body
+    # coordinates, so virtual work and damper dissipation agree.
+    def exact_stroke(q):
+        return q[1] - q[0] + 2 * np.sin(q[2])
+
+    step = 1e-6
+    finite_difference = np.array([
+        (exact_stroke(step * np.eye(3)[axis])
+         - exact_stroke(-step * np.eye(3)[axis])) / (2 * step)
+        for axis in range(3)
+    ])
+    np.testing.assert_allclose(finite_difference, jacobian, rtol=0, atol=1e-9)
+    position = np.array([0.12, -0.03, 0.04])
+    speed = np.array([0.2, -0.3, 0.1])
+    line_force = connections[0].force(position[None], speed[None])[0]
+    generalized_force = -stiffness @ position - damping @ speed + bias
+    np.testing.assert_allclose(generalized_force, jacobian * line_force,
+                               rtol=0, atol=1e-12)
+    output = dict(connections[0].outputs(position[None], speed[None]))
+    stroke = output["pto_main_stroke"][0]
+    stroke_speed = output["pto_main_velocity"][0]
+    dissipated = output["pto_main_absorbed_power"][0]
+    np.testing.assert_allclose(
+        generalized_force @ speed + 1000 * (stroke - 0.1) * stroke_speed
+        + dissipated, 0, rtol=0, atol=1e-12,
+    )
+
 
 def test_world_anchor_sets_default_axis():
     mapping = np.zeros((6, 1))
