@@ -1,0 +1,100 @@
+"""Published held-yaw source numerics through the public WEC API in ordinary CI."""
+
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+from wecsim import PMWave, WEC, WorldPoint
+from wecsim.environment.irregularWave import pm_equal_energy_components
+from wecsim.hydrodynamics.bodyClass import BodyClass
+from wecsim.hydrodynamics.passiveYaw import (
+    HeldPassiveYawExcitation, SampledPassiveYawExcitation,
+)
+
+
+FIXTURES = Path(__file__).resolve().parent / "fixtures/matlab"
+HYDRO = FIXTURES / "oswec_multi_wave/oswec.h5"
+SOURCE = FIXTURES / "oswec_held_yaw/source.npz"
+HEADING_EVENTS = {1: 141, 2: 52, 3: 91}
+
+
+def _heading_events(hydro_data, components, time, yaw):
+    sampled = SampledPassiveYawExcitation.from_hydro_data(
+        hydro_data, components, dt=.01, end_time=250,
+        ramp_time=100, rho=1000, g=9.81,
+    )
+    held = HeldPassiveYawExcitation(sampled, threshold=1)
+    headings = np.empty(len(time))
+    for index, instant in enumerate(time):
+        held.commit(instant, np.array([yaw[index]]))
+        headings[index] = held.last_heading
+    return np.flatnonzero(np.abs(np.diff(headings)) > 1e-5)
+
+
+@pytest.mark.parametrize("seed", (1, 2, 3))
+def test_published_250s_held_yaw_source_path_from_phase_seed(seed):
+    """The opt-in solver reproduces source output; the physical default is separate."""
+    with np.load(SOURCE) as archive:
+        time = archive["time"]
+        source = {key.removeprefix(f"seed{seed}_"): archive[key]
+                  for key in archive.files if key.startswith(f"seed{seed}_")}
+    components = pm_equal_energy_components(
+        HYDRO, significant_height=2.5, peak_period=8,
+        directions=[10], spreading=[1], count=500,
+        seed=seed, phase_generator="matlab",
+    )
+    generated = np.column_stack((
+        components.omega, components.spectral_amplitude,
+        components.d_omega, components.phase[:, 0],
+    ))
+    np.testing.assert_allclose(generated, source["components"],
+                               rtol=0, atol=1e-12)
+
+    wec = WEC("OSWEC published held yaw")
+    flap = wec.body("flap", HYDRO, mass=12700, inertia=(1.85e6,) * 3,
+                    passive_yaw=True, passive_yaw_threshold=1)
+    wec.body("base", HYDRO, mass=999, inertia=(999,) * 3)
+    yaw = wec.coordinate("yaw", flap.move("yaw", pivot=WorldPoint(0, 0, -8.9)))
+    wec.rotational_pto("hinge", yaw, damping=120000)
+    result = wec.run(
+        PMWave(2.5, 8, direction=10, seed=seed, phase_generator="matlab"),
+        dt=.01, end_time=250, ramp_time=100, radiation_memory=40,
+        solver="wecsim_ode4",
+    )
+
+    np.testing.assert_allclose(result.time, time, rtol=0, atol=1e-10)
+    np.testing.assert_allclose(result.wave_elevation,
+                               source["wave_elevation"], rtol=0, atol=1e-11)
+    expected_base = np.array([0, 0, -10.9, 0, 0, 0])
+    np.testing.assert_allclose(result.bodies["base"].position,
+                               np.broadcast_to(expected_base, (len(time), 6)),
+                               rtol=0, atol=1e-12)
+    np.testing.assert_allclose(result.bodies["base"].velocity,
+                               np.zeros((len(time), 6)), rtol=0, atol=1e-12)
+    actual_force = dict(result.raw.extra_outputs)["body1_excitation_force"]
+    assert np.max(np.abs(actual_force[:, 5] - source["yaw_excitation"])) < .001
+
+    angle = result.bodies["flap"].position[:, 5]
+    speed = result.bodies["flap"].velocity[:, 5]
+    pto = result.ptos["hinge"]
+    assert np.max(np.abs(angle - source["yaw"])) < 1e-6
+    assert np.max(np.abs(speed - source["yaw_speed"])) < 1e-7
+    assert np.max(np.abs(pto.force - source["pto_torque"])) < .01
+    np.testing.assert_allclose(source["pto_torque"],
+                               -120000 * source["pto_speed"],
+                               rtol=0, atol=1e-5)
+    source_work = -np.trapezoid(source["pto_power"], time)
+    python_work = np.trapezoid(pto.absorbed_power, time)
+    assert source_work > 0
+    assert abs(python_work - source_work) / source_work < 1e-6
+
+    body = BodyClass(str(HYDRO))
+    body.bodyNumber = 1
+    body.bodyTotal = 2
+    body.readH5file()
+    source_events = _heading_events(body.hydroData, components,
+                                    time, source["yaw"])
+    python_events = _heading_events(body.hydroData, components, time, angle)
+    assert len(source_events) == HEADING_EVENTS[seed]
+    np.testing.assert_array_equal(python_events, source_events)
