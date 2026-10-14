@@ -15,7 +15,7 @@ from wecsim.dynamics.case_inputs import (
 from wecsim.dynamics.case_response import CaseResponse
 from wecsim.dynamics.generalDynamics import BodyMotion, DynamicBody, GeneralizedDynamics
 from wecsim.dynamics.hingePitch import hinged_pitch_motion
-from wecsim.dynamics.linearCoordinates import build_coordinate_maps, initial_coordinate
+from wecsim.dynamics.linearCoordinates import _pivot, build_coordinate_maps, initial_coordinate
 from wecsim.dynamics.ptoConnections import build_linear_ptos
 from wecsim.environment.irregularWave import (
     imported_spectrum_components,
@@ -152,18 +152,19 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
     )
     n = maps[0].shape[1]
     exact_pitch_motion = None
-    # A pitch coordinate around an offset world pivot also translates the
-    # center of gravity. Use exact hinge kinematics for this one-coordinate
-    # case instead of treating its map as constant.
+    # An offset pitch pivot translates the center of gravity. A body-local
+    # point and its equivalent world point need the same exact hinge motion;
+    # the constant small-motion map is only the initial Jacobian.
     if len(bodies) == n == 1 and "coordinates" in constraint:
         definitions = constraint["coordinates"][0]["motions"]
         if len(definitions) == 1:
             definition = definitions[0]
             pivot = definition.get("pivot", {})
+            pivot_world = _pivot(pivot, centers[0]) if pivot else None
             if (definition["dof"] == "pitch"
                     and float(definition.get("scale", 1)) == 1
-                    and "world" in pivot
-                    and np.allclose(centers[0][:2], pivot["world"][:2],
+                    and pivot_world is not None
+                    and np.allclose(centers[0][:2], pivot_world[:2],
                                     rtol=0, atol=1e-12)):
                 if any(pto.get("kind") == "linear_actuator"
                        for pto in case.get("ptos", [])):
@@ -171,7 +172,7 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
                         "exact pitch-pivot motion currently supports rotational PTOs only"
                     )
                 exact_pitch_motion = hinged_pitch_motion(
-                    centers[0][2] - pivot["world"][2],
+                    centers[0][2] - pivot_world[2],
                 )
     moving_morison = tuple(
         index for index, spec in enumerate(bodies)

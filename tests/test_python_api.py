@@ -187,6 +187,41 @@ def test_named_pitch_pivot_uses_exact_motion_and_physical_pretension():
                                rtol=0, atol=1e-10)
 
 
+def test_body_local_pitch_pivot_matches_equivalent_world_pivot():
+    hydro = ROOT / "examples/data/oswec.h5"
+
+    def run(local):
+        wec = WEC("OSWEC pivot equivalence")
+        flap = wec.body("flap", hydro, mass=127_000,
+                        inertia=(0, 1.85e6, 0))
+        # The HDF5 CG is at z=-3.9 m; both points identify z=-8.9 m.
+        pivot = flap.at(0, 0, -5) if local else WorldPoint(0, 0, -8.9)
+        pitch = wec.coordinate("pitch", flap.move("pitch", pivot=pivot))
+        wec.rotational_pto("hinge", pitch, damping=12_000,
+                           stiffness=500, pretension=-50)
+        return wec.run(RegularWave(0, 8), dt=.1, end_time=.2,
+                       ramp_time=0, initial_coordinate={"pitch": .3})
+
+    world, local = run(False), run(True)
+    assert world.case["constraint"]["coordinates"][0]["motions"][0]["pivot"] == {
+        "world": [0, 0, -8.9],
+    }
+    assert local.case["constraint"]["coordinates"][0]["motions"][0]["pivot"] == {
+        "point": [0, 0, -5],
+    }
+    for field in ("position", "velocity"):
+        np.testing.assert_array_equal(getattr(local.bodies["flap"], field),
+                                      getattr(world.bodies["flap"], field))
+    for field in ("stroke", "velocity", "force", "absorbed_power"):
+        np.testing.assert_array_equal(getattr(local.ptos["hinge"], field),
+                                      getattr(world.ptos["hinge"], field))
+    angle = local.coordinates["pitch"].position
+    np.testing.assert_allclose(local.bodies["flap"].position[:, 0],
+                               5 * np.sin(angle), rtol=0, atol=1e-12)
+    np.testing.assert_allclose(local.bodies["flap"].position[:, 2],
+                               -8.9 + 5 * np.cos(angle), rtol=0, atol=1e-12)
+
+
 def test_python_builder_supports_ground_anchor_and_named_initial_state():
     wec = WEC("Anchored float")
     body = wec.body("float", HYDRO)
