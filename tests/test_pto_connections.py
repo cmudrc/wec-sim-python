@@ -7,6 +7,7 @@ import sys
 
 import numpy as np
 import pytest
+from scipy.integrate import trapezoid
 
 from wecsim import NoWave, WEC, WorldPoint
 from wecsim.dynamics.ptoConnections import build_linear_ptos
@@ -112,6 +113,64 @@ def test_opposite_body_local_ptos_superpose_as_one_passive_pto():
                                rtol=0, atol=1e-10)
     assert np.ptp(combined.bodies["sphere"].position[:, 2]) > .1
     assert np.max(single.absorbed_power) > 0
+
+
+def test_position_feedback_matches_spring_motion_but_accounts_for_its_work():
+    """Equivalent forces need not have the same reported absorbed energy."""
+    spring = 25_000.0
+    damper = 50_000.0
+
+    def run(*, feedback):
+        wec = WEC("Sphere heave with configurable PTO")
+        body = wec.body("sphere", SPHERE)
+        wec.coordinate("heave", body.move("heave"))
+        wec.pto(
+            "main", WorldPoint(0, 0, -5), body.at(0, 0, 0),
+            damping=damper,
+            position_control_gain=spring if feedback else 0,
+            stiffness=0 if feedback else spring,
+        )
+        return wec.run(
+            NoWave(), dt=.01, end_time=2, radiation_memory=.2,
+            initial_coordinate={"heave": .5},
+        )
+
+    passive = run(feedback=False)
+    active = run(feedback=True)
+    passive_pto = passive.ptos["main"]
+    active_pto = active.ptos["main"]
+    for field in ("position", "velocity"):
+        np.testing.assert_allclose(
+            getattr(passive.bodies["sphere"], field),
+            getattr(active.bodies["sphere"], field), rtol=0, atol=1e-10,
+        )
+    for field in ("stroke", "velocity", "force"):
+        np.testing.assert_allclose(
+            getattr(passive_pto, field), getattr(active_pto, field),
+            rtol=0, atol=1e-10,
+        )
+    assert np.ptp(active_pto.stroke) > .1
+    np.testing.assert_allclose(
+        passive_pto.absorbed_power, damper * passive_pto.velocity**2,
+        rtol=0, atol=1e-10,
+    )
+    np.testing.assert_allclose(
+        active_pto.control_force, -spring * active_pto.stroke,
+        rtol=0, atol=1e-10,
+    )
+    np.testing.assert_allclose(
+        active_pto.absorbed_power - passive_pto.absorbed_power,
+        active_pto.control_absorbed_power, rtol=0, atol=1e-9,
+    )
+    # The reactive controller exchanges the energy a passive spring stores.
+    controller_work = trapezoid(active_pto.control_absorbed_power,
+                                x=active.time)
+    spring_energy_change = spring * (
+        active_pto.stroke[-1]**2 - active_pto.stroke[0]**2
+    ) / 2
+    assert controller_work < 0
+    np.testing.assert_allclose(controller_work, spring_energy_change,
+                               rtol=1e-4, atol=0)
 
 
 def test_named_pitch_pivot_moves_body_center():
