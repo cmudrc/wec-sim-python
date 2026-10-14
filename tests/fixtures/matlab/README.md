@@ -393,6 +393,21 @@ SHA-256 is
 The portable test compares the new source step change and independent public
 Python motion. The published-step cases retain their qualified status.
 
+`rm3_pto_extension_003125.npz` adds both 9,601-row, 30 s source trajectories
+from a second local R2025b Update 7 refinement. Disposable copies of the
+same pinned float and spar inputs changed only `simu.dt` from 0.1 to
+0.003125 s, and reused the generated common-RM3 HDF5 with SHA-256
+`b8dd385f5db2a53fa3ffb971b105ea4fe8a2685ffd00bab0ae6050f366f69768`.
+The float/spar CSV SHA-256 hashes are
+`2a3f9c92aec9bebccbeabc14cc7fba557cddefef93a1801276fb3fe95d5341f4`
+and `7fb93a6366764409098e71049db797bcc4ee191d67ea8cf5add82d911dbb47e5`;
+the compressed fixture SHA-256 is
+`94ca53190aad68a0bd65bdefa9eca372e7873cdf5dfcc91a7339309fede16589`.
+The always-on test uses the previously declared decreasing source-step and
+extrapolation-inconsistency screens, then checks independent physical Python
+motion against the latest formal extrapolation. This is a convergence
+diagnostic, not a published-step parity gate.
+
 ## Sphere free decay
 
 `sphere_free_decay.npz` retains every sample of the five published Sphere

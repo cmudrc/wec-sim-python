@@ -3,12 +3,12 @@
 This fork started from THREDgroup/WEC-Sim-Python `c04ef427` (October 2021).
 The current MATLAB reference reviewed for this baseline is
 [WEC-Sim/WEC-Sim `0753b2e47f2457c078751dcfe5d251d1767b80ab`](https://github.com/WEC-Sim/WEC-Sim/tree/0753b2e47f2457c078751dcfe5d251d1767b80ab).
-The original Python repository includes MATLAB-generated fixtures, but there
-is no MATLAB or Octave executable on the local machine. The `MATLAB reference
-parity` GitHub Actions workflow checks out the pinned MATLAB revision, runs
-its `waveClass` under MATLAB R2025b, and compares the generated outputs with
-the production Python code. The live wave comparison passed on 6 October
-2026. The workflow saves the MATLAB outputs as an artifact.
+The original Python repository includes MATLAB-generated fixtures. Local
+MATLAB R2025b is now available for focused checks. The `MATLAB reference
+parity` GitHub Actions workflow also checks out the pinned MATLAB revision,
+runs its `waveClass`, and compares the generated outputs with the production
+Python code. The live wave comparison passed on 6 October 2026; the workflow
+saves its MATLAB outputs as an artifact.
 
 | Behavior | Reference | Baseline result |
 | --- | --- | --- |
@@ -1758,6 +1758,32 @@ The largest new source speed changes occur at `0.025` s (float) and
 `0.0375` s (spar); after the first second they fall to `4.50` and `0.166`
 mm/s. This timing directs the next local audit toward startup mass feedback,
 while the full-duration screen remains unchanged.
+As a further diagnostic on those archived 30 s histories, formal first-order
+extrapolations from the `0.025`/`0.0125` s and `0.0125`/`0.00625` s pairs
+still disagree by up to `2.14` mm float heave and `25.64` mm/s float speed;
+the corresponding spar differences are `0.0805` mm and `1.16` mm/s. The
+independent physical Python run at `0.00625` s differs from the latter
+extrapolation by at most `0.614`/`0.0244` mm float/spar heave. Its largest
+speed gaps are `12.56`/`0.324` mm/s, both at `0.025` s; after `0.1` s they
+fall below `0.796`/`0.0525` mm/s. Python's own `0.0125`-to-`0.00625` s
+heave changes are `0.296` mm for the float and `0.00709` mm for the spar.
+The float extrapolations disagree more
+than Python differs from the latest extrapolation, so this supports a
+source-step explanation without establishing a converged MATLAB trajectory.
+A further local MATLAB halving to `0.003125` s, using the same pinned HDF5 and
+unaltered no-wave cases, passed the declared decreasing-step and
+extrapolation-consistency screens for both bodies. Its full-duration
+`0.00625`-to-`0.003125` s heave/speed changes are `2.37` mm / `9.80` mm/s
+for the float and `0.498` mm / `0.305` mm/s for the spar. Successive formal
+extrapolations now differ by `0.535` mm / `11.89` mm/s (float) and
+`0.0201` mm / `0.239` mm/s (spar), down from `2.14` mm / `25.64` mm/s and
+`0.0805` mm / `1.16` mm/s. An independent public Python run at `0.003125` s
+differs from the latest extrapolation by at most `0.154` mm / `0.670` mm/s
+and `0.00605` mm / `0.106` mm/s for float and spar. The
+[portable source and physical diagnostic](tests/test_rm3_pto_extension_physical_step.py)
+preserves these trend checks in ordinary Python CI. The float still fails the
+unchanged `1` mm / `3` mm/s source-stability screen, so this does not establish
+a converged MATLAB reference or published-case parity.
 Both published 0.1 s cases remain qualified, and the RM3 badge stays 17/21.
 
 The `MATLAB reference model baselines` workflow runs the two canonical core
