@@ -737,6 +737,23 @@ reproduced that result with the physical-default public `WEC.run` path at
 Python/source errors passed all
 four unchanged yaw, speed, PTO-torque, and relative-work limits. Its uploaded
 quarter-step artifact contains all 56,001 samples through 140 s.
+Local R2025b Update 7 completed a further 160 s quarter-step run of the same
+pinned sea and heading bank without a hosted-job time limit. Its
+[source trajectories](tests/fixtures/matlab/oswec_yaw_160_source.npz),
+[measured errors](tests/fixtures/matlab/oswec_yaw_160_metrics.json), and
+[MATLAB runner](tests/matlab/oswec_variable_yaw_160s_step_audit.m) retain the
+evidence. The unchanged MATLAB self-change and independent Python/source
+limits both pass again at 120 and 140 s. At 160 s, independent physical-default
+Python still passes against the quarter-step MATLAB trajectory: yaw
+`0.0003576` rad, yaw speed `7.120e-5` rad/s, PTO torque `8.544` N m, and
+relative PTO work `0.0194%`. MATLAB's own `0.005`-to-`0.0025` s self-change
+fails all four unchanged limits: yaw `0.005133` rad, yaw speed
+`0.0007689` rad/s, torque `92.27` N m, and work `0.487%`, against limits of
+`0.0006` rad, `0.00015` rad/s, `20` N m, and `0.1%`. The two MATLAB heading
+histories differ at 2,143 common samples through 160 s, versus 320 through
+140 s. The 160 s result locates a new source-stability boundary; it does not
+establish published 600 s physical-motion parity, so the case remains
+qualified and its badge count is unchanged.
 MATLAB's own `0.01`-to-`0.005` s source change becomes large by 250 s, and a
 250 s quarter-step source run remains beyond the current GitHub job budget.
 Neither 250 s source convergence nor native 600 s motion parity is established.

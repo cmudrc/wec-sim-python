@@ -483,6 +483,37 @@ heave, speed, force after startup, and the full force-impulse difference.
 This derived heave-only experiment supplements the published Sphere cases;
 it does not make a new published-case badge claim.
 
+## OSWEC variable-yaw 160 s source step diagnostic
+
+`oswec_yaw_160_source.npz` preserves the full 250 s `dt=0.005` MATLAB
+trajectory and wave, plus every sample of the local 160 s `dt=0.0025`
+trajectory and wave. The source is WEC-Sim core
+`0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e` under local MATLAB
+R2025b Update 7. The existing coarse/fine inputs came from the pinned
+[250 s source audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38127365821).
+The committed [MATLAB runner](../../matlab/oswec_variable_yaw_160s_step_audit.m)
+sets only `simu.endTime=160` and `simu.dt=0.0025` on the published irregular
+input and uses the selected 0.25° heading bank. Its generated OSWEC HDF5
+SHA-256 is `6b6a2837d16808382c4eeeaef5abe5cef5aab5a60cb8dd5e0124b9bac51b17f9`.
+
+The archive retains unrounded float64 CSV values. SHA-256 hashes: source
+`fine_trajectory.csv` `2276cace8ac5254002ff9e939ff3db51eeba417b1b6aa5f64003f9219802039d`,
+`quarter_trajectory.csv` `375f9fb517f386257c5d538960630497111f4251dcca03c918c1e19f0dd05d2c`,
+`quarter_wave.csv` `77188908365176bc5992a79df125291cc32d23ef8682e268ebcc6`,
+and compact archive `dbf479b062288c19eafcd0d2f598e0838580f89774d52fce174131ca94ef3bcc`.
+`oswec_yaw_160_metrics.json` contains the predeclared 120/140/160 s source
+self-change and independent Python/source errors; its SHA-256 is
+`aa44a6f24ddef3a8d8db30ebe517d7eedfb4b4505e04c43966efa025b31702a1`.
+The unchanged limits and 160 s duration were recorded before the local run in
+`oswec_yaw_160_gate_spec.json` (SHA-256
+`a50186a2ce9b7ce9a611da5c95e9a2eb312991368b7255c3ef1b486311dc94bb`).
+The Python comparator used the physical-default `WEC.run` path at repo
+commit `547dd5ed` and the same generated HDF5; its 160 s comparison passed
+the unchanged Python/source limits, while MATLAB's own step stability failed.
+The always-on diagnostic recomputes the source side of that boundary from
+the saved trajectories. This is not a published-case parity gate.
+
 ## OSWEC directional irregular wave
 
 `oswec_irregular_wave.npz` keeps all 4,001 samples of the published 400 s
