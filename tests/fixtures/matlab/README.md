@@ -11,6 +11,27 @@ documented in [rm3_direct_generator/README.md](rm3_direct_generator/README.md).
 The full 900 s published Sphere variable-mass comparison is documented in
 [sphere_variable_mass/README.md](sphere_variable_mass/README.md).
 
+## Sphere latching
+
+`sphere_latching.npz` retains all 40,001 samples of the published 400 s
+`Controls/Latching` source time, body heave and speed, controller force, and
+controller power. It comes from the successful [R2025b source sweep](https://github.com/cmudrc/wec-sim-python/actions/runs/38532934332)
+(`matlab-Sphere_Latching-baseline`, run commit
+`f8f8f14b1e8c70260f783df85f94b3176185d3b8`). The workflow pins WEC-Sim
+core `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`.
+The body CSV SHA-256 is `7f5d5f4ae49b9df3346800dff1123b3467d06d3f5e2ed8c86f4377da512a8002`;
+the controller CSV is `fb7407195929649aa41fad17940486cd2fcd9b0f6ab1dacacf7725b6850b4e48`.
+Load both CSVs as float64, verify that their time columns match, and save body
+columns 0, 3, and 9 as `time`, `position`, and `velocity`, and controller
+columns 3 and 9 as `force` and `power` with `numpy.savez_compressed`.
+The archive SHA-256 is `2fd3aec85a62068cd4c979528471c3597aa184ec3395165b1aa23820b4130f75`.
+The source HDF5 SHA-256 is `98c847c4d5f106455f542f469c519f5d71fbb700b2f35b11c7f95dab21300116`;
+all 46 datasets match bundled `examples/data/sphere.h5`, including
+NaN positions. Ordinary CI uses the bundled HDF5; the live source workflow
+continues to use its generated HDF5 and fresh CSVs. Both paths run the same
+full-duration motion, latch-event, force-law, and absorbed-energy gates.
+
 `oswec_spline_interpolation_probe.csv` is a six-sample numerical probe made
 with MATLAB R2025b Update 7 from bundled `examples/data/oswec.h5` (SHA-256
 `28aa028d404a88f877924bc435e7ad3a4c50e26f9706c1f39ef7324e5ec60750`).

@@ -633,6 +633,11 @@ the WaveBot case count or the physical damping default.
 The two already-paired 400 s Sphere body-local PTO configurations, including
 the spring pretension variant, also run their public-API body, PTO, force,
 and power gates in ordinary CI from a pinned source fixture.
+The published 400 s Sphere latching case now runs its full motion, controller
+force-law, latch-event, and absorbed-energy gates in ordinary CI from a pinned
+40,001-sample source fixture. The fresh MATLAB workflow still tests its own
+generated HDF5 and CSV output. This strengthens regression protection for an
+already-gated case and does not change the Sphere badge count.
 The already-gated 400 s RM3 direct linear-generator case now has a portable
 20 s published-source window in ordinary Python CI. Its public `WEC` run
 checks both body heaves and speeds, PTO motion and force, mechanical and
