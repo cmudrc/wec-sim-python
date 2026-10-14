@@ -15,10 +15,21 @@ from wecsim.hydrodynamics.radiation import replay_rm3_fitted_radiation
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (APPLICATIONS and REFERENCE),
-    reason="paired MATLAB RM3 radiation-option output not provided",
-)
+FIXTURE = Path(__file__).parent / "fixtures/matlab/rm3_radiation_options"
+if bool(APPLICATIONS) != bool(REFERENCE):
+    raise ValueError("provide both RM3 radiation source paths or neither")
+HYDRO = (Path(APPLICATIONS) / "_Common_Input_Files/RM3/hydroData/rm3.h5"
+         if APPLICATIONS else FIXTURE / "rm3.h5")
+
+
+def _source(mode, part):
+    if REFERENCE:
+        return np.loadtxt(
+            Path(REFERENCE) / f"RM3_Radiation_Options_{mode}_{part}.csv",
+            delimiter=",", ndmin=2,
+        )
+    with np.load(FIXTURE / "source.npz") as source:
+        return source[f"{mode}_{part}"]
 
 
 def _max_error(actual, expected, limit, label):
@@ -51,8 +62,7 @@ def _fir_radiation_force(h5, body, velocity, dt=0.1, memory=60):
 @pytest.mark.parametrize("mode", ["constant", "convolution", "FIR",
                                   "state_space"])
 def test_published_rm3_radiation_options(mode):
-    hydro = (Path(APPLICATIONS)
-             / "_Common_Input_Files/RM3/hydroData/rm3.h5").resolve()
+    hydro = HYDRO.resolve()
     simulation = {"dt": 0.1, "end_time": 500, "ramp_time": 100}
     if mode != "constant":
         simulation["radiation_memory"] = 60
@@ -78,13 +88,9 @@ def test_published_rm3_radiation_options(mode):
         "pto": {"kind": "relative_heave", "damping": 1_200_000},
     }
     response = run_case(case)
-    reference = Path(REFERENCE)
     assert response.body_position.shape == (5001, 2, 6)
     for index in range(2):
-        expected = np.loadtxt(
-            reference / f"RM3_Radiation_Options_{mode}_body{index + 1}.csv",
-            delimiter=",",
-        )
+        expected = _source(mode, f"body{index + 1}")
         assert expected.shape == (5001, 37)  # includes radiation and added-mass forces
         np.testing.assert_allclose(response.time, expected[:, 0],
                                    rtol=0, atol=1e-10)
@@ -120,9 +126,7 @@ def test_published_rm3_radiation_options(mode):
     speed = ((response.body_velocity[:, 0, 2]
               - response.body_velocity[:, 1, 2]
               + (center_gap + stroke) * np.sin(pitch) * pitch_speed) / cosine)
-    pto = np.loadtxt(
-        reference / f"RM3_Radiation_Options_{mode}_pto1.csv", delimiter=",",
-    )
+    pto = _source(mode, "pto1")
     np.testing.assert_allclose(response.time, pto[:, 0], rtol=0, atol=1e-10)
     _max_error(stroke, pto[:, 3], 0.0125, f"{mode} PTO stroke")
     _max_error(speed, pto[:, 9], 0.003, f"{mode} PTO speed")
@@ -134,10 +138,7 @@ def test_published_rm3_radiation_options(mode):
     if mode == "FIR":
         with h5py.File(hydro) as h5:
             for body in (1, 2):
-                expected = np.loadtxt(
-                    reference / f"RM3_Radiation_Options_FIR_body{body}.csv",
-                    delimiter=",",
-                )
+                expected = _source("FIR", f"body{body}")
                 calculated = _fir_radiation_force(
                     h5, body, response.body_velocity[:, body - 1, :],
                 )
@@ -151,12 +152,8 @@ def test_published_rm3_radiation_options(mode):
 
 
 def test_matlab_radiation_modes_are_distinct():
-    reference = Path(REFERENCE)
     loads = {
-        mode: np.loadtxt(
-            reference / f"RM3_Radiation_Options_{mode}_body1.csv",
-            delimiter=",",
-        )
+        mode: _source(mode, "body1")
         for mode in ("constant", "FIR", "state_space", "convolution")
     }
     for response in loads.values():
@@ -169,12 +166,8 @@ def test_matlab_radiation_modes_are_distinct():
 
 def test_published_state_space_radiation_force_on_source_motion():
     """Check the source fitted force law without making it the default solver."""
-    hydro = (Path(APPLICATIONS)
-             / "_Common_Input_Files/RM3/hydroData/rm3.h5").resolve()
-    traces = [np.loadtxt(
-        Path(REFERENCE) / f"RM3_Radiation_Options_state_space_body{body}.csv",
-        delimiter=",",
-    ) for body in (1, 2)]
+    hydro = HYDRO.resolve()
+    traces = [_source("state_space", f"body{body}") for body in (1, 2)]
     assert all(trace.shape == (5001, 37) for trace in traces)
     time = traces[0][:, 0]
     np.testing.assert_allclose(traces[1][:, 0], time, rtol=0, atol=1e-10)
