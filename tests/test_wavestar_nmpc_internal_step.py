@@ -39,14 +39,18 @@ def test_fixed_inputs_isolate_precontrol_ode8_substeps():
         wave = _read(folder, "wave")
         steps = _read(folder, "steps")
         assert body.shape == (200, 25)
-        assert pto.shape == (200, 43)
+        # The PTO block logs at Simulink's internal step, while WEC-Sim body
+        # and wave outputs retain the published 50 ms reporting interval.
+        pto_time = np.arange(round(9.95 / solver_step) + 1) * solver_step
+        assert pto.shape == (pto_time.size, 43)
         assert components.shape == (500, 4)
         assert wave.shape == (200, 2)
         np.testing.assert_allclose(steps, [[.05, .05, solver_step, solver_step]],
                                    rtol=0, atol=1e-12)
-        for recorded in (body[:, 0], pto[:, 0], wave[:, 0]):
+        for recorded in (body[:, 0], wave[:, 0]):
             np.testing.assert_allclose(recorded, common_time,
                                        rtol=0, atol=1e-9)
+        np.testing.assert_allclose(pto[:, 0], pto_time, rtol=0, atol=1e-9)
         np.testing.assert_allclose(pto[:, 31:37], 0., rtol=0, atol=1e-12)
         runs.append((body, components, wave))
 
@@ -88,7 +92,10 @@ def test_fixed_inputs_isolate_precontrol_ode8_substeps():
             np.max(np.abs(python.angular_speed - angular_speed))
         )
     # The published-step gap is an identity guard for this archived input.
-    # Source self-change is measured, not treated as a passing parity gate.
+    # The second two limits were declared before the hosted source run: they
+    # test whether internal integration alone explains most of that gap.
     assert .0025 < errors["python_vs_50ms_pitch_rad"] < .0045
+    assert np.max(np.abs(pitch[0] - pitch[2])) > .0017
+    assert errors["python_vs_12p5ms_pitch_rad"] < .001
     print("fixed-input WaveStar solver-step audit:", json.dumps(errors,
                                                              sort_keys=True))

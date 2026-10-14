@@ -550,6 +550,12 @@ five inventoried cases; smaller systems stay in the disjoint remainder.
 
 The working goal is to resolve every comparison that is feasible with the
 pinned source, local R2025b MATLAB, and an independent public Python run.
+Use local MATLAB for bounded RM3, OSWEC, Sphere, and other cases supported by
+its installed Simulink and Simscape products. Route controller-heavy cases
+such as WaveStar NMPC to the hosted R2025b workflow when their required
+Control System, Optimization, or other toolboxes are absent locally. Prefer
+short local source sweeps that isolate one solver or physical mechanism over
+another long hosted run; preserve source checksums and exported trajectories.
 Prioritize the seven remaining RM3 and OSWEC published inputs; Sphere is
 already 12/12. Then address the four remaining noncore inputs:
 `Nonlinear_Hydro/ode45/Regular`, `Nonlinear_Hydro/ode45/RegularCIC`,
@@ -1646,6 +1652,20 @@ checks input identity, zero actuation, decreasing source and cross-language
 step gaps, and final limits of `0.0003` rad and `0.003` rad/s. This strongly
 implicates the published coarse source step in the pre-control gap; it does
 not prove step convergence or account for the active 225 s closed loop.
+
+A [fixed-input internal-step audit](https://github.com/cmudrc/wec-sim-python/pull/357)
+holds `simu.dt`, `dtOut`, controller settings, generated hydrodynamics, and
+sampled sea at 50 ms, changing only the Simulink `ode8` `FixedStep` and
+`MaxStep` to 25 and 12.5 ms. Its 9.95 s source trajectories show the same
+50-to-25 and 25-to-12.5 ms pitch/speed changes, to the precision reported
+above. The independent 1 ms Python plant differs by `0.003416`, `0.000629`,
+and `0.000148` rad pitch at the three steps. The 50-to-12.5 ms source
+change exceeds the predeclared `0.0017` rad criterion and the final Python
+gap is below `0.001` rad. Exact component and wave identity, zero precontrol
+PTO force, and the distinct internal/output grids are checked from the saved
+source outputs. This isolates the integration interval as the main cause of
+the earlier precontrol gap, while leaving the active 225 s NMPC published
+case open.
 
 Before PTO actuation, a 50 ms Python RK4 solve changes the peak source pitch
 gap by only `4.7e-6` rad relative to the 1 ms solve. A fixed 50 ms DOP853
