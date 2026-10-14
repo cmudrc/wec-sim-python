@@ -562,7 +562,7 @@ to a coarse MATLAB artifact. A badge need not read 100% for the feasible
 investigation to be closed; its fraction counts only published gates.
 
 In parallel, raise meaningful combined Python line-and-branch coverage from
-80.93% toward 90%, concentrating on public configuration, actual dynamics,
+81.01% toward 90%, concentrating on public configuration, actual dynamics,
 and numerical invariants. Coverage tests must check behavior rather than
 merely execute uncovered lines. The feasible phase is ready for review when
 the case ledger and badges match the measured evidence, each open case has a
@@ -602,7 +602,7 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 80.93% (81% displayed); raise it with behavior and numerical
+coverage is 81.01% (81% displayed); raise it with behavior and numerical
 invariants, including portable full-duration gates for already paired cases.
 Do not add tests
 written only to execute lines.
