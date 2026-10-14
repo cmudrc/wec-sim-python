@@ -1,4 +1,4 @@
-# RM3 body-to-body regularCIC published cases
+# RM3 body-to-body published cases
 
 `source.npz` contains the full 4,001-sample body and PTO CSV exports for
 all six published RM3 B2B cases. Cases 1 and 2 use regular waves; Cases 3
@@ -9,7 +9,7 @@ body-to-body hydrodynamics. They came from the successful
 on 2026-10-14, with WEC-Sim core commit
 `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications commit
 `d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The archive was made by
-loading the six corresponding source CSVs as float64 and calling
+loading all 18 corresponding source CSVs as float64 and calling
 `numpy.savez_compressed` without rounding. Its SHA-256 is
 `ca391f8929df2810a2670fdfe4804f0fa58dee8979f71849c26c17ab5818b1e4`.
 
