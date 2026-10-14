@@ -142,6 +142,44 @@ def test_irregular_phase_replay_rejects_missing_directions():
         wave.waveSetup([0.4, 2.0], "infinite", 1, 0.1, 20, 9.81, 1000, 2)
 
 
+@pytest.mark.parametrize("ramp_time", [0.0, 1.0])
+def test_directional_irregular_gauges_follow_spatial_phase_and_ramp(ramp_time):
+    """Each direction shifts a gauge by its projected travel distance."""
+    wave = WaveClass("irregular")
+    wave.w = np.array([1.0, 1.8])
+    wave.k = np.array([0.15, 0.3])
+    wave.A = np.array([0.8, 1.2])
+    wave.dw = np.array([0.2, 0.3])
+    wave.waveDir = [0, 90]
+    wave.waveSpread = [0.7, 0.3]
+    wave.phase = np.array([[0.1, 0.3], [-0.2, 0.4]])
+    gauges = [(0, 0), (4, 0), (0, 3), (-1, 2)]
+    wave.wavegauge1loc, wave.wavegauge2loc, wave.wavegauge3loc = gauges[1:]
+
+    wave.waveElevIrreg(ramp_time, 0.25, 8, wave.dw)
+
+    times = np.arange(9) * 0.25
+    envelope = (np.ones_like(times) if ramp_time == 0 else
+                np.sin(np.pi * np.minimum(times, ramp_time) / (2 * ramp_time))**2)
+    for point, history in zip(gauges, (
+            wave.waveAmpTime, wave.waveAmpTime1,
+            wave.waveAmpTime2, wave.waveAmpTime3)):
+        expected = np.zeros_like(times)
+        for heading, spread, phases in zip(
+                wave.waveDir, wave.waveSpread, wave.phase):
+            projected_distance = (point[0] * np.cos(np.deg2rad(heading))
+                                  + point[1] * np.sin(np.deg2rad(heading)))
+            amplitudes = np.sqrt(wave.A * wave.dw * spread)
+            expected += np.sum(amplitudes[:, None] * np.cos(
+                wave.w[:, None] * times
+                - wave.k[:, None] * projected_distance
+                + phases[:, None],
+            ), axis=0)
+        np.testing.assert_array_equal(history[0], times)
+        np.testing.assert_allclose(history[1], expected * envelope,
+                                   rtol=0, atol=1e-14)
+
+
 def test_wave_surface_grid_matches_matlab_regular_and_irregular_equations():
     X = np.array([[0.0, 2.0], [0.0, 2.0]])
     Y = np.array([[0.0, 0.0], [3.0, 3.0]])
