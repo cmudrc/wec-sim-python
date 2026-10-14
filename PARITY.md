@@ -590,7 +590,7 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 79.85% (80% displayed); raise it with behavior and numerical
+coverage is 79.86% (80% displayed); raise it with behavior and numerical
 invariants, including portable full-duration gates for already paired cases.
 Do not add tests
 written only to execute lines.
@@ -610,6 +610,10 @@ The already-gated 900 s Sphere variable-mass input now has a portable
 ordinary-CI gate for all nine draft states, source force assembly, and the
 independently advanced public `WEC.variable_body` trajectory. It keeps the
 published motion and PTO limits and does not change the Sphere badge count.
+The public `fixed_body` default of zero inertia is now accepted for stationary
+Morison and fixed-hinge bodies. A force-history invariant confirms that a
+fixed body's inertia does not enter its Morison force calculation; negative
+inertia remains invalid. This changes no published-case badge.
 
 Both already-gated WaveBot published inputs now have portable full-duration
 ordinary-CI comparisons: the 100 s adaptive controller and the 600 s
