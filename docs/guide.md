@@ -401,7 +401,7 @@ Supported combinations are:
 | Constraint `kind` | Wave `type` | Bodies and PTO | Integration |
 | --- | --- | --- | --- |
 | `heave` | `none` | One equilibrium-mass body, initial heave displacement, no PTO | Radiation convolution |
-| `fixed_hinge` | `pm` or `pm_multi` | Hydrodynamic flap, optional fixed hydrodynamic base, pitch PTO | Directional PM excitation and radiation convolution; `pm_multi` sums independently phased seas |
+| `fixed_hinge` | `pm`, `jonswap`, or `pm_multi` | Hydrodynamic flap, optional fixed hydrodynamic base, pitch PTO | Directional irregular excitation and radiation convolution; PM and JONSWAP accept EqualEnergy or Traditional bins and an optional frequency range; `pm_multi` sums independently phased PM seas |
 | `fixed_hinge` | `spectrumImportFullDir` | Hydrodynamic flap, optional fixed hydrodynamic base, pitch PTO | Imported frequency-dependent directional spectrum and radiation convolution |
 | `fixed_hinge` | `regular` | One hydrodynamic flap, optional fixed nonhydrodynamic base, pitch PTO | Regular-wave excitation and constant-frequency radiation; optional instantaneous STL mesh hydrostatics and Froude–Krylov force |
 | `fixed_morison` | `pm` | Stationary bodies without HDF5; body-local Cartesian Morison elements; no PTO | Directional irregular-wave velocity, acceleration, and six-component Morison force; optional single-heading current |
@@ -717,7 +717,7 @@ the gate checks both the absolute motion and the difference from its
 no-current control. General six-DOF moving Morison layouts and other
 moving-current configurations remain unpaired.
 
-For a heave or other `linear_subspace` device, `JONSWAPWave(2.5, 8,
+For a heave, `fixed_hinge`, or other `linear_subspace` device, `JONSWAPWave(2.5, 8,
 seed=1, gamma=3.3)` selects a JONSWAP sea. Omitting `gamma` uses WEC-Sim's
 height/period-dependent value. The published Sphere MPC case uses 2.5 m and
 8 s, which infers `gamma=1`; its JONSWAP spectrum therefore equals the PM

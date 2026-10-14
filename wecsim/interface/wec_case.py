@@ -351,7 +351,7 @@ class _WECCaseMixin:
             raise ValueError("fixed_hinge needs its selected bodies and no custom coordinates or PTOs")
         if not isinstance(wave, (RegularWave, PMWave, MultiPMWave,
                                  FullDirectionalSpectrumWave)):
-            raise ValueError("fixed_hinge supports regular, PM, or full-directional waves")
+            raise ValueError("fixed_hinge supports regular, PM, JONSWAP, or full-directional waves")
         if (isinstance(wave, RegularWave)
                 and (wave.direction != 0
                      or hinge.added_mass_scheme != "implicit")):

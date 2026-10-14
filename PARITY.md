@@ -18,6 +18,7 @@ saves its MATLAB outputs as an artifact.
 | Current PM and JONSWAP spectra and seeded elevation | Pinned MATLAB `waveClass` with Traditional, EqualEnergy, and narrowed EqualEnergy 64-frequency discretizations, 8 s peak period, significant heights of 2.5 m and 4 m, and its Threefry phase output; [live R2025b gate](https://github.com/cmudrc/wec-sim-python/actions/runs/37780011107) | Production `WaveClass.waveSetup` uses the current height-dependent PM and JONSWAP equations, including inferred JONSWAP `gamma`. Its explicit `phaseGenerator="matlab"` now independently generates all six saved phase matrices from `phaseSeed=1` within `1e-13` rad, including three incident PM directions. All six live wave comparisons pass locally without a phase file. In the equal-energy pairs, the maximum difference across frequency, width, and spectrum entries is `5.4e-15`; deep-water power differs by at most `2.2e-11` W/m, and origin and three-marker elevation by at most `7.4e-15` m. NumPy remains the default phase generator. |
 | Narrowed PM and JONSWAP frequency ranges | Same pinned MATLAB `waveClass`, with `bem.range=[0.5,1.5]` rad/s inside a `[0.4,2.0]` rad/s BEM interval; [passing R2025b gate](https://github.com/cmudrc/wec-sim-python/actions/runs/37780011107) | The public `PMWave` and `JONSWAPWave` settings now pass an optional range through the hydrodynamic `WEC` runner. The production component builders' selected frequencies, widths, and spectral values differ from MATLAB by at most `5.8e-15`; replayed origin elevation differs by at most `1.9e-14` m. The live gate also checks power and three marker elevations through `WaveClass`. Out-of-BEM range endpoints clamp to HDF5 limits as in MATLAB; hydrodynamic bodies retain HDF5 water depth. This validates wave preprocessing and API propagation, not a new coupled-motion case. |
 | Traditional PM and JONSWAP production components | Pinned R2025b `waveClass` with 64 uniform bins, saved phases, and origin elevation from the live wave gate above | The production irregular-wave builders now reproduce both source frequency grids and spectra within `2e-12` relative and `1e-14` absolute tolerances, and origin elevation within `2e-12` m. The public `PMWave` and `JONSWAPWave` use 1000 bins by default when `discretization="traditional"`; the RM3 floating-joint runner accepts a single zero-heading irregular sea. This is wave preprocessing and a short local coupled-run check; the published RM3 MoorDyn visualization trajectory remains unpaired. |
+| Public fixed-hinge PM and JONSWAP equal-energy waves | The same pinned R2025b six-sea phase, bin, and elevation archive | Production component builders independently generate all six Traditional, EqualEnergy, and narrowed EqualEnergy source seas from the MATLAB substream seed: phase error is below `1e-13` rad, frequency and spectrum satisfy `2e-12` relative and `1e-14` absolute limits, and origin elevation satisfies `2e-12` m. The public `WEC.fixed_hinge` path now accepts PM frequency ranges and JONSWAP waves; its two unnarrowed EqualEnergy 2 s origin histories also pass the `2e-12` m gate. This verifies wave preprocessing and dispatch, not a new published coupled-motion case. |
 | Irregular Bretschneider equal-energy binning | Original MATLAB-era test constants | Production `WaveClass` agrees after NumPy/SciPy API updates. This is historical compatibility only: current MATLAB WEC-Sim rejects the `BS` option. |
 | Wave-surface grid for no-wave, regular, and directional irregular waves | Current MATLAB `waveClass.waveElevationGrid` equations | Implemented and checked for regular and two-direction irregular cases. |
 | RM3 and OSWEC hydrodynamic preprocessing | Pinned R2025b `bodyClass.hydroForcePre` on both bodies of each geometry, using the same bundled HDF5 in MATLAB and Python | The four regular-CIC comparisons cover all hydrostatic restoring and infinite-frequency added-mass entries, 101 samples of each 6×6 radiation kernel, and all regular-wave excitation coefficients. The two additional OSWEC irregular comparisons cover three headings and 64 frequencies across all six excitation channels. Restoring, added mass, and irregular excitation are bit-equal; the largest kernel and regular-excitation differences are `7.51e-9` and `4.66e-10` in their respective units, below fixed `1e-10` relative and `1e-5` absolute gates. A [compact source fixture](tests/fixtures/matlab/README.md) runs in ordinary CI and the MATLAB workflow regenerates fresh outputs. This checks force preprocessing, not coupled published-case motion. |
@@ -595,7 +596,7 @@ MATLAB artifact. A badge need not read 100% for the feasible investigation
 to be closed; its fraction counts only published gates.
 
 In parallel, raise meaningful combined Python line-and-branch coverage from
-the current 82.89% toward 90%, concentrating on public configuration,
+the current 83.02% toward 90%, concentrating on public configuration,
 actual dynamics, and numerical invariants. Coverage tests must check behavior
 rather than merely execute uncovered lines. The feasible phase is ready for
 review when every input is gated, measured as qualified, or explicitly open;
@@ -636,14 +637,12 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 82.89% (83% displayed). The latest rise adds a short public
-floating-OWC run that checks two-body slider motion, wave input, PTO force and
-absorbed work, and the MoorDyn interface. It uses an analytic two-mass hydro
-limit and does not add a published-case gate. Raise coverage with behavior and
-numerical invariants, including portable full-duration gates for already paired
-cases.
-Do not add tests
-written only to execute lines.
+coverage is 83.02% (83% displayed). The latest rise shares the production
+PM/JONSWAP component parser with the fixed-hinge path and gates its public
+equal-energy wave preprocessing against pinned MATLAB phases and elevation.
+These short wave checks do not add a published-case gate. Raise coverage with
+behavior and numerical invariants, including portable full-duration gates for
+already paired cases. Do not add tests written only to execute lines.
 
 The already gated published OSWEC `Multiple_Wave_Spectra` case now has an
 ordinary-CI, full-duration public `WEC.run(MultiPMWave(...))` gate from the

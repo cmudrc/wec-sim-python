@@ -7,14 +7,14 @@ from zipfile import ZipFile
 import numpy as np
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-
-from wecsim.environment.waveClass import WaveClass  # noqa: E402
-from wecsim.environment.irregularWave import (  # noqa: E402
+from wecsim import JONSWAPWave, PMWave, WEC, WorldPoint
+from wecsim.environment.waveClass import WaveClass
+from wecsim.environment.irregularWave import (
     jonswap_equal_energy_components, pm_equal_energy_components,
     synthesize_irregular_response,
 )
 
+ROOT = Path(__file__).resolve().parents[1]
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_REFERENCE_DIR")
 PORTABLE = ROOT / "tests/fixtures/matlab/wave_reference.zip"
 
@@ -110,41 +110,58 @@ def test_current_irregular_spectrum_against_executed_matlab(
     source_elevation = _source(f"{label}_elevation.csv")
     np.testing.assert_allclose(np.asarray(wave.waveAmpTime).T,
                                source_elevation, rtol=0, atol=2e-12)
-    if discretization in ("Traditional", "NarrowEqualEnergy"):
-        # The public WEC runner uses these component builders, while the
-        # class above preserves Sungjun Won's original wave interface.
-        hydro = ROOT / "tests/test_objects/test_bodyclass/testData/hydroData/oswec.h5"
-        builder = (jonswap_equal_energy_components if spectrum == "JS"
-                   else pm_equal_energy_components)
-        components = builder(
-            None if discretization == "Traditional" else hydro,
-            significant_height=height, peak_period=8,
-            directions=wave.waveDir, spreading=wave.waveSpread,
-            count=64, phase=wave.phase.T,
-            frequency_range=((0.4, 2.0) if discretization == "Traditional"
-                             else (0.5, 1.5)),
-            discretization=("traditional" if discretization == "Traditional"
-                            else "equal_energy"),
-        )
-        actual_bins = np.column_stack((components.omega,
+    # The public WEC runner uses these builders. Generate phases independently
+    # from the pinned MATLAB substream instead of replaying WaveClass output.
+    hydro = ROOT / "tests/test_objects/test_bodyclass/testData/hydroData/oswec.h5"
+    builder = (jonswap_equal_energy_components if spectrum == "JS"
+               else pm_equal_energy_components)
+    directions = [0, 30, 90] if spectrum == "PM" else [0]
+    spreading = [0.1, 0.2, 0.7] if spectrum == "PM" else [1]
+    components = builder(
+        hydro, significant_height=height, peak_period=8,
+        directions=directions, spreading=spreading,
+        count=64, seed=1, phase_generator="matlab",
+        frequency_range=((0.5, 1.5) if discretization == "NarrowEqualEnergy"
+                         else (0.4, 2.0)),
+        discretization=("traditional" if discretization == "Traditional"
+                        else "equal_energy"),
+    )
+    np.testing.assert_allclose(components.phase, source_phase,
+                               rtol=0, atol=1e-13)
+    actual_bins = np.column_stack((components.omega,
+                                   components.spectral_amplitude / 2))
+    if discretization != "Traditional":
+        actual_bins = np.column_stack((components.omega, components.d_omega,
                                        components.spectral_amplitude / 2))
-        expected_bins = expected
-        if discretization != "Traditional":
-            actual_bins = np.column_stack((components.omega, components.d_omega,
-                                           components.spectral_amplitude / 2))
+    np.testing.assert_allclose(actual_bins, expected,
+                               rtol=2e-12, atol=1e-14)
+    if discretization == "Traditional":
         np.testing.assert_allclose(
-            actual_bins, expected_bins, rtol=2e-12, atol=1e-14,
+            components.d_omega, np.full(64, 1.6 / 63), rtol=0, atol=1e-15,
         )
-        if discretization == "Traditional":
-            np.testing.assert_allclose(
-                components.d_omega, np.full(64, 1.6 / 63), rtol=0, atol=1e-15,
-            )
-        incident = synthesize_irregular_response(
-            hydro, components, dt=0.1, end_time=2, ramp_time=1,
+    incident = synthesize_irregular_response(
+        hydro, components, dt=0.1, end_time=2, ramp_time=1,
+    )
+    np.testing.assert_allclose(incident.elevation,
+                               source_elevation[:, 1], rtol=0, atol=2e-12)
+    if discretization == "EqualEnergy":
+        # The public builder should select the same source sea without a
+        # saved phase file, through WEC.run rather than only component helpers.
+        wec = WEC("Pinned equal-energy OSWEC wave")
+        flap = wec.body("flap", hydro, mass=127_000, inertia=(1.85e6,) * 3)
+        base = wec.body("base", hydro, mass=999, inertia=(999,) * 3)
+        wec.fixed_hinge(flap, base, location=WorldPoint(0, 0, -10),
+                        pto_location=WorldPoint(0, 0, -8.9), damping=12_000)
+        wave_type = PMWave if spectrum == "PM" else JONSWAPWave
+        configured_wave = wave_type(
+            height, 8, seed=1, phase_generator="matlab", frequency_count=64,
+            directions=tuple(directions), spreading=tuple(spreading),
+            frequency_range=(0.4, 2.0),
         )
-        np.testing.assert_allclose(
-            incident.elevation, source_elevation[:, 1], rtol=0, atol=2e-12,
-        )
+        result = wec.run(configured_wave, dt=0.1, end_time=2,
+                         ramp_time=1, radiation_memory=0.2)
+        np.testing.assert_allclose(result.wave_elevation,
+                                   source_elevation[:, 1], rtol=0, atol=2e-12)
     source_markers = _source(f"{label}_markers.csv")
     for index, attribute in enumerate(("waveAmpTime1", "waveAmpTime2",
                                        "waveAmpTime3")):
