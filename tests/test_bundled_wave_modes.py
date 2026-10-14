@@ -206,3 +206,78 @@ def test_finite_depth_regular_wave_gauges_follow_dispersion_and_direction():
     matlab_k, matlab_power = np.loadtxt(source / "constants.csv", delimiter=",")
     np.testing.assert_allclose(k, matlab_k, rtol=0, atol=1e-14)
     np.testing.assert_allclose(wave.Pw, matlab_power, rtol=0, atol=1e-7)
+
+
+def test_directional_pm_gauges_match_pinned_matlab_and_wave_superposition():
+    source = ROOT / "tests/fixtures/matlab/irregular_wave_gauges"
+    matlab_elevation = np.loadtxt(source / "elevation.csv", delimiter=",")
+    matlab_components = np.loadtxt(source / "components.csv", delimiter=",")
+    matlab_phase = np.loadtxt(source / "phase.csv", delimiter=",")
+
+    wave = WaveClass("irregular")
+    wave.H = 2.0
+    wave.T = 8.0
+    wave.waveDir = [0.0, 45.0]
+    wave.waveSpread = [.6, .4]
+    wave.spectrumType = "PM"
+    wave.freqDisc = "Traditional"
+    wave.numFreq = 16
+    wave.phaseSeed = 3
+    wave.phaseGenerator = "matlab"
+    wave.wavegauge1loc = [3.0, 4.0]
+    wave.wavegauge2loc = [-2.0, 1.0]
+    wave.wavegauge3loc = [0.0, 0.0]
+    wave.waveSetup([.2, 2.0], 15.0, .2, .05, 8, 9.81, 1025.0, .4)
+
+    python_components = np.column_stack((wave.w, wave.dw, wave.k, wave.S, wave.A))
+    np.testing.assert_allclose(python_components, matlab_components,
+                               rtol=0, atol=1e-13)
+    np.testing.assert_allclose(wave.phase.T, matlab_phase,
+                               rtol=0, atol=1e-13)
+    omega, width, k, _, amplitude = matlab_components.T
+    dispersion = omega**2 / 9.81
+    residual = np.abs(k * np.tanh(15.0 * k) - dispersion) / dispersion
+    # The pinned source's 100 fixed-point iterations have not converged at
+    # the first near-zero-energy PM bin. Retain that measured limitation while
+    # checking physical dispersion where this spectrum carries wave energy.
+    assert residual[0] > .02
+    assert np.max(residual[amplitude > 1e-3]) < 1e-12
+
+    time = matlab_elevation[:, 0]
+    directions = np.deg2rad([0.0, 45.0])
+    weights = np.sqrt(amplitude[:, None] * width[:, None] * [.6, .4])
+    locations = ([0.0, 0.0], wave.wavegauge1loc,
+                 wave.wavegauge2loc, wave.wavegauge3loc)
+
+    def expected_elevation(ramp_time):
+        ramp = np.ones_like(time)
+        if ramp_time:
+            early = time < ramp_time
+            ramp[early] = (1 - np.cos(np.pi * time[early] / ramp_time)) / 2
+        values = [time]
+        for x, y in locations:
+            distance = x * np.cos(directions) + y * np.sin(directions)
+            phase = (time[:, None, None] * omega[None, :, None]
+                     - k[None, :, None] * distance[None, None, :]
+                     + matlab_phase[None, :, :])
+            values.append(ramp * np.sum(weights[None, :, :] * np.cos(phase),
+                                        axis=(1, 2)))
+        return np.column_stack(values)
+
+    def python_elevation():
+        return np.column_stack((
+            wave.waveAmpTime[0], wave.waveAmpTime[1],
+            wave.waveAmpTime1[1], wave.waveAmpTime2[1],
+            wave.waveAmpTime3[1],
+        ))
+
+    np.testing.assert_allclose(matlab_elevation, expected_elevation(.2),
+                               rtol=0, atol=1e-12)
+    np.testing.assert_allclose(python_elevation(), matlab_elevation,
+                               rtol=0, atol=1e-12)
+
+    # With the same phase realization, disabling the ramp must affect only
+    # the first four samples and preserve each directional gauge phase.
+    wave.waveElevIrreg(0, .05, 8, wave.dw)
+    np.testing.assert_allclose(python_elevation(), expected_elevation(0),
+                               rtol=0, atol=1e-12)
