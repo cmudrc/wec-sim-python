@@ -1858,6 +1858,20 @@ full-duration self-change. The published controlled motion remains open;
 the earlier 9.95 s precontrol solver-step result does not extend through
 controller activation.
 
+A bounded [hosted 25 ms `ode8` controller-clock probe](https://github.com/cmudrc/wec-sim-python/actions/runs/38631235118)
+then made the command-producing controller subsystem atomic at its published
+50 ms rate and kept its Stateflow charts and discrete filters at that rate.
+Through 15.2 s, the source logged exactly 305 commands on the 50 ms grid;
+all 500 sea components and 305 wave samples exactly match the archived
+published run. With controller cadence held, the 0–10 s pre-control float
+pitch and speed still differ from the published 50 ms source by up to
+`0.002867` rad and `0.02969` rad/s. During 10–15 s resistive control, the
+torque request differs by up to `13.905` N m, applied axial PTO force by
+`66.957` N, float pitch by `0.050795` rad, and speed by `0.848815` rad/s.
+Thus the bounded multirate source run does not supply a comparable
+plant-only trajectory for a 225 s published-case gate. WaveStar NMPC
+remains open, and the badge count is unchanged.
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001
