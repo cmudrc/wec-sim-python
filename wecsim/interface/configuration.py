@@ -162,6 +162,7 @@ class LinearPTO:
     direct_drive: SimpleDirectDrive | None = None
     linear_generator: DirectLinearGenerator | None = None
     velocity_control_gain: float = 0.0
+    position_control_gain: float = 0.0
 
 
 @dataclass(frozen=True)

@@ -51,7 +51,7 @@ class LinearGeneratorHistory:
 class PTOHistory:
     """PTO stroke in metres, or angle in radians for a rotational PTO.
 
-    Force and absorbed power include a configured velocity-control gain;
+    Force and absorbed power include configured position and velocity feedback;
     the optional control histories expose that contribution separately.
     """
 

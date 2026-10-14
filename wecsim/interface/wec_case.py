@@ -431,6 +431,8 @@ class _WECCaseMixin:
         }
         if pto.velocity_control_gain:
             item["velocity_control_gain"] = pto.velocity_control_gain
+        if pto.position_control_gain:
+            item["position_control_gain"] = pto.position_control_gain
         if pto.control is not None:
             if isinstance(pto.control, DeclutchingControl):
                 item["control"] = {
