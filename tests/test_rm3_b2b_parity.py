@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 
 import numpy as np
+
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,20 +15,26 @@ from wecsim.dynamics.rm3Regular import solve_rm3_regular  # noqa: E402
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (APPLICATIONS and REFERENCE),
-    reason="paired MATLAB RM3 body-to-body application output not provided",
-)
+PORTABLE = ROOT / "tests/fixtures/matlab/rm3_b2b_cic/source.npz"
+HYDRO = ROOT / "examples/data/rm3.h5"
+
+
+def _source_array(case, signal):
+    if APPLICATIONS and REFERENCE:
+        return np.loadtxt(
+            Path(REFERENCE) / f"RM3_B2B_{case}_{signal}.csv", delimiter=",",
+        )
+    with np.load(PORTABLE, allow_pickle=False) as saved:
+        return saved[f"{case}_{signal}"].copy()
 
 
 @pytest.mark.parametrize("case,b2b", [("B2B_Case1", False), ("B2B_Case2", True)])
 def test_rm3_body_to_body_cases(case, b2b):
-    hydro = Path(APPLICATIONS) / "_Common_Input_Files" / "RM3" / "hydroData" / "rm3.h5"
+    hydro = (Path(APPLICATIONS) / "_Common_Input_Files/RM3/hydroData/rm3.h5"
+             if APPLICATIONS and REFERENCE else HYDRO)
     response = solve_rm3_regular(hydro, b2b=b2b)
     for body_number in (1, 2):
-        expected = np.loadtxt(
-            Path(REFERENCE) / f"RM3_B2B_{case}_body{body_number}.csv", delimiter=",",
-        )
+        expected = _source_array(case, f"body{body_number}")
         np.testing.assert_allclose(response.time, expected[:, 0], rtol=0, atol=1e-10)
         position = response.body_position[:, body_number - 1, :]
         velocity = response.body_velocity[:, body_number - 1, :]
@@ -35,16 +42,12 @@ def test_rm3_body_to_body_cases(case, b2b):
             assert np.max(np.abs(position[:, dof] - expected[:, 1 + dof])) < tolerance
         for dof, tolerance in ((0, 0.035), (2, 0.004), (4, 0.001)):
             assert np.max(np.abs(velocity[:, dof] - expected[:, 7 + dof])) < tolerance
-    expected_pto = np.loadtxt(
-        Path(REFERENCE) / f"RM3_B2B_{case}_pto1.csv", delimiter=",",
-    )
+    expected_pto = _source_array(case, "pto1")
     np.testing.assert_allclose(response.time, expected_pto[:, 0], rtol=0, atol=1e-10)
     assert np.max(np.abs(response.pto_force - expected_pto[:, 15])) < 6_000
     if b2b:
         uncoupled = solve_rm3_regular(hydro, b2b=False)
-        expected_heave = np.loadtxt(
-            Path(REFERENCE) / f"RM3_B2B_{case}_body1.csv", delimiter=",",
-        )[:, 3]
+        expected_heave = _source_array(case, "body1")[:, 3]
         coupled_error = np.sqrt(np.mean(
             (response.body_position[:, 0, 2] - expected_heave)**2,
         ))
