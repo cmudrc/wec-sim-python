@@ -562,7 +562,7 @@ to a coarse MATLAB artifact. A badge need not read 100% for the feasible
 investigation to be closed; its fraction counts only published gates.
 
 In parallel, raise meaningful combined Python line-and-branch coverage from
-80.93% toward 90%, concentrating on public configuration, actual dynamics,
+81.01% toward 90%, concentrating on public configuration, actual dynamics,
 and numerical invariants. Coverage tests must check behavior rather than
 merely execute uncovered lines. The feasible phase is ready for review when
 the case ledger and badges match the measured evidence, each open case has a
@@ -602,10 +602,20 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 80.93% (81% displayed); raise it with behavior and numerical
+coverage is 81.01% (81% displayed); raise it with behavior and numerical
 invariants, including portable full-duration gates for already paired cases.
 Do not add tests
 written only to execute lines.
+
+The already gated published OSWEC `Multiple_Wave_Spectra` case now has an
+ordinary-CI, full-duration public `WEC.run(MultiPMWave(...))` gate from the
+pinned source artifact. The exact BEMIO dataset values and all 1,001 MATLAB
+samples are retained in a [portable fixture](tests/fixtures/matlab/oswec_multi_wave/README.md).
+On the local independent 100 s run, the two-body excitation differences are
+below `3.02e-7` N or N m; maximum flap surge, heave, pitch, PTO torque, and
+mechanical-power differences are `10.30` mm, `1.20` mm, `0.00207` rad,
+`818` N m, and `314.5` W. All retain the published-case limits stated above.
+This strengthens regression durability and does not add a badge case.
 
 The ordinary Python suite now checks two public configuration and dynamics
 invariants without another source run: imported elevation can apply the
