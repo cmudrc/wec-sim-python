@@ -540,25 +540,35 @@ five inventoried cases; smaller systems stay in the disjoint remainder.
 
 ### Current priority
 
-The first milestone is to resolve every feasible published-input comparison
-in the RM3, OSWEC, and Sphere inventory. Use existing artifacts and the local
-R2025b MATLAB installation for specific unanswered physical or solver
-questions, including bounded runs that would exceed hosted job limits. Fix
-numerical limits before inspecting results, then preserve source artifacts
-and ordinary Python regression gates when the evidence supports them. Each
-input ends **gated** by an independent full-duration published comparison,
-**qualified** with a measured source or solver limitation, or **open** with a
-concrete next experiment. Resolving the investigation does not require its
-badge to read 100%: a case with demonstrated source step sensitivity stays
-qualified until a step-stable physical reference exists. Do not repeat an
-unchanged negative-gap run or tune the physical Python default to a coarse
-MATLAB artifact.
+The working goal is to close every comparison that can be resolved with the
+pinned source, a local R2025b MATLAB installation, and an independent Python
+run. First address the seven remaining RM3 and OSWEC published inputs; Sphere
+is already 12/12. Next address the four remaining noncore inputs:
+`Nonlinear_Hydro/ode45/Regular`, `Nonlinear_Hydro/ode45/RegularCIC`,
+`OWC/OrificeModel`, and `WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive`.
+Use existing artifacts before requesting another source run. Each new MATLAB
+experiment must answer a distinct physical or solver question with numerical
+limits fixed before results are inspected; local bounded runs can answer
+questions that exceed hosted job limits. Preserve source artifacts and add
+ordinary Python regression gates for passing independent comparisons.
 
-The second milestone is meaningful combined Python line-and-branch coverage
-toward 90%, concentrating on public configuration, dynamics, and numerical
-invariants. Coverage tests must check behavior rather than merely execute
-uncovered lines. Report the measured percentage and any remaining important
-untested paths; do not treat a percentage alone as parity evidence.
+For each of the 63 inputs, record an independent full-duration published
+**gate**, a **qualified** result with a measured source or solver limitation,
+or an **open** result with the specific missing evidence and next experiment.
+A diagnosed source-step or heading-event sensitivity remains qualified even
+when an opt-in solver reproduces the published numerical path. Stop repeating
+an unchanged negative-gap run, and do not tune the physical Python default
+to a coarse MATLAB artifact. A badge need not read 100% for the feasible
+investigation to be closed; its fraction counts only published gates.
+
+In parallel, raise meaningful combined Python line-and-branch coverage from
+80.93% toward 90%, concentrating on public configuration, actual dynamics,
+and numerical invariants. Coverage tests must check behavior rather than
+merely execute uncovered lines. The feasible phase is ready for review when
+the case ledger and badges match the measured evidence, each open case has a
+bounded next experiment or an external blocker, tractable fixes have durable
+CI gates, and the coverage result and important untested paths are reported.
+This review is not a claim of physical parity for qualified or open inputs.
 
 A case earns its badge gate only when an independent Python run covers the
 published input and duration and passes predeclared MATLAB motion or
