@@ -161,8 +161,8 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
             definition = definitions[0]
             pivot = definition.get("pivot", {})
             pivot_world = _pivot(pivot, centers[0]) if pivot else None
+            scale = float(definition.get("scale", 1))
             if (definition["dof"] == "pitch"
-                    and float(definition.get("scale", 1)) == 1
                     and pivot_world is not None
                     and np.allclose(centers[0][:2], pivot_world[:2],
                                     rtol=0, atol=1e-12)):
@@ -171,9 +171,22 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
                     raise ValueError(
                         "exact pitch-pivot motion currently supports rotational PTOs only"
                     )
-                exact_pitch_motion = hinged_pitch_motion(
+                hinge_motion = hinged_pitch_motion(
                     centers[0][2] - pivot_world[2],
                 )
+                if scale == 1:
+                    exact_pitch_motion = hinge_motion
+                else:
+                    # The hinge angle is scale*q. Its Jacobian is with
+                    # respect to q; the speed-squared bias already uses
+                    # the scaled angular speed inside hinge_motion.
+                    def exact_pitch_motion(q, v):
+                        physical = hinge_motion(scale * q, scale * v)
+                        return BodyMotion(
+                            physical.displacement,
+                            scale * physical.jacobian,
+                            physical.bias_acceleration,
+                        )
     moving_morison = tuple(
         index for index, spec in enumerate(bodies)
         if spec.get("morison_elements")
