@@ -75,6 +75,12 @@ def solve_floating_gbm_regular(
     real = np.asarray(force["fExt"]["re"])[active]
     imaginary = np.asarray(force["fExt"]["im"])[active]
     inverse_mass = np.linalg.solve(mass_matrix, np.eye(n))
+    # Hydrostatic stiffness describes displacement from the HDF5 waterline.
+    # A user mass different from displaced-water mass also applies a constant
+    # weight/buoyancy imbalance at that reference position.
+    static_force = np.zeros(n)
+    static_force[1] = (rho * float(np.asarray(body.dispVol).item())
+                       - physical_mass) * g
 
     def excitation(at_time):
         ramp = (1 if ramp_time == 0 or at_time >= ramp_time else
@@ -87,7 +93,7 @@ def solve_floating_gbm_regular(
     def derivative(at_time, state):
         q, speed = state[:n], state[n:]
         acceleration = inverse_mass @ (
-            excitation(at_time) - damping @ speed - stiffness @ q
+            excitation(at_time) + static_force - damping @ speed - stiffness @ q
         )
         return np.r_[speed, acceleration]
 
