@@ -590,7 +590,7 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 80.01% (80% displayed); raise it with behavior and numerical
+coverage is 80.33% (80% displayed); raise it with behavior and numerical
 invariants, including portable full-duration gates for already paired cases.
 Do not add tests
 written only to execute lines.
@@ -619,6 +619,12 @@ R2025b between-knot MATLAB result for all six force channels. It also checks
 that spline and linear interpolation agree at BEM knots but differ between
 them. This tests a numerical path used by published cases without promoting
 any qualified case or changing a parity badge.
+Short ordinary-CI RM3 multiple-condition runs now advance the real dynamics
+solver for both regular-wave and imported-spectrum inputs. They check PTO
+spring-damper force, mechanical versus dissipated power, averaging-window
+selection, sea-state ordering, and power-matrix placement. These 1 s
+invariants supplement the existing full-duration MATLAB MCR gates; they do
+not add a published-case gate.
 
 Both already-gated WaveBot published inputs now have portable full-duration
 ordinary-CI comparisons: the 100 s adaptive controller and the 600 s
