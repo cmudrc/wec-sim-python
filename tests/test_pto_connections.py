@@ -258,6 +258,47 @@ def test_connection_rejects_unknown_body():
         build_linear_ptos(specs, [mapping], [np.zeros(3)], ["body1"])
 
 
+@pytest.mark.parametrize("change, message", [
+    ({"to": {"ground": [0, 0, 0]}}, "noncoincident endpoints"),
+    ({"to": {"ground": [2, 0, 0]}}, "no motion in its force axis"),
+    ({"from": {"body": True, "point": [0, 0, 0]}},
+     "identify a body"),
+    ({"from": {"body": 1, "point": [0, 0, float("nan")]}},
+     "finite three-vector"),
+    ({"damping": -1}, "outside its supported range"),
+    ({"pretension": 100}, "pretension needs positive stiffness"),
+    ({"equilibrium_position": 0.1}, "equilibrium needs positive stiffness"),
+], ids=["coincident-points", "uncoupled-axis", "boolean-body",
+        "nonfinite-attachment", "negative-damping", "unsupported-pretension",
+        "unsupported-equilibrium"])
+def test_pto_configuration_rejects_nonphysical_force_paths(change, message):
+    """A user-defined actuator must have a finite, movable line of action."""
+    mapping = np.zeros((6, 1))
+    mapping[2, 0] = 1  # The body can heave, but cannot surge.
+    spec = {
+        "name": "main", "kind": "linear_actuator",
+        "from": {"body": 1, "point": [0, 0, 0]},
+        "to": {"ground": [0, 0, 2]},
+        "damping": 100,
+        **change,
+    }
+    with pytest.raises(ValueError, match=message):
+        build_linear_ptos([spec], [mapping], [np.zeros(3)], ["body1"])
+
+
+def test_pto_configuration_rejects_duplicate_output_names():
+    mapping = np.zeros((6, 1))
+    mapping[2, 0] = 1
+    spec = {
+        "name": "main", "kind": "linear_actuator",
+        "from": {"body": 1, "point": [0, 0, 0]},
+        "to": {"ground": [0, 0, 2]},
+        "damping": 100,
+    }
+    with pytest.raises(ValueError, match="unique identifiers"):
+        build_linear_ptos([spec, spec], [mapping], [np.zeros(3)], ["body1"])
+
+
 def test_configurable_example_runs_with_named_coordinates():
     case = json.loads(EXAMPLE.read_text(encoding="utf-8"))
     case["simulation"]["end_time"] = 0.2
