@@ -1830,10 +1830,14 @@ remaining source-extrapolation spread. An always-on regression test preserves
 both source-step and independent-motion gates. The comparison grid was
 corrected from `0.003125` to `0.00625` s before evaluating any complete case
 because the oldest source history has no intermediate samples; numerical
-limits were unchanged and both specifications are archived. These two
-additional refinements strengthen the physical free-decay comparison, but
-do not prove asymptotic convergence or match the published `0.1` s source
-trajectory. Both published cases remain qualified and badges are unchanged.
+limits were unchanged and both specifications are archived. Directly against
+the finest MATLAB trajectory, without extrapolation, Python's float gaps are
+`0.614` mm heave and `1.665` mm/s speed; the spar gaps are `0.125` mm and
+`0.0510` mm/s. The float's direct heave gap is nearly the same as MATLAB's
+own final step change. These two additional refinements strengthen the
+physical free-decay comparison, but do not prove asymptotic convergence or
+match the published `0.1` s source trajectory. Both published cases remain
+qualified and badges are unchanged.
 
 The `MATLAB reference model baselines` workflow runs the two canonical core
 examples, all five Sphere free-decay cases, RM3 body-to-body Cases 1–4,
