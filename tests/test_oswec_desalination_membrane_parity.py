@@ -4,22 +4,22 @@ import os
 from pathlib import Path
 
 import numpy as np
-import pytest
-
 from wecsim import ReverseOsmosisMembrane
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not REFERENCE, reason="pinned OSWEC Desalination output absent",
-)
+FIXTURE = Path(__file__).parent / "fixtures/matlab/oswec_desalination/source.npz"
 
 
 def test_published_membrane_permeate_flow():
-    measured = np.loadtxt(
-        Path(REFERENCE) / "OSWEC_DESALINATION_SOURCE_simout1.csv",
-        delimiter=",",
-    )
+    if REFERENCE:
+        measured = np.loadtxt(
+            Path(REFERENCE) / "OSWEC_DESALINATION_SOURCE_simout1.csv",
+            delimiter=",",
+        )
+    else:
+        with np.load(FIXTURE) as source:
+            measured = source["simout1"]
     assert measured.shape == (30_001, 8)
     membrane = ReverseOsmosisMembrane(
         resistance=.6023e8,
