@@ -1770,8 +1770,20 @@ heave changes are `0.296` mm for the float and `0.00709` mm for the spar.
 The float extrapolations disagree more
 than Python differs from the latest extrapolation, so this supports a
 source-step explanation without establishing a converged MATLAB trajectory.
-Another source-step halving would test extrapolation consistency; it would
-not turn the published `0.1` s trajectory into a physical parity gate.
+A further local MATLAB halving to `0.003125` s, using the same pinned HDF5 and
+unaltered no-wave cases, passed the declared decreasing-step and
+extrapolation-consistency screens for both bodies. Its full-duration
+`0.00625`-to-`0.003125` s heave/speed changes are `2.37` mm / `9.80` mm/s
+for the float and `0.498` mm / `0.305` mm/s for the spar. Successive formal
+extrapolations now differ by `0.535` mm / `11.89` mm/s (float) and
+`0.0201` mm / `0.239` mm/s (spar), down from `2.14` mm / `25.64` mm/s and
+`0.0805` mm / `1.16` mm/s. An independent public Python run at `0.003125` s
+differs from the latest extrapolation by at most `0.154` mm / `0.670` mm/s
+and `0.00605` mm / `0.106` mm/s for float and spar. The
+[portable source and physical diagnostic](tests/test_rm3_pto_extension_physical_step.py)
+preserves these trend checks in ordinary Python CI. The float still fails the
+unchanged `1` mm / `3` mm/s source-stability screen, so this does not establish
+a converged MATLAB reference or published-case parity.
 Both published 0.1 s cases remain qualified, and the RM3 badge stays 17/21.
 
 The `MATLAB reference model baselines` workflow runs the two canonical core

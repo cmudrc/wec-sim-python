@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HYDRO = ROOT / "examples/data/rm3_end_stops.h5"
 MATLAB = ROOT / "tests/fixtures/matlab/rm3_pto_extension_step.npz"
 MATLAB_FINER = ROOT / "tests/fixtures/matlab/rm3_pto_extension_00625.npz"
+MATLAB_FINEST = ROOT / "tests/fixtures/matlab/rm3_pto_extension_003125.npz"
 
 
 def _run(name, dt, scheme):
@@ -144,3 +145,48 @@ def test_local_matlab_next_step_and_independent_physical_motion(
               f"independent Python/source gap {gap}")
         assert gap[0] < position_limit
         assert gap[1] < speed_limit
+
+
+@pytest.mark.parametrize("name,column", (("float", 1), ("spar", 3)))
+def test_local_matlab_extrapolation_trend_and_physical_diagnostic(name, column):
+    """Track the declared source convergence trend, not published-step parity."""
+    with (np.load(MATLAB, allow_pickle=False) as archived,
+          np.load(MATLAB_FINER, allow_pickle=False) as finer,
+          np.load(MATLAB_FINEST, allow_pickle=False) as finest):
+        a = archived[f"{name}_0p025"]
+        b = archived[f"{name}_0p0125"]
+        c = finer[f"{name}_0p00625"]
+        d = finest[f"{name}_0p003125"]
+        assert d.shape == (9601, 9)
+        np.testing.assert_allclose(d[:, 0], np.arange(9601) * .003125,
+                                   rtol=0, atol=1e-10)
+        assert np.isfinite(d).all()
+        assert np.max(np.abs(d[:, 7:9])) < 1e-7  # Published PTO is unforced.
+
+        previous_step = np.max(np.abs(
+            b[:, column:column + 2] - c[::2, column:column + 2]), axis=0)
+        new_step = np.max(np.abs(
+            c[:, column:column + 2] - d[::2, column:column + 2]), axis=0)
+        assert np.all(new_step < previous_step), (name, previous_step, new_step)
+
+        # Formal first-order extrapolations share the 0.025 s output grid.
+        first = 2 * b[::2, column:column + 2] - a[:, column:column + 2]
+        second = 2 * c[::4, column:column + 2] - b[::2, column:column + 2]
+        third = 2 * d[::8, column:column + 2] - c[::4, column:column + 2]
+        previous_inconsistency = np.max(np.abs(second - first), axis=0)
+        new_inconsistency = np.max(np.abs(third - second), axis=0)
+        assert np.all(new_inconsistency < previous_inconsistency), (
+            name, previous_inconsistency, new_inconsistency)
+
+        physical = _run(name, .003125, "implicit").bodies[name]
+        python = np.column_stack((physical.position[::8, 2],
+                                  physical.velocity[::8, 2]))
+        physical_gap = np.max(np.abs(python - third), axis=0)
+        # The independent run lies inside the remaining source-extrapolation
+        # spread; this does not establish that the source has converged.
+        assert np.all(physical_gap < new_inconsistency), (
+            name, physical_gap, new_inconsistency)
+        if name == "float":
+            assert new_step[0] > .001 and new_step[1] > .003
+        print(f"{name}: source step {new_step}; extrapolation spread "
+              f"{new_inconsistency}; Python/extrapolation {physical_gap}")
