@@ -592,7 +592,7 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 80.59% (81% displayed); raise it with behavior and numerical
+coverage is 80.61% (81% displayed); raise it with behavior and numerical
 invariants, including portable full-duration gates for already paired cases.
 Do not add tests
 written only to execute lines.
