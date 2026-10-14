@@ -2,7 +2,8 @@
 
 The pinned Simulink controller applies -Kp * heave_velocity - Ki * heave_position
 to the translational PTO, with Ki negative in this published example. The
-signed matrix in the generalized-coordinate runner represents that force.
+public PTO builder keeps that active position gain separate from passive
+stiffness.
 """
 
 import os
@@ -10,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
-from wecsim.dynamics.caseDynamics import run_case
+from wecsim import RegularWave, WEC, WorldPoint
 
 
 FIXTURES = Path(__file__).parent / "fixtures/matlab"
@@ -51,33 +52,39 @@ def _source():
 
 
 def test_published_sphere_reactive_pi_against_matlab():
-    hydro = str(Path(SPHERE_H5).resolve())
-    case = {
-        "simulation": {"dt": 0.02, "end_time": 200, "ramp_time": 50},
-        "wave": {"type": "regular", "height": 2.5, "period": 9.6664},
-        "bodies": [{
-            "hydro_file": hydro, "name": "sphere", "mass": "equilibrium",
-            "inertia": [20_907_301, 21_306_090.66, 37_085_481.11],
-        }],
-        "constraint": {"kind": "linear_subspace", "coordinates": [{
-            "name": "heave", "motions": [{"body": "sphere", "dof": "heave"}],
-        }]},
-        "pto": {"kind": "linear", "stiffness_matrix": [[KI]],
-                "damping_matrix": [[KP]]},
-    }
-    response = run_case(case)
+    wec = WEC("Sphere reactive PI")
+    sphere = wec.body(
+        "sphere", Path(SPHERE_H5).resolve(),
+        inertia=(20_907_301, 21_306_090.66, 37_085_481.11),
+    )
+    wec.coordinate("heave", sphere.move("heave"))
+    wec.pto(
+        "reactive", WorldPoint(0, 0, -2), sphere.at(0, 0, 0),
+        axis=(0, 0, 1), velocity_control_gain=KP,
+        position_control_gain=KI,
+    )
+    response = wec.run(
+        RegularWave(2.5, 9.6664), dt=0.02, end_time=200, ramp_time=50,
+    )
     time, position, velocity, source_force, source_power = _source()
     assert time.shape == (10_001,)
     np.testing.assert_allclose(response.time, time, rtol=0, atol=1e-10)
 
-    outputs = dict(response.extra_outputs)
-    displacement = outputs["coordinate_heave_position"]
-    speed = outputs["coordinate_heave_velocity"]
+    displacement = response.coordinates["heave"].position
+    speed = response.coordinates["heave"].velocity
     force = -KP * speed - KI * displacement
     power = force * speed
-    _max_error(response.body_position[:, 0, 2], position, 0.010,
+    pto = response.ptos["reactive"]
+    np.testing.assert_allclose(pto.force, force, rtol=0, atol=1e-8)
+    np.testing.assert_allclose(pto.control_force, force, rtol=0, atol=1e-8)
+    np.testing.assert_allclose(pto.absorbed_power, -power, rtol=0, atol=1e-7)
+    np.testing.assert_allclose(pto.control_absorbed_power, -power, rtol=0, atol=1e-7)
+    np.testing.assert_allclose(
+        response.raw.pto_generalized_force[:, 0], pto.force, rtol=0, atol=1e-8,
+    )
+    _max_error(response.bodies["sphere"].position[:, 2], position, 0.010,
                "Sphere heave position")
-    _max_error(response.body_velocity[:, 0, 2], velocity, 0.006,
+    _max_error(response.bodies["sphere"].velocity[:, 2], velocity, 0.006,
                "Sphere heave velocity")
     _max_error(force, source_force, 5_500, "reactive controller force")
     _max_error(power, source_power, 40_000, "reactive controller power")

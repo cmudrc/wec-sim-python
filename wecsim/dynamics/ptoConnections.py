@@ -25,6 +25,7 @@ class LinearPTOConnection:
     equilibrium_position: float
     control: DeclutchingControl | LatchingControl | None = None
     velocity_control_gain: float = 0.0
+    position_control_gain: float = 0.0
 
     def force(self, coordinate: np.ndarray, speed: np.ndarray) -> np.ndarray:
         if self.control is not None:
@@ -32,6 +33,7 @@ class LinearPTOConnection:
         stroke = coordinate @ self.stroke_jacobian
         stroke_speed = speed @ self.stroke_jacobian
         return (-self.stiffness * (stroke - self.equilibrium_position)
+                - self.position_control_gain * stroke
                 - (self.damping + self.velocity_control_gain) * stroke_speed)
 
     def outputs(self, coordinate: np.ndarray,
@@ -46,9 +48,10 @@ class LinearPTOConnection:
                  else np.asarray(force_override, dtype=float))
         if force.shape != stroke_speed.shape:
             raise ValueError("controlled PTO force must match the time grid")
-        # Passive absorbed power counts damping loss, not spring energy.
-        # For a controlled force, use minus force times stroke speed.
+        # Passive spring storage is excluded. Position feedback can absorb
+        # or supply energy, so include its signed mechanical power.
         absorbed_power = ((self.damping + self.velocity_control_gain) * stroke_speed**2
+                          + self.position_control_gain * stroke * stroke_speed
                           if force_override is None else -force * stroke_speed)
         output = (
             (f"{prefix}_stroke", stroke),
@@ -56,12 +59,13 @@ class LinearPTOConnection:
             (f"{prefix}_force", force),
             (f"{prefix}_absorbed_power", absorbed_power),
         )
-        if self.velocity_control_gain:
-            control_force = -self.velocity_control_gain * stroke_speed
+        if self.velocity_control_gain or self.position_control_gain:
+            control_force = (-self.position_control_gain * stroke
+                             - self.velocity_control_gain * stroke_speed)
             output += (
                 (f"{prefix}_control_force", control_force),
                 (f"{prefix}_control_absorbed_power",
-                 self.velocity_control_gain * stroke_speed**2),
+                 -control_force * stroke_speed),
             )
         return output
 
@@ -143,7 +147,8 @@ def build_linear_ptos(specs, maps, centers, names, coordinate_names=None, *,
         spec = _object(raw, f"ptos[{position}]", {"name", "kind"},
                        {"name", "kind", "from", "to", "axis", "damping",
                         "stiffness", "equilibrium_position", "pretension",
-                        "control", "coordinate", "velocity_control_gain"}
+                        "control", "coordinate", "velocity_control_gain",
+                        "position_control_gain"}
                        | ({"direct_drive"} if allow_direct_drive else set())
                        | ({"linear_generator"} if allow_linear_generator else set()))
         name = spec["name"]
@@ -190,20 +195,24 @@ def build_linear_ptos(specs, maps, centers, names, coordinate_names=None, *,
             spec.get("velocity_control_gain", 0),
             f"ptos[{position}].velocity_control_gain", nonnegative=True,
         )
+        position_gain = _number(
+            spec.get("position_control_gain", 0),
+            f"ptos[{position}].position_control_gain",
+        )
         spring = _number(spec.get("stiffness", 0),
                          f"ptos[{position}].stiffness", nonnegative=True)
-        if not coefficient and not spring and not control_gain and not (
+        if not coefficient and not spring and not control_gain and not position_gain and not (
                 (allow_direct_drive and "direct_drive" in spec)
                 or (allow_linear_generator and "linear_generator" in spec)):
-            raise ValueError("PTO actuator needs damping or stiffness")
+            raise ValueError("PTO actuator needs damping, stiffness, or feedback")
         if "direct_drive" in spec and (
-                coefficient or spring or control_gain or "control" in spec
+                coefficient or spring or control_gain or position_gain or "control" in spec
                 or "equilibrium_position" in spec or "pretension" in spec
                 or "linear_generator" in spec):
             raise ValueError("direct drive supplies its own PTO force")
         if "linear_generator" in spec and (
                 spec["kind"] != "linear_actuator" or coefficient or spring
-                or control_gain
+                or control_gain or position_gain
                 or "control" in spec or "equilibrium_position" in spec
                 or "pretension" in spec):
             raise ValueError("linear generator supplies its own actuator force")
@@ -227,7 +236,7 @@ def build_linear_ptos(specs, maps, centers, names, coordinate_names=None, *,
                 {"kind", "declutch_time", "minimum_on_time", "latch_time",
                  "latch_damping", "minimum_normal_time"},
             )
-            if not coefficient or spring or equilibrium or control_gain:
+            if not coefficient or spring or equilibrium or control_gain or position_gain:
                 raise ValueError("sampled PTO control needs damping and no spring")
             kind = control_spec["kind"]
             if kind == "declutching":
@@ -261,11 +270,11 @@ def build_linear_ptos(specs, maps, centers, names, coordinate_names=None, *,
                 raise ValueError("unsupported PTO control kind")
         connection = LinearPTOConnection(name, jacobian, coefficient,
                                          spring, equilibrium, control,
-                                         control_gain)
+                                         control_gain, position_gain)
         connections.append(connection)
         # Stroke = jacobian @ q. Virtual work maps the scalar PTO force back
         # to coordinates through the same jacobian, giving outer-product K/C.
-        stiffness += spring * np.outer(jacobian, jacobian)
+        stiffness += (spring + position_gain) * np.outer(jacobian, jacobian)
         if control is None:
             damping += (coefficient + control_gain) * np.outer(jacobian, jacobian)
         bias += spring * equilibrium * jacobian

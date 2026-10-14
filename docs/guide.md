@@ -691,6 +691,16 @@ The gain applies force opposite PTO speed, while
 contribution separately. Total PTO force and absorbed power include both
 the native damper and this control term.
 
+The published Sphere reactive PI case without a generator uses
+`position_control_gain=-573_350` and `velocity_control_gain=49_181` on a
+vertical `wec.pto`. These give PTO force
+`-position_control_gain * stroke - velocity_control_gain * stroke_speed`.
+The signed position gain can supply energy; `control_absorbed_power` reports
+its mechanical power together with velocity feedback. Passive `stiffness`
+remains nonnegative and its stored spring energy is excluded from
+`absorbed_power`. The full 200 s public `WEC.run` trajectory is paired to
+the pinned MATLAB application in ordinary CI.
+
 For pure heave, define only the heave coordinate. Still-water free decay
 uses `NoWave()` and `radiation_memory=15`. These moving-body layouts accept a
 linear PTO defined by body-local attachment points; regular waves require zero
