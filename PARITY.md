@@ -612,6 +612,11 @@ The already-gated 900 s Sphere variable-mass input now has a portable
 ordinary-CI gate for all nine draft states, source force assembly, and the
 independently advanced public `WEC.variable_body` trajectory. It keeps the
 published motion and PTO limits and does not change the Sphere badge count.
+The already-gated 200 s Sphere reactive direct-drive input now has a portable
+ordinary-CI gate on all 20,001 samples of public `WEC.run` body motion, PTO
+stroke and force, controller force, incident wave, and shaft and electrical
+outputs. It uses the exact source-generated HDF5 and a compact MATLAB trace;
+the original full source gate and Sphere badge count are unchanged.
 The public `fixed_body` default of zero inertia is now accepted for stationary
 Morison and fixed-hinge bodies. A force-history invariant confirms that a
 fixed body's inertia does not enter its Morison force calculation; negative
