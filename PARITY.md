@@ -587,13 +587,13 @@ MATLAB artifact. A badge need not read 100% for the feasible investigation
 to be closed; its fraction counts only published gates.
 
 In parallel, raise meaningful combined Python line-and-branch coverage from
-81.41% toward 90%, concentrating on public configuration, actual dynamics,
-and numerical invariants. Coverage tests must check behavior rather than
-merely execute uncovered lines. The feasible phase is ready for review when
-every input is gated, measured as qualified, or explicitly open; each open
-input names a bounded next experiment or an external blocker, tractable
-fixes have durable CI gates, and the measured coverage and important untested
-paths are reported. This review is not a claim of physical parity for
+the current 82.18% toward 90%, concentrating on public configuration,
+actual dynamics, and numerical invariants. Coverage tests must check behavior
+rather than merely execute uncovered lines. The feasible phase is ready for
+review when every input is gated, measured as qualified, or explicitly open;
+each open input names a bounded next experiment or an external blocker.
+Tractable fixes have durable CI gates, and the measured coverage and important
+untested paths are reported. This review is not a claim of physical parity for
 qualified or open inputs.
 
 A case earns its badge gate only when an independent Python run covers the
@@ -628,8 +628,11 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 81.41% (81% displayed); raise it with behavior and numerical
-invariants, including portable full-duration gates for already paired cases.
+coverage is 82.18% (82% displayed). The latest rise includes removal of seven
+unused legacy body helpers; the new broadband yaw test exercises force
+preparation but does not add a published-case gate. Raise coverage with behavior
+and numerical invariants, including portable full-duration gates for already
+paired cases.
 Do not add tests
 written only to execute lines.
 
