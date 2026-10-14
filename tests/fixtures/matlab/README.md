@@ -2,6 +2,8 @@
 
 The published 100 s WaveBot adaptive controller input and trajectory are
 documented in [wavebot_control/README.md](wavebot_control/README.md).
+The published 600 s WaveBot impedance experiment is documented in
+[wavebot_impedance/README.md](wavebot_impedance/README.md).
 
 ## Fixed hydrodynamic monopile
 

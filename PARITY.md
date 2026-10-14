@@ -585,6 +585,10 @@ stop repeating that comparison. In parallel, raise meaningful combined
 Python line-and-branch coverage from the measured 79% toward 90% with behavior
 and numerical invariants, including portable full-duration gates for already
 paired cases. Do not add tests written only to execute lines.
+Both already-gated WaveBot published inputs now have portable full-duration
+ordinary-CI comparisons: the 100 s adaptive controller and the 600 s
+impedance experiment. These strengthen regression coverage without changing
+the WaveBot case count or the physical damping default.
 
 | Other published cases | Gated / inventoried |
 | --- | ---: |
