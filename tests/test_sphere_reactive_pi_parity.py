@@ -9,17 +9,14 @@ import os
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from wecsim.dynamics.caseDynamics import run_case
 
 
-SPHERE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")
+FIXTURES = Path(__file__).parent / "fixtures/matlab"
+SPHERE_H5 = (os.environ.get("WEC_SIM_SPHERE_H5")
+             or FIXTURES / "sphere_pto_config/sphere.h5")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (SPHERE_H5 and REFERENCE),
-    reason="paired MATLAB Sphere reactive-controller output not provided",
-)
 
 KP = 49_181.0
 KI = -573_350.0
@@ -30,6 +27,27 @@ def _max_error(actual, expected, limit, label):
     assert np.isfinite(expected).all(), label
     error = np.max(np.abs(actual - expected))
     assert error < limit, f"{label}: max error {error:.6g} exceeds {limit}"
+
+
+def _source():
+    if REFERENCE:
+        reference = Path(REFERENCE)
+        body = np.loadtxt(
+            reference / "Sphere_Reactive_PI_Reactive_PI_body1.csv", delimiter=",",
+        )
+        controller = np.loadtxt(
+            reference / "Sphere_Reactive_PI_controller.csv", delimiter=",",
+        )
+        assert body.shape == (10_001, 25)
+        assert controller.shape == (10_001, 13)
+        np.testing.assert_allclose(body[:, 0], controller[:, 0], rtol=0, atol=1e-10)
+        return (body[:, 0], body[:, 3], body[:, 9],
+                controller[:, 3], controller[:, 9])
+    with np.load(FIXTURES / "sphere_reactive_pi.npz") as fixture:
+        return tuple(fixture[key] for key in (
+            "time", "position_heave", "velocity_heave",
+            "controller_force", "controller_power",
+        ))
 
 
 def test_published_sphere_reactive_pi_against_matlab():
@@ -48,33 +66,25 @@ def test_published_sphere_reactive_pi_against_matlab():
                 "damping_matrix": [[KP]]},
     }
     response = run_case(case)
-    reference = Path(REFERENCE)
-    body = np.loadtxt(
-        reference / "Sphere_Reactive_PI_Reactive_PI_body1.csv", delimiter=",",
-    )
-    controller = np.loadtxt(
-        reference / "Sphere_Reactive_PI_controller.csv", delimiter=",",
-    )
-    assert body.shape == (10_001, 25)
-    assert controller.shape == (10_001, 13)
-    np.testing.assert_allclose(response.time, body[:, 0], rtol=0, atol=1e-10)
-    np.testing.assert_allclose(response.time, controller[:, 0], rtol=0, atol=1e-10)
+    time, position, velocity, source_force, source_power = _source()
+    assert time.shape == (10_001,)
+    np.testing.assert_allclose(response.time, time, rtol=0, atol=1e-10)
 
     outputs = dict(response.extra_outputs)
     displacement = outputs["coordinate_heave_position"]
     speed = outputs["coordinate_heave_velocity"]
     force = -KP * speed - KI * displacement
     power = force * speed
-    _max_error(response.body_position[:, 0, 2], body[:, 3], 0.010,
+    _max_error(response.body_position[:, 0, 2], position, 0.010,
                "Sphere heave position")
-    _max_error(response.body_velocity[:, 0, 2], body[:, 9], 0.006,
+    _max_error(response.body_velocity[:, 0, 2], velocity, 0.006,
                "Sphere heave velocity")
-    _max_error(force, controller[:, 3], 5_500, "reactive controller force")
-    _max_error(power, controller[:, 9], 40_000, "reactive controller power")
+    _max_error(force, source_force, 5_500, "reactive controller force")
+    _max_error(power, source_power, 40_000, "reactive controller power")
 
     # The saved MATLAB controller must also follow its documented gains.
-    matlab_force = -KP * body[:, 9] - KI * (body[:, 3] - body[0, 3])
-    _max_error(matlab_force, controller[:, 3], 1e-4,
+    matlab_force = -KP * velocity - KI * (position - position[0])
+    _max_error(matlab_force, source_force, 1e-4,
                "MATLAB controller gain relation")
-    _max_error(controller[:, 3] * body[:, 9], controller[:, 9], 1e-3,
+    _max_error(source_force * velocity, source_power, 1e-3,
                "MATLAB controller power relation")

@@ -408,6 +408,26 @@ extrapolation-inconsistency screens, then checks independent physical Python
 motion against the latest formal extrapolation. This is a convergence
 diagnostic, not a published-step parity gate.
 
+## Sphere reactive PI controller
+
+`sphere_reactive_pi.npz` keeps every sample of the published 200 s Sphere
+`Controls/Reactive (PI)` heave, speed, controller force, and controller power.
+It comes from the successful [pinned R2025b baseline
+run](https://github.com/cmudrc/wec-sim-python/actions/runs/38497841030)
+(`matlab-Sphere_Reactive_PI-baseline` artifact, run commit
+`397f48a71cf017b396a0e98e79ad63340749f778`). That workflow pins WEC-Sim
+core `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The generated source
+HDF5 is bundled at `sphere_pto_config/sphere.h5`. The archive stores CSV
+columns 0, 3, and 9 from the body and columns 3 and 9 from the controller
+as float64 without rounding. The source body and controller CSV SHA-256 hashes
+are `34a9d0e44006f8c42ed8a866b20bf19f707f017ccc36865d0d0a7484072fcf15`
+and `545c9cefdc26ca25e00e353ef42d1d349d9ab9ea210aa15d11fb1cb0bc9d195a`;
+the compact archive SHA-256 is
+`73bf7245e0b536afae5f64f515da0858f31520a220d32f3400ef23d0dffaa471`.
+The test retains its 200 s motion, force, power, and MATLAB gain-law gates in
+ordinary CI. This strengthens an already counted Sphere case.
+
 ## Sphere free decay
 
 `sphere_free_decay.npz` retains every sample of the five published Sphere
