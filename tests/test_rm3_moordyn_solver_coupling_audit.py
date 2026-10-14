@@ -39,7 +39,8 @@ def test_source_moordyn_coupling_pulse_uses_simu_dt():
 
 
 def test_independent_solver_and_moordyn_step_audit():
-    labels = ("published_step", "solver_only", "solver_and_moordyn")
+    labels = ("published_step", "solver_only", "solver_and_moordyn",
+              "tolerance_only")
     channels = ("body1", "body2", "mooring")
     phase = [_read(label, "phase") for label in labels]
     wave = [_read(label, "wave") for label in labels]
@@ -86,6 +87,25 @@ def test_independent_solver_and_moordyn_step_audit():
                 dt_change = np.max(abs(records[2][:, index] - records[1][:, index]))
                 print(f"MoorDyn {name}: MaxStep-only {solver_change:.9g}; "
                       f"additional simu.dt change {dt_change:.9g}")
+
+
+def test_tighter_source_tolerance_does_not_close_maxstep_gap():
+    """A tighter ode45 RelTol changes the source path but leaves a large gap."""
+    for number in (1, 2):
+        published = _read("published_step", f"body{number}")[:, 1]
+        tighter = _read("tolerance_only", f"body{number}")[:, 1]
+        refined = _read("solver_and_moordyn", f"body{number}")[:, 1]
+        tolerance_shift = float(np.max(np.abs(tighter - published)))
+        remaining_gap = float(np.max(np.abs(tighter - refined)))
+        published_gap = float(np.max(np.abs(published - refined)))
+        rms_fraction = float(np.linalg.norm(tighter - refined)
+                             / np.linalg.norm(published - refined))
+        print(f"body{number} surge: tighter RelTol shift {tolerance_shift:.9g} m; "
+              f"remaining refined-source gap {remaining_gap:.9g} m; "
+              f"published gap {published_gap:.9g} m; RMS fraction {rms_fraction:.6g}")
+        assert tolerance_shift > 0.04
+        assert remaining_gap > 0.09
+        assert rms_fraction > 0.5
 
 
 @pytest.mark.skipif(not (RECORDS and APPLICATIONS and LIBRARY),
