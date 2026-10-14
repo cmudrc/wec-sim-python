@@ -5,9 +5,14 @@ on:
     paths:
       - '.github/workflows/matlab-reference.yml'
       - 'tests/matlab/regular_wave_reference.m'
+      - 'tests/matlab/core_hydro_preprocess_reference.m'
       - 'tests/test_live_matlab_parity.py'
+      - 'tests/test_core_hydro_preprocess_parity.py'
       - 'wecsim/environment/waveClass.py'
       - 'wecsim/environment/irregularWave.py'
+      - 'wecsim/hydrodynamics/bodyClass.py'
+      - 'examples/data/rm3.h5'
+      - 'examples/data/oswec.h5'
   workflow_dispatch:
 
 jobs:
@@ -30,6 +35,11 @@ jobs:
       - uses: matlab-actions/run-command@v3
         with:
           command: addpath('matlab-ref/source/objects'); addpath('matlab-ref/source/functions/BEMIO'); run('tests/matlab/regular_wave_reference.m')
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: run('tests/matlab/core_hydro_preprocess_reference.m')
+        env:
+          WEC_SIM_MATLAB_CORE_DIR: matlab-ref
       - run: ls -l matlab-reference-output
       - uses: actions/setup-python@v7
         with:
@@ -39,8 +49,18 @@ jobs:
       - run: python -m pytest -q tests/test_live_matlab_parity.py
         env:
           WEC_SIM_MATLAB_REFERENCE_DIR: matlab-reference-output
+      - run: python -m pytest -q tests/test_core_hydro_preprocess_parity.py
+        env:
+          WEC_SIM_MATLAB_REFERENCE_DIR: matlab-reference-output
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: matlab-wave-reference
-          path: matlab-reference-output/
+          path: |
+            matlab-reference-output/*.csv
+            matlab-reference-output/matlab_release.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: matlab-core-hydro-preprocess
+          path: matlab-reference-output/core_hydro_*.mat
