@@ -570,9 +570,11 @@ five inventoried cases; smaller systems stay in the disjoint remainder.
 ### Current priority and feasible closeout
 
 The near-term goal is to close every *feasible investigation*. Badge fractions
-continue to count only full published-input gates. Prioritize the seven
-remaining RM3 and OSWEC published inputs; Sphere is already 12/12. Then
-address the four remaining
+continue to count only full published-input gates. Use the local R2025b
+installation to test distinct, bounded mechanisms in the seven remaining RM3
+and OSWEC published inputs; Sphere is already 12/12. Make existing passing
+full-duration comparisons durable in ordinary CI when source artifacts permit.
+Then address the four remaining
 noncore inputs:
 `Nonlinear_Hydro/ode45/Regular`, `Nonlinear_Hydro/ode45/RegularCIC`,
 `OWC/OrificeModel`, and `WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive`.
@@ -596,7 +598,7 @@ MATLAB artifact. A badge need not read 100% for the feasible investigation
 to be closed; its fraction counts only published gates.
 
 After the core investigations, raise meaningful combined Python line-and-branch
-coverage from the measured 83.02% toward 90%, concentrating on public
+coverage from the current 83% CI badge toward 90%, concentrating on public
 configuration, actual dynamics, and numerical invariants. Coverage tests must
 check behavior rather than merely execute uncovered lines. The feasible phase
 is ready for review when every input is gated, measured as qualified, or
@@ -637,7 +639,7 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 83.02% (83% displayed). The latest rise shares the production
+coverage is 83% as displayed by CI. The latest rise shares the production
 PM/JONSWAP component parser with the fixed-hinge path and gates its public
 equal-energy wave preprocessing against pinned MATLAB phases and elevation.
 These short wave checks do not add a published-case gate. Raise coverage with
@@ -803,6 +805,12 @@ establish Python parity.
 | OWC `FloatingOWC` | The pinned [source and air-train run](https://github.com/cmudrc/wec-sim-python/actions/runs/37895804527) completes the published 500 s `ode45` case and saves 50,001 samples of both bodies, PTO, wave, six-component MoorDyn coupling, available fairlead tensions, turbine speed/control, efficiency, and pneumatic/turbine power. BEMIO generates its two-body, 12-DOF HDF5. Python now pairs the regular-wave excitation on all 12 body channels over all 50,001 samples; the largest absolute difference is `4.04e-6` N or N m, below a `1e-5` gate. This checks hydrodynamic input only, with no source force history passed to Python. The published run leaves body-to-body coupling disabled, so each body applies `6×6` added-mass and damping blocks despite the shared HDF5; Python matches those logged matrices within `1e-5` and `1e-7` respectively. A corrected HDF5 hydrostatic orientation matches both full `6×6` source matrices within `1e-5`, including asymmetric yaw couplings. The source radiation-force record also equals its damping matrix times body velocity within `1e-8` N or N m. The published nine-line configuration logs five named `FairTen` channels. The state-bus exporter records chamber pressure, water-column displacement and speed, and rotor speed; Simulink names the bus speed field `signal4`. Public `FloatingOwcColumnJoint` now reconstructs the water-column center pose and velocity from the saved floater state and PTO axial stroke/speed at all 50,001 samples within `1e-10` m, m/s, or rad/s. Its world heave relative to the column equilibrium center and world heave speed reproduce both chamber input signals within `1e-10`. This is a prescribed-floater-and-PTO kinematic gate. A separate two-coordinate Python heave solve advances both bodies from the pinned wave and HDF5 coefficients using only the saved MoorDyn vertical force and chamber pressure as external histories: over 500 s, maximum floater/column heave differences are `0.00516`/`0.00981` m and heave-speed differences are `0.00258`/`0.00355` m/s (gates `0.015` m and `0.006` m/s). This reduced model omits surge and rotation and prescribes rather than advances MoorDyn and chamber state; it is a mechanical-motion diagnostic, not full floating OWC parity. Given only the saved water-column displacement and speed after initialization, public `FloatingOwcChamber` and `FloatingOwcTurbine` advance the coupled chamber pressure and rotor speed over all 50,001 samples. Local ARM64 maximum differences are `0.0121` Pa pressure and `0.000501` rad/s speed; RMS differences are `0.00416` Pa and `0.000263` rad/s. Linux x86 gives `0.0124` Pa pressure RMS on identical source data. The explicit gates are `0.05` Pa and `0.002` rad/s maximum, `0.02` Pa and `0.001` rad/s RMS. From locally advanced states, maximum differences are `0.0195` W for logged turbine load power, `0.141` W pneumatic power, `5.01e-5` N m load torque, and `9.81e-6` turbine efficiency; power gates allow `0.1` W and `0.5` W. Evaluated directly on saved pressure and speed, the fitted Wells curves and control law reproduce each logged turbine output within `1e-7` in its units. This is a prescribed-water-column-motion air-train comparison. A separate fully coupled seven-coordinate Python trajectory with live MoorDyn, chamber, and turbine feedback is now gated below. |
 | Other/dynamic: `MOST` | A focused pinned MATLAB reader gate compares Python's decoding of the checked-in 20,750-step TurbSim `.bts` file at selected grid points and with spatial checks at every time. A second source gate executes the published `RunTurbsim.m` on a 1,000-frame excerpt and compares all 249 output times, three velocity components, ten X planes, and 12×12 YZ grid points with Python's lazy advection view; the maximum difference is exactly zero. A third gate compares the six-component force and all three horizontal/vertical fairlead tensions from the pinned direct `nonLinearStaticMooring.m` at ten translated and rotated poses. Observed maximum differences are below `1e-5` N force, `1.5e-4` N m moment, and `5e-6` N tension; the paired gates are `1e-3` N, `1e-2` N m, and `1e-3` N respectively. A [fourth pinned MATLAB gate](https://github.com/cmudrc/wec-sim-python/actions/runs/37957379862) extracts the active BEM rotor function from `MOST_Lib.slx`, generates its IEA 15 MW blade inputs, and compares Python's three-blade root forces and moments at five hub/wind states, including moving and rotated hubs and spatially varying wind. The maximum observed component difference is `1.5e-8` N or N m, below the absolute `1e-4` gate. The published input sets `nonlinearStaticData.flag=1`, leaves `lookupTableFlag=0`, and sets `aeroLoadsType=1` for BEM; its active mooring block is `MooringNLStatic`. The generated mooring and aerodynamic lookup tables are not used by this case. These gates establish wind input, frozen-turbulence time shift, direct static catenary force, and isolated BEM blade loads. The 10 s rotor gate below advances turbine state from prescribed platform motion. A six-coordinate runner couples it to the platform over two pinned 10 s JONSWAP seas (4 m/seed 1 and 6 m/seed 2); the 30 and 60 s developed-sea gates below extend the 6 m condition beyond its wave ramp; a separate 12 m/s constant-wind gate exercises nonzero initial pitch. The published 1,000 s coupled case now has a local independent trajectory comparison and a [passing full-duration source gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38071234135). Other wind/controller regimes remain unpaired. The WaveStar base and fault applications and both WaveBot applications are paired separately above. |
 | Other/dynamic: published-step `Nonlinear_Hydro/ode45` and `OWC/OrificeModel` | Both nonlinear-hydro ode45 cases pass full-duration derived fine-step gates, but the original 0.05 s source trajectories retain force-timing and step-sensitivity gaps. The OrificeModel physical coupled path diverges late, while an explicit source-convention force route passes 130 s body/PTO gates; this does not validate the source air model beyond its Mach threshold. |
+
+The already gated 300 s OSWEC `Desalination` network and coupled-motion
+comparison now runs from a [portable source fixture](tests/fixtures/matlab/oswec_desalination/README.md)
+and the existing OSWEC BEMIO fixture in ordinary Python CI. The same
+full-duration limits apply to flap motion, incident excitation, rod motion,
+pressure, smoothed chamber force, and net work. It adds no case badge.
 
 A [compact source fixture](tests/fixtures/matlab/wavestar_nmpc/README.md)
 now gates the published WaveStar NMPC observer, AR forecast, RTI command, and

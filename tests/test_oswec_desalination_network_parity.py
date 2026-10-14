@@ -17,16 +17,18 @@ from wecsim.environment.irregularWave import pm_equal_energy_components
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not REFERENCE, reason="pinned OSWEC Desalination output absent",
-)
+FIXTURE = Path(__file__).parent / "fixtures/matlab/oswec_desalination/source.npz"
+HYDRO = Path(__file__).parent / "fixtures/matlab/oswec_multi_wave/oswec.h5"
 
 
 def _source(name):
-    return np.loadtxt(
-        Path(REFERENCE) / f"OSWEC_DESALINATION_SOURCE_{name}.csv",
-        delimiter=",",
-    )
+    if REFERENCE:
+        return np.loadtxt(
+            Path(REFERENCE) / f"OSWEC_DESALINATION_SOURCE_{name}.csv",
+            delimiter=",",
+        )
+    with np.load(FIXTURE) as source:
+        return source[name]
 
 
 def _network():
@@ -164,9 +166,7 @@ def test_published_chamber_force_without_matching_pressure_chatter(
 
 
 def test_published_fully_coupled_flap_and_desalination():
-    hydro_file = os.environ.get("WEC_SIM_OSWEC_H5")
-    if not hydro_file:
-        pytest.skip("pinned OSWEC hydrodynamics absent")
+    hydro_file = os.environ.get("WEC_SIM_OSWEC_H5", str(HYDRO))
     source_components = _source("components")
     components = pm_equal_energy_components(
         hydro_file, significant_height=2.64, peak_period=9.86,
