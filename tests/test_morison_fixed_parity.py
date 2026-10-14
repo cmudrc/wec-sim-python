@@ -127,6 +127,39 @@ def test_directional_morison_phase_is_the_default():
     assert np.max(np.abs(directional.force - source_shared.force)) > .01
 
 
+def test_fixed_body_default_zero_inertia_matches_explicit_stationary_inertia():
+    """A stationary Morison body has no inertia term in its force equation."""
+    def run(inertia=None):
+        wec = WEC("fixed pile")
+        settings = {} if inertia is None else {"inertia": inertia}
+        pile = wec.fixed_body("pile", center_gravity=(0, 0, -5),
+                              volume=1, **settings)
+        wec.morison_element(
+            pile, point=pile.at(0, 0, 0),
+            drag_coefficient=(1, 1, 1),
+            added_mass_coefficient=(0, 0, 0),
+            area=(2, 2, 2), volume=1,
+        )
+        return wec.run(
+            PMWave(2, 5, seed=1, frequency_count=4,
+                   frequency_range=(.1, 2), water_depth=30),
+            dt=.1, end_time=.2, ramp_time=0,
+        )
+
+    default = run()
+    explicit = run((1, 2, 3))
+    assert default.case["bodies"][0]["inertia"] == [0, 0, 0]
+    assert np.max(np.abs(default.body_forces["pile"])) > 0
+    np.testing.assert_array_equal(default.body_forces["pile"],
+                                  explicit.body_forces["pile"])
+    np.testing.assert_array_equal(default.bodies["pile"].position,
+                                  explicit.bodies["pile"].position)
+    np.testing.assert_array_equal(default.wave_elevation,
+                                  explicit.wave_elevation)
+    with pytest.raises(ValueError, match="three nonnegative values"):
+        run((-1, 0, 0))
+
+
 @pytest.mark.parametrize("profile,depth,scale", [
     ("uniform", None, 1),
     ("power", 10, .5**(1 / 7)),

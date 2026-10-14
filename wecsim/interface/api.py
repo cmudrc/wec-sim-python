@@ -141,7 +141,10 @@ class WEC(_WECCaseMixin):
                    mass: str | float = "equilibrium",
                    inertia: Sequence[float] = (0, 0, 0),
                    volume: float = 0.0) -> Body:
-        """Add a stationary body without HDF5 hydrodynamics."""
+        """Add a stationary body without HDF5 hydrodynamics.
+
+        Zero inertia is valid because this body never accelerates.
+        """
         if any(existing.name == name for existing in self.bodies):
             raise ValueError(f"body name already exists: {name}")
         center = tuple(center_gravity)

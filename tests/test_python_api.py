@@ -99,7 +99,7 @@ def test_public_fixed_hinge_reports_named_motion_and_dissipated_power():
     flap = wec.body("flap", hydro, mass=127_000,
                     inertia=(0, 1.85e6, 0))
     base = wec.fixed_body("base", center_gravity=(0, 0, -10.9),
-                          mass=999, inertia=(1, 1, 1))
+                          mass=999)
     wec.fixed_hinge(flap, base, damping=12_000, stiffness=500,
                     equilibrium_angle=0.1)
     result = wec.run(RegularWave(2.5, 8), dt=0.1, end_time=1,

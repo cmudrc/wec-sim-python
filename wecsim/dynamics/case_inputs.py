@@ -75,8 +75,10 @@ def _hydro_file(body, base_dir):
                 _number(body["mass"], "fixed body mass", positive=True)
         if "inertia" in body:
             inertia = np.asarray(body["inertia"], dtype=float)
-            if inertia.shape != (3,) or not np.isfinite(inertia).all() or np.any(inertia <= 0):
-                raise ValueError("fixed body inertia must have three positive values")
+            # This body never accelerates. Zero inertia is valid and is the
+            # public fixed_body default; negative inertia is still invalid.
+            if inertia.shape != (3,) or not np.isfinite(inertia).all() or np.any(inertia < 0):
+                raise ValueError("fixed body inertia must have three nonnegative values")
         return None
     _section(body, "body", {"hydro_file"},
              {"hydro_file", "hydro_body", "mass", "pitch_inertia",
