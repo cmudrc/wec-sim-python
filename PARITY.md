@@ -595,7 +595,7 @@ MATLAB artifact. A badge need not read 100% for the feasible investigation
 to be closed; its fraction counts only published gates.
 
 In parallel, raise meaningful combined Python line-and-branch coverage from
-the current 82.46% toward 90%, concentrating on public configuration,
+the current 82.89% toward 90%, concentrating on public configuration,
 actual dynamics, and numerical invariants. Coverage tests must check behavior
 rather than merely execute uncovered lines. The feasible phase is ready for
 review when every input is gated, measured as qualified, or explicitly open;
@@ -636,11 +636,12 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 82.46% (82% displayed). The latest rise includes removal of seven
-unused legacy body helpers and ordinary-CI tests for broadband yaw force
-preparation and the derived Sphere moving-Morison heave trajectory. These tests
-do not add published-case gates. Raise coverage with behavior and numerical
-invariants, including portable full-duration gates for already paired cases.
+coverage is 82.89% (83% displayed). The latest rise adds a short public
+floating-OWC run that checks two-body slider motion, wave input, PTO force and
+absorbed work, and the MoorDyn interface. It uses an analytic two-mass hydro
+limit and does not add a published-case gate. Raise coverage with behavior and
+numerical invariants, including portable full-duration gates for already paired
+cases.
 Do not add tests
 written only to execute lines.
 

@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from wecsim import MoorDyn, solve_floating_owc
+from wecsim import MoorDyn, RegularWave, WEC, solve_floating_owc
 import wecsim.dynamics.floatingOwcDynamics as floating_owc
 
 
@@ -46,26 +46,33 @@ class _SteadyTurbine:
                                pneumatic_power=zeros)
 
 
+def _two_mass_hydro(masses, floater_excitation=0):
+    """A two-body limit with prescribed vertical excitation and no hydro memory."""
+    def body_data(_h5, number, *_):
+        mass = masses[number - 1]
+        excitation = np.zeros(6)
+        if number == 1:
+            excitation[2] = floater_excitation
+        return {
+            "center": np.array([0.0, 0.0, float(number - 1)]),
+            "mass": np.diag([mass] * 6),
+            "damping": np.zeros((6, 6)),
+            "restoring": np.zeros((6, 6)),
+            "restoring_at_equilibrium": np.zeros(6),
+            "vertical_bias": 0.0,
+            "excitation_real": excitation,
+            "excitation_imag": np.zeros(6),
+        }
+    return body_data
+
+
 def test_coupled_slider_conserves_momentum_and_loses_only_pto_energy(
         tmp_path, monkeypatch):
     """The two body solver should reduce to an analytic damped slider."""
     floater_mass, column_mass, damping = 1000.0, 100.0, 50.0
     masses = (floater_mass, column_mass)
 
-    def body_data(_h5, number, *_):
-        mass = masses[number - 1]
-        return {
-            "center": np.array([0.0, 0.0, float(number - 1)]),
-            "mass": np.diag([mass] * 3 + [mass] * 3),
-            "damping": np.zeros((6, 6)),
-            "restoring": np.zeros((6, 6)),
-            "restoring_at_equilibrium": np.zeros(6),
-            "vertical_bias": 0.0,
-            "excitation_real": np.zeros(6),
-            "excitation_imag": np.zeros(6),
-        }
-
-    monkeypatch.setattr(floating_owc, "_body_data", body_data)
+    monkeypatch.setattr(floating_owc, "_body_data", _two_mass_hydro(masses))
     library, lines = tmp_path / "libmoordyn.so", tmp_path / "lines.txt"
     library.touch()
     lines.touch()
@@ -120,3 +127,60 @@ def test_coupled_slider_conserves_momentum_and_loses_only_pto_energy(
     np.testing.assert_allclose(response.pto_dissipated_power,
                                damping * response.stroke_speed**2,
                                rtol=0, atol=1e-12)
+
+
+def test_public_floating_owc_routes_wave_motion_and_pto_work(tmp_path, monkeypatch):
+    """The public builder must preserve slider geometry, force, and energy."""
+    monkeypatch.setattr(
+        floating_owc, "_body_data", _two_mass_hydro((1000.0, 100.0), 1000.0),
+    )
+    hydro = tmp_path / "owc.h5"
+    library = tmp_path / "libmoordyn.so"
+    lines = tmp_path / "lines.txt"
+    for path in (hydro, library, lines):
+        path.touch()
+    mooring = MoorDyn(library, lines)
+    session = _ZeroMooring()
+    monkeypatch.setattr(mooring, "start", session.start)
+    monkeypatch.setattr(mooring, "step", session.step)
+
+    wec = WEC("Two-mass OWC through the public API")
+    floater = wec.body("floater", hydro, hydro_body=1, mass=1000,
+                       inertia=(1, 1, 1))
+    column = wec.body("column", hydro, hydro_body=2, mass=100,
+                      inertia=(1, 1, 1))
+    wec.floating_owc(floater, column, moordyn=mooring,
+                     column_height=1, column_diameter=1, pto_damping=50)
+    result = wec.run(RegularWave(.5, 8), dt=.01, end_time=.5, ramp_time=0)
+
+    assert result.time.shape == (51,)
+    assert session.calls == 50 and session.closed
+    np.testing.assert_allclose(
+        result.wave_elevation, .25 * np.cos(2 * np.pi * result.time / 8),
+        rtol=0, atol=1e-15,
+    )
+    floater_state = result.bodies["floater"]
+    column_state = result.bodies["column"]
+    pto = result.ptos["column_slider"]
+    np.testing.assert_allclose(
+        pto.stroke, column_state.position[:, 2] - floater_state.position[:, 2] - 1,
+        rtol=0, atol=1e-12,
+    )
+    np.testing.assert_allclose(
+        pto.velocity, column_state.velocity[:, 2] - floater_state.velocity[:, 2],
+        rtol=0, atol=1e-12,
+    )
+    np.testing.assert_allclose(pto.force, -50 * pto.velocity, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(pto.absorbed_power, 50 * pto.velocity**2,
+                               rtol=0, atol=1e-12)
+    assert np.ptp(pto.stroke) > .02
+    absorbed_work = np.sum(
+        .5 * (pto.absorbed_power[1:] + pto.absorbed_power[:-1])
+        * np.diff(result.time)
+    )
+    assert absorbed_work > .05
+    extras = dict(result.raw.extra_outputs)
+    assert np.isfinite(extras["chamber_pressure"]).all()
+    assert np.isfinite(extras["turbine_speed"]).all()
+    np.testing.assert_array_equal(extras["moordyn_connection_force"],
+                                  np.zeros((51, 6)))
