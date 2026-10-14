@@ -11,6 +11,21 @@ documented in [rm3_direct_generator/README.md](rm3_direct_generator/README.md).
 The full 900 s published Sphere variable-mass comparison is documented in
 [sphere_variable_mass/README.md](sphere_variable_mass/README.md).
 
+## Wave-class outputs
+
+`wave_reference.zip` contains 36 numerical CSVs and `matlab_release.txt` from
+the successful [R2025b wave-source run](https://github.com/cmudrc/wec-sim-python/actions/runs/38324036361)
+(run commit `fcec46b15eab1bc3f8e461aedde6ac7ebf0c7212`). The workflow pins
+WEC-Sim core `0753b2e47f2457c078751dcfe5d251d1767b80ab`; regenerate the
+files with `tests/matlab/regular_wave_reference.m`. A separate local R2025b
+Update 7 run produced numerical arrays exactly equal to all 36 archived CSVs.
+The ZIP SHA-256 is
+`d9ceb5e28daa572fd2bd05341c9782728df53e408089e457dc3bc7900fdc0668`.
+Ordinary Python CI checks regular and finite-depth waves and six PM/JONSWAP
+spectral, phase, power, and marker-output configurations against the archive.
+Set `WEC_SIM_MATLAB_REFERENCE_DIR` to use fresh MATLAB outputs for the same
+tests. These are wave-preprocessing checks, not published coupled-motion gates.
+
 ## Sphere latching
 
 `sphere_latching.npz` retains all 40,001 samples of the published 400 s

@@ -540,10 +540,10 @@ five inventoried cases; smaller systems stay in the disjoint remainder.
 
 The first milestone is to resolve every feasible published-input comparison
 in the RM3, OSWEC, and Sphere inventory. Use existing artifacts and the local
-R2025b MATLAB installation for a specific unanswered physical or solver
-question, including a bounded run that would exceed hosted job limits. Fix
-numerical limits before inspecting results, then preserve the source artifact
-and an ordinary Python regression gate when the evidence supports one. Each
+R2025b MATLAB installation for specific unanswered physical or solver
+questions, including bounded runs that would exceed hosted job limits. Fix
+numerical limits before inspecting results, then preserve source artifacts
+and ordinary Python regression gates when the evidence supports them. Each
 input ends **gated** by an independent full-duration published comparison,
 **qualified** with a measured source or solver limitation, or **open** with a
 concrete next experiment. Resolving the investigation does not require its
@@ -590,7 +590,7 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 80.33% (80% displayed); raise it with behavior and numerical
+coverage is 80.59% (81% displayed); raise it with behavior and numerical
 invariants, including portable full-duration gates for already paired cases.
 Do not add tests
 written only to execute lines.
@@ -638,6 +638,10 @@ force-law, latch-event, and absorbed-energy gates in ordinary CI from a pinned
 40,001-sample source fixture. The fresh MATLAB workflow still tests its own
 generated HDF5 and CSV output. This strengthens regression protection for an
 already-gated case and does not change the Sphere badge count.
+Eight wave-class checks now run in ordinary CI from a pinned R2025b archive:
+regular and finite-depth waves plus six PM/JONSWAP configurations. The same
+tests use fresh MATLAB output when supplied. They check spectral grids,
+phases, power, origin elevation, and gauges without changing case badges.
 The already-gated 400 s RM3 direct linear-generator case now has a portable
 20 s published-source window in ordinary Python CI. Its public `WEC` run
 checks both body heaves and speeds, PTO motion and force, mechanical and

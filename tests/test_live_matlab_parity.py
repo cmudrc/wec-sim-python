@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-import sys
+from zipfile import ZipFile
 
 import numpy as np
 import pytest
@@ -16,7 +16,15 @@ from wecsim.environment.irregularWave import (  # noqa: E402
 )
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_REFERENCE_DIR")
-pytestmark = pytest.mark.skipif(not REFERENCE, reason="MATLAB reference output not provided")
+PORTABLE = ROOT / "tests/fixtures/matlab/wave_reference.zip"
+
+
+def _source(name: str, *, ndmin: int = 0):
+    """Read fresh MATLAB output when available, otherwise the pinned archive."""
+    if REFERENCE:
+        return np.loadtxt(Path(REFERENCE) / name, delimiter=",", ndmin=ndmin)
+    with ZipFile(PORTABLE) as archive, archive.open(name) as values:
+        return np.loadtxt(values, delimiter=",", ndmin=ndmin)
 
 
 def test_regular_wave_against_executed_matlab():
@@ -31,9 +39,8 @@ def test_regular_wave_against_executed_matlab():
         [5.19999512307279, 0.0199999977946844],
         "infinite", 100.0, 0.1, 2000, 9.81, 1000.0, 200.0,
     )
-    reference = Path(REFERENCE)
-    origin = np.loadtxt(reference / "regular_origin.csv", delimiter=",")
-    markers = np.loadtxt(reference / "regular_markers.csv", delimiter=",")
+    origin = _source("regular_origin.csv")
+    markers = _source("regular_markers.csv")
     np.testing.assert_allclose(np.asarray(wave.waveAmpTime).T, origin, rtol=0, atol=1e-10)
     for index, attribute in enumerate(("waveAmpTime1", "waveAmpTime2", "waveAmpTime3")):
         np.testing.assert_allclose(
@@ -51,7 +58,7 @@ def test_finite_depth_against_executed_matlab():
     wave.wavegauge2loc = [0, 0]
     wave.wavegauge3loc = [0, 0]
     wave.waveSetup([0.4, 2.0], 25.0, 0, 0.1, 2000, 9.81, 1000.0, 200.0)
-    expected = np.loadtxt(Path(REFERENCE) / "finite_depth.csv", delimiter=",")
+    expected = _source("finite_depth.csv")
     np.testing.assert_allclose([np.asarray(wave.k).item(), np.asarray(wave.Pw).item()],
                                expected, rtol=1e-11)
 
@@ -78,33 +85,29 @@ def test_current_irregular_spectrum_against_executed_matlab(
     wave.wavegauge1loc = [5, 5]
     wave.wavegauge2loc = [10, 0]
     wave.wavegauge3loc = [0, -10]
-    reference = Path(REFERENCE)
     suffix = {"Traditional": "", "EqualEnergy": "_equal",
               "NarrowEqualEnergy": "_narrow"}[discretization]
     label = spectrum.lower() + suffix
     if discretization == "NarrowEqualEnergy":
         wave.freqRange = [0.5, 1.5]
     wave.waveSetup([0.4, 2.0], "infinite", 1, 0.1, 20, 9.81, 1000, 2)
-    source_phase = np.loadtxt(reference / f"{label}_phase.csv",
-                              delimiter=",", ndmin=2)
+    source_phase = _source(f"{label}_phase.csv", ndmin=2)
     np.testing.assert_allclose(wave.phase.T, source_phase, rtol=0, atol=1e-13)
 
     if discretization != "Traditional":
-        expected = np.loadtxt(reference / f"{label}_bins.csv", delimiter=",")
+        expected = _source(f"{label}_bins.csv")
         actual = np.column_stack((wave.w, wave.dw, wave.S))
     else:
-        expected = np.loadtxt(reference / f"{label}_spectrum.csv", delimiter=",")
+        expected = _source(f"{label}_spectrum.csv")
         actual = np.column_stack((wave.w, wave.S))
     np.testing.assert_allclose(actual, expected,
                                rtol=2e-12, atol=1e-14)
-    power = np.loadtxt(reference / f"{label}_power.csv",
-                       delimiter=",")
+    power = _source(f"{label}_power.csv")
     np.testing.assert_allclose(wave.Pw, power, rtol=2e-12, atol=1e-9)
     if spectrum == "JS":
-        gamma = np.loadtxt(reference / f"{label}_gamma.csv", delimiter=",")
+        gamma = _source(f"{label}_gamma.csv")
         np.testing.assert_allclose(wave.gamma, gamma, rtol=2e-12)
-    source_elevation = np.loadtxt(
-        reference / f"{label}_elevation.csv", delimiter=",")
+    source_elevation = _source(f"{label}_elevation.csv")
     np.testing.assert_allclose(np.asarray(wave.waveAmpTime).T,
                                source_elevation, rtol=0, atol=2e-12)
     if discretization in ("Traditional", "NarrowEqualEnergy"):
@@ -142,8 +145,7 @@ def test_current_irregular_spectrum_against_executed_matlab(
         np.testing.assert_allclose(
             incident.elevation, source_elevation[:, 1], rtol=0, atol=2e-12,
         )
-    source_markers = np.loadtxt(
-        reference / f"{label}_markers.csv", delimiter=",")
+    source_markers = _source(f"{label}_markers.csv")
     for index, attribute in enumerate(("waveAmpTime1", "waveAmpTime2",
                                        "waveAmpTime3")):
         np.testing.assert_allclose(
