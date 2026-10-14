@@ -5,25 +5,26 @@ import os
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from wecsim.dynamics.wavestar import run_wavestar_published
 from wecsim.environment.irregularWave import jonswap_equal_energy_components
 
 
+FIXTURE = Path(__file__).parent / "fixtures/matlab/wavestar_fixed_input_step"
 SOURCE = os.environ.get("WEC_SIM_WAVESTAR_INTERNAL_STEP_DIR")
-HYDRO = os.environ.get("WEC_SIM_WAVESTAR_H5")
-pytestmark = pytest.mark.skipif(
-    not (SOURCE and HYDRO), reason="fixed-input WaveStar source runs are absent",
-)
+HYDRO = os.environ.get("WEC_SIM_WAVESTAR_H5", FIXTURE / "wavestar.h5")
 PREFIX = "WECCCOMP_NMPC_INTERNAL_STEP_"
 
 
 def _read(folder, label):
-    values = np.loadtxt(
-        Path(SOURCE) / folder / f"{PREFIX}{label}.csv",
-        delimiter=",", ndmin=2,
-    )
+    if SOURCE:
+        values = np.loadtxt(
+            Path(SOURCE) / folder / f"{PREFIX}{label}.csv",
+            delimiter=",", ndmin=2,
+        )
+    else:
+        with np.load(FIXTURE / "source.npz") as saved:
+            values = saved[f"{folder}_{label}"]
     assert np.isfinite(values).all(), (folder, label)
     return values
 

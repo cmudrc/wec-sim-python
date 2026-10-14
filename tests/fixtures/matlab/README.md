@@ -14,6 +14,8 @@ The published 100 s OSWEC two-sea motion and PTO gate is documented in
 [oswec_multi_wave/README.md](oswec_multi_wave/README.md).
 The four published 500 s RM3 radiation-option motion and PTO gates are
 documented in [rm3_radiation_options/README.md](rm3_radiation_options/README.md).
+The fixed-input 9.95 s WaveStar internal-step diagnosis is documented in
+[wavestar_fixed_input_step/README.md](wavestar_fixed_input_step/README.md).
 
 ## Wave-class outputs
 
