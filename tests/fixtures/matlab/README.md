@@ -1,5 +1,8 @@
 # Portable MATLAB reference data
 
+The published 100 s WaveBot adaptive controller input and trajectory are
+documented in [wavebot_control/README.md](wavebot_control/README.md).
+
 ## Fixed hydrodynamic monopile
 
 `monopile_hydro.h5` is the exact generated six-DOF HDF5 from the successful
