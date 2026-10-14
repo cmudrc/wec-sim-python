@@ -7,6 +7,7 @@ from scipy.integrate import solve_ivp
 from wecsim.dynamics.generalDynamics import (
     BodyMotion, DynamicBody, GeneralizedDynamics,
 )
+from wecsim.hydrodynamics.radiation import RadiationStateSpace
 
 
 def _oscillator(*, mass=2.0, stiffness=8.0, radiation=None,
@@ -99,6 +100,68 @@ def test_radiation_memory_matches_augmented_state_equation():
     assert expected.success
     assert np.max(np.abs(response.coordinate[:, 0] - expected.y[0])) < 3e-4
     assert np.max(np.abs(response.speed[:, 0] - expected.y[1])) < 6e-4
+
+
+def test_two_body_fitted_radiation_matches_independent_state_equation():
+    """The fitted force on body two must project through its reversed motion."""
+    mass, stiffness, strength, decay = 5.0, 10.0, 1.5, 0.8
+
+    def body(sign, rigid_mass):
+        jacobian = np.zeros((6, 1))
+        jacobian[2, 0] = sign
+        inertia = np.zeros((6, 6))
+        inertia[2, 2] = rigid_mass
+        restoring = np.zeros((6, 6))
+        restoring[2, 2] = stiffness / 2
+
+        def motion(q, v):
+            return BodyMotion(jacobian[:, 0] * q[0], jacobian, np.zeros(6))
+
+        return DynamicBody(
+            rigid_mass=inertia,
+            added_mass=(np.zeros((6, 6)), np.zeros((6, 6))),
+            damping=(np.zeros((6, 6)), np.zeros((6, 6))),
+            restoring=restoring,
+            static_force=np.zeros(6),
+            reference_position=np.zeros(6),
+            motion=motion,
+            excitation=lambda t: np.zeros(6),
+        )
+
+    # The state is driven by body one's +q velocity. Body two moves as -q;
+    # a negative physical force on body two becomes positive generalized
+    # radiation, which the dynamics subtracts from the oscillator balance.
+    b = np.zeros((1, 12))
+    b[0, 2] = strength
+    c = np.zeros((12, 1))
+    c[8, 0] = -1
+    radiation = RadiationStateSpace(np.array([[-decay]]), b, c)
+    system = GeneralizedDynamics((body(1, 2), body(-1, 3)), 1)
+    response = system.integrate(
+        dt=0.01, end_time=5, initial_coordinate=np.array([1.0]),
+        radiation_state_space=radiation,
+    )
+
+    expected = solve_ivp(
+        lambda t, state: [
+            state[1], (-stiffness * state[0] - state[2]) / mass,
+            strength * state[1] - decay * state[2],
+        ],
+        (0, 5), [1, 0, 0], t_eval=response.time,
+        rtol=1e-11, atol=1e-13,
+    )
+    assert expected.success
+    np.testing.assert_allclose(response.coordinate[:, 0], expected.y[0],
+                               rtol=0, atol=1e-7)
+    np.testing.assert_allclose(response.speed[:, 0], expected.y[1],
+                               rtol=0, atol=1e-7)
+    np.testing.assert_allclose(response.acceleration[:, 0],
+                               (-stiffness * expected.y[0] - expected.y[2]) / mass,
+                               rtol=0, atol=1e-7)
+    np.testing.assert_allclose(response.body_position[:, 0, 2], expected.y[0],
+                               rtol=0, atol=1e-7)
+    np.testing.assert_allclose(response.body_position[:, 1, 2], -expected.y[0],
+                               rtol=0, atol=1e-7)
 
 
 def test_discontinuous_sampled_force_uses_accepted_selection_only_on_failure():
