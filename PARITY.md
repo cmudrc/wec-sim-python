@@ -567,7 +567,7 @@ In parallel, raise meaningful combined Python line-and-branch coverage from
 81.01% toward 90%, concentrating on public configuration, actual dynamics,
 and numerical invariants. Coverage tests must check behavior rather than
 merely execute uncovered lines. The feasible phase is ready for review when
-every input is gated or has a measured qualification, every remaining open
+every input is gated, measured as qualified, or explicitly open; each open
 input names a bounded next experiment or an external blocker, tractable
 fixes have durable CI gates, and the measured coverage and important untested
 paths are reported. This review is not a claim of physical parity for
