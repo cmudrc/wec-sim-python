@@ -592,7 +592,7 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 80.61% (81% displayed); raise it with behavior and numerical
+coverage is 80.93% (81% displayed); raise it with behavior and numerical
 invariants, including portable full-duration gates for already paired cases.
 Do not add tests
 written only to execute lines.
@@ -617,6 +617,11 @@ ordinary-CI gate on all 20,001 samples of public `WEC.run` body motion, PTO
 stroke and force, controller force, incident wave, and shaft and electrical
 outputs. It uses the exact source-generated HDF5 and a compact MATLAB trace;
 the original full source gate and Sphere badge count are unchanged.
+The public floating-OWC builder now has ordinary-CI checks for the published
+two-body order, floater-local MoorDyn attachment, column geometry, PTO settings,
+and rejection of incompatible sea, radiation-memory, and coordinate layouts.
+This protects case configuration; the existing coupled-motion gate remains
+the evidence for the published OWC trajectory.
 The public `fixed_body` default of zero inertia is now accepted for stationary
 Morison and fixed-hinge bodies. A force-history invariant confirms that a
 fixed body's inertia does not enter its Morison force calculation; negative
