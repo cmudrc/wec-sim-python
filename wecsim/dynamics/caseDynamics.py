@@ -322,10 +322,10 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         # The hinge solver follows the flap's curved center-of-gravity path;
         # a constant pitch coordinate map would miss that translation.
         if (len(bodies) not in (1, 2)
-                or wave["type"] not in ("pm", "pm_multi", "regular",
+                or wave["type"] not in ("pm", "jonswap", "pm_multi", "regular",
                                         "spectrumImportFullDir")
                 or b2b):
-            raise ValueError("fixed-hinge pitch needs one flap, optional fixed base, and PM or regular waves")
+            raise ValueError("fixed-hinge pitch needs one flap, optional fixed base, and regular, PM, JONSWAP, multi-PM, or full-directional waves")
         if len(bodies) == 2 and hydro[1] is not None:
             _body_number(bodies[1], 2)
             fixed_body = BodyClass(str(hydro[1]))
@@ -493,36 +493,13 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 excitation_interpolation=wave.get("excitation_interpolation", "linear"),
             )
         else:
-            if set(wave) - {"type", "height", "period", "directions",
-                             "spreading", "seed", "phase_file", "phase_generator",
-                             "frequency_count", "excitation_interpolation"}:
-                raise ValueError("PM waves use height, period, directions, and phase settings")
-            height = _number(wave.get("height"), "wave.height", positive=True)
-            period = _number(wave.get("period"), "wave.period", positive=True)
-            if "direction" in wave:
-                raise ValueError("PM waves use directions and spreading arrays")
-            if "seed" in wave and "phase_file" in wave:
-                raise ValueError("supply either wave.seed or wave.phase_file")
-            if "phase_file" in wave:
-                if not isinstance(wave["phase_file"], str) or not wave["phase_file"]:
-                    raise ValueError("wave.phase_file must be a file path")
-                phase_path = (base / wave["phase_file"]).resolve(strict=True)
-                phase = np.loadtxt(phase_path, delimiter=",", ndmin=2)
-                seed = None
-                auxiliary_files = [phase_path]
-            else:
-                phase = None
-                seed = wave.get("seed", 7)
-                if not isinstance(seed, int) or isinstance(seed, bool):
-                    raise ValueError("wave.seed must be an integer")
-                auxiliary_files = []
-            count = wave.get("frequency_count", 500)
-            components = pm_equal_energy_components(
-                hydro[0], significant_height=height, peak_period=period,
-                directions=wave.get("directions", [0, 30, 90]),
-                spreading=wave.get("spreading", [0.1, 0.2, 0.7]),
-                count=count, seed=seed, phase=phase,
-                phase_generator=wave.get("phase_generator", "numpy"),
+            # Preserve the historical fixed-hinge PM spread for case files
+            # that omit directions; public PMWave supplies its own settings.
+            wave_settings = ({"directions": [0, 30, 90],
+                              "spreading": [0.1, 0.2, 0.7], **wave}
+                             if wave["type"] == "pm" else wave)
+            components, auxiliary_files = _irregular_components_from_case(
+                wave_settings, hydro[0], base,
             )
             incident = synthesize_irregular_response(
                 hydro[0], components, dt=dt, end_time=end_time,
