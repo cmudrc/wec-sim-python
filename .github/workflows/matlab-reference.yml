@@ -29,6 +29,7 @@ jobs:
           sparse-checkout: |
             source/objects
             source/functions/BEMIO
+            examples/RM3/hydroData/rm3.h5
       - uses: matlab-actions/setup-matlab@v3
         with:
           release: R2025b
@@ -52,6 +53,7 @@ jobs:
       - run: python -m pytest -q tests/test_core_hydro_preprocess_parity.py
         env:
           WEC_SIM_MATLAB_REFERENCE_DIR: matlab-reference-output
+          WEC_SIM_MATLAB_CORE_DIR: matlab-ref
       - uses: actions/upload-artifact@v4
         if: always()
         with:
