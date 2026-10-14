@@ -1665,7 +1665,9 @@ gap is below `0.001` rad. Exact component and wave identity, zero precontrol
 PTO force, and the distinct internal/output grids are checked from the saved
 source outputs. This isolates the integration interval as the main cause of
 the earlier precontrol gap, while leaving the active 225 s NMPC published
-case open.
+case open. The exact archived HDF5 and three source traces now keep this
+bounded independent comparison in ordinary Python CI through the
+[portable fixture](tests/fixtures/matlab/wavestar_fixed_input_step/README.md).
 
 Before PTO actuation, a 50 ms Python RK4 solve changes the peak source pitch
 gap by only `4.7e-6` rad relative to the 1 ms solve. A fixed 50 ms DOP853
