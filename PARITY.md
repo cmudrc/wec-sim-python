@@ -1146,6 +1146,22 @@ on this seeded sea, but not every channel. This is a controlled numerical
 attribution, not an independent Python published-step gate. The original
 published-step case remains qualified and its badge count is unchanged.
 
+A local R2025b Update 7 run with the pinned arm64 MoorDyn library reproduces
+the hosted 80 s source phases and wave exactly; active body positions differ
+by less than `2.1e-12` m. The
+[tolerance-only audit](tests/test_rm3_moordyn_solver_coupling_audit.py)
+holds the seed-1 sea, `simu.dt=0.01` s, and ode45 `MaxStep=0.01` s fixed
+while tightening only `RelTol` from its `1e-3` default to `1e-4` for 10 s.
+All 1,000 phases and 1,001 wave samples remain identical. Float/spar surge
+shift by `69.34`/`60.80` mm from the published-step trace, but still differ
+by `122.29`/`110.85` mm from the fully refined source trace; the original
+published-to-refined gaps are `191.63`/`171.64` mm. The corresponding
+squared RMS-gap reductions are `59.36%`/`59.43%`, far below the MaxStep-only
+reduction above. Spar-heave error relative to the refined source increases
+from `0.404` to `1.857` mm. This is evidence that tighter error tolerance
+alone does not remove the source step sensitivity; it neither establishes a
+unique physical cause nor closes the published coupled-motion gate.
+
 The same pinned run exports actual published ParaView wave surfaces at 0, 10,
 and 80 s. Python independently rebuilds their 2,000-point grids from the
 exported sea components. All point coordinates match exactly at the source

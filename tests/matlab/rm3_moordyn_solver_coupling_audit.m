@@ -12,12 +12,15 @@ sourceDir = fullfile(repoRoot, 'applications', ...
     'Paraview_Visualization', 'RM3_MoorDyn_Viz');
 outDir = fullfile(repoRoot, 'matlab-rm3-solver-coupling-audit');
 mkdir(outDir);
-runOne(sourceDir, outDir, 'published_step', 0.01, 0.01);
-runOne(sourceDir, outDir, 'solver_only', 0.01, 0.0003125);
-runOne(sourceDir, outDir, 'solver_and_moordyn', 0.0003125, 0.0003125);
+runOne(sourceDir, outDir, 'published_step', 0.01, 0.01, []);
+runOne(sourceDir, outDir, 'solver_only', 0.01, 0.0003125, []);
+runOne(sourceDir, outDir, 'solver_and_moordyn', 0.0003125, 0.0003125, []);
+% Keep MaxStep and MoorDyn coupling at the published setting while asking
+% ode45 for tighter local error control. This isolates RelTol from MaxStep.
+runOne(sourceDir, outDir, 'tolerance_only', 0.01, 0.01, 1e-4);
 end
 
-function runOne(sourceDir, outDir, label, couplingStep, maximumStep)
+function runOne(sourceDir, outDir, label, couplingStep, maximumStep, relativeTolerance)
         caseDir = fullfile(fileparts(sourceDir), ...
             ['RM3_MoorDyn_Viz_solver_audit_' label]);
         mkdir(caseDir);
