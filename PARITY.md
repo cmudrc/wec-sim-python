@@ -538,18 +538,26 @@ five inventoried cases; smaller systems stay in the disjoint remainder.
 
 ### Current priority
 
-Close every feasible published-input gate for RM3, OSWEC, and Sphere using
-existing artifacts or bounded, hypothesis-driven runs on the local R2025b
-MATLAB installation with a distinct, testable mechanism. Use the local runner
-to investigate cases beyond hosted job limits, with limits fixed before
-inspecting results. Preserve a reproducible source artifact and an ordinary
-Python regression gate where the resulting evidence supports one.
-When a case's remaining gap is traced to source step sensitivity and no
-step-stable physical reference is available, retain its qualified label and
-close that investigation; filling the badge denominator is not itself a
-reason to reproduce a coarse-step numerical artifact. Once those feasible
-gates are exhausted, prioritize meaningful combined Python line-and-branch
-coverage toward 90%.
+The first milestone is to resolve every feasible published-input comparison
+in the RM3, OSWEC, and Sphere inventory. Use existing artifacts and the local
+R2025b MATLAB installation for a specific unanswered physical or solver
+question, including a bounded run that would exceed hosted job limits. Fix
+numerical limits before inspecting results, then preserve the source artifact
+and an ordinary Python regression gate when the evidence supports one. Each
+input ends **gated** by an independent full-duration published comparison,
+**qualified** with a measured source or solver limitation, or **open** with a
+concrete next experiment. Resolving the investigation does not require its
+badge to read 100%: a case with demonstrated source step sensitivity stays
+qualified until a step-stable physical reference exists. Do not repeat an
+unchanged negative-gap run or tune the physical Python default to a coarse
+MATLAB artifact.
+
+The second milestone is meaningful combined Python line-and-branch coverage
+toward 90%, concentrating on public configuration, dynamics, and numerical
+invariants. Coverage tests must check behavior rather than merely execute
+uncovered lines. Report the measured percentage and any remaining important
+untested paths; do not treat a percentage alone as parity evidence.
+
 A case earns its badge gate only when an independent Python run covers the
 published input and duration and passes predeclared MATLAB motion or
 fixed-body force limits. Keep a case
@@ -581,10 +589,10 @@ the irregular published case remains qualified. For each other
 qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
-stop repeating that comparison. In parallel, raise meaningful combined
-Python line-and-branch coverage from the measured 79% toward 90% with behavior
-and numerical invariants, including portable full-duration gates for already
-paired cases. Do not add tests written only to execute lines.
+stop repeating that comparison. The measured combined Python line-and-branch
+coverage is 79%; raise it with behavior and numerical invariants, including
+portable full-duration gates for already paired cases. Do not add tests
+written only to execute lines.
 Both already-gated WaveBot published inputs now have portable full-duration
 ordinary-CI comparisons: the 100 s adaptive controller and the 600 s
 impedance experiment. These strengthen regression coverage without changing
