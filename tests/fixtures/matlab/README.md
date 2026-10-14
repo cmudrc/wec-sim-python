@@ -510,6 +510,25 @@ the compact archive SHA-256 is
 The test retains its 200 s motion, force, power, and MATLAB gain-law gates in
 ordinary CI. This strengthens an already counted Sphere case.
 
+## Sphere reactive direct drive
+
+`sphere_reactive_drive/source.npz` retains all 20,001 samples of 200 s
+published Sphere `Controls/ReactiveWithPTO` body heave and speed, PTO stroke,
+reactive controller force, eight generator/shaft channels, and incident-wave
+elevation as float64 without rounding. It comes from the successful
+[pinned R2025b baseline run](https://github.com/cmudrc/wec-sim-python/actions/runs/38542914373)
+(`matlab-SPHERE_REACTIVE_DDPTO-baseline` artifact, run commit
+`a7de59cb81cd08806ee0b1b025b36d042845b55d`). The workflow pins WEC-Sim
+core `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The adjacent `sphere.h5`
+is the unmodified source-generated HDF5 from that artifact. Its SHA-256 is
+`144f0c6e510e8da7fdc167bfcd97efcdc707e54b027849e742656847cce6f2b1`;
+the compact trace SHA-256 is
+`aa3e0c63e4cd40428ded02d50a2118d32c9cea3a825701eabdf5bf372faa527f`.
+The ordinary-CI test advances the public `WEC.run` path independently from
+the incident wave and HDF5 and retains the published full-duration motion,
+PTO, controller, and electrical-output gates. This does not add a case badge.
+
 ## Sphere free decay
 
 `sphere_free_decay.npz` retains every sample of the five published Sphere
