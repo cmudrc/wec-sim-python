@@ -7,6 +7,7 @@ import pytest
 from scipy.io import savemat
 
 from wecsim.environment.irregularWave import (
+    IrregularComponents,
     imported_full_directional_components,
     pm_equal_energy_components,
     synthesize_full_directional_response,
@@ -14,6 +15,7 @@ from wecsim.environment.irregularWave import (
     synthesize_multiple_irregular_response,
 )
 from wecsim.environment.waveClass import WaveClass
+from wecsim.hydrodynamics.bodyClass import BodyClass
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -88,6 +90,51 @@ def test_multiple_seas_sum_wave_and_excitation_before_dynamics():
     np.testing.assert_allclose(combined.excitation_force,
                                individual[0].excitation_force
                                + individual[1].excitation_force)
+
+
+def test_oswec_spline_excitation_preserves_bem_knots():
+    """Spline and linear BEM interpolation agree at knots, but not between them."""
+    body = BodyClass(str(OSWEC))
+    body.bodyNumber = 1
+    body.readH5file()
+    frequencies = np.asarray(
+        body.hydroData["simulation_parameters"]["w"], dtype=float,
+    ).ravel()
+    knots = frequencies[[20, 22, 24]]
+    midpoints = (knots + frequencies[[21, 23, 25]]) / 2
+
+    def response(omega, method):
+        components = IrregularComponents(
+            omega=omega, spectral_amplitude=np.full(3, .1),
+            d_omega=np.full(3, .05), directions=np.array([0., 30.]),
+            spreading=np.array([.6, .4]),
+            phase=np.array([[.1, .4], [.2, .5], [.3, .6]]),
+        )
+        return synthesize_irregular_response(
+            OSWEC, components, dt=.1, end_time=.5, ramp_time=.2,
+            excitation_interpolation=method,
+        )
+
+    at_knots = (response(knots, "linear"), response(knots, "spline"))
+    between = (response(midpoints, "linear"), response(midpoints, "spline"))
+    for linear, spline in (at_knots, between):
+        np.testing.assert_array_equal(linear.elevation, spline.elevation)
+        np.testing.assert_array_equal(linear.time, spline.time)
+        np.testing.assert_array_equal(linear.excitation_force[0], 0)
+    np.testing.assert_allclose(at_knots[0].excitation_force,
+                               at_knots[1].excitation_force,
+                               rtol=0, atol=1e-8)
+    assert np.max(np.abs(between[0].excitation_force
+                         - between[1].excitation_force)) > 100
+    source = np.loadtxt(
+        ROOT / "tests/fixtures/matlab/oswec_spline_interpolation_probe.csv",
+        delimiter=",",
+    )
+    assert source.shape == (6, 7)
+    np.testing.assert_allclose(between[1].time, source[:, 0],
+                               rtol=0, atol=1e-12)
+    np.testing.assert_allclose(between[1].excitation_force, source[:, 1:],
+                               rtol=0, atol=1e-7)
 
 
 def test_legacy_imported_elevation_uses_file_values_and_ramp():
