@@ -8,6 +8,8 @@ The two configured 400 s Sphere PTO comparisons are documented in
 [sphere_pto_config/README.md](sphere_pto_config/README.md).
 The public RM3 direct linear generator's published 20 s source window is
 documented in [rm3_direct_generator/README.md](rm3_direct_generator/README.md).
+The full 900 s published Sphere variable-mass comparison is documented in
+[sphere_variable_mass/README.md](sphere_variable_mass/README.md).
 
 ## Fixed hydrodynamic monopile
 

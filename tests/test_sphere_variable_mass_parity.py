@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from zipfile import ZipFile
 
 import numpy as np
 import pytest
@@ -12,14 +13,21 @@ from wecsim.hydrodynamics.bodyClass import BodyClass
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (APPLICATIONS and REFERENCE),
-    reason="paired MATLAB variable-mass output and Applications absent",
-)
+BUNDLED = Path(__file__).parent / "fixtures/matlab/sphere_variable_mass/source.zip"
 
 
-def _source():
-    folder = Path(REFERENCE)
+@pytest.fixture(scope="module")
+def paired_paths(tmp_path_factory):
+    if APPLICATIONS or REFERENCE:
+        assert APPLICATIONS and REFERENCE, "both source directories are required"
+        return Path(APPLICATIONS), Path(REFERENCE)
+    root = tmp_path_factory.mktemp("sphere-variable-mass")
+    with ZipFile(BUNDLED) as archive:
+        archive.extractall(root)
+    return root / "applications", root / "matlab-reference-model-output"
+
+
+def _source(folder):
     body = np.loadtxt(folder / "SPHERE_VARIABLE_MASS_Variable_Mass_body1.csv",
                       delimiter=",")
     pto = np.loadtxt(folder / "SPHERE_VARIABLE_MASS_Variable_Mass_pto1.csv",
@@ -38,8 +46,8 @@ def _source():
     return body, pto, state, properties, wave
 
 
-def _model(properties):
-    hydro_dir = (Path(APPLICATIONS) / "Variable_Hydro" / "Variable_Mass"
+def _model(properties, applications):
+    hydro_dir = (applications / "Variable_Hydro" / "Variable_Mass"
                  / "hydroData")
     wec = WEC("Variable mass sphere")
     sphere = wec.variable_body(
@@ -62,8 +70,9 @@ def _max_error(actual, expected, limit, label):
     assert error < limit, f"{label}: {error:.6g} exceeds {limit}"
 
 
-def test_source_uses_all_nine_draft_states_and_matches_bem_forces():
-    body, pto, active, properties, wave = _source()
+def test_source_uses_all_nine_draft_states_and_matches_bem_forces(paired_paths):
+    applications, reference = paired_paths
+    body, pto, active, properties, wave = _source(reference)
     time = body[:, 0]
     expected_index = np.minimum(np.floor(time / 100).astype(int) + 1, 9)
     _max_error(active[:, 0], time, 1e-10, "active-state time")
@@ -77,7 +86,7 @@ def test_source_uses_all_nine_draft_states_and_matches_bem_forces():
 
     coefficients = []
     for i in range(1, 10):
-        path = (Path(APPLICATIONS) / "Variable_Hydro" / "Variable_Mass"
+        path = (applications / "Variable_Hydro" / "Variable_Mass"
                 / "hydroData" / f"draft{i}.h5")
         hydro = BodyClass(str(path))
         hydro.bodyNumber = hydro.bodyTotal = 1
@@ -116,9 +125,10 @@ def test_source_uses_all_nine_draft_states_and_matches_bem_forces():
                "source PTO damping")
 
 
-def test_public_python_variable_body_tracks_published_trajectory():
-    body, pto, active, properties, wave = _source()
-    result = _model(properties).run(
+def test_public_python_variable_body_tracks_published_trajectory(paired_paths):
+    applications, reference = paired_paths
+    body, pto, active, properties, wave = _source(reference)
+    result = _model(properties, applications).run(
         RegularWave(height=1, period=8), dt=.01, end_time=900,
         ramp_time=0, rho=1025,
     )
