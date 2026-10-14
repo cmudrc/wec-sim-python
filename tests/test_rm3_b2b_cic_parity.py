@@ -13,10 +13,24 @@ from wecsim.dynamics.rm3Regular import solve_rm3_regular
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (APPLICATIONS and REFERENCE),
-    reason="paired MATLAB RM3 regularCIC output not provided",
-)
+PORTABLE = Path(__file__).parent / "fixtures/matlab/rm3_b2b_cic/source.npz"
+HYDRO = Path(__file__).resolve().parents[1] / "examples/data/rm3.h5"
+
+
+def _hydro_file():
+    if APPLICATIONS and REFERENCE:
+        return (Path(APPLICATIONS)
+                / "_Common_Input_Files/RM3/hydroData/rm3.h5").resolve()
+    return HYDRO
+
+
+def _source_array(case, signal):
+    if APPLICATIONS and REFERENCE:
+        return np.loadtxt(
+            Path(REFERENCE) / f"RM3_B2B_{case}_{signal}.csv", delimiter=",",
+        )
+    with np.load(PORTABLE, allow_pickle=False) as saved:
+        return saved[f"{case}_{signal}"].copy()
 
 
 def _max_error(actual, expected, limit, label):
@@ -35,7 +49,7 @@ def _max_error(actual, expected, limit, label):
                          ids=["default-implicit", "source-delay"])
 def test_rm3_regular_cic_against_matlab(case, b2b, mass_scheme):
     """Gate the ordinary solver as well as the opt-in Simulink numerics."""
-    hydro = (Path(APPLICATIONS) / "_Common_Input_Files/RM3/hydroData/rm3.h5").resolve()
+    hydro = _hydro_file()
     simulation = {"dt": 0.1, "end_time": 400, "ramp_time": 100,
                   "radiation_memory": 60}
     if mass_scheme is not None:
@@ -54,11 +68,8 @@ def test_rm3_regular_cic_against_matlab(case, b2b, mass_scheme):
         "body_to_body": b2b,
     }
     response = run_case(config)
-    reference = Path(REFERENCE)
     for body in (1, 2):
-        expected = np.loadtxt(
-            reference / f"RM3_B2B_{case}_body{body}.csv", delimiter=",",
-        )
+        expected = _source_array(case, f"body{body}")
         np.testing.assert_allclose(response.time, expected[:, 0], rtol=0, atol=1e-10)
         for dof, label, position_limit, velocity_limit in (
             (0, "surge", 0.075, 0.04),
@@ -72,7 +83,7 @@ def test_rm3_regular_cic_against_matlab(case, b2b, mass_scheme):
             _max_error(response.body_velocity[:, body - 1, dof],
                        expected[:, 7 + dof], velocity_limit,
                        f"{case} body{body} {label} velocity")
-    pto = np.loadtxt(reference / f"RM3_B2B_{case}_pto1.csv", delimiter=",")
+    pto = _source_array(case, "pto1")
     np.testing.assert_allclose(response.time, pto[:, 0], rtol=0, atol=1e-10)
     # Recover the PTO translation at the floating joint, accounting for
     # the two body-center offsets when the assembly pitches.
@@ -106,14 +117,9 @@ def test_state_space_source_motion_differs_from_convolution(
     compares complete source trajectories as well as Python's unchanged
     physical convolution path; it does not claim fitted-case parity.
     """
-    hydro = (Path(APPLICATIONS) / "_Common_Input_Files/RM3/hydroData/rm3.h5")
-    reference = Path(REFERENCE)
-    convolution = np.loadtxt(
-        reference / f"RM3_B2B_{convolution_case}_body1.csv", delimiter=",",
-    )
-    fitted = np.loadtxt(
-        reference / f"RM3_B2B_{fitted_case}_body1.csv", delimiter=",",
-    )
+    hydro = _hydro_file()
+    convolution = _source_array(convolution_case, "body1")
+    fitted = _source_array(fitted_case, "body1")
     assert convolution.shape == fitted.shape == (4001, 25)
     np.testing.assert_allclose(convolution[:, 0], fitted[:, 0], rtol=0,
                                atol=1e-10)
@@ -137,7 +143,7 @@ def test_state_space_source_motion_differs_from_convolution(
 ])
 def test_opt_in_fitted_radiation_advances_published_motion(case, b2b):
     """Pair the nonpassive source fit without changing convolution dynamics."""
-    hydro = (Path(APPLICATIONS) / "_Common_Input_Files/RM3/hydroData/rm3.h5")
+    hydro = _hydro_file()
     wec = WEC(f"RM3 {case} source fit", body_to_body=b2b)
     float_body = wec.body("float", hydro, inertia=(0, 21_306_090.66, 0))
     spar = wec.body("spar", hydro, inertia=(0, 94_407_091.24, 0))
@@ -148,12 +154,8 @@ def test_opt_in_fitted_radiation_advances_published_motion(case, b2b):
         ramp_time=100, radiation_memory=60,
     )
     assert response.case["simulation"]["radiation_method"] == "state_space"
-    reference = Path(REFERENCE)
     for body_index, name in enumerate(("float", "spar"), start=1):
-        expected = np.loadtxt(
-            reference / f"RM3_B2B_{case}_body{body_index}.csv",
-            delimiter=",",
-        )
+        expected = _source_array(case, f"body{body_index}")
         _max_error(response.time, expected[:, 0], 1e-10, "time")
         for dof, label, position_limit, velocity_limit in (
             (0, "surge", .08, .04),
@@ -166,8 +168,7 @@ def test_opt_in_fitted_radiation_advances_published_motion(case, b2b):
             _max_error(response.bodies[name].velocity[:, dof],
                        expected[:, 7 + dof], velocity_limit,
                        f"{case} {name} {label} velocity")
-    expected_pto = np.loadtxt(reference / f"RM3_B2B_{case}_pto1.csv",
-                              delimiter=",")
+    expected_pto = _source_array(case, "pto1")
     pto = response.ptos["relative_heave"]
     _max_error(pto.stroke, expected_pto[:, 3], .006, f"{case} PTO stroke")
     _max_error(pto.velocity, expected_pto[:, 9], .004, f"{case} PTO speed")
