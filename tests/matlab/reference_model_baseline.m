@@ -1135,7 +1135,7 @@ for iCase = 1:numel(cases)
     if string(model) == "RM3_Radiation_Options"
         [output, simu] = run_radiation_option(cases(iCase));
     elseif string(model) == "WECCCOMP_NMPC_INTERNAL_STEP"
-        run('wec_sim_solver_substep');
+        wec_sim_solver_substep;
     else
         wecSim;
     end
