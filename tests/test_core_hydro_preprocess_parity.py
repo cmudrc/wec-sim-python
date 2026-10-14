@@ -1,5 +1,6 @@
 """Pair core geometry force preprocessing with pinned MATLAB bodyClass."""
 
+import hashlib
 import os
 from pathlib import Path
 
@@ -13,6 +14,10 @@ from wecsim.hydrodynamics.bodyClass import BodyClass
 ROOT = Path(__file__).resolve().parents[1]
 FRESH = os.environ.get("WEC_SIM_MATLAB_REFERENCE_DIR")
 CORE = os.environ.get("WEC_SIM_MATLAB_CORE_DIR")
+CURRENT_RM3_SHA256 = (
+    "a909360c6479773c113f792be72afb13"
+    "51cae9299d62e501fa80561dca450aa3"
+)
 FIXTURE = ROOT / "tests/fixtures/matlab/core_hydro_preprocess.npz"
 FIELDS = ("linearRestoring", "addedMass", "radiationKernel",
           "excitationReal", "excitationImag")
@@ -30,6 +35,7 @@ def _source(geometry, number):
 def _configured_body(geometry, number):
     if geometry == "rm3_current":
         file = Path(CORE) / "examples/RM3/hydroData/rm3.h5"
+        assert hashlib.sha256(file.read_bytes()).hexdigest() == CURRENT_RM3_SHA256
     else:
         file = ROOT / "examples/data" / f"{geometry}.h5"
     body = BodyClass(str(file))

@@ -1,4 +1,4 @@
-% Compare the pinned MATLAB bodyClass with Python on the bundled core HDF5s.
+% Compare the pinned MATLAB bodyClass with Python on bundled and current HDF5s.
 % Run from the fork root with WEC_SIM_MATLAB_CORE_DIR set to the pinned core.
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 coreRoot = getenv('WEC_SIM_MATLAB_CORE_DIR');
