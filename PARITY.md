@@ -600,6 +600,12 @@ the WaveBot case count or the physical damping default.
 The two already-paired 400 s Sphere body-local PTO configurations, including
 the spring pretension variant, also run their public-API body, PTO, force,
 and power gates in ordinary CI from a pinned source fixture.
+The already-gated 400 s RM3 direct linear-generator case now has a portable
+20 s published-source window in ordinary Python CI. Its public `WEC` run
+checks both body heaves and speeds, PTO motion and force, mechanical and
+electrical power, and three-phase current and voltage at the published
+0.0005 s integration step. The full 400 s gate remains in the MATLAB workflow;
+this durability check does not change the RM3 case count.
 
 | Other published cases | Gated / inventoried |
 | --- | ---: |
