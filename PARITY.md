@@ -607,6 +607,16 @@ invariants, including portable full-duration gates for already paired cases.
 Do not add tests
 written only to execute lines.
 
+The already gated published OSWEC `Multiple_Wave_Spectra` case now has an
+ordinary-CI, full-duration public `WEC.run(MultiPMWave(...))` gate from the
+pinned source artifact. The exact BEMIO dataset values and all 1,001 MATLAB
+samples are retained in a [portable fixture](tests/fixtures/matlab/oswec_multi_wave/README.md).
+On the local independent 100 s run, the two-body excitation differences are
+below `3.02e-7` N or N m; maximum flap surge, heave, pitch, PTO torque, and
+mechanical-power differences are `10.30` mm, `1.20` mm, `0.00207` rad,
+`818` N m, and `314.5` W. All retain the published-case limits stated above.
+This strengthens regression durability and does not add a badge case.
+
 The ordinary Python suite now checks two public configuration and dynamics
 invariants without another source run: imported elevation can apply the
 published force ramp a second time without altering the incident sea, and a
