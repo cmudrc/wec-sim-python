@@ -410,7 +410,10 @@ and on in Case 6. Against those source forces, the largest error is 0.0554% of
 a source-channel peak (0.0526% in Case 6); the paired gate is 0.07% with a
 3 N peak floor. This tests the force law on prescribed source motion, not an
 independent coupled trajectory or the physical validity of the fit. The
-default Python convolution dynamics remain unchanged.
+default Python convolution dynamics remain unchanged. All four full-duration
+source body-force histories now have a [portable pinned fixture](tests/fixtures/matlab/rm3_b2b_state_space/README.md),
+so both unchanged Cases 5/6 force gates also run in ordinary Python CI. This
+adds durability to already counted cases, not another case badge gate.
 An opt-in coupled `radiation_method="state_space"` now advances the pinned
 fitted radiation states and RM3 joint motion together, using the HDF5 A/B/C
 matrices, zero source direct term, and only channels active in the four moving

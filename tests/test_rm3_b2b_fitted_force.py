@@ -11,21 +11,27 @@ from wecsim.hydrodynamics.radiation import replay_rm3_fitted_radiation
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (APPLICATIONS and REFERENCE),
-    reason="paired MATLAB RM3 state-space output not provided",
-)
+PORTABLE = Path(__file__).parent / "fixtures/matlab/rm3_b2b_state_space/source.npz"
+HYDRO = Path(__file__).resolve().parents[1] / "examples/data/rm3.h5"
+
+
+def _source_trace(case, body):
+    key = f"B2B_Case{case}_body{body}"
+    if APPLICATIONS and REFERENCE:
+        return np.loadtxt(
+            Path(REFERENCE) / f"RM3_B2B_STATE_SPACE_{key}.csv",
+            delimiter=",",
+        )
+    with np.load(PORTABLE, allow_pickle=False) as saved:
+        return saved[key].copy()
 
 
 @pytest.mark.parametrize(("case", "body_to_body"), [(5, False), (6, True)])
 def test_published_fitted_radiation_force(case, body_to_body):
-    hydro = (Path(APPLICATIONS)
-             / "_Common_Input_Files/RM3/hydroData/rm3.h5").resolve()
-    traces = [np.loadtxt(
-        Path(REFERENCE)
-        / f"RM3_B2B_STATE_SPACE_B2B_Case{case}_body{body}.csv",
-        delimiter=",",
-    ) for body in (1, 2)]
+    hydro = ((Path(APPLICATIONS)
+              / "_Common_Input_Files/RM3/hydroData/rm3.h5").resolve()
+             if APPLICATIONS and REFERENCE else HYDRO)
+    traces = [_source_trace(case, body) for body in (1, 2)]
     assert all(trace.shape == (4001, 37) for trace in traces)
     time = traces[0][:, 0]
     np.testing.assert_allclose(time, np.arange(4001) * 0.1,
