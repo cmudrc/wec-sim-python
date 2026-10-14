@@ -28,6 +28,12 @@ difference was `1.46e-11` in a radiation kernel. The 10-direction
 `examples/data/oswec.h5` changes excitation by as much as 2.28 N and cannot
 serve as this published input.
 
+The pinned Applications input sets `waves.phaseSeed = 1` for its 250-bin PM
+sea. The portable coupled gate now generates its incident phases from that
+published seed using WEC-Sim's MATLAB-compatible Threefry substream. All 250
+phases are compared with the archived MATLAB values before the 300 s solve;
+source phases, forces, and motion histories are comparison data, not inputs.
+
 The tests retain their external CSV/HDF5 path for fresh MATLAB comparisons.
 The portable fixture makes the already counted, full-duration Desalination
 motion and hydraulic gates run in ordinary Python CI. It does not add a new

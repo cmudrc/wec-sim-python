@@ -171,8 +171,12 @@ def test_published_fully_coupled_flap_and_desalination():
     components = pm_equal_energy_components(
         hydro_file, significant_height=2.64, peak_period=9.86,
         directions=(0,), spreading=(1,), count=250,
-        phase=source_components[:, 3:4],
+        seed=1, phase_generator="matlab",
     )
+    # The published input specifies phaseSeed=1. The archived MATLAB phases
+    # verify the generated sea; they are not supplied to the coupled solve.
+    np.testing.assert_allclose(components.phase[:, 0], source_components[:, 3],
+                               rtol=0, atol=1e-12)
     linkage = PitchRodLinkage(
         anchor=(5.6021271782, -8.7), hinge=(0, -8.9),
         body_center=(0, -3.9), body_point=(.9, -3.1),
