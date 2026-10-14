@@ -48,11 +48,47 @@ write_text(plotFile, '% No plots in this bounded timing probe.');
 addpath(genpath(fullfile(repo, 'matlab-ref', 'source')));
 cd(caseDir);
 load_system('WaveStar');
-block = 'WaveStar/Controller';
+% The top Controller contains a From block fed by the global time signal;
+% making that whole subsystem atomic would sever the Goto/From connection.
+% Give only the command-producing strategy an atomic 50 ms boundary.
+block = 'WaveStar/Controller/controller_rot/Control strategy';
 assert(strcmp(get_param(block, 'TreatAsAtomicUnit'), 'off') && ...
     strcmp(get_param(block, 'SystemSampleTime'), '-1'), ...
-    'The pinned controller no longer inherits its sample time');
+    'The pinned control strategy no longer inherits its sample time');
 set_param(block, 'TreatAsAtomicUnit', 'on', 'SystemSampleTime', '0.05');
+% The observer, predictor, and power charts would otherwise keep updating
+% at the plant rate despite the held strategy output.
+root = sfroot;
+charts = root.find('-isa', 'Stateflow.EMChart');
+names = ["RTI_NMPC", "observer", "vectorExcMpred", "resistive", "Power"];
+selected = strings(0);
+for iChart = 1:numel(charts)
+    chart = charts(iChart);
+    if ~startsWith(string(chart.Path), "WaveStar/")
+        continue;
+    end
+    script = string(chart.Script);
+    for name = names
+        if startsWith(strtrim(script), "function ") && ...
+                contains(extractBefore(script, newline), name + "(")
+            chart.ChartUpdate = 'DISCRETE';
+            chart.SampleTime = '0.05';
+            selected(end + 1) = name; %#ok<AGROW>
+            break;
+        end
+    end
+end
+assert(numel(selected) == numel(names) && isempty(setxor(selected, names)), ...
+    'The pinned controller function set changed');
+filters = find_system('WaveStar', 'LookUnderMasks', 'all', ...
+    'BlockType', 'DiscreteTransferFcn');
+assert(numel(filters) == 3, 'The pinned controller filter set changed');
+for iFilter = 1:numel(filters)
+    name = string(get_param(filters{iFilter}, 'Name'));
+    if ~contains(name, "Cmd torque to measured torque dynamics")
+        set_param(filters{iFilter}, 'SampleTime', '0.05');
+    end
+end
 wecSim;
 assert(strcmp(simu.solver, 'ode8') && abs(simu.dt - 0.025) < 1e-12 ...
     && abs(simu.dtOut - 0.05) < 1e-12 && simu.endTime == 15.2, ...
