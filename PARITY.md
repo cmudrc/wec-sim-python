@@ -606,6 +606,10 @@ An equivalent body-local or world pitch pivot now selects the same exact hinge
 motion. An ordinary public-API test checks body pose and velocity, PTO motion,
 force, and power, and the circular center-of-gravity path. This configuration
 invariant does not change a published-case badge.
+The already-gated 900 s Sphere variable-mass input now has a portable
+ordinary-CI gate for all nine draft states, source force assembly, and the
+independently advanced public `WEC.variable_body` trajectory. It keeps the
+published motion and PTO limits and does not change the Sphere badge count.
 
 Both already-gated WaveBot published inputs now have portable full-duration
 ordinary-CI comparisons: the 100 s adaptive controller and the 600 s
