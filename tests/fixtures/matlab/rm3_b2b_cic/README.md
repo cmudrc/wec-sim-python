@@ -25,3 +25,13 @@ checked at every saved time against the existing predeclared limits.
 The external Applications/MATLAB-output path remains available for fresh
 source runs. This fixture makes all six already gated published cases durable in
 ordinary Python CI; it does not add to the case badge count.
+
+The pinned Applications checkout generates `rm3.h5` from `rm3.out` with
+`bemio.m`; it does not commit the HDF5. A local R2025b regeneration with the
+pinned core reproduced both bodies' restoring, added-mass, excitation, and
+frequency-domain damping arrays exactly. The largest radiation-kernel
+difference from the bundled HDF5 was `2.73e-12`; displaced volumes differed
+by `0.001` and `0.004` m³. Its state-space matrices are different realizations,
+but the existing fitted-transfer gate passes. All ten full-duration comparisons
+also passed using this regenerated HDF5 with the same archived MATLAB outputs.
+Ordinary CI uses the bundled HDF5 to avoid requiring MATLAB at test time.
