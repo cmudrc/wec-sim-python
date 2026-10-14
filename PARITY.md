@@ -131,7 +131,9 @@ run. It is a durable check for an already counted case; badge counts stay the
 same.
 
 The published OWC OrificeModel's first 6 s now runs in ordinary Python CI
-from the [exact archived seven-DOF HDF5 and source phases](tests/fixtures/matlab/README.md).
+from the [exact archived seven-DOF HDF5 and published phase seed](tests/fixtures/matlab/README.md).
+Python's MATLAB-compatible Threefry generator pairs all 500 phases with the
+archived source values before the independent coupled solve.
 The independent physical coupled path passes the predeclared 12 mm surge,
 25 mm heave, 10 mrad pitch, and 7.5 mm flexible-displacement limits before
 the source Mach flag first rises. Selected source internal solver evaluations

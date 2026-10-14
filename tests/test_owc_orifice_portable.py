@@ -45,7 +45,7 @@ def test_published_orifice_law_at_both_flow_signs_and_mach_regimes():
                                rtol=0, atol=1e-8)
 
 
-def test_public_coupled_owc_motion_before_source_mach_flag(tmp_path):
+def test_public_coupled_owc_motion_before_source_mach_flag():
     with np.load(SOURCE, allow_pickle=False) as saved:
         source = {name: saved[name] for name in
                   ("body", "flex", "wave", "components", "parameters")}
@@ -59,20 +59,19 @@ def test_public_coupled_owc_motion_before_source_mach_flag(tmp_path):
     _limit(body[:, 0], np.arange(1201) * .005, 1e-10, "source time")
     _limit(wave[:, 0], body[:, 0], 1e-10, "source wave time")
 
-    # Phases are the only saved source values supplied to the Python run.
+    # The published input specifies substream 128. Generate its phases from
+    # that setting; the saved MATLAB phases are comparison data only.
     phase = components[:, 3]
     incident = pm_equal_energy_components(
         HYDRO, significant_height=1, peak_period=4,
         directions=np.array([0.]), spreading=np.array([1.]),
-        phase=phase[:, None],
+        seed=128, phase_generator="matlab",
     )
+    _limit(incident.phase[:, 0], phase, 1e-12, "published PM phases")
     _limit(incident.omega, components[:, 0], 1e-12, "PM frequency")
     _limit(incident.spectral_amplitude, components[:, 1], 1e-12,
            "PM spectral amplitude")
     _limit(incident.d_omega, components[:, 2], 1e-12, "PM bin width")
-    phase_file = tmp_path / "phase.csv"
-    np.savetxt(phase_file, phase, delimiter=",")
-
     wec = WEC("OWC physical prefix")
     owc = wec.body("OWC", HYDRO, inertia=(99.28, 11.04, 99.2))
     wec.floating_gbm(
@@ -82,9 +81,11 @@ def test_public_coupled_owc_motion_before_source_mach_flag(tmp_path):
         pitch_drag_cd=1.2, pitch_drag_area=8,
     )
     result = wec.run(
-        PMWave(height=1, period=4, phase_file=phase_file),
+        PMWave(height=1, period=4, seed=128, phase_generator="matlab"),
         dt=.005, end_time=6, ramp_time=10, radiation_memory=15,
     )
+    assert result.case["wave"]["seed"] == 128
+    assert result.case["wave"]["phase_generator"] == "matlab"
     assert result.case["constraint"]["orifice_force_path"] == "coupled"
     _limit(result.wave_elevation, wave[:, 1], 1e-11, "incident sea")
     _limit(result.bodies["OWC"].position[:, 0], source["body"][:, 1],

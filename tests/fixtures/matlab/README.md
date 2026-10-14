@@ -277,10 +277,12 @@ and the full internal orifice CSV SHA-256 is
 `22314e78887134feebc28f2a54e1e5157d39769ce534229367f44dc22cd43096`.
 The compact archive SHA-256 is
 `d6106f4b14abfed868665f478f2b658346f535f501c5ec533e356620bc79dca7`.
-The ordinary-CI Python run receives only the pinned HDF5 and saved wave
-phases. Its motion is compared after the solve against the same predeclared
-6 s limits as the live source test. This pre-threshold prefix does not gate
-the published 130 s physical coupled trajectory.
+The published input sets `waves.phaseSeed = 128`. The ordinary-CI Python run
+receives that seed and the pinned HDF5; its MATLAB-compatible Threefry phases
+are compared with all 500 archived source phases before the coupled solve.
+Its motion is compared against the same predeclared 6 s limits as the live
+source test. This pre-threshold prefix does not gate the published 130 s
+physical coupled trajectory.
 
 ## MBARI Cable
 
