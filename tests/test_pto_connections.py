@@ -8,6 +8,7 @@ import sys
 import numpy as np
 import pytest
 
+from wecsim import NoWave, WEC, WorldPoint
 from wecsim.dynamics.ptoConnections import build_linear_ptos
 from wecsim.dynamics.caseDynamics import run_case
 from wecsim.dynamics.linearCoordinates import build_coordinate_maps
@@ -15,6 +16,7 @@ from wecsim.dynamics.linearCoordinates import build_coordinate_maps
 
 ROOT = Path(__file__).resolve().parents[1]
 RM3 = ROOT / "examples/data/rm3.h5"
+SPHERE = ROOT / "examples/data/sphere.h5"
 EXAMPLE = ROOT / "examples/configurable_rm3_pto.json"
 
 
@@ -64,6 +66,52 @@ def test_world_anchor_sets_default_axis():
         connections[0].force(np.array([[0.25]]), np.array([[0]])),
         [250],
     )
+
+
+def test_opposite_body_local_ptos_superpose_as_one_passive_pto():
+    """Opposite stroke signs must still give the same generalized force."""
+    def run(two_ptos):
+        wec = WEC("Sphere PTO superposition")
+        body = wec.body("sphere", SPHERE)
+        wec.coordinate("heave", body.move("heave"))
+        if two_ptos:
+            # The upper body-to-ground stroke is -heave; lower ground-to-body
+            # stroke is +heave. Their spring biases sum to -2,000 N.
+            wec.pto("upper", body.at(0, 0, 0), WorldPoint(0, 0, 5),
+                    stiffness=10_000, damping=200_000, pretension=-1_000)
+            wec.pto("lower", WorldPoint(0, 0, -5), body.at(0, 0, 0),
+                    stiffness=20_000, damping=300_000,
+                    equilibrium_position=-.05)
+        else:
+            wec.pto("equivalent", WorldPoint(0, 0, -5), body.at(0, 0, 0),
+                    stiffness=30_000, damping=500_000,
+                    equilibrium_position=-1 / 15)
+        return wec.run(NoWave(), dt=.01, end_time=2,
+                       radiation_memory=.2,
+                       initial_coordinate={"heave": .5})
+
+    combined = run(True)
+    equivalent = run(False)
+    upper, lower = combined.ptos["upper"], combined.ptos["lower"]
+    single = equivalent.ptos["equivalent"]
+    assert combined.case["ptos"][0]["from"] == {
+        "body": "sphere", "point": [0, 0, 0],
+    }
+    assert combined.case["ptos"][0]["pretension"] == -1_000
+    np.testing.assert_allclose(upper.stroke, -lower.stroke, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(lower.stroke, single.stroke, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(-upper.force + lower.force, single.force,
+                               rtol=0, atol=1e-9)
+    np.testing.assert_allclose(upper.absorbed_power + lower.absorbed_power,
+                               single.absorbed_power, rtol=0, atol=1e-8)
+    np.testing.assert_allclose(combined.bodies["sphere"].position,
+                               equivalent.bodies["sphere"].position,
+                               rtol=0, atol=1e-10)
+    np.testing.assert_allclose(combined.bodies["sphere"].velocity,
+                               equivalent.bodies["sphere"].velocity,
+                               rtol=0, atol=1e-10)
+    assert np.ptp(combined.bodies["sphere"].position[:, 2]) > .1
+    assert np.max(single.absorbed_power) > 0
 
 
 def test_named_pitch_pivot_moves_body_center():
