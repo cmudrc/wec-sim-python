@@ -1,5 +1,6 @@
 """Pair core geometry force preprocessing with pinned MATLAB bodyClass."""
 
+import hashlib
 import os
 from pathlib import Path
 
@@ -12,6 +13,11 @@ from wecsim.hydrodynamics.bodyClass import BodyClass
 
 ROOT = Path(__file__).resolve().parents[1]
 FRESH = os.environ.get("WEC_SIM_MATLAB_REFERENCE_DIR")
+CORE = os.environ.get("WEC_SIM_MATLAB_CORE_DIR")
+CURRENT_RM3_SHA256 = (
+    "a909360c6479773c113f792be72afb13"
+    "51cae9299d62e501fa80561dca450aa3"
+)
 FIXTURE = ROOT / "tests/fixtures/matlab/core_hydro_preprocess.npz"
 FIELDS = ("linearRestoring", "addedMass", "radiationKernel",
           "excitationReal", "excitationImag")
@@ -27,7 +33,11 @@ def _source(geometry, number):
 
 
 def _configured_body(geometry, number):
-    file = ROOT / "examples/data" / f"{geometry}.h5"
+    if geometry == "rm3_current":
+        file = Path(CORE) / "examples/RM3/hydroData/rm3.h5"
+        assert hashlib.sha256(file.read_bytes()).hexdigest() == CURRENT_RM3_SHA256
+    else:
+        file = ROOT / "examples/data" / f"{geometry}.h5"
     body = BodyClass(str(file))
     body.bodyNumber = number
     body.bodyTotal = 2
@@ -40,10 +50,12 @@ def _configured_body(geometry, number):
     return body
 
 
-@pytest.mark.parametrize("geometry", ("rm3", "oswec"))
+@pytest.mark.parametrize("geometry", ("rm3", "oswec", "rm3_current"))
 @pytest.mark.parametrize("number", (1, 2))
 def test_regular_cic_force_preprocessing_against_matlab(geometry, number):
     """Check hydrostatics, radiation memory and excitation on both bodies."""
+    if geometry == "rm3_current" and not (FRESH and CORE):
+        pytest.skip("current core RM3 HDF5 and fresh MATLAB source needed")
     body = _configured_body(geometry, number)
     time = np.arange(101) * 0.1
     body.hydroForcePre(

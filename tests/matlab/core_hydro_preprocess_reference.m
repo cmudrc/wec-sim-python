@@ -1,4 +1,4 @@
-% Compare the pinned MATLAB bodyClass with Python on the bundled core HDF5s.
+% Compare the pinned MATLAB bodyClass with Python on bundled and current HDF5s.
 % Run from the fork root with WEC_SIM_MATLAB_CORE_DIR set to the pinned core.
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 coreRoot = getenv('WEC_SIM_MATLAB_CORE_DIR');
@@ -19,8 +19,13 @@ dt = 0.1;
 time = (0:dt:10)';
 simu = struct('cicTime', time, 'dt', dt, 'rho', 1000, ...
     'gravity', 9.81, 'stateSpace', 0, 'b2b', 0);
-for geometry = ["rm3", "oswec"]
-    file = fullfile(repoRoot, 'examples', 'data', geometry + ".h5");
+for geometry = ["rm3", "oswec", "rm3_current"]
+    if geometry == "rm3_current"
+        % The current core RM3 HDF5 is distinct from the bundled RM3 file.
+        file = fullfile(coreRoot, 'examples', 'RM3', 'hydroData', 'rm3.h5');
+    else
+        file = fullfile(repoRoot, 'examples', 'data', geometry + ".h5");
+    end
     for number = 1:2
         body = bodyClass(file);
         body.setNumber(number);
