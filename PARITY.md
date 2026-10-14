@@ -565,23 +565,20 @@ five inventoried cases; smaller systems stay in the disjoint remainder.
 
 ### Current priority and feasible closeout
 
-The working goal is to resolve every comparison that is feasible with the
-pinned source, local R2025b MATLAB, and an independent public Python run.
-Use local MATLAB for bounded RM3, OSWEC, Sphere, and other cases supported by
-its installed Simulink and Simscape products. Route controller-heavy cases
-such as WaveStar NMPC to the hosted R2025b workflow when their required
-Control System, Optimization, or other toolboxes are absent locally. Prefer
-short local source sweeps that isolate one solver or physical mechanism over
-another long hosted run; preserve source checksums and exported trajectories.
-Prioritize the seven remaining RM3 and OSWEC published inputs; Sphere is
-already 12/12. Then address the four remaining noncore inputs:
+The near-term goal is to close every *feasible investigation*. Badge fractions
+continue to count only full published-input gates. Prioritize the seven
+remaining RM3 and OSWEC published inputs; Sphere is already 12/12. Then
+address the four remaining
+noncore inputs:
 `Nonlinear_Hydro/ode45/Regular`, `Nonlinear_Hydro/ode45/RegularCIC`,
 `OWC/OrificeModel`, and `WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive`.
-For each input, inspect existing artifacts first, then use local MATLAB for
-a distinct bounded physical or solver question that hosted jobs could not
-answer. Fix numerical limits before inspecting results. Preserve source
-artifacts and add ordinary Python regression gates for passing independent
-comparisons.
+Inspect existing artifacts first. Use local R2025b MATLAB for bounded source
+experiments supported by its Simulink and Simscape installation. Its missing
+Control System and Optimization toolboxes require hosted R2025b for WaveStar
+NMPC. Give each new run one distinct physical or solver question, with limits
+fixed before results are inspected; avoid repeating timed-out or already
+diagnosed jobs unchanged. Preserve source checksums and trajectories, and add
+ordinary Python regression gates for passing independent comparisons.
 
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,
@@ -594,15 +591,15 @@ unchanged negative-gap run or tune the physical Python default to a coarse
 MATLAB artifact. A badge need not read 100% for the feasible investigation
 to be closed; its fraction counts only published gates.
 
-In parallel, raise meaningful combined Python line-and-branch coverage from
-the current 82.89% toward 90%, concentrating on public configuration,
-actual dynamics, and numerical invariants. Coverage tests must check behavior
-rather than merely execute uncovered lines. The feasible phase is ready for
-review when every input is gated, measured as qualified, or explicitly open;
-each open input names a bounded next experiment or an external blocker.
-Tractable fixes have durable CI gates, and the measured coverage and important
-untested paths are reported. This review is not a claim of physical parity for
-qualified or open inputs.
+After the core investigations, raise meaningful combined Python line-and-branch
+coverage toward 90%, concentrating on public configuration, actual dynamics,
+and numerical invariants. Coverage tests must check behavior rather than
+merely execute uncovered lines. The feasible phase is ready for review when
+every input is gated, measured as qualified, or explicitly open; each open
+input names a bounded next experiment or an external blocker. Tractable fixes
+have durable CI gates, and the measured coverage and important untested paths
+are reported. This review is not a claim of physical parity for qualified or
+open inputs.
 
 A case earns its badge gate only when an independent Python run covers the
 published input and duration and passes predeclared MATLAB motion or
@@ -1860,6 +1857,20 @@ assertion ran before body/PTO export, so this audit does not quantify their
 full-duration self-change. The published controlled motion remains open;
 the earlier 9.95 s precontrol solver-step result does not extend through
 controller activation.
+
+A bounded [hosted 25 ms `ode8` controller-clock probe](https://github.com/cmudrc/wec-sim-python/actions/runs/38631235118)
+then made the command-producing controller subsystem atomic at its published
+50 ms rate and kept its Stateflow charts and discrete filters at that rate.
+Through 15.2 s, the source logged exactly 305 commands on the 50 ms grid;
+all 500 sea components and 305 wave samples exactly match the archived
+published run. With controller cadence held, the 0–10 s pre-control float
+pitch and speed still differ from the published 50 ms source by up to
+`0.002867` rad and `0.02969` rad/s. During 10–15 s resistive control, the
+torque request differs by up to `13.905` N m, applied axial PTO force by
+`66.957` N, float pitch by `0.050795` rad, and speed by `0.848815` rad/s.
+Thus the bounded multirate source run does not supply a comparable
+plant-only trajectory for a 225 s published-case gate. WaveStar NMPC
+remains open, and the badge count is unchanged.
 
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
