@@ -30,7 +30,9 @@ tests. These are wave-preprocessing checks, not published coupled-motion gates.
 
 `core_hydro_preprocess.npz` holds the R2025b Update 7 `bodyClass` outputs for
 both RM3 and OSWEC bodies in a 2.5 m, 8 s, zero-heading `regularCIC` wave.
-Regenerate the four source MAT files with
+It also holds both OSWEC bodies' real and imaginary excitation coefficients
+at three headings and 64 traditional PM frequency bins. Regenerate the six
+source MAT files with
 `tests/matlab/core_hydro_preprocess_reference.m` and pinned WEC-Sim core
 `0753b2e47f2457c078751dcfe5d251d1767b80ab`. The script uses the bundled
 `examples/data/rm3.h5` and `examples/data/oswec.h5` (SHA-256
@@ -42,11 +44,14 @@ on the same bundled RM3 input.
 
 The fixture contains all 6×6 restoring and infinite-frequency added-mass
 entries, 101 time samples of each 6×6 radiation kernel, and all six regular
-excitation real and imaginary coefficients for each body. It was packed from
-the four source MAT files as float64 without rounding; its SHA-256 is
-`df2ee9935a5a3f7c399f7ee44da385b47766e444c8b878433439dc05bbafef7d`.
+excitation real and imaginary coefficients for each body. The OSWEC irregular
+entries retain all 3×64×6 excitation coefficients and the frequency grid.
+It was packed from the six source MAT files as float64 without rounding; its
+SHA-256 is
+`6241f9849a9408f0177d0e179efad75b7f599e992c87724cabbd24754e99df95`.
 The largest observed absolute Python/source difference is `7.51e-9` in the
-OSWEC radiation kernel. Ordinary CI uses the fixture; the fresh MATLAB
+OSWEC radiation kernel; all irregular excitation entries are bit-equal.
+Ordinary CI uses the fixture; the fresh MATLAB
 workflow sets `WEC_SIM_MATLAB_REFERENCE_DIR` to compare newly generated MAT
 files against the same Python calculation. This is force preprocessing, not
 a coupled-motion or published-case badge gate.

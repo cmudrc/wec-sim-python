@@ -49,3 +49,35 @@ for geometry = ["rm3", "oswec"]
             'radiationKernel', 'excitationReal', 'excitationImag', '-v7');
     end
 end
+
+% OSWEC's multi-heading PM cases also interpolate excitation over both
+% frequency and BEM direction. Check that branch on a compact 64-bin sea.
+file = fullfile(repoRoot, 'examples', 'data', 'oswec.h5');
+for number = 1:2
+    body = bodyClass(file);
+    body.setNumber(number);
+    body.setDOF(2, 0);
+    body.mass = 'equilibrium';
+    body.inertia = [1 1 1];
+    body.loadHydroData(readBEMIOH5(file, number, 0), 1);
+    wave = waveClass('irregular');
+    wave.period = 8;
+    wave.height = 2.5;
+    wave.direction = [0 30 90];
+    wave.spread = [0.1 0.2 0.7];
+    wave.spectrumType = 'PM';
+    wave.bem.option = 'Traditional';
+    wave.bem.count = 64;
+    wave.phaseSeed = 1;
+    hydro = body.hydroData(1);
+    wave.setup(hydro.simulation_parameters.w, ...
+        hydro.simulation_parameters.waterDepth, 0, dt, ...
+        length(time)-1, time, 9.81, 1000);
+    body.hydroForcePre(wave, simu, 1);
+    omega = wave.omega;
+    force = body.hydroForce.hf1;
+    excitationReal = force.fExt.re;
+    excitationImag = force.fExt.im;
+    save(fullfile(outputDir, sprintf('core_hydro_oswec_irregular_body%d.mat', ...
+        number)), 'omega', 'excitationReal', 'excitationImag', '-v7');
+end

@@ -26,10 +26,7 @@ def _source(geometry, number):
                 for field in FIELDS}
 
 
-@pytest.mark.parametrize("geometry", ("rm3", "oswec"))
-@pytest.mark.parametrize("number", (1, 2))
-def test_regular_cic_force_preprocessing_against_matlab(geometry, number):
-    """Check hydrostatics, radiation memory and excitation on both bodies."""
+def _configured_body(geometry, number):
     file = ROOT / "examples/data" / f"{geometry}.h5"
     body = BodyClass(str(file))
     body.bodyNumber = number
@@ -40,6 +37,14 @@ def test_regular_cic_force_preprocessing_against_matlab(geometry, number):
                      "cd": np.zeros(6), "characteristicArea": np.zeros(6)}
     body.linearDamping = np.zeros((6, 6))
     body.mass = "equilibrium"
+    return body
+
+
+@pytest.mark.parametrize("geometry", ("rm3", "oswec"))
+@pytest.mark.parametrize("number", (1, 2))
+def test_regular_cic_force_preprocessing_against_matlab(geometry, number):
+    """Check hydrostatics, radiation memory and excitation on both bodies."""
+    body = _configured_body(geometry, number)
     time = np.arange(101) * 0.1
     body.hydroForcePre(
         2 * np.pi / 8, [0], len(time), time, [], 0.1, 1000, 9.81,
@@ -68,4 +73,34 @@ def test_regular_cic_force_preprocessing_against_matlab(geometry, number):
         np.testing.assert_allclose(
             python, source, rtol=1e-10, atol=1e-5,
             err_msg=f"{geometry} body {number} {field}",
+        )
+
+
+@pytest.mark.parametrize("number", (1, 2))
+def test_oswec_irregular_directional_excitation_against_matlab(number):
+    """Check 64 frequency bins and three incident headings on each body."""
+    body = _configured_body("oswec", number)
+    bem_frequency = np.asarray(body.hydroData["simulation_parameters"]["w"]).ravel()
+    omega = np.linspace(bem_frequency.min(), bem_frequency.max(), 64)
+    time = np.arange(101) * 0.1
+    body.hydroForcePre(
+        omega, [0, 30, 90], len(time), time, 64, 0.1, 1000, 9.81,
+        "irregular", np.vstack((time, np.zeros_like(time))),
+        number, [], 0, 0, 0,
+    )
+    if FRESH:
+        expected = loadmat(Path(FRESH) / f"core_hydro_oswec_irregular_body{number}.mat")
+    else:
+        with np.load(FIXTURE) as values:
+            expected = {field: values[f"oswec_irregular_{number}_{field}"]
+                        for field in ("omega", "excitationReal", "excitationImag")}
+    np.testing.assert_allclose(omega, expected["omega"].ravel(), rtol=0, atol=1e-12)
+    for field, key in (("excitationReal", "re"), ("excitationImag", "im")):
+        source = np.asarray(expected[field])
+        python = np.asarray(body.hydroForce["fExt"][key])
+        assert source.shape == python.shape == (3, 64, 6)
+        assert np.isfinite(source).all() and np.max(np.abs(source)) > 0
+        np.testing.assert_allclose(
+            python, source, rtol=1e-10, atol=1e-5,
+            err_msg=f"OSWEC body {number} {field}",
         )
