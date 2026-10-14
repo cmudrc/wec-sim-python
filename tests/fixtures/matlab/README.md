@@ -11,6 +11,15 @@ documented in [rm3_direct_generator/README.md](rm3_direct_generator/README.md).
 The full 900 s published Sphere variable-mass comparison is documented in
 [sphere_variable_mass/README.md](sphere_variable_mass/README.md).
 
+`oswec_spline_interpolation_probe.csv` is a six-sample numerical probe made
+with MATLAB R2025b Update 7 from bundled `examples/data/oswec.h5` (SHA-256
+`28aa028d404a88f877924bc435e7ad3a4c50e26f9706c1f39ef7324e5ec60750`).
+Regenerate it with `tests/matlab/oswec_spline_interpolation_probe.m`. It uses
+three between-knot frequencies, two BEM headings, fixed phases, MATLAB
+`interp1(...,'spline')`, and a 0.2 s ramp. The portable test compares all six
+excitation channels within `1e-7` N; the measured maximum error was
+`3.8e-10` N. This is an interpolation check, not a published-case motion gate.
+
 ## Fixed hydrodynamic monopile
 
 `monopile_hydro.h5` is the exact generated six-DOF HDF5 from the successful
