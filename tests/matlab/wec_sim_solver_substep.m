@@ -1,5 +1,5 @@
 % Run the pinned WaveStar model with its 50 ms WEC-Sim inputs unchanged.
-% Only Simulink's ode8 fixed step changes, including in the full NMPC case.
+% Only the Simulink ode8 fixed step is refined, before PTO activation.
 run('initializeWecSim');
 
 [~, modelName] = fileparts(simu.simMechanicsFile);

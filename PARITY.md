@@ -1806,6 +1806,24 @@ its derived fine-step aggregate gate above is separate.
 
 ![Published WaveStar NMPC float pitch and controller-command differences](docs/figures/wavestar-nmpc-published-gap.png)
 
+A subsequent [full 225 s `ode8` internal-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38591012516)
+tried to hold the published 50 ms WEC-Sim and NMPC settings while changing
+Simulink `FixedStep` and `MaxStep` to 25 ms. The 500 sea components, all 4,501
+wave samples, and all 46 generated HDF5 datasets match the pinned published
+input. The predeclared **50 ms controller-grid gate failed** after the source
+simulation completed: the command, power, and energy histories each contain
+9,001 samples at 25 ms rather than 4,501 at 50 ms. From 30 to 225 s, the
+command changes on 3,899 of the 3,900 intermediate half-step samples by
+more than `1e-6` N m. Even at the common 50 ms ticks, the torque request
+differs from the published source by up to `14.71` N m (`1.85` N m RMS),
+and reported final energy changes from `129.49` to `95.86` J. These measured
+changes cannot be attributed to the plant integrator alone because the
+controller command is not held across the original 50 ms grid. The source
+assertion ran before body/PTO export, so this audit does not quantify their
+full-duration self-change. The published controlled motion remains open;
+the earlier 9.95 s precontrol solver-step result does not extend through
+controller activation.
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001
