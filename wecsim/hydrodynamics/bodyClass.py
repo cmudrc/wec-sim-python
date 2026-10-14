@@ -20,7 +20,6 @@ import trimesh
 from numpy.linalg import inv
 from scipy import interpolate
 from scipy.signal import fftconvolve
-from copy import copy
 
 
 def _directional_interp(frequencies, directions, values, query_frequencies, query_directions):
@@ -371,82 +370,7 @@ class BodyClass:
             gbm['state_space']['D'] = np.zeros((2 * gbmDOF, 2 * gbmDOF))
             self.flexHydroBody = 1
             self.nhBody=0
-            
-    def adjustMassMatrix(self,adjMassWeightFun,B2B):
-        """
-        Merge diagonal term of added mass matrix to the mass matrix
-        1. Store the original mass and added-mass properties
-        2. Add diagonal added-mass inertia to moment of inertia
-        3. Add the maximum diagonal traslational added-mass to body
-        mass - this is not the correct description
 
-        """
-        iBod = self.bodyNumber
-        self.hydroForce['storage']['mass'] = copy(self.mass) # use copy method to set it as seperate variable
-        self.hydroForce['storage']['momOfInertia'] = copy(self.momOfInertia)
-        self.hydroForce['storage']['fAddedMass'] = copy(self.hydroForce['fAddedMass'])
-        if B2B == 1:
-            self.tmp['fadm'] = np.diag(self.hydroForce['fAddedMass'],k =(iBod-1)*6)
-            self.tmp['adjmass'] = sum(self.tmp['fadm'][0:3]*adjMassWeightFun)
-            self.mass = self.mass + self.tmp['adjmass']
-            self.momOfInertia = self.momOfInertia+self.tmp['fadm'][3:6]
-            self.hydroForce['fAddedMass'][0,(iBod-1)*6] = self.hydroForce['fAddedMass'][0,(iBod-1)*6] - self.tmp['adjmass']
-            self.hydroForce['fAddedMass'][1,1+(iBod-1)*6] = self.hydroForce['fAddedMass'][1,1+(iBod-1)*6] - self.tmp['adjmass']
-            self.hydroForce['fAddedMass'][2,2+(iBod-1)*6] = self.hydroForce['fAddedMass'][2,2+(iBod-1)*6] - self.tmp['adjmass']
-            self.hydroForce['fAddedMass'][3,3+(iBod-1)*6] = 0
-            self.hydroForce['fAddedMass'][4,4+(iBod-1)*6] = 0
-            self.hydroForce['fAddedMass'][5,5+(iBod-1)*6] = 0
-        else:
-            self.tmp['fadm'] = np.diag(self.hydroForce['fAddedMass'])
-            self.tmp['adjmass'] = sum(self.tmp['fadm'][0:3])*adjMassWeightFun # scalar value for adjMassWeighFun
-            self.mass = self.mass + self.tmp['adjmass']
-            self.momOfInertia = self.momOfInertia + self.tmp['fadm'][3:6]
-            self.hydroForce['fAddedMass'][0,0] = self.hydroForce['fAddedMass'][0,0] - self.tmp['adjmass']
-            self.hydroForce['fAddedMass'][1,1] = self.hydroForce['fAddedMass'][1,1] - self.tmp['adjmass']
-            self.hydroForce['fAddedMass'][2,2] = self.hydroForce['fAddedMass'][2,2] - self.tmp['adjmass']
-            self.hydroForce['fAddedMass'][3,3] = 0
-            self.hydroForce['fAddedMass'][4,4] = 0
-            self.hydroForce['fAddedMass'][5,5] = 0
-
-    def restoreMassMatrix(self):
-        """
-        Restore the mass and added-mass matrix back to the original value
-        Used copy method to set as new variables
-        """
-        self.tmp['mass'] = copy(self.mass)
-        self.tmp['momOfInertia'] = copy(self.momOfInertia)
-        self.tmp['hydroForce_fAddedMass'] = copy(self.hydroForce['fAddedMass'])
-        self.mass = copy(self.hydroForce['storage']['mass'])
-        self.momOfInertia = copy(self.hydroForce['storage']['momOfInertia'])
-        self.hydroForce['fAddedMass'] = copy(self.hydroForce['storage']['fAddedMass'])
-        self.hydroForce['storage']['mass'] = copy(self.tmp['mass'])
-        self.hydroForce['storage']['momOfInertia'] = copy(self.tmp['momOfInertia'])
-        self.hydroForce['storage']['fAddedMass'] = copy(self.tmp['hydroForce_fAddedMass'])
-             
-    def storeForceAddedMass(self,am_mod,ft_mod):
-        """
-        Store the modified added mass and total forces history (inputs)
-        """
-        self.hydroForce['storage']['output_forceAddedMass'] = am_mod
-        self.hydroForce['storage']['output_forceTotal'] = ft_mod
- 
-    def setInitDisp(self, x_rot, ax_rot, ang_rot, addLinDisp):
-        """
-        Function to set the initial displacement when having initial rotation
-        x_rot: rotation point
-        ax_rot: axis about which to rotate (must be a normal vector)
-        ang_rot: rotation angle in radians
-        addLinDisp: initial linear displacement (in addition to the displacement caused by rotation)
-        """
-        cg = self.cg
-        relCoord = cg - x_rot
-        rotatedRelCoord = self.rotateXYZ(relCoord,ax_rot,ang_rot)
-        newCoord = rotatedRelCoord + x_rot
-        linDisp = newCoord-cg
-        self.initDisp = {'initLinDisp':(linDisp + addLinDisp), 
-                         'initAngularDispAxis': ax_rot, 
-                         'initAngularDispAngle': ang_rot}     
-    
     def listInfo(self):
         """
         List body info{:f}\n'.format(self.T)
@@ -758,56 +682,3 @@ class BodyClass:
             self.momOfInertia = [999, 999, 999]
         else:
             self.massCalcMethod = 'user'
-        
-    def forceAddedMass(self,acc,B2B):
-        """
-        Calculates and outputs the real added mass force time history
-        
-        """
-        iBod = self.bodyNumber
-        fam = np.zeros(np.shape(acc))
-        for i in range(6):
-            tmp = np.zeros(np.size(acc[:,i]))
-            for j in range(6):
-                if B2B == 1:
-                    jj = (iBod-1)*6+j
-                else:
-                    jj = j
-                iam = self.hydroForce['fAddedMass'][i,jj]
-                tmp = tmp + acc[:,j]* iam
-            fam[:,i] = tmp
-        return(fam)
-    
-    def rotateXYZ(self,x,ax,t):
-        """
-        Function to rotate a point about an arbitrary axis
-        x: 3-componenet coordiantes
-        ax: axis about which to rotate (must be a normal vector)
-        t: rotation angle
-        xn: new coordinates after rotation
-        
-        """
-        rotMat = np.zeros((3,3))
-        rotMat[0,0] = ax[0]*ax[0]*(1-np.cos(t))    + np.cos(t)
-        rotMat[0,1] = ax[1]*ax[0]*(1-np.cos(t))    + ax[2]*np.sin(t)
-        rotMat[0,2] = ax[2]*ax[0]*(1-np.cos(t))    - ax[1]*np.sin(t)
-        rotMat[1,0] = ax[0]*ax[1]*(1-np.cos(t))    - ax[2]*np.sin(t)
-        rotMat[1,1] = ax[1]*ax[1]*(1-np.cos(t))    + np.cos(t)
-        rotMat[1,2] = ax[2]*ax[1]*(1-np.cos(t))    + ax[0]*np.sin(t)
-        rotMat[2,0] = ax[0]*ax[2]*(1-np.cos(t))    + ax[1]*np.sin(t)
-        rotMat[2,1] = ax[1]*ax[2]*(1-np.cos(t))    - ax[0]*np.sin(t)
-        rotMat[2,2] = ax[2]*ax[2]*(1-np.cos(t))    + np.cos(t)
-        xn = np.dot(x,rotMat)
-        return(xn)
-    
-    
-    def offsetXYZ(self,verts,x):
-        """
-        Function to move the position vertices
-        
-        """
-        verts_out = np.zeros(3)#for now change when being tested later
-        verts_out[0] = verts[0] + x[0]
-        verts_out[1] = verts[1] + x[1]
-        verts_out[2] = verts[2] + x[2]
-        return verts_out
