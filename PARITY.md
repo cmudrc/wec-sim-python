@@ -590,9 +590,19 @@ qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
 stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 79%; raise it with behavior and numerical invariants, including
-portable full-duration gates for already paired cases. Do not add tests
+coverage is 79.81% (80% displayed); raise it with behavior and numerical
+invariants, including portable full-duration gates for already paired cases.
+Do not add tests
 written only to execute lines.
+
+The ordinary Python suite now checks two public configuration and dynamics
+invariants without another source run: imported elevation can apply the
+published force ramp a second time without altering the incident sea, and a
+fully submerged zero-wave mesh body has balanced buoyancy, zero nonlinear
+wave correction, and drag that opposes either heave direction. These checks
+strengthen the input and instantaneous nonlinear-hydro paths; they do not
+change any case badge.
+
 Both already-gated WaveBot published inputs now have portable full-duration
 ordinary-CI comparisons: the 100 s adaptive controller and the 600 s
 impedance experiment. These strengthen regression coverage without changing

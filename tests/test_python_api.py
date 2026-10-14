@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from scipy.io import loadmat
+from scipy.io import loadmat, savemat
 
 from examples.configurable_rm3_pto import HYDRO, build_wec
 from wecsim.dynamics.caseDynamics import run_case
@@ -357,6 +357,51 @@ def test_python_builder_runs_imported_elevation_with_relative_mat_path():
     assert np.isfinite(response.bodies["spar"].position).all()
     assert np.isfinite(response.ptos["main"].force).all()
     assert dict(response.raw.extra_outputs)["body1_excitation_force"].shape == (3, 6)
+
+
+def test_imported_elevation_optional_source_force_ramp(tmp_path):
+    """The source's second ramp acts on force, not the incident sea."""
+    sample_time = np.arange(6) * .1
+    source = tmp_path / "eta.mat"
+    savemat(source, {"etaData": np.column_stack((
+        sample_time, np.sin(np.pi * sample_time),
+    ))})
+    wec = build_wec()
+    settings = dict(dt=.1, end_time=.5, ramp_time=.4, radiation_memory=.2)
+    ordinary = wec.run(ImportedElevationWave(source), **settings)
+    source_ramp = wec.run(
+        ImportedElevationWave(source, reapply_force_ramp=True), **settings,
+    )
+    ramp = np.ones_like(sample_time)
+    early = sample_time < .4
+    ramp[early] = (1 - np.cos(np.pi * sample_time[early] / .4)) / 2
+
+    np.testing.assert_array_equal(source_ramp.wave_elevation,
+                                  ordinary.wave_elevation)
+    for body_number in (1, 2):
+        key = f"body{body_number}_excitation_force"
+        before = dict(ordinary.raw.extra_outputs)[key]
+        after = dict(source_ramp.raw.extra_outputs)[key]
+        np.testing.assert_allclose(after, before * ramp[:, None],
+                                   rtol=0, atol=1e-9)
+    assert np.max(np.abs(
+        source_ramp.bodies["float"].position
+        - ordinary.bodies["float"].position,
+    )) > 1e-5
+
+
+@pytest.mark.parametrize("samples,reason", [
+    ([(0, 0), (.2, 1), (.1, 0), (.5, -1)], "increasing"),
+    ([(0, 0), (.1, 1), (.2, 0), (.3, -1)], "full simulation time"),
+])
+def test_imported_elevation_rejects_unsafe_sample_times(tmp_path, samples, reason):
+    source = tmp_path / "eta.mat"
+    savemat(source, {"etaData": np.asarray(samples, dtype=float)})
+    with pytest.raises(ValueError, match=reason):
+        build_wec().run(
+            ImportedElevationWave(source), dt=.1, end_time=.5,
+            ramp_time=.4, radiation_memory=.2,
+        )
 
 
 def test_python_builder_configures_paired_floating_joint_and_pto():
