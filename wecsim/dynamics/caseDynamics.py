@@ -170,6 +170,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         body_mass = bodies[0].get("mass", "equilibrium")
         if body_mass != "equilibrium":
             body_mass = _number(body_mass, "body.mass", positive=True)
+        auxiliary_files = ()
         if "orifice" not in constraint:
             if (wave["type"] != "regular"
                     or set(sim) - {"dt", "end_time", "ramp_time", "rho", "g"}
@@ -212,6 +213,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 phase_path = (base / wave["phase_file"]).resolve(strict=True)
                 phase = np.loadtxt(phase_path, delimiter=",", ndmin=2)
                 seed = None
+                auxiliary_files = (phase_path,)
             else:
                 phase = None
                 seed = wave.get("seed", 7)
@@ -274,6 +276,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             result.time, result.body_position[:, None, :],
             result.body_velocity[:, None, :], hydro,
             wave_elevation=result.wave_elevation,
+            auxiliary_files=auxiliary_files,
             extra_outputs=tuple(extras),
         )
 

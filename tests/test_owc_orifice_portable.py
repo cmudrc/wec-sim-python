@@ -104,3 +104,42 @@ def test_public_coupled_owc_motion_before_source_mach_flag():
                                rtol=0, atol=1e-8)
     assert not np.any(dict(result.raw.extra_outputs)[
         "orifice_compressibility_flag"])
+
+
+def test_public_owc_replays_published_phase_file(tmp_path):
+    """A saved MATLAB phase record must reproduce the seeded OWC input."""
+    with np.load(SOURCE, allow_pickle=False) as saved:
+        phases = saved["components"][:, 3]
+        parameters = saved["parameters"]
+    phase_file = tmp_path / "published_phases.csv"
+    np.savetxt(phase_file, phases, delimiter=",", fmt="%.18e")
+
+    wec = WEC("OWC phase replay")
+    body = wec.body("OWC", HYDRO, inertia=(99.28, 11.04, 99.2))
+    wec.floating_gbm(
+        body, orifice=OrificePTO(*parameters),
+        heave_linear_damping=100, mode_linear_damping=100,
+        heave_drag_cd=1.2, heave_drag_area=8,
+        pitch_drag_cd=1.2, pitch_drag_area=8,
+    )
+    settings = dict(dt=.005, end_time=2, ramp_time=10,
+                    radiation_memory=15)
+    seeded = wec.run(PMWave(1, 4, seed=128, phase_generator="matlab"),
+                     **settings)
+    replayed = wec.run(PMWave(1, 4, phase_file=phase_file), **settings)
+
+    assert replayed.case["wave"]["phase_file"] == str(phase_file)
+    assert replayed.raw.auxiliary_files == (phase_file,)
+    assert np.ptp(seeded.wave_elevation) > .001
+    assert np.ptp(seeded.ptos["orifice"].force) > 1
+    _limit(replayed.wave_elevation, seeded.wave_elevation, 1e-10,
+           "replayed wave elevation")
+    _limit(replayed.bodies["OWC"].position,
+           seeded.bodies["OWC"].position, 1e-7,
+           "replayed coupled body position")
+    _limit(replayed.flexible_modes["OWC"].position,
+           seeded.flexible_modes["OWC"].position, 1e-7,
+           "replayed flexible position")
+    _limit(replayed.ptos["orifice"].force,
+           seeded.ptos["orifice"].force, 1e-4,
+           "replayed orifice force")
