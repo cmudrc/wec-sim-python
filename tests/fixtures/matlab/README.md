@@ -77,6 +77,28 @@ workflow sets `WEC_SIM_MATLAB_REFERENCE_DIR` to compare newly generated MAT
 files against the same Python calculation. This is force preprocessing, not
 a coupled-motion or published-case badge gate.
 
+## Sphere declutching
+
+`sphere_declutching.npz` retains all 40,001 samples of the published 400 s
+`Controls/Declutching` source time, body heave and speed, controller force,
+and controller power. It comes from the successful [pinned R2025b baseline
+run](https://github.com/cmudrc/wec-sim-python/actions/runs/38677803196)
+(`matlab-Sphere_Declutching-baseline`, run commit
+`48e11f79682346404acb3762fc80d10ddcf8a34c`). The workflow pins WEC-Sim
+core `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`.
+The body CSV SHA-256 is `e0c1209beba9899ff6e7f3a2f1f6be3abe8553e44915920c9461e98a2a670767`;
+the controller CSV is `e27ca38b95b45998048f27887edadd4fcd18de98e93349d95f222f631f979762`.
+Load both CSVs as float64, verify matching time columns, and save body
+columns 0, 3, and 9 as `time`, `position`, and `velocity`, and controller
+columns 3 and 9 as `force` and `power` with `numpy.savez_compressed`.
+The archive SHA-256 is `d848a8bf45ae4e4d4d1bfcd21f1d64b10fed06f5b3f1f3bc93c67e64222feb76`.
+All 46 generated HDF5 datasets match bundled `examples/data/sphere.h5`,
+including NaN positions. Ordinary CI uses that bundled HDF5; the live MATLAB
+workflow continues to use fresh CSVs and its generated HDF5. Both paths run
+the same full-duration motion, declutch-event, force, power, and work gates.
+This strengthens an already counted Sphere case.
+
 ## Sphere latching
 
 `sphere_latching.npz` retains all 40,001 samples of the published 400 s
