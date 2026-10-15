@@ -156,6 +156,14 @@ also gate the orifice force, pressure, flow, power, and Mach flag at both flow
 signs and across the threshold. The published 130 s physical trajectory
 remains unpaired, so this adds no case badge.
 
+A short public OWC replay now loads the archived MATLAB phases through
+`PMWave(phase_file=...)` and compares the resulting coupled response with
+the independent MATLAB-compatible seed path. Over the first 2 s, wave
+elevation, body and flexible-mode position, and orifice force agree within
+`1e-10` m, `1e-7` m or rad, and `1e-4` N, respectively. The result
+records the phase CSV among its auxiliary inputs. This checks reproducible
+case configuration; it does not extend the physical-motion parity window.
+
 A [bounded local R2025b OWC source-to-source check](tests/fixtures/matlab/owc_orifice_local_prefix/README.md)
 uses the same pinned HDF5, all 500 incident-wave components, and 0.005 s
 output grid as the archived published 130 s source run. A 6 s local rerun is
