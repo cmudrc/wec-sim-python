@@ -13,12 +13,12 @@ class ParaviewClass:
     def __init__(self, waves):
         self.waves = waves
 
-    def waveElevationGrid(self, t, X, Y):
+    def waveElevationGrid(self, t, X, Y, *, g=9.81):
         """Return the undisturbed wave elevation over an X/Y grid at time t.
 
         This follows ``waveClass.waveElevationGrid`` in MATLAB WEC-Sim for
-        no-wave, regular, and frequency-resolved irregular waves. The arrays
-        X and Y must have matching or broadcastable shapes.
+        no-wave, regular, frequency-resolved irregular, and imported-elevation
+        waves. The arrays X and Y must have matching or broadcastable shapes.
         """
         X, Y = np.broadcast_arrays(np.asarray(X, dtype=float),
                                    np.asarray(Y, dtype=float))
@@ -64,6 +64,41 @@ class ParaviewClass:
                         + frequency * t
                         + phases[direction_index, frequency_index]
                     )
+            return elevation
+
+        if waves.wType == "etaImport":
+            # MATLAB's elevationImport visualization reconstructs a spatial
+            # sea from the sampled origin elevation using a one-sided FFT.
+            # Its deep-water wavenumber is independent of the BEM depth.
+            samples = np.asarray(waves.waveAmpTime, dtype=float)
+            direction = np.asarray(waves.waveDir, dtype=float).ravel()
+            gravity = np.asarray(g, dtype=float)
+            if (samples.ndim != 2 or samples.shape[0] != 2
+                    or samples.shape[1] < 2 or not np.isfinite(samples).all()
+                    or direction.size != 1 or not np.isfinite(direction).all()
+                    or gravity.ndim != 0 or not np.isfinite(gravity)
+                    or gravity <= 0):
+                raise ValueError("imported wave grid needs finite samples, one direction, and positive gravity")
+            step = np.diff(samples[0])
+            if (np.any(step <= 0)
+                    or not np.allclose(step, step[0], rtol=1e-9, atol=1e-12)):
+                raise ValueError("imported wave grid needs uniformly spaced samples")
+            count = samples.shape[1]
+            # MATLAB round(count/2) rounds odd half-integers upward.
+            positive_count = (count + 1) // 2 + 1
+            spectrum = np.fft.fft(samples[1])[:positive_count] / count
+            amplitude = np.abs(spectrum)
+            amplitude[1:-1] *= 2
+            frequency = np.arange(positive_count) / (count * step[0])
+            position = (X * np.cos(np.deg2rad(direction[0]))
+                        + Y * np.sin(np.deg2rad(direction[0])))
+            elevation = np.zeros_like(X)
+            for index in range(1, positive_count):
+                omega = 2 * np.pi * frequency[index]
+                elevation += amplitude[index] * np.cos(
+                    -omega**2 / gravity * position + omega * t
+                    + np.angle(spectrum[index])
+                )
             return elevation
 
         raise NotImplementedError(
@@ -134,7 +169,7 @@ class ParaviewClass:
     def write_paraview_vtp_wave(
         self, times, directory, *, domain_size,
         num_points_x=None, num_points_y=None, water_depth=None,
-        num_moordyn=0,
+        num_moordyn=0, g=9.81,
     ) -> tuple[Path, ...]:
         """Write a WEC-Sim-style wave grid as numbered VTP PolyData frames.
 
@@ -180,7 +215,7 @@ class ParaviewClass:
         ])
         paths = []
         for index, time in enumerate(times, start=1):
-            Z = self.waveElevationGrid(float(time), X, Y)
+            Z = self.waveElevationGrid(float(time), X, Y, g=g)
             if Z.shape != X.shape or not np.isfinite(Z).all():
                 raise ValueError("wave VTP elevation must be finite on the grid")
             root = ElementTree.Element("VTKFile", type="PolyData", version="0.1")
