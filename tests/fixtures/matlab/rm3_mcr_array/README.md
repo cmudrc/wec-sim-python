@@ -8,6 +8,15 @@ core `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications
 remain in its `matlab-RM3_MCR_ARRAY-baseline` artifact. The NPZ SHA-256 is
 `2de50eb304b39c7fe37f08afc9d55168e9d461655ce3b29ae5bceb77f8a36ed1`.
 
+An independent local MATLAB R2025b Update 7 run on 2026-10-15 used the same
+pinned core and Applications revisions and regenerated `rm3.h5` with pinned
+BEMIO. `reference_model_baseline('RM3_MCR_ARRAY')` completed all eight 400 s
+conditions. Against this archive, the maximum absolute difference across the
+selected body motion channels was `8.35e-13`; PTO stroke and speed differed by
+at most `1.60e-14` m and `6.00e-15` m/s, PTO force and power by at most
+`1.21e-8` N and W, and the eight-case mean-power summary by at most
+`9.90e-10` W. These differences are at CSV serialization precision.
+
 `summary` is the original 8×6 source table: wave height, period, PTO damping,
 PTO stiffness, mean signed mechanical power, and repeated damping. For each
 `case1` through `case8`, the 4,001×17 array selects these source CSV columns
