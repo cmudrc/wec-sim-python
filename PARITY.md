@@ -725,6 +725,14 @@ mechanical-power differences are `10.30` mm, `1.20` mm, `0.00207` rad,
 `818` N m, and `314.5` W. All retain the published-case limits stated above.
 This strengthens regression durability and does not add a badge case.
 
+The published 400 s OSWEC `Nonhydro_Body` case now also runs through the
+public fixed-hinge API in ordinary Python CI. Its [portable source trace](tests/fixtures/matlab/oswec_nonhydro/README.md)
+retains all 4,001 flap, fixed-base, and PTO samples; the existing BEMIO HDF5
+fixture matches all 68 generated source datasets to within `4.01e-11` at
+worst. The test keeps the original motion, six-component excitation, and PTO
+limits and still accepts fresh MATLAB output. This makes an existing case gate
+durable without changing its badge count or claiming fixed-base reactions.
+
 The ordinary Python suite now checks two public configuration and dynamics
 invariants without another source run: imported elevation can apply the
 published force ramp a second time without altering the incident sea, and a

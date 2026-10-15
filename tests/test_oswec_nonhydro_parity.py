@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from wecsim import RegularWave, WEC, WorldPoint
 from wecsim.dynamics.caseDynamics import run_case
@@ -13,10 +12,9 @@ from wecsim.dynamics.hingePitch import solve_hinged_pitch_regular
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (APPLICATIONS and REFERENCE),
-    reason="paired MATLAB OSWEC nonhydrodynamic output not provided",
-)
+FIXTURE = Path(__file__).parent / "fixtures/matlab/oswec_nonhydro/source.npz"
+PINNED_HYDRO = (Path(__file__).parent
+                / "fixtures/matlab/oswec_multi_wave/oswec.h5")
 
 
 def _max_error(actual, expected, limit, label):
@@ -27,8 +25,27 @@ def _max_error(actual, expected, limit, label):
 
 
 def test_published_nonhydrodynamic_base_against_matlab():
-    hydro = (Path(APPLICATIONS)
-             / "_Common_Input_Files/OSWEC/hydroData/oswec.h5").resolve()
+    live_source = bool(APPLICATIONS and REFERENCE)
+    hydro = ((Path(APPLICATIONS)
+              / "_Common_Input_Files/OSWEC/hydroData/oswec.h5")
+             if live_source else PINNED_HYDRO).resolve()
+    if live_source:
+        reference = Path(REFERENCE)
+        flap = np.loadtxt(
+            reference / "OSWEC_Nonhydro_Nonhydro_body1.csv", delimiter=",",
+        )
+        base = np.loadtxt(
+            reference / "OSWEC_Nonhydro_Nonhydro_body2.csv", delimiter=",",
+        )
+        pto = np.loadtxt(
+            reference / "OSWEC_Nonhydro_Nonhydro_pto1.csv", delimiter=",",
+        )
+    else:
+        # The ordinary CI path uses the exact source trajectories archived
+        # from the pinned run, while still advancing the WEC independently.
+        with np.load(FIXTURE, allow_pickle=False) as source:
+            flap, base, pto = (source[key] for key in ("flap", "base", "pto"))
+    assert flap.shape == base.shape == pto.shape == (4001, 25)
     case = {
         "simulation": {"dt": 0.1, "end_time": 400, "ramp_time": 100},
         "wave": {"type": "regular", "height": 2.5, "period": 8},
@@ -44,13 +61,6 @@ def test_published_nonhydrodynamic_base_against_matlab():
                 "location": [0, 0, -8.9]},
     }
     response = run_case(case)
-    reference = Path(REFERENCE)
-    flap = np.loadtxt(
-        reference / "OSWEC_Nonhydro_Nonhydro_body1.csv", delimiter=",",
-    )
-    base = np.loadtxt(
-        reference / "OSWEC_Nonhydro_Nonhydro_body2.csv", delimiter=",",
-    )
     np.testing.assert_allclose(response.time, flap[:, 0], rtol=0, atol=1e-10)
     np.testing.assert_allclose(response.time, base[:, 0], rtol=0, atol=1e-10)
     for dof, label, position_limit, velocity_limit in (
@@ -72,9 +82,6 @@ def test_published_nonhydrodynamic_base_against_matlab():
     )
     np.testing.assert_allclose(
         response.body_velocity[:, 1, :], base[:, 7:13], rtol=0, atol=1e-10,
-    )
-    pto = np.loadtxt(
-        reference / "OSWEC_Nonhydro_Nonhydro_pto1.csv", delimiter=",",
     )
     _max_error(response.body_position[:, 0, 4], pto[:, 5], 0.007, "PTO angle")
     _max_error(response.body_velocity[:, 0, 4], pto[:, 11], 0.006,
