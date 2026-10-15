@@ -27,6 +27,70 @@ def _small_rotor():
     )
 
 
+def test_iea_blade_reader_preserves_geometry_and_distinct_airfoil_polars(tmp_path):
+    """File conversion must preserve the local blade geometry used by BEM."""
+    def write_table(name, rows, header_lines):
+        np.savetxt(
+            tmp_path / name, rows,
+            header="\n".join(["source header"] * header_lines), comments="",
+        )
+
+    # Raw blade radii are relative to the 3.94 m hub. Airfoil indices in the
+    # input are one-based, and adjacent stations use midpoint properties.
+    write_table("IEA-15-240-RWT_blade.dat", np.array([
+        [1, 0, 0, 0, 2, 1, 1],
+        [3, .2, 1, 10, 4, 3, 2],
+        [5, .4, 2, 20, 6, 5, 2],
+    ]), 6)
+    # The duplicate zero-angle row has deliberately different coefficients:
+    # source preprocessing retains the first occurrence for interpolation.
+    write_table("IEA-15-240-RWT_Airfoil_0.dat", np.array([
+        [-20, -1, .1, -.2],
+        [0, 0, .2, 0],
+        [0, 99, 99, 99],
+        [20, 1, .3, .2],
+    ]), 54)
+    write_table("IEA-15-240-RWT_Airfoil_1.dat", np.array([
+        [-20, 0, 0, -.1],
+        [0, .5, .05, 0],
+        [20, 1, .1, .1],
+    ]), 54)
+
+    model = MostBEM.from_iea15mw(tmp_path)
+    np.testing.assert_allclose(model.radius, [5.94, 7.94], rtol=0, atol=1e-12)
+    np.testing.assert_allclose(model.radius_interval, [2, 2], rtol=0, atol=0)
+    np.testing.assert_allclose([model.hub_radius, model.tip_radius],
+                               [4.94, 8.94], rtol=0, atol=1e-12)
+    np.testing.assert_allclose(model.twist, [3, 5], rtol=0, atol=0)
+    np.testing.assert_allclose(model.chord, [2, 4], rtol=0, atol=0)
+    np.testing.assert_allclose(model.curve_angle, np.deg2rad([5, 15]),
+                               rtol=0, atol=1e-15)
+    np.testing.assert_allclose(model.sweep, [.5, 1.5], rtol=0, atol=0)
+    np.testing.assert_allclose(model.curve, [.1, .3], rtol=0, atol=1e-15)
+    np.testing.assert_array_equal(model.airfoil_index, [0, 1])
+
+    angles = np.linspace(-20, 20, 4)
+    np.testing.assert_allclose(model.airfoil[:, 0, :],
+                               np.repeat(angles[:, None], 2, axis=1))
+    np.testing.assert_allclose(model.airfoil[:, 1, 0], angles / 20)
+    np.testing.assert_allclose(model.airfoil[:, 2, 0], .2 + angles / 200)
+    np.testing.assert_allclose(model.airfoil[:, 3, 0], angles / 100)
+    np.testing.assert_allclose(model.airfoil[:, 1, 1], .5 + angles / 40)
+    np.testing.assert_allclose(model.airfoil[:, 2, 1], .05 + angles / 400)
+
+    # At a 10-degree inflow angle, the first midpoint has 3 degrees of
+    # twist. Its interpolated polar therefore uses 7 degrees of attack.
+    phi = np.deg2rad(10)
+    lift, drag = 7 / 20, .2 + 7 / 200
+    normal, tangent, moment = model._coefficients(phi, 0, 0)
+    np.testing.assert_allclose(
+        [normal, tangent, moment],
+        [lift*np.cos(phi) + drag*np.sin(phi),
+         lift*np.sin(phi) - drag*np.cos(phi), 7 / 100],
+        rtol=0, atol=1e-14,
+    )
+
+
 def test_three_blade_bem_rotates_loads_cyclically_and_gains_thrust_with_wind():
     bem = _small_rotor()
     hub = np.zeros(14)
