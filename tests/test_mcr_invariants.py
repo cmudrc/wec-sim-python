@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from openpyxl import Workbook
 from scipy.io import savemat
 
 from wecsim.analysis.mcr import (
@@ -50,6 +51,31 @@ def test_mcr_excel_style_selection_and_mat_table_have_same_case_order(tmp_path):
     assert mcr_mat_file(mat) == selected
     with pytest.raises(ValueError, match="numbers"):
         mcr_wave_statistics([[0, 6], [1, "=2+2"]], [100])
+
+
+def test_mcr_excel_workbook_preserves_sea_state_order_and_rejects_formulas(tmp_path):
+    workbook = Workbook()
+    sheet = workbook.active
+    for row in ((None, 6, 8), (1.5, 3, 0), (2.5, 0, 7)):
+        sheet.append(row)
+    path = tmp_path / "waveStatistic.xlsx"
+    workbook.save(path)
+
+    # Positive interior cells select cases; their magnitudes are not weights.
+    assert mcr_wave_statistics(path, [1_200_000, 2_400_000]) == (
+        MCRCondition(1.5, 6, 1_200_000),
+        MCRCondition(2.5, 8, 1_200_000),
+        MCRCondition(1.5, 6, 2_400_000),
+        MCRCondition(2.5, 8, 2_400_000),
+    )
+
+    # A formula has no stable value without Excel recalculation. Reading the
+    # formula itself prevents a silently cached result from selecting a case.
+    sheet["B2"] = "=1+2"
+    workbook.save(path)
+    workbook.close()
+    with pytest.raises(ValueError, match="numbers, not formulas"):
+        mcr_wave_statistics(path, [1_200_000])
 
 
 def test_mcr_rejects_missing_or_duplicate_power_matrix_cells():
