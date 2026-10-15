@@ -32,4 +32,22 @@ imported.setup([0.3 1.5], 30, 0, 0.25, 15, recordTime, 9.7, 1000);
 writeParaviewWave(imported, 0.375, 3, 2, 2, 'Imported', 'pinned', ...
     0, importedOutput, 0.375, 9.7);
 writematrix(imported.waveAmpTime, fullfile(importedOutput, 'record.csv'));
+
+% Use the published RM3 MooringMatrix elevation file, not a generated sea.
+% Four frames probe the start, middle, and end of its 400 s application run.
+rm3 = waveClass('elevationImport');
+rm3Fixture = fullfile(pwd, 'tests', 'fixtures', 'matlab', ...
+    'rm3_mooring_matrix');
+rm3.elevationFile = fullfile(rm3Fixture, 'etaData.mat');
+rm3BemFreq = h5read(fullfile(rm3Fixture, 'rm3.h5'), ...
+    '/simulation_parameters/w');
+rm3Time = (0:40000)' * 0.01;
+rm3.setup(rm3BemFreq, 'infinite', 40, 0.01, 40000, rm3Time, 9.81, 1000);
+rm3Output = fullfile(output, 'rm3_mooring_matrix');
+mkdir(rm3Output);
+mkdir(fullfile(rm3Output, 'waves'));
+rm3Frames = [0 80 240 400];
+writeParaviewWave(rm3, rm3Frames, 4, 3, 4, 'RM3', 'pinned', ...
+    0, rm3Output, rm3Frames, 9.81);
+writematrix(rm3.waveAmpTime, fullfile(rm3Output, 'wave_amp_time.csv'));
 end
