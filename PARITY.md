@@ -1439,8 +1439,15 @@ and reconstructs its spatial surface with WEC-Sim's one-sided FFT and
 deep-water wavenumber. An analytic two-frequency test checks origin samples,
 heading, phase, gravity, and serialized VTP points. A separate pinned MATLAB
 wave-writer gate compares the resulting spatial VTP points within `1e-5` m
-and checks connectivity and offsets exactly. This is a paired synthetic sea;
-a published imported-elevation VTP history is not yet paired.
+and checks connectivity and offsets exactly. A second [fresh R2025b writer
+gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38809480268) uses
+the pinned published RM3 MooringMatrix `etaData.mat`, applies its 40 s ramp on
+the 0.01 s grid, and compares four selected surfaces at 0, 80, 240, and 400 s.
+All 40,001 imported elevation samples differ by at most `5.69e-14` m; all four
+VTP point arrays agree exactly at stored five-decimal precision, as do quad
+connectivity and offsets. This pairs the writer on a published sea input; it
+does not claim a full VTP history from the unchanged application or alter the
+motion-case badges.
 
 The MOST [wind-to-BEM source gate](https://github.com/cmudrc/wec-sim-python/actions/runs/37958579712)
 feeds three actual time-shifted frames from the pinned TurbSim excerpt into
