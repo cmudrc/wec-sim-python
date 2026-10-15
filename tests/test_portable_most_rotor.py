@@ -90,6 +90,22 @@ def test_iea_blade_reader_preserves_geometry_and_distinct_airfoil_polars(tmp_pat
         rtol=0, atol=1e-14,
     )
 
+    # The public source factory must use the same blade reader while placing
+    # the published tilted shaft and hub in the platform body frame.
+    rotor = MostRotor.from_iea15mw(tmp_path)
+    np.testing.assert_array_equal(rotor.bem.radius, model.radius)
+    tilt = np.deg2rad(6)
+    np.testing.assert_allclose(rotor.shaft_axis,
+                               [np.cos(tilt), 0, -np.sin(tilt)],
+                               rtol=0, atol=1e-15)
+    np.testing.assert_allclose(
+        rotor.hub_offset,
+        [-12.098 * np.cos(tilt), 0,
+         15 + 129.386 + 4.3495 + 12.098 * np.sin(tilt) + 14.4],
+        rtol=0, atol=1e-12,
+    )
+    assert rotor.inertia > 0
+
 
 def test_three_blade_bem_rotates_loads_cyclically_and_gains_thrust_with_wind():
     bem = _small_rotor()
