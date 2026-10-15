@@ -267,6 +267,21 @@ and the compact archive SHA-256 is
 Ordinary Python CI uses these files when live MATLAB output is unavailable;
 the same test uses fresh generated files when both source directories are set.
 
+`gbm_barge_preprocess.npz` completes the portable force-preprocessing gate. It
+stores the source's 10×2 regular-wave excitation coefficients and all 8,001
+body times and six rigid excitation-force channels as float64 without
+rounding. They come from `GBM_BARGE_excitation_coefficients.csv` (SHA-256
+`77bf64d8014b4d5ad2d968bc5cacc037c51af4ca667db8f9be85df43eeeddd20`)
+and `GBM_BARGE_Barge_body1.csv` (SHA-256
+`666e42a9c6ce0e01e12dc6a35b20d542f7531682a2882b41b29b209f98721ecf`)
+in the same pinned source artifact. The archive SHA-256 is
+`fae0ae0ce2dccf00a22fe27bd48173459beee515b7aeb9e52a5c645c6bcc36b9`.
+`test_gbm_source_parity.py` now checks the flexible effective mass,
+stiffness, damping, ten-DOF restoring, applied added mass, radiation damping,
+excitation coefficients, and logged rigid excitation in ordinary CI. This is
+hydrodynamic preprocessing on the published input; the independent 400 s
+motion gate remains in `test_gbm_motion_parity.py`.
+
 ## OWC OrificeModel physical prefix
 
 The separate [10 s local MaxStep audit](owc_orifice_maxstep_10s/README.md)
