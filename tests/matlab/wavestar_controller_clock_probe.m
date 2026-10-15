@@ -1,13 +1,18 @@
-function wavestar_controller_clock_probe(end_time)
-% Hold the NMPC clock at 50 ms while the ode8 plant runs at 25 ms.
+function wavestar_controller_clock_probe(end_time, plant_step)
+% Hold the NMPC clock at 50 ms while auditing 25 or 50 ms ode8 plant steps.
 % Work only in a disposable copy of the pinned application. This is a
 % source-timing diagnostic, not a published-case motion-parity gate.
 if nargin == 0
     end_time = 15.2;
 end
+if nargin < 2
+    plant_step = 0.025;
+end
 assert(isnumeric(end_time) && isscalar(end_time) && isfinite(end_time) ...
     && end_time > 0 && abs(end_time / 0.05 - round(end_time / 0.05)) < 1e-9, ...
     'The requested end time must be a positive multiple of 50 ms');
+assert(isscalar(plant_step) && any(abs(plant_step - [0.025, 0.05]) < 1e-12), ...
+    'The audited plant step must be 25 or 50 ms');
 repo = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 source = fullfile(repo, 'applications', 'WECCCOMP');
 scratch = fullfile(repo, 'wavestar-controller-clock-work');
@@ -30,7 +35,7 @@ assert(contains(input, 'simu.dt             = 50/1000;') && ...
     contains(input, 'simu.cicEndTime     = 2;'), ...
     'The pinned WaveStar timing inputs changed');
 input = strrep(input, 'simu.dt             = 50/1000;', ...
-    sprintf('simu.dt             = 0.025;\nsimu.dtOut = 0.05;'));
+    sprintf('simu.dt             = %.12g;\nsimu.dtOut = 0.05;', plant_step));
 input = strrep(input, 'simu.cicEndTime     = 2;', ...
     sprintf('simu.endTime = %.12g;\n    simu.cicEndTime     = 2;', end_time));
 for name = ["Float", "Arm", "Frame", "BC", "Motor"]
@@ -96,7 +101,7 @@ for iFilter = 1:numel(filters)
     end
 end
 wecSim;
-assert(strcmp(simu.solver, 'ode8') && abs(simu.dt - 0.025) < 1e-12 ...
+assert(strcmp(simu.solver, 'ode8') && abs(simu.dt - plant_step) < 1e-12 ...
     && abs(simu.dtOut - 0.05) < 1e-12 && simu.endTime == end_time, ...
     'The source solver or output settings changed');
 
@@ -107,13 +112,13 @@ assert(numel(commandTime) == numel(command) && ...
     all(isfinite(commandTime)) && all(isfinite(command)), ...
     'The source command trace is invalid');
 output_count = round(end_time / 0.05) + 1;
-plant_count = round(end_time / 0.025) + 1;
+plant_count = round(end_time / plant_step) + 1;
 if numel(commandTime) == output_count
     assert(max(abs(commandTime - (0:0.05:end_time)')) < 1e-9, ...
         'The 50 ms controller output grid changed');
 elseif numel(commandTime) == plant_count
-    assert(max(abs(commandTime - (0:0.025:end_time)')) < 1e-9, ...
-        'The 25 ms controller output grid changed');
+    assert(max(abs(commandTime - (0:plant_step:end_time)')) < 1e-9, ...
+        'The plant-step controller output grid changed');
     % Logging may occur on every plant step; the held command must not.
     middle = commandTime(2:2:end) >= 10;
     updates = abs(command(2:2:end) - command(1:2:end-1));
@@ -140,8 +145,8 @@ writematrix([waves.omega(:), waves.amplitude(:), waves.dOmega(:), ...
     waves.phase(:)], fullfile(out, 'components.csv'));
 writematrix([output.wave.time(:), output.wave.elevation(:)], ...
     fullfile(out, 'wave.csv'));
-fprintf('CLOCK_PROBE_PASSED endTime=%g commandSamples=%d plantStep=0.025 controllerStep=0.05\n', ...
-    end_time, numel(commandTime));
+fprintf('CLOCK_PROBE_PASSED endTime=%g commandSamples=%d plantStep=%g controllerStep=0.05\n', ...
+    end_time, numel(commandTime), plant_step);
 close_system('WaveStar', 0);
 end
 

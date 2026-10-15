@@ -31,7 +31,7 @@ def _gap(first, second):
 
 
 @pytest.mark.skipif(not SOURCE, reason="fresh held-clock MATLAB run absent")
-def test_full_held_clock_separates_plant_step_from_controller_cadence():
+def test_full_held_clock_measures_source_and_python_differences():
     with np.load(BASELINE, allow_pickle=False) as saved:
         published = {name: saved[name].copy() for name in saved.files}
     body = _source("float")
