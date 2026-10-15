@@ -27,16 +27,23 @@ The fixed-input 9.95 s WaveStar internal-step diagnosis is documented in
 
 ## Wave-class outputs
 
-`wave_reference.zip` contains 36 numerical CSVs and `matlab_release.txt` from
+`wave_reference.zip` contains 44 numerical CSVs and `matlab_release.txt`. The
+original 36 CSVs came from
 the successful [R2025b wave-source run](https://github.com/cmudrc/wec-sim-python/actions/runs/38324036361)
 (run commit `fcec46b15eab1bc3f8e461aedde6ac7ebf0c7212`). The workflow pins
 WEC-Sim core `0753b2e47f2457c078751dcfe5d251d1767b80ab`; regenerate the
 files with `tests/matlab/regular_wave_reference.m`. A separate local R2025b
-Update 7 run produced numerical arrays exactly equal to all 36 archived CSVs.
+Update 7 run produced numerical arrays exactly equal to all 36 original CSVs.
+The same local release and pinned core produced eight additional CSVs for the
+automatic JONSWAP peak-factor branches: H=9 m selects gamma=5, and H=1 m
+selects gamma=1 at T=8 s. A fresh run of the updated script reproduced all
+eight additions byte for byte. The existing H=4 m case covers the middle
+branch.
 The ZIP SHA-256 is
-`d9ceb5e28daa572fd2bd05341c9782728df53e408089e457dc3bc7900fdc0668`.
+`edd6b937ec94074589c41b2f3bda1d41d02cb134864003c531ebb30257cb77d7`.
 Ordinary Python CI checks regular and finite-depth waves and six PM/JONSWAP
-spectral, phase, power, and marker-output configurations against the archive.
+spectral, phase, power, and marker-output configurations against the archive,
+plus both automatic-gamma branches through the public `WEC.run` wave output.
 Set `WEC_SIM_MATLAB_REFERENCE_DIR` to use fresh MATLAB outputs for the same
 tests. These are wave-preprocessing checks, not published coupled-motion gates.
 

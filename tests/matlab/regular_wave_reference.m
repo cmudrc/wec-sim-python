@@ -78,6 +78,30 @@ for spectrum = ["PM", "JS"]
     end
 end
 
+% Exercise the two constant branches of WEC-Sim's automatic JS peak factor.
+% The existing height=4 comparison covers the interpolated middle branch.
+for height = [9, 1]
+    irregular = waveClass('irregular');
+    irregular.period = 8;
+    irregular.height = height;
+    irregular.spectrumType = 'JS';
+    irregular.bem.option = 'EqualEnergy';
+    irregular.bem.range = [0.4, 2.0];
+    irregular.bem.count = 64;
+    irregular.phaseSeed = 1;
+    irregular.setup([0.4, 2.0], 'infinite', 1, 0.1, 20, ...
+        (0:0.1:2)', 9.81, 1000);
+    label = sprintf('js_auto_height_%g', height);
+    writematrix([irregular.omega, irregular.dOmega, irregular.spectrum], ...
+        fullfile(outputDir, sprintf('%s_bins.csv', label)));
+    writematrix(irregular.phase, ...
+        fullfile(outputDir, sprintf('%s_phase.csv', label)));
+    writematrix(irregular.waveAmpTime, ...
+        fullfile(outputDir, sprintf('%s_elevation.csv', label)));
+    writematrix(irregular.gamma, ...
+        fullfile(outputDir, sprintf('%s_gamma.csv', label)));
+end
+
 fid = fopen(fullfile(outputDir, 'matlab_release.txt'), 'w');
 fprintf(fid, '%s\n', version('-release'));
 fclose(fid);
