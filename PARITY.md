@@ -988,6 +988,18 @@ qualified and its badge count is unchanged.
 MATLAB's own `0.01`-to-`0.005` s source change becomes large by 250 s, and a
 250 s quarter-step source run remains beyond the current GitHub job budget.
 Neither 250 s source convergence nor native 600 s motion parity is established.
+An [ordinary-CI 140 s public `WEC.run` gate](tests/test_variable_yaw_140s_portable.py)
+now independently checks the physical-default selected-heading motion against
+the source-stable quarter-step prefix, using the pinned 40 s OSWEC BEMIO
+fixture. The published 600 s source artifact's common HDF5 has the same 68
+datasets and attributes as that fixture, with at most `2.16e-15`
+peak-relative differences in four impulse-response arrays; all other values
+agree exactly. The paired 140 s maxima are `8.65e-5` rad yaw,
+`1.51e-5` rad/s yaw speed, `1.81` N m PTO torque, and `0.0199%` relative PTO
+work, below the predeclared 120/140 s limits. Wave elevation agrees within
+`4.77e-14` m. This keeps a useful independent prefix from regressing but
+does not change the 160 s source-stability failure or establish the
+published 600 s irregular-motion gate; the case and badge remain unchanged.
 
 The [RM3 MoorDyn visualization force export](https://github.com/cmudrc/wec-sim-python/actions/runs/38085085794)
 records acceleration, excitation, radiation, added mass, restoring, Morison,

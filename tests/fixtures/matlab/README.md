@@ -690,6 +690,22 @@ the unchanged Python/source limits, while MATLAB's own step stability failed.
 The always-on diagnostic recomputes the source side of that boundary from
 the saved trajectories. This is not a published-case parity gate.
 
+The independent 140 s physical-default `WEC.run` comparison now runs in
+ordinary Python CI against the source-stable part of this archive. It reuses
+the 40 s BEMIO HDF5 from the [published OSWEC two-sea fixture](oswec_multi_wave/README.md).
+The [published 600 s variable-yaw source artifact](https://github.com/cmudrc/wec-sim-python/actions/runs/38411605074)
+contains its common OSWEC HDF5 (SHA-256
+`b1b960d1eefc5053bab549ab8750fca7b49bf6226c2e198b42fa36cc1cc3b6ed`).
+All 68 datasets and their attributes have the same names, shapes, and types
+as the reusable fixture. Their values agree exactly except four impulse-response
+arrays, whose maximum absolute difference is `4.01e-11` and maximum
+peak-relative difference is `2.16e-15`. The 140 s Python run matches source
+wave elevation within `4.77e-14` m, yaw within `8.65e-5` rad, yaw speed within
+`1.51e-5` rad/s, PTO torque within `1.81` N m, and integrated PTO work within
+`0.0199%`, below the unchanged 120/140 s limits. MATLAB's own quarter-step
+self-change fails those limits by 160 s, so this remains a bounded prefix
+comparison rather than a 600 s published-input parity gate.
+
 ## OSWEC directional irregular wave
 
 `oswec_irregular_wave.npz` keeps all 4,001 samples of the published 400 s
