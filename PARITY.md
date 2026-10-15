@@ -666,13 +666,15 @@ the irregular published case remains qualified. For each other
 qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
-stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 83% as displayed by CI. The latest rise shares the production
-PM/JONSWAP component parser with the fixed-hinge path and gates its public
+stop repeating that comparison. The last test-driven coverage rise to 83%
+shared the production PM/JONSWAP component parser with the fixed-hinge path
+and gated its public
 equal-energy wave preprocessing against pinned MATLAB phases and elevation.
 These short wave checks do not add a published-case gate. Raise coverage with
 behavior and numerical invariants, including portable full-duration gates for
-already paired cases. Do not add tests written only to execute lines.
+already paired cases. Do not add tests written only to execute lines. The
+subsequent removal of unused legacy wave-reporting methods changes the coverage
+denominator; its badge increase does not represent newly tested dynamics.
 
 The published 250 s OSWEC `PassiveYawRegression` opt-in source-numerical
 comparison now runs in ordinary Python CI for all three seeds. It generates
