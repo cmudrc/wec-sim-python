@@ -267,49 +267,7 @@ class WaveClass:
             self.typeNum = 21
         elif self.wType == 'etaImport': #Waves with imported wave elevation time-history
             self.typeNum = 30
-        
-    def plotEta(self, *rampTime):
-        """
-        Plot wave elevation time-history
-        This method is for our visual understanding. 
-        Does not get used in any method
-        rampTime input argument is optional
 
-        """
-        import matplotlib.pyplot as plt
-        plt.figure(figsize=(10,8))
-        plt.plot(self.waveAmpTime[0],self.waveAmpTime[1])
-        plt.title('Wave Surfave Elevation')
-        if np.size(rampTime) == 1: # If ramptime is given we can specify it but will generate similar graph
-            plt.plot(np.array(rampTime),np.array(1.5*min(self.waveAmpTime[1]),1.5*max(self.waveAmpTime[1])))
-            plt.title(['Wave Surfave Elevation, Ramp Time ' + str(rampTime) +' (s)'])
-        plt.xlabel('Time (s)')
-        plt.ylabel('Eta (m)')
-    
-    def plotSpectrum(self):
-        """
-        Plot wave spetrum
-        This method is for our visual understanding. 
-        Does not get used in any method
-
-        """
-        import matplotlib.pyplot as plt
-        m0 = integrate.trapezoid(self.S, x=self.w)
-        HsTest = 4*np.sqrt(m0)
-        I = np.argmax(np.abs(self.S))
-        wp = self.w[I]
-        TpTest = 2*np.pi/wp
-        plt.figure(figsize=(10,8))
-        plt.plot(self.w,self.S,'s-')
-        plt.plot(wp,np.array(max(self.S)))
-        plt.xlim([0, max(self.w)])
-        plt.title([self.spectrumType, ' Spectrum, T_p= ' + str(TpTest) + ' [s], H_m_0= ' + str(HsTest) + ', [m]'])
-        if self.spectrumType == 'JS':
-            plt.title([self.spectrumType, ' Spectrum, T_p= ' + str(TpTest) + ' [s], H_m_0= ' + str(HsTest) + ', [m], gamma = ' + str(self.gamma)])
-        
-        plt.xlabel('Frequency (rad/s)')
-        plt.ylabel('Spectrum (m^2-s/rad)')
-        
     def waveSetup(self,bemFreq,wDepth,rampTime,dt,maxIt,g,rho,endTime):
         """
         Set up wave for all wave type. Input parameters are from simulationClass.py
@@ -742,77 +700,7 @@ class WaveClass:
             for i in range(maxRampIT+1):
                 self.waveAmpTime[0][i] = t[i]
                 self.waveAmpTime[1][i] *= (1+np.cos(np.pi+np.pi*(i)/maxRampIT))/2
-  
-    def listInfo(self):
-        """
-        List wave info
 
-        """
-        print('\n Wave Environment: \n')
-        if self.wType == 'noWave':
-            print('\tWave Type                            = No Wave (Constant Hydrodynamic Coefficients)\n')
-            print('\tHydro Data Wave Period, T (sec)    	= {:f}\n'.format(self.T))
-        if self.wType == 'regular':
-            print('\tWave Type                            = Regular Waves (Constant Hydrodynamic Coefficients)\n')
-            print('\tWave Height, H (m)                   = {:f}\n'.format(self.H))
-            print('\tWave Period, T (sec)                 = {:f}\n'.format(self.T))
-        if self.wType == 'noWaveCIC':
-            print('\tWave Type                            = No Wave (Convolution Integral Calculation)\n')
-        if self.wType == 'regularCIC':
-            print('\tWave Type                            = Regular Waves (Convolution Integral Calculation)\n')
-            print('\tWave Height, H (m)                   = {:f}\n'.format(self.H))
-            print('\tWave Period, T (sec)                 = {:f}\n'.format(self.T))
-        if self.wType == 'irregular':
-            if self.phaseSeed == 0:
-                print('\tWave Type                            = Irregular Waves (Arbitrary Random Phase)\n')
-            else:
-                print('\tWave Type                            = Irregular Waves (Predefined Random Phase)\n')
-            self.printWaveSpectrumType
-            print('\tSignificant Wave Height, Hs      (m) = {:f}\n'.format(self.H))
-            print('\tPeak Wave Period, Tp           (sec) = {:f}\n'.format(self.T))
-        if self.wType == 'spectrumImport':
-            if np.size(np.loadtxt(self.spectrumDataFile),1) == 3:
-                print('\tWave Type                            = Irregular waves with imported wave spectrum (Imported Phase)\n')
-            elif self.phaseSeed == 0:
-                print('\tWave Type                            = Irregular waves with imported wave spectrum (Random Phase)\n')
-            else:
-                print('\tWave Type                            = Irregular waves with imported wave spectrum (Seeded Phase)\n')
-            self.printWaveSpectrumType
-        if self.wType == 'etaImport':
-            print( '\tWave Type                           = Waves with imported wave elevation time-history\n')
-            print(['\tWave Elevation Time-Series File    	= ' + self.etaDataFile + '  \n'])
-                     
-    def checkinputs(self):
-        """
-        Check user inputs
-
-        """
-        # 'noWave' period undefined for hydro data
-        if (self.wType == 'noWave') and (self.T == 'NOT DEFINED'):
-            warnings.warn('"waves.T" must be defined for the hydrodynamic data period when using the "noWave" wave type',DeprecationWarning)
-        # spectrumDataFile defined for 'spectrumImport' case
-        if (self.wType == 'spectrumImport') and (self.spectrumDataFile == 'NOT DEFINED'):
-            warnings.warn('The spectrumDataFile variable must be defined when using the "spectrumImport" wave type',DeprecationWarning)
-        # check waves types
-        types = ['noWave', 'noWaveCIC', 'regular', 'regularCIC', 'irregular', 'spectrumImport', 'etaImport']
-        if [1 for x in types if x == self.wType] != [1]:
-            warnings.warn('Unexpected wave environment type setting, choose from: ' \
-                    '"noWave", "noWaveCIC", "regular", "regularCIC", "irregular", "spectrumImport", and "etaImport".',DeprecationWarning)
-            
-    def printWaveSpectrumType(self):
-        """
-        Lists the wave spectrum type
-
-        """
-        if self.spectrumType == 'BS':
-            print('\tSpectrum Type                        = Bretschneider \n')
-        elif self.spectrumType == 'JS':
-            print('\tSpectrum Type                        = JONSWAP \n')
-        elif self.spectrumType == 'PM':
-            print('\tSpectrum Type                        = Pierson-Moskowitz  \n')
-        elif self.spectrumType == 'spectrumImport':
-            print('\tSpectrum Type                        = Imported Spectrum \n')
-            
 def arange_MATLAB(start, end, step):
     """
     Change np.arange to have same sequence as MATLAB when step is float
