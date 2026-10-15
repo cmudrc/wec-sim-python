@@ -988,7 +988,7 @@ qualified and its badge count is unchanged.
 MATLAB's own `0.01`-to-`0.005` s source change becomes large by 250 s, and a
 250 s quarter-step source run remains beyond the current GitHub job budget.
 Neither 250 s source convergence nor native 600 s motion parity is established.
-An [ordinary-CI 140 s public `WEC.run` gate](tests/test_variable_yaw_160_source_diagnostic.py)
+An [ordinary-CI 140 s public `WEC.run` gate](tests/test_variable_yaw_140s_portable.py)
 now independently checks the physical-default selected-heading motion against
 the source-stable quarter-step prefix, using the pinned 40 s OSWEC BEMIO
 fixture. The published 600 s source artifact's common HDF5 has the same 68
