@@ -256,6 +256,12 @@ the same test uses fresh generated files when both source directories are set.
 
 ## OWC OrificeModel physical prefix
 
+The separate [10 s local MaxStep audit](owc_orifice_maxstep_10s/README.md)
+holds the source input and output grid fixed while halving only `ode23t`'s
+internal maximum step. It keeps both source traces and an independent public
+Python force-route comparison in ordinary CI; the published 130 s physical
+coupled case remains qualified.
+
 `owc_orifice.h5` is the exact seven-DOF BEMIO output from the successful
 [R2025b source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37799665808)
 (`matlab-OWC_ORIFICE-baseline`, commit

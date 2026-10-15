@@ -169,6 +169,22 @@ isolates a source-to-source motion sensitivity that still needs a causal
 explanation; it neither changes the qualified OWC status nor establishes a
 Python defect.
 
+A [controlled 10 s local OWC MaxStep audit](tests/fixtures/matlab/owc_orifice_maxstep_10s/README.md)
+keeps that pinned application, HDF5, 500-component seed-128 sea, `simu.dt`,
+0.005 s output grid, and `ode23t` solver fixed while halving only its
+internal `MaxStep` from 0.005 to 0.0025 s. The waves and components are
+bit-identical. MATLAB changes surge by up to 6.141 mm, heave by 0.586 mm,
+physical orientation by 0.005850 rad, flexible displacement by 0.1915 mm,
+and flexible speed by 2.047 mm/s; all predeclared 0.1 mm or 0.1 mm/s
+motion-stability limits fail. Against the half-step source, independent
+public Python `WEC.run` with the explicit published force route differs by
+6.691 mm surge, 1.063 mm heave, 0.005929 rad pitch, and 0.2421 mm flexible
+displacement over 10 s. The physical coupled route still differs by
+82.15 mm heave and 20.94 mm flexible displacement. This separates a
+solver-step contribution to surge/pitch from the larger piston-force-routing
+gap. It does not establish source step convergence, fix the 130 s coupled
+case, or change badge counts.
+
 A [local 0.05 s OWC custom-mass check](tests/fixtures/matlab/owc_orifice_custom_mass/README.md)
 isolates the rigid weight/buoyancy force with a 100 kg mass increase and a
 negligible incident sea. MATLAB reaches -0.534 mm heave and -12.87 mm/s

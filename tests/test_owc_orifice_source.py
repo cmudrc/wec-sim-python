@@ -172,8 +172,9 @@ def test_published_owc_wave_and_seventh_excitation_channel():
                _load("hydrostatic_stiffness"), 1e-9,
                "hydrostatic stiffness")
 
-    # The source flexible state equation applies the orifice reaction in
-    # addition to its logged hydrodynamic force balance.
+    # The source-reported flexible acceleration includes the orifice reaction.
+    # Its state-space velocity derivative follows the hydrodynamic input
+    # without that reaction; the two paths are distinguished in PARITY.md.
     total = flexible[:, 3]
     hydro_terms = flexible[:, 4:]
     _max_error(total, hydro_terms[:, 0] - hydro_terms[:, 1:].sum(axis=1),
