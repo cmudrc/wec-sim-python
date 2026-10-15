@@ -1960,11 +1960,27 @@ more than `1e-6` N m. Even at the common 50 ms ticks, the torque request
 differs from the published source by up to `14.71` N m (`1.85` N m RMS),
 and reported final energy changes from `129.49` to `95.86` J. These measured
 changes cannot be attributed to the plant integrator alone because the
-controller command is not held across the original 50 ms grid. The source
-assertion ran before body/PTO export, so this audit does not quantify their
-full-duration self-change. The published controlled motion remains open;
-the earlier 9.95 s precontrol solver-step result does not extend through
-controller activation.
+controller command is not held across the original 50 ms grid. That run's
+assertion stopped before body/PTO export. The published controlled motion
+remains open; the earlier 9.95 s precontrol solver-step result does not extend
+through controller activation.
+
+A [follow-up full-duration source export](https://github.com/cmudrc/wec-sim-python/actions/runs/38706528549)
+removed only that premature assertion. It rechecked the same 500 sea
+components, all 4,501 wave samples, and every generated HDF5 dataset against
+the pinned input, and reproduced the previous 25 ms precontrol trace. The
+new source body history has 4,501 samples at 50 ms; its PTO and controller
+histories have 9,001 samples at 25 ms. At common 50 ms ticks, the 25 ms
+source differs from the published 50 ms source over 225 s by at most
+`0.16510` rad float pitch (`0.02546` rad RMS), `1.18712` rad/s pitch speed
+(`0.12074` rad/s RMS), and `71.62` N axial PTO force (`9.10` N RMS).
+Mechanical PTO work changes by `20.13%` and the source's reported final
+energy by `25.98%`. These are MATLAB self-changes under a **combined solver
+and controller-cadence change**, not Python errors or a plant-only step
+convergence test. They exceed the earlier independent Python/published
+`0.04110` rad maximum pitch gap, but cannot establish which controller or
+plant effect dominates after activation. The published NMPC case remains
+`open_motion`; its badge count does not change.
 
 A bounded [hosted 25 ms `ode8` controller-clock probe](https://github.com/cmudrc/wec-sim-python/actions/runs/38631235118)
 then made the command-producing controller subsystem atomic at its published
