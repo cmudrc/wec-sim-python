@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from xml.etree import ElementTree
 
+import h5py
 import numpy as np
 import pytest
 
@@ -97,12 +98,13 @@ def test_published_rm3_imported_wave_vtp_against_pinned_matlab(tmp_path):
     """The published MooringMatrix sea also produces the source wave surface."""
     reference = Path(REFERENCE) / "rm3_mooring_matrix"
     wave = WaveClass("etaImport")
-    wave.etaDataFile = str(
-        Path(__file__).parent / "fixtures/matlab/rm3_mooring_matrix/etaData.mat"
-    )
-    wave.waveDir = [0]
-    wave.waterDepth = 30
-    wave.waveSetup([.3, 1.5], 30, 40, .01, 40000, 9.81, 1000, 400)
+    fixture = Path(__file__).parent / "fixtures/matlab/rm3_mooring_matrix"
+    wave.etaDataFile = str(fixture / "etaData.mat")
+    with h5py.File(fixture / "rm3.h5") as hydro:
+        bem_frequency = hydro["simulation_parameters/w"][:].ravel()
+        assert hydro["simulation_parameters/water_depth"][()] == b"infinite"
+    wave.waveSetup(bem_frequency, "infinite", 40, .01, 40000, 9.81, 1000, 400)
+    assert wave.waterDepth == 200
 
     source_record = np.loadtxt(reference / "wave_amp_time.csv", delimiter=",")
     np.testing.assert_allclose(
