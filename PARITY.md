@@ -130,6 +130,14 @@ This preserves the existing 400 s numerical limits without a fresh MATLAB
 run. It is a durable check for an already counted case; badge counts stay the
 same.
 
+A bounded [local R2025b still-water check](tests/fixtures/matlab/gbm_custom_mass/README.md)
+also varies the barge mass from its 4,000,000 kg equilibrium value to
+4,100,000 kg. MATLAB heave reaches -51.95 mm after 1 s. The public Python GBM
+solver now includes the constant weight/buoyancy imbalance; its 1 s heave and
+speed histories differ from MATLAB by at most 2.85 mm and 7.99 mm/s. This
+tests a configurable-mass behavior outside the published input and leaves
+published-case badge counts unchanged.
+
 The published OWC OrificeModel's first 6 s now runs in ordinary Python CI
 from the [exact archived seven-DOF HDF5 and published phase seed](tests/fixtures/matlab/README.md).
 Python's MATLAB-compatible Threefry generator pairs all 500 phases with the
