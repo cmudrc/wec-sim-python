@@ -4,22 +4,34 @@ import os
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from wecsim.hydrodynamics.bodyClass import BodyClass
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (APPLICATIONS and REFERENCE),
-    reason="generated MATLAB GBM barge output and HDF5 absent",
-)
+FIXTURES = Path(__file__).parent / "fixtures/matlab"
+FRESH = bool(APPLICATIONS and REFERENCE)
 
 
 def _load(name):
-    return np.loadtxt(Path(REFERENCE) / f"GBM_BARGE_{name}.csv",
-                      delimiter=",", ndmin=2)
+    if FRESH:
+        return np.loadtxt(Path(REFERENCE) / f"GBM_BARGE_{name}.csv",
+                          delimiter=",", ndmin=2)
+    archive = ("gbm_barge_preprocess.npz" if name == "excitation_coefficients"
+               else "gbm_barge.npz")
+    key = "coefficients" if name == "excitation_coefficients" else name
+    with np.load(FIXTURES / archive) as saved:
+        return saved[key]
+
+
+def _logged_excitation():
+    if FRESH:
+        body = _load("Barge_body1")
+        assert body.shape == (8001, 49)
+        return body[:, 0], body[:, 19:25]
+    with np.load(FIXTURES / "gbm_barge_preprocess.npz") as saved:
+        return saved["body_time"], saved["rigid_excitation"]
 
 
 def _max_error(actual, expected, limit, label):
@@ -30,8 +42,9 @@ def _max_error(actual, expected, limit, label):
 
 
 def test_barge_ten_dof_bem_and_flexible_matrices():
-    hydro = (Path(APPLICATIONS)
-             / "Generalized_Body_Modes/hydroData/barge.h5").resolve()
+    hydro = ((Path(APPLICATIONS)
+              / "Generalized_Body_Modes/hydroData/barge.h5").resolve()
+             if FRESH else FIXTURES / "gbm_barge.h5")
     body = BodyClass(str(hydro))
     body.bodyNumber = body.bodyTotal = 1
     body.readH5file()
@@ -64,11 +77,12 @@ def test_barge_ten_dof_bem_and_flexible_matrices():
     assert np.any(np.abs(coefficients[6:]) > 1), "flexible excitation missing"
     assert gbm["state_space"]["A"].shape == (8, 8)
 
-    reference_body = _load("Barge_body1")
+    body_time, rigid_excitation = _logged_excitation()
     wave = _load("wave")
-    assert reference_body.shape == (8001, 49)
+    assert body_time.shape == (8001,)
+    assert rigid_excitation.shape == (8001, 6)
     assert wave.shape == (8001, 2)
-    _max_error(reference_body[:, 0], wave[:, 0], 1e-10, "time grid")
+    _max_error(body_time, wave[:, 0], 1e-10, "time grid")
     time = wave[:, 0]
     ramp = np.ones_like(time)
     early = time < 100
@@ -79,5 +93,5 @@ def test_barge_ten_dof_bem_and_flexible_matrices():
         np.cos(2 * np.pi * time[:, None] / 8) * coefficients[:, 0]
         - np.sin(2 * np.pi * time[:, None] / 8) * coefficients[:, 1]
     )
-    _max_error(excitation[:, :6], reference_body[:, 19:25], 1e-5,
+    _max_error(excitation[:, :6], rigid_excitation, 1e-5,
                "logged rigid excitation")
