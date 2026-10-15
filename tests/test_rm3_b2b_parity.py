@@ -7,6 +7,7 @@ import sys
 import numpy as np
 
 import pytest
+from scipy.integrate import trapezoid
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -94,6 +95,6 @@ def test_public_rm3_regular_body_to_body_against_matlab(case, b2b):
     # MATLAB reports mechanical PTO output with the opposite sign to Python's
     # absorbed-power channel. Integrate both to catch a persistent bias.
     assert np.max(np.abs(pto.absorbed_power + expected_pto[:, 21])) < 8_000
-    source_work = -np.trapezoid(expected_pto[:, 21], x=response.time)
-    python_work = np.trapezoid(pto.absorbed_power, x=response.time)
+    source_work = -trapezoid(expected_pto[:, 21], x=response.time)
+    python_work = trapezoid(pto.absorbed_power, x=response.time)
     assert abs(python_work - source_work) / source_work < .01
