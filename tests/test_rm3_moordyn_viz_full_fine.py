@@ -132,4 +132,26 @@ def test_full_duration_refined_source_and_python_motion(tmp_path):
     source = _read(fine, "pto")
     _compare(result.ptos["relative_heave"].force[indices], source[:, 15],
              2000, "Python versus fine source PTO force", failures)
+    # Net connection force can hide compensating changes in the three
+    # lines. Check each native fairlead output on the same 0.01 s grid.
+    coarse_fairlead, fine_fairlead = (_read(prefix, "fairlead")
+                                    for prefix in (coarse, fine))
+    assert coarse_fairlead.shape == fine_fairlead.shape == (8001, 4)
+    _compare(coarse_fairlead[:, 0], fine_wave[:, 0], 1e-8,
+             "coarse source fairlead time", failures)
+    _compare(fine_fairlead[:, 0], fine_wave[:, 0], 1e-8,
+             "fine source fairlead time", failures)
+    native_fairlead = np.loadtxt(lines.with_suffix(".out"), skiprows=1,
+                                ndmin=2)
+    assert native_fairlead.shape[0] == len(result.time)
+    assert native_fairlead.shape[1] >= 4
+    assert np.isfinite(native_fairlead).all()
+    _compare(native_fairlead[indices, 0], fine_wave[:, 0], 1e-8,
+             "Python fairlead time", failures)
+    for line in range(1, 4):
+        _compare(coarse_fairlead[:, line], fine_fairlead[:, line], 1500,
+                 f"source step change line {line} fairlead tension", failures)
+        _compare(native_fairlead[indices, line], fine_fairlead[:, line], 4000,
+                 f"Python versus fine source line {line} fairlead tension",
+                 failures)
     assert not failures, "; ".join(failures)
