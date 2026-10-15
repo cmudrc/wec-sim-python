@@ -152,6 +152,15 @@ The archive contains `time`, `pose`, `velocity`, `acceleration`,
 `63f3669b192ab271a92f5ea9c4650d1d183ef68f0abc4a6b0faedcd2b4948e4f`.
 The refined-step source job gates its 0.1 s run against these published
 channels before evaluating step sensitivity or independent Python motion.
+`oswec_nonlinear_viz_collection.zip` preserves the same source run's exact
+`vtp_samples/OSWEC.pvd` and `bodies.txt` (source SHA-256
+`49a012df7d1c4e64bb00b4e30b84ccbb76efc619b7743fc39db4e35c1fdf0b06`
+and `8bad4e93b54fc92251f4cd3d61b5ec713f60dead5ab6c75bc8ece4abe67b9d10`).
+The ZIP SHA-256 is
+`0c2b2b594fe1b9e2779f3cdb4e04c70d11d9acb60a52cfb3a228932391cff7d1`.
+The portable test compares the full 3,603-entry collection and body display
+manifest in ordinary Python CI. This checks ParaView collection metadata;
+the live source workflow separately checks the referenced VTP frames.
 The motion archive does not contain hydrodynamic coefficients. The pinned
 [refinement artifact](https://github.com/cmudrc/wec-sim-python/actions/runs/38093454463)
 supplies its matching `oswec.h5` (SHA-256
