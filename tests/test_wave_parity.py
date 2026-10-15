@@ -41,6 +41,31 @@ def test_regular_wave_matches_matlab_fixture():
         np.testing.assert_allclose(getattr(wave, attribute), expected, rtol=0, atol=1e-12)
 
 
+def test_zero_ramp_directional_gauges_match_current_matlab():
+    """Zero ramp and finite depth keep the spatial phase at each marker."""
+    wave = WaveClass("regular")
+    wave.T = 8
+    wave.H = 2.5
+    wave.waveDir = [30]
+    wave.wavegauge1loc = [4, 0]
+    wave.wavegauge2loc = [0, 5]
+    wave.wavegauge3loc = [-3, 2]
+    wave.waveSetup([0.4, 2], 25, 0, 0.1, 20, 9.81, 1000, 2)
+
+    source = np.loadtxt(
+        ROOT / "tests/fixtures/matlab/zero_ramp_regular_gauges.csv",
+        delimiter=",",
+    )
+    assert source.shape == (21, 5)
+    np.testing.assert_allclose(source[:, 0], np.arange(21) * 0.1,
+                               rtol=0, atol=1e-14)
+    actual = np.column_stack((
+        wave.waveAmpTime[0], wave.waveAmpTime[1],
+        wave.waveAmpTime1[1], wave.waveAmpTime2[1], wave.waveAmpTime3[1],
+    ))
+    np.testing.assert_allclose(actual, source, rtol=0, atol=1e-12)
+
+
 def test_finite_depth_regular_power_follows_matlab_group_velocity():
     wave = WaveClass("regular")
     wave.w = 2 * np.pi / 8
