@@ -149,6 +149,15 @@ also gate the orifice force, pressure, flow, power, and Mach flag at both flow
 signs and across the threshold. The published 130 s physical trajectory
 remains unpaired, so this adds no case badge.
 
+A [local 0.05 s OWC custom-mass check](tests/fixtures/matlab/owc_orifice_custom_mass/README.md)
+isolates the rigid weight/buoyancy force with a 100 kg mass increase and a
+negligible incident sea. MATLAB reaches -0.534 mm heave and -12.87 mm/s
+heave speed; its equilibrium-mass control stays below `3e-16` m. The public
+Python GBM orifice path now includes the initial and ongoing static force.
+With the explicit published-source orifice routing, independent Python
+motion differs by at most 4.48 µm heave and 0.522 mm/s speed over the 11
+samples. This derived diagnostic does not change the published-case badge.
+
 The shortened 120 s MATLAB selected-bank baseline reproduces the first 120 s
 of the published 600 s run: its 500 incident-wave components and selected
 headings agree exactly, yaw within `1.1e-15` rad, and PTO torque within

@@ -222,6 +222,12 @@ def solve_floating_gbm_pm_orifice(
     stiffness[3, 3] += float(np.asarray(force["gbm"]["stiffness"])[0, 0])
     damping = np.asarray(force["linearDamping"])[np.ix_(active, active)].copy()
     damping[3, 3] += float(np.asarray(force["gbm"]["damping"])[0, 0])
+    # The linear hydrostatic matrix acts about the HDF5 waterline; custom
+    # rigid mass leaves a constant buoyancy-minus-weight force there.
+    static_force = np.array([
+        0., (rho * float(np.asarray(body.dispVol).item()) - physical_mass) * g,
+        0., 0.,
+    ])
     drag = np.diag(np.asarray(force["visDrag"])[np.ix_(active, active)])
     kernel = np.asarray(force["irkb"])[:, active, :][:, :, active]
     excitation = incident.excitation_force[:, active]
@@ -229,6 +235,7 @@ def solve_floating_gbm_pm_orifice(
     coordinate = np.zeros((count, 4))
     velocity = np.zeros_like(coordinate)
     acceleration = np.zeros_like(coordinate)
+    acceleration[0] = np.linalg.solve(matrix, excitation[0] + static_force)
     pto_force = np.zeros(count)
     pto_power = np.zeros(count)
     pto_flag = np.zeros(count, dtype=bool)
@@ -253,7 +260,7 @@ def solve_floating_gbm_pm_orifice(
             applied = piston_distribution * reaction
             restoring = stiffness @ position
             restoring[2] = stiffness[2, 2] * np.arcsin(np.sin(position[2]))
-            current = (excitation[step] - radiation
+            current = (excitation[step] + static_force - radiation
                        - dt / 2 * kernel[0] @ trial
                        - restoring - damping @ trial
                        - drag * trial * np.abs(trial) + applied)
