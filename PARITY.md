@@ -1267,6 +1267,13 @@ removed, follows the two preceding acceleration samples through its
 `1e-7` s Transport Delay within `0.01` N or N m. This source timing is
 separate from Python's default implicit added mass.
 
+A [portable pressure fixture](tests/fixtures/matlab/oswec_nonlinear_pressure/README.md)
+also checks 46 frames across startup, the wave ramp, and the full 120 s
+duration in ordinary Python CI. It pairs all 1,042 facet pressures per frame
+and integrated hydrostatic restoring force on saved MATLAB poses. The
+full-history source workflow remains the broader gate; this portable sample
+does not close the published-step independent-motion gap or change a badge.
+
 A [four-step R2025b refinement](https://github.com/cmudrc/wec-sim-python/actions/runs/38093454463)
 keeps the published 120 s, 2.5 m/8 s regular wave, 40 s ramp, hinge, and mesh
 hydrodynamics. Disabling pressure and VTP output leaves all 1,201 samples of

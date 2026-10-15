@@ -16,6 +16,9 @@ from wecsim.hydrodynamics.nonlinearHydro import (
 )
 
 
+PORTABLE = Path(__file__).parent / "fixtures/matlab/oswec_nonlinear_pressure"
+
+
 def test_regular_mesh_pressure_uses_mean_and_moved_surfaces():
     vertices = np.array([[0, 0, -2], [1, 0, -2], [0, 1, -2]])
     faces = np.array([[0, 1, 2]])
@@ -28,6 +31,61 @@ def test_regular_mesh_pressure_uses_mean_and_moved_surfaces():
     np.testing.assert_allclose(pressure.hydrostatic[:, 0], [19620, 17167.5])
     assert pressure.linear_wave[0, 0] == pressure.linear_wave[1, 0]
     assert pressure.nonlinear_wave[0, 0] != pressure.nonlinear_wave[1, 0]
+
+
+def test_published_oswec_facet_pressures_and_restoring_force_portable():
+    """Pair actual flap-facet loads across startup, ramp, and steady motion."""
+    with np.load(PORTABLE / "samples.npz") as reference:
+        source = {key: reference[key] for key in reference.files}
+    mesh = trimesh.Trimesh(vertices=source["vertices"], faces=source["faces"],
+                           process=False)
+    assert len(mesh.faces) == source["centers"].shape[0] == 1042
+    np.testing.assert_allclose(mesh.triangles_center, source["centers"],
+                               rtol=0, atol=1e-9)
+    np.testing.assert_allclose(mesh.face_normals, source["normals"],
+                               rtol=0, atol=1e-12)
+    np.testing.assert_allclose(mesh.area_faces, source["areas"],
+                               rtol=0, atol=1e-12)
+
+    indices = source["sample_index"]
+    assert len(indices) == 46 and {0, 1, 399, 400, 401, 1200} <= set(indices)
+    time = source["time"]
+    np.testing.assert_allclose(time, indices * 0.1, rtol=0, atol=1e-8)
+    depth = float(source["water_depth"])
+    rho = float(source["rho"])
+    gravity = float(source["gravity"])
+    assert (depth, rho, gravity) == (10.9, 1000, 9.81)
+    omega = 2 * np.pi / 8
+    wave_number = brentq(
+        lambda k: gravity * k * np.tanh(k * depth) - omega**2, 1e-12, 1,
+    )
+    np.testing.assert_allclose(wave_number, source["wave_number"],
+                               rtol=0, atol=1e-10)
+    ramp = np.where(time >= 40, 1, (1 - np.cos(np.pi * time / 40)) / 2)
+    np.testing.assert_allclose(source["wave"][:, 0], time, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(source["wave"][:, 1],
+                               1.25 * ramp * np.cos(omega * time),
+                               rtol=0, atol=1e-10)
+
+    pressure = regular_wave_mesh_pressures(
+        mesh.vertices, mesh.faces, source["pose"], time,
+        center_gravity=source["cg"], rho=rho, gravity=gravity,
+        water_depth=depth, wave_number=wave_number,
+        wave_height=2.5, wave_period=8, ramp_time=40,
+    )
+    for field, key in (
+        (pressure.hydrostatic, "hydrostatic"),
+        (pressure.nonlinear_wave, "nonlinear_wave"),
+        (pressure.linear_wave, "linear_wave"),
+    ):
+        assert field.shape == (46, 1042)
+        np.testing.assert_allclose(field, source[key], rtol=0, atol=1e-8)
+    restoring = mesh_pressure_wrenches(
+        mesh.vertices, mesh.faces, source["pose"], pressure,
+    ).hydrostatic
+    restoring[:, 2] -= 127000 * gravity
+    np.testing.assert_allclose(source["force_restoring"], -restoring,
+                               rtol=0, atol=2e-8)
 
 
 @pytest.mark.skipif(
