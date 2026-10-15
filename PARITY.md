@@ -1166,6 +1166,17 @@ connection positions and velocities also pass the existing fine-step gates:
 `500` N or `2` kN m connection load, and `2` kN PTO force. A local ARM64
 run reproduces the Linux errors to the shown precision.
 
+A [fresh full-duration fairlead gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38744324247)
+also compares the three native MoorDyn line tensions at all 8,001 common
+0.01 s samples. Halving the refined MATLAB coupling step from 0.000625 to
+0.0003125 s changes the three tension histories by at most `60.99`, `44.32`,
+and `44.32` N. The independent public Python run at 0.00125 s differs from
+the finest source by at most `271.3`, `51.28`, and `51.28` N, respectively.
+All pass the predeclared `1.5` kN MATLAB step-change and `4` kN Python/source
+limits. This checks individual lines that could otherwise compensate in the
+net connection load; the Python trajectory uses the pinned sea phases,
+HDF5, and native mooring input, without source motion or force histories.
+
 The original 0.01 s MATLAB trajectory differs from the finest MATLAB
 trajectory by up to `203.4` mm float surge and `104.2` kN m MoorDyn pitch
 moment; Python differs from that original by `203.2` mm and `104.0` kN m.
@@ -1175,9 +1186,9 @@ changes ode45 MaxStep, MoorDyn coupling, and wave/radiation discretization
 together; the short isolation audit below separates MaxStep from the other
 changes but does not prove a unique converged 80 s limit. This is
 full-duration **derived fine-step** parity for the named channels, not
-parity with the original published-step trajectory or all fairlead and
-ParaView outputs. The physical Python default and strict expected failure
-for the published-step gate remain unchanged.
+parity with the original published-step trajectory. The published ParaView
+output gate on saved source poses is separate. The physical Python default
+and strict expected failure for the published-step gate remain unchanged.
 
 A [pinned 10 s MaxStep isolation audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38116072640)
 uses the same 1,000 source phases, wave, output times, and initial states in
