@@ -1,11 +1,12 @@
 """Check tower reaction mechanics without the large MATLAB MOST artifacts."""
 
 import numpy as np
+from scipy.io import savemat
 
 from wecsim import MostTowerReaction
 
 
-def test_collocated_turbine_reaction_obeys_newton_euler_balance():
+def test_collocated_turbine_reaction_obeys_newton_euler_balance(tmp_path):
     # Put every mass at the tower base. This removes lever-arm moments while
     # retaining the tower, yaw bearing, nacelle, hub, and three blade paths.
     origin = np.zeros(3)
@@ -33,6 +34,16 @@ def test_collocated_turbine_reaction_obeys_newton_euler_balance():
 
     reaction = tower.evaluate(position, velocity, acceleration,
                               rotor_speed, azimuth, torque, blade_loads)
+    # The published source supplies the same nested properties in a MAT
+    # artifact. Loading it must preserve the tower's physical reaction.
+    source_file = tmp_path / "Properties_IEA15MW.mat"
+    savemat(source_file, {"WTcomponents": properties})
+    loaded = MostTowerReaction.from_iea15mw(source_file, platform_cg=origin)
+    np.testing.assert_allclose(
+        loaded.evaluate(position, velocity, acceleration,
+                        rotor_speed, azimuth, torque, blade_loads),
+        reaction, rtol=0, atol=1e-12,
+    )
     np.testing.assert_allclose(reaction[:, :2], 0, atol=1e-12)
     np.testing.assert_allclose(reaction[:, 3:], 0, atol=1e-12)
     np.testing.assert_allclose(
