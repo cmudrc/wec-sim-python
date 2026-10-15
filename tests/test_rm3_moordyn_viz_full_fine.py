@@ -92,12 +92,13 @@ def test_full_duration_refined_source_and_python_motion(tmp_path):
     lines.parent.mkdir()
     shutil.copyfile(apps / "Paraview_Visualization/RM3_MoorDyn_Viz"
                     / "Mooring/lines.txt", lines)
+    moordyn = MoorDyn(LIBRARY, lines)
     wec = WEC("RM3 MoorDyn 80 s fine-step comparison")
     float_body = wec.body("float", hydro, inertia=(0, 21_306_090.66, 0))
     spar = wec.body("spar", hydro, inertia=(0, 94_407_091.24, 0))
     wec.floating_joint(
         float_body, spar, damping=1_200_000,
-        moordyn=MoorDyn(LIBRARY, lines),
+        moordyn=moordyn,
         moordyn_point=spar.at(0, 0, 21.5),
     )
     result = wec.run(
@@ -153,5 +154,29 @@ def test_full_duration_refined_source_and_python_motion(tmp_path):
                  f"source step change line {line} fairlead tension", failures)
         _compare(native_fairlead[indices, line], fine_fairlead[:, line], 4000,
                  f"Python versus fine source line {line} fairlead tension",
+                 failures)
+    # Compare the line scene from independent coupled motion, rather than
+    # feeding saved MATLAB node poses to the VTP writer.
+    frame_indices = np.arange(801) * 80
+    for line in range(1, 4):
+        coarse_line, fine_line = (_read(prefix, f"line{line}")
+                                  for prefix in (coarse, fine))
+        assert coarse_line.shape == fine_line.shape == (801, 84)
+        time, nodes, tensions = moordyn.line_history(line)
+        assert time.shape == (64001,)
+        assert nodes.shape == (64001, 21, 3)
+        assert tensions.shape == (64001, 20)
+        _compare(coarse_line[:, 0], fine_line[:, 0], 1e-8,
+                 f"source line {line} frame time", failures)
+        _compare(time[frame_indices], fine_line[:, 0], 1e-8,
+                 f"Python line {line} frame time", failures)
+        _compare(coarse_line[:, 1:64], fine_line[:, 1:64], .005,
+                 f"source step change line {line} nodes", failures)
+        _compare(nodes[frame_indices].reshape(801, 63), fine_line[:, 1:64],
+                 .01, f"Python versus fine source line {line} nodes", failures)
+        _compare(coarse_line[:, 64:], fine_line[:, 64:], 1500,
+                 f"source step change line {line} segment tension", failures)
+        _compare(tensions[frame_indices], fine_line[:, 64:], 4000,
+                 f"Python versus fine source line {line} segment tension",
                  failures)
     assert not failures, "; ".join(failures)
