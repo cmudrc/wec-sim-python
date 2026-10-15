@@ -648,6 +648,16 @@ These short wave checks do not add a published-case gate. Raise coverage with
 behavior and numerical invariants, including portable full-duration gates for
 already paired cases. Do not add tests written only to execute lines.
 
+The published 250 s OSWEC `PassiveYawRegression` opt-in source-numerical
+comparison now runs in ordinary Python CI for all three seeds. It generates
+all 500 phases from each published MATLAB substream seed and compares the
+independently advanced public `WEC.run` yaw, speed, excitation, PTO torque,
+work, and 141/52/91 heading-event samples against the [archived source
+traces](tests/fixtures/matlab/oswec_held_yaw/README.md). The strict existing
+source-numerical limits are unchanged. MATLAB's held-yaw path remains strongly
+step-sensitive, so this durability gate does not promote the physical default
+or change the OSWEC badge count.
+
 The already gated published OSWEC `Multiple_Wave_Spectra` case now has an
 ordinary-CI, full-duration public `WEC.run(MultiPMWave(...))` gate from the
 pinned source artifact. The exact BEMIO dataset values and all 1,001 MATLAB
