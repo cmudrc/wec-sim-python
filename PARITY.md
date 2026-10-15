@@ -1979,8 +1979,14 @@ energy by `25.98%`. These are MATLAB self-changes under a **combined solver
 and controller-cadence change**, not Python errors or a plant-only step
 convergence test. They exceed the earlier independent Python/published
 `0.04110` rad maximum pitch gap, but cannot establish which controller or
-plant effect dominates after activation. The published NMPC case remains
-`open_motion`; its badge count does not change.
+plant effect dominates after activation. A [portable negative-control gate](tests/test_wavestar_nmpc_full_internal_step.py)
+independently reruns the public Python plant and controller for 225 s from
+the same HDF5 and phases. Python's maximum pitch and PTO-force gaps are
+`0.04110` rad and `13.63` N against the published source, versus `0.16693`
+rad and `70.66` N against the 25 ms source; relative PTO-work differences
+are `5.91%` and `17.81%`. Thus the 25 ms coupled source trajectory is not a
+better Python parity target. The published NMPC case remains `open_motion`;
+its badge count does not change.
 
 A bounded [hosted 25 ms `ode8` controller-clock probe](https://github.com/cmudrc/wec-sim-python/actions/runs/38631235118)
 then made the command-producing controller subsystem atomic at its published
