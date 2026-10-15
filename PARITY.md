@@ -480,7 +480,12 @@ inputs. Across both cases, the largest active body-position differences are
 differences are below 30.6 mm/s surge, 2.37 mm/s heave, and `0.00110` rad/s
 pitch. PTO stroke, speed, force, and absorbed power differ by at most
 4.22 mm, 3.16 mm/s, 3.79 kN, and 4.53 kW. Explicit full-duration paired
-gates cover both bodies and those PTO channels. This reproduces the published
+gates cover both bodies and those PTO channels. A [separate full-duration
+public PTO-work gate](tests/test_rm3_fitted_pto_work.py) integrates the
+independently advanced Python histories against the archived source: the
+source/Python works are 97.642/98.121 MJ in Case 5 and 100.866/101.366 MJ
+in Case 6, or 0.490% and 0.495% differences under the 1% work
+limit. This reproduces the published
 nonpassive fit numerically; it does not replace the convolution default or
 validate the fitted model as physical radiation damping.
 The published Cases 5 and 6 change only the state-space radiation flag from
