@@ -1436,9 +1436,11 @@ saved source nodes and segment tensions. Native Python coupled motion at the
 original published step remains unpaired.
 The ParaView wave writer also accepts an imported elevation record (`etaImport`)
 and reconstructs its spatial surface with WEC-Sim's one-sided FFT and
-deep-water wavenumber. An analytic two-frequency gate checks origin samples,
-heading, phase, gravity, and serialized VTP points. This is source-equation
-coverage; a published imported-elevation VTP history is not yet paired.
+deep-water wavenumber. An analytic two-frequency test checks origin samples,
+heading, phase, gravity, and serialized VTP points. A separate pinned MATLAB
+wave-writer gate compares the resulting spatial VTP points within `1e-5` m
+and checks connectivity and offsets exactly. This is a paired synthetic sea;
+a published imported-elevation VTP history is not yet paired.
 
 The MOST [wind-to-BEM source gate](https://github.com/cmudrc/wec-sim-python/actions/runs/37958579712)
 feeds three actual time-shifted frames from the pinned TurbSim excerpt into

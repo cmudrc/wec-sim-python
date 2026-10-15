@@ -59,3 +59,35 @@ def test_regular_wave_vtp_against_pinned_matlab(tmp_path):
         np.testing.assert_allclose(actual_points, source_points, rtol=0, atol=1e-5)
         np.testing.assert_array_equal(actual_cells, source_cells)
         np.testing.assert_array_equal(actual_offsets, source_offsets)
+
+
+def test_imported_elevation_vtp_against_pinned_matlab(tmp_path):
+    reference = Path(REFERENCE) / "imported"
+    record = np.loadtxt(reference / "record.csv", delimiter=",")
+    assert record.shape == (16, 2)
+    sample_time = np.arange(16) * .25
+    expected_elevation = (
+        .7 * np.cos(np.pi * sample_time + .35)
+        + .2 * np.cos(2 * np.pi * sample_time - .8)
+    )
+    np.testing.assert_allclose(record[:, 0], sample_time, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(record[:, 1], expected_elevation, rtol=0, atol=1e-12)
+
+    wave = WaveClass("etaImport")
+    wave.waveAmpTime = [record[:, 0], record[:, 1]]
+    wave.waveDir = [60]
+    wave.waterDepth = 30
+    path, = ParaviewClass(wave).write_paraview_vtp_wave(
+        [.375], tmp_path, domain_size=2,
+        num_points_x=3, num_points_y=2, g=9.7,
+    )
+    assert (tmp_path / "ground.txt").read_text() == (
+        reference / "ground.txt"
+    ).read_text()
+    actual_points, actual_cells, actual_offsets = _mesh(path)
+    source_points, source_cells, source_offsets = _mesh(
+        reference / "waves/waves_1.vtp"
+    )
+    np.testing.assert_allclose(actual_points, source_points, rtol=0, atol=1e-5)
+    np.testing.assert_array_equal(actual_cells, source_cells)
+    np.testing.assert_array_equal(actual_offsets, source_offsets)
