@@ -113,6 +113,18 @@ def test_two_degree_bank_against_pinned_matlab():
          and os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")),
     reason="fresh variable-yaw MATLAB output not provided",
 )
+def test_published_bank_against_pinned_matlab():
+    _check_bank_against_pinned_matlab(
+        "OSWEC_VARIABLE_YAW_PUBLISHED", "regular",
+        np.arange(-30, 30.25, .25),
+    )
+
+
+@pytest.mark.skipif(
+    not (os.environ.get("WEC_SIM_APPLICATIONS_DIR")
+         and os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")),
+    reason="fresh variable-yaw MATLAB output not provided",
+)
 def test_irregular_120s_bank_against_pinned_matlab():
     """Pair the source force path and independent 120 s PM trajectory."""
     applications = Path(os.environ["WEC_SIM_APPLICATIONS_DIR"])

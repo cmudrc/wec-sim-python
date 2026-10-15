@@ -30,6 +30,7 @@ the same 374 heading-change samples, and local maximum yaw, speed, and PTO
 torque differences are `6.53e-15` rad, `3.68e-16` rad/s, and `1.32e-10` N m.
 The relative PTO-work difference is `7.30e-14`.
 
-Ordinary Python CI uses this NPZ and the bundled HDF5. The fresh MATLAB
-workflow uses its newly generated CSVs and HDF5 for the same full-duration
-gates. This strengthens an already counted published OSWEC case.
+Ordinary Python CI uses this NPZ and the bundled HDF5. The existing fresh
+MATLAB test reads newly generated CSVs and HDF5 and applies the same
+full-duration limits. This strengthens an already counted published OSWEC
+case.
