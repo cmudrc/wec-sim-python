@@ -1,6 +1,7 @@
 """Independent 400 s body/PTO trajectory against the pinned RM3 hydraulic case."""
 
 import os
+from functools import cache
 from pathlib import Path
 
 import numpy as np
@@ -17,16 +18,21 @@ from wecsim.environment.irregularWave import pm_equal_energy_components
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
 RM3_H5 = os.environ.get("WEC_SIM_RM3_H5")
-pytestmark = pytest.mark.skipif(
-    not (REFERENCE and RM3_H5),
-    reason="pinned RM3 hydraulic MATLAB output and HDF5 absent",
-)
+LIVE = bool(REFERENCE and RM3_H5)
+FIXTURE = Path(__file__).parent / "fixtures/matlab/rm3_hydraulic"
+HYDRO = Path(RM3_H5) if LIVE else FIXTURE / "rm3.h5"
 
 
+@cache
 def _source(name):
-    data = np.loadtxt(
-        Path(REFERENCE) / f"RM3_HYDRAULIC_SOURCE_{name}.csv", delimiter=",",
-    )
+    if LIVE:
+        data = np.loadtxt(
+            Path(REFERENCE) / f"RM3_HYDRAULIC_SOURCE_{name}.csv",
+            delimiter=",",
+        )
+    else:
+        with np.load(FIXTURE / "source.npz", allow_pickle=False) as saved:
+            data = saved[name]
     assert data.ndim == 2 and np.isfinite(data).all(), name
     return data
 
@@ -57,10 +63,10 @@ def _published_pto():
 def paired():
     components = _source("components")
     sea = pm_equal_energy_components(
-        RM3_H5, significant_height=2.5, peak_period=8,
+        HYDRO, significant_height=2.5, peak_period=8,
         directions=(0,), spreading=(1,), phase=components[:, 3:4],
     )
-    response = run_rm3_rectified_hydraulic(RM3_H5, sea, _published_pto())
+    response = run_rm3_rectified_hydraulic(HYDRO, sea, _published_pto())
     source = {name: _source(name) for name in (
         "wave", "RM3_cHydraulic_PTO_body1", "RM3_cHydraulic_PTO_body2",
         "RM3_cHydraulic_PTO_pto1", "cylinder", "valve",

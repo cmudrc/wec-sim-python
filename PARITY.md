@@ -124,6 +124,13 @@ The same six tests also accept fresh MATLAB outputs through explicit source
 paths. This strengthens an already counted case without changing the badge
 count or treating its nonpassive state-space fit as physical validation.
 
+The published 400 s RM3 rectified-hydraulic case now has its [exact source
+HDF5 and compact full-duration traces](tests/fixtures/matlab/rm3_hydraulic/README.md)
+in ordinary Python CI. Its existing nine source-equation and independent
+body/PTO/hydraulic/electrical tests retain their numerical limits and still
+accept fresh MATLAB output through explicit paths. This hardens an already
+counted case; the RM3 badge count is unchanged.
+
 The full Barge GBM motion and flexible-force gate now runs in ordinary Python
 CI from the [exact archived HDF5 and source histories](tests/fixtures/matlab/README.md).
 This preserves the existing 400 s numerical limits without a fresh MATLAB
