@@ -737,6 +737,13 @@ Python yaw states to check exported excitation and verifies the PTO torque
 and absorbed work. This is an internal consistency check, not a paired
 MATLAB motion gate.
 
+The same 2 s seeded input now compares the opt-in source `ode4` and physical
+implicit solvers at `0.05`, `0.0125`, and `0.003125` s. Each fourfold step
+refinement reduces their maximum yaw and yaw-speed gaps by more than a factor
+of three; at the finest step the gaps are `5.93e-7` rad and `9.12e-7` rad/s.
+This short-window solver-convergence check does not resolve the published
+250 s heading-event sensitivity or change its qualified label.
+
 The already gated published OSWEC `Multiple_Wave_Spectra` case now has an
 ordinary-CI, full-duration public `WEC.run(MultiPMWave(...))` gate from the
 pinned source artifact. The exact BEMIO dataset values and all 1,001 MATLAB

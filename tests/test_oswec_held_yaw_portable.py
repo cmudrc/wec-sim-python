@@ -73,6 +73,50 @@ def test_default_held_yaw_commits_heading_and_reports_consistent_work():
     assert np.trapezoid(pto.absorbed_power, result.time) > 0
 
 
+def test_implicit_and_source_ode4_approach_the_same_short_yaw_motion():
+    """Refining the step should remove their numerical, not physical, gap.
+
+    The long published held-yaw run is sensitive to heading-event timing.
+    This short seeded window checks the two independent solvers at the same
+    resolution before that accumulated event error dominates.
+    """
+    gaps = []
+    for dt in (.05, .0125, .003125):
+        results = {}
+        for solver in ("implicit", "wecsim_ode4"):
+            wec = WEC("OSWEC short held-yaw solver convergence")
+            flap = wec.body(
+                "flap", HYDRO, mass=12700, inertia=(1.85e6,) * 3,
+                passive_yaw=True, passive_yaw_threshold=1,
+            )
+            wec.body("base", HYDRO, mass=999, inertia=(999,) * 3)
+            yaw = wec.coordinate(
+                "yaw", flap.move("yaw", pivot=WorldPoint(0, 0, -8.9)),
+            )
+            wec.rotational_pto("hinge", yaw, damping=120000)
+            results[solver] = wec.run(
+                PMWave(2.5, 8, direction=10, seed=1,
+                       phase_generator="matlab"),
+                dt=dt, end_time=2, ramp_time=0, radiation_memory=1,
+                initial_coordinate={"yaw": .02}, solver=solver,
+            )
+        implicit, source = results["implicit"], results["wecsim_ode4"]
+        np.testing.assert_array_equal(implicit.time, source.time)
+        gaps.append((
+            np.max(np.abs(implicit.coordinates["yaw"].position
+                          - source.coordinates["yaw"].position)),
+            np.max(np.abs(implicit.coordinates["yaw"].velocity
+                          - source.coordinates["yaw"].velocity)),
+        ))
+    gaps = np.asarray(gaps)
+    assert np.isfinite(gaps).all()
+    # Each fourfold step refinement must reduce both motion gaps by at least
+    # a factor of three; the finest run also has an absolute motion bound.
+    assert np.all(gaps[1:] < gaps[:-1] / 3), gaps
+    assert gaps[-1, 0] < 1e-6
+    assert gaps[-1, 1] < 1.5e-6
+
+
 def _heading_events(hydro_data, components, time, yaw):
     sampled = SampledPassiveYawExcitation.from_hydro_data(
         hydro_data, components, dt=.01, end_time=250,
