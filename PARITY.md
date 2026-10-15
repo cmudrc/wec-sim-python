@@ -156,6 +156,19 @@ also gate the orifice force, pressure, flow, power, and Mach flag at both flow
 signs and across the threshold. The published 130 s physical trajectory
 remains unpaired, so this adds no case badge.
 
+A [bounded local R2025b OWC source-to-source check](tests/fixtures/matlab/owc_orifice_local_prefix/README.md)
+uses the same pinned HDF5, all 500 incident-wave components, and 0.005 s
+output grid as the archived published 130 s source run. A 6 s local rerun is
+repeatable; changing its end time to 10 s leaves its first 6 s bit-identical.
+The local and archived wave histories and components are also bit-identical,
+but their 6 s surge histories differ by up to 1.054 mm in position and
+0.701 mm/s in speed. Flexible displacement and speed differ by up to
+0.0337 mm and 0.333 mm/s. All four predeclared `1e-5` motion limits fail,
+and the runs log different numbers of internal orifice evaluations. This
+isolates a source-to-source motion sensitivity that still needs a causal
+explanation; it neither changes the qualified OWC status nor establishes a
+Python defect.
+
 A [local 0.05 s OWC custom-mass check](tests/fixtures/matlab/owc_orifice_custom_mass/README.md)
 isolates the rigid weight/buoyancy force with a 100 kg mass increase and a
 negligible incident sea. MATLAB reaches -0.534 mm heave and -12.87 mm/s
