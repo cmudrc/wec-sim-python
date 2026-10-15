@@ -103,6 +103,41 @@ for iStep = 1:numel(steps)
         all(isfinite(fairlead), 'all'), ...
         'The refined fairlead record is incomplete');
     writematrix(fairlead, fullfile(outDir, [label '_fairlead.csv']));
+    % Save complete line geometry and segment loads at the 0.1 s published
+    % visualization cadence. These histories come from this refined MATLAB
+    % trajectory, not from the published-step source-pose VTP baseline.
+    assert(isequal(mooring(1).moorDynNodes, [21 21 21]), ...
+        'The three-line MoorDyn topology changed');
+    frameStride = round(0.1 / step);
+    assert(abs(frameStride * step - 0.1) < 1e-12);
+    for iLine = 1:3
+        lineRecord = output.moorDyn(1).(sprintf('Line%d', iLine));
+        frames = 1:frameStride:numel(lineRecord.Time);
+        nodeCount = mooring(1).moorDynNodes(iLine);
+        history = zeros(numel(frames), 4 * nodeCount);
+        history(:, 1) = reshape(lineRecord.Time(frames), [], 1);
+        column = 2;
+        for iNode = 0:nodeCount - 1
+            for axis = {'px', 'py', 'pz'}
+                field = sprintf('Node%d%s', iNode, axis{1});
+                values = lineRecord.(field);
+                history(:, column) = reshape(values(frames), [], 1);
+                column = column + 1;
+            end
+        end
+        for iSegment = 1:nodeCount - 1
+            values = lineRecord.(sprintf('Seg%dTe', iSegment));
+            history(:, column) = reshape(values(frames), [], 1);
+            column = column + 1;
+        end
+        assert(column == size(history, 2) + 1 && ...
+            size(history, 1) == 801 && ...
+            max(abs(history(:, 1) - (0:0.1:80)')) < 1e-8 && ...
+            all(isfinite(history), 'all'), ...
+            'The refined MoorDyn line history is incomplete');
+        writematrix(history, fullfile(outDir, ...
+            sprintf('%s_line%d.csv', label, iLine)));
+    end
     close_system('RM3MoorDyn', 0);
 end
 end
