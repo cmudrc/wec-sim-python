@@ -6,6 +6,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
+from scipy.integrate import trapezoid
 from scipy.interpolate import CubicSpline
 from scipy.signal import fftconvolve
 
@@ -240,39 +241,68 @@ def test_all_three_imported_waves_and_excitation_against_matlab():
                            f"case {index} body {body} {name} excitation")
 
 
-def test_public_python_wec_replays_published_imported_seas():
-    """Exercise the Python builder against the three saved MATLAB sea states.
-
-    This checks imported-wave propagation through the general WEC runner;
-    the one-body heave motion here is not the published RM3 four-DOF joint.
-    """
+def test_public_python_wec_pairs_full_published_joint():
+    """Advance both bodies and PTO from the pinned inputs, not source states."""
     root = Path(APPLICATIONS)
     reference = Path(REFERENCE)
-    hydro = "_Common_Input_Files/RM3/hydroData/rm3.h5"
+    hydro = root / "_Common_Input_Files/RM3/hydroData/rm3.h5"
     inputs = root / "Multiple_Condition_Runs/RM3_MCROPT3_SeaState"
     for index in (1, 2, 3):
         wec = WEC(f"Imported RM3 sea {index}")
-        body = wec.body("float", hydro)
-        wec.coordinate("heave", body.move("heave"))
-        wave = ImportedSpectrumWave(
-            f"Multiple_Condition_Runs/RM3_MCROPT3_SeaState/"
-            f"spectrumData{index}.mat"
-        )
+        float_body = wec.body("float", hydro,
+                              inertia=(0, 21_306_090.66, 0))
+        spar = wec.body("spar", hydro,
+                        inertia=(0, 94_407_091.24, 0))
+        wec.floating_joint(float_body, spar, damping=1_200_000,
+                           added_mass_scheme="simulink_delay")
+        spectrum = inputs / f"spectrumData{index}.mat"
         result = wec.run(
-            wave, dt=0.1, end_time=400, ramp_time=100,
-            radiation_memory=15, base_dir=root,
+            ImportedSpectrumWave(spectrum), dt=0.1, end_time=400,
+            ramp_time=100, radiation_memory=60,
         )
-        source = np.loadtxt(
+        wave = np.loadtxt(
             reference / f"RM3_MCR_SEASTATE_case{index}_wave.csv",
-            delimiter=",",
-        )[:len(result.time)]
-        _max_error(result.time, source[:, 0], 1e-10,
+            delimiter=",")
+        _max_error(result.time, wave[:, 0], 1e-10,
                    f"case {index} public WEC time")
-        _max_error(result.wave_elevation, source[:, 1], 1e-10,
+        _max_error(result.wave_elevation, wave[:, 1], 1e-10,
                    f"case {index} public WEC imported elevation")
-        assert result.raw.auxiliary_files == (
-            (inputs / f"spectrumData{index}.mat").resolve(),
-        )
+        assert result.raw.auxiliary_files == (spectrum.resolve(),)
+
+        for body_number, name in ((1, "float"), (2, "spar")):
+            source = np.loadtxt(reference / (
+                f"RM3_MCR_SEASTATE_case{index}_body{body_number}.csv"
+            ), delimiter=",")
+            for dof, label, position_limit, speed_limit in (
+                (0, "surge", .020, .005),
+                (2, "heave", .0015, .0013),
+                (4, "pitch", .0009, .0004),
+            ):
+                _max_error(result.bodies[name].position[:, dof],
+                           source[:, 1 + dof], position_limit,
+                           f"case {index} {name} {label} position")
+                _max_error(result.bodies[name].velocity[:, dof],
+                           source[:, 7 + dof], speed_limit,
+                           f"case {index} {name} {label} velocity")
+
+        source_pto = np.loadtxt(reference / (
+            f"RM3_MCR_SEASTATE_case{index}_pto1.csv"
+        ), delimiter=",")
+        pto = result.ptos["relative_heave"]
+        for label, actual, source_column, limit in (
+            ("stroke", pto.stroke, 3, .0035),
+            ("speed", pto.velocity, 9, .002),
+            ("force", pto.force, 15, 2_500),
+            ("power", pto.absorbed_power, 21, 1_800),
+        ):
+            expected = -source_pto[:, source_column] if label == "power" \
+                else source_pto[:, source_column]
+            _max_error(actual, expected, limit,
+                       f"case {index} PTO {label}")
+        source_work = -trapezoid(source_pto[:, 21], x=source_pto[:, 0])
+        python_work = trapezoid(pto.absorbed_power, x=result.time)
+        assert source_work > 0
+        assert abs(python_work - source_work) / source_work < .001
 
 
 def test_matlab_radiation_force_on_matlab_velocities():
