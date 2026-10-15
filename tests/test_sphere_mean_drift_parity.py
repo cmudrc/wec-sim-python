@@ -6,7 +6,6 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-import pytest
 from scipy.interpolate import CubicSpline
 from scipy.signal import fftconvolve
 
@@ -16,10 +15,30 @@ from wecsim.interface.cli import main as cli_main
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (APPLICATIONS and REFERENCE),
-    reason="paired MATLAB Sphere mean-drift output not provided",
-)
+PORTABLE = Path(__file__).parent / "fixtures/matlab/sphere_mean_drift"
+
+
+def _paired_data():
+    """Use fresh source output in MATLAB CI and the same archived case elsewhere."""
+    if APPLICATIONS or REFERENCE:
+        if not (APPLICATIONS and REFERENCE):
+            raise ValueError("both Applications and MATLAB output are required")
+        root = Path(REFERENCE)
+        hydro = Path(APPLICATIONS) / "Mean_Drift/hydroData/sphere.h5"
+        body = np.loadtxt(root / "SPHERE_MEAN_DRIFT_Mean_Drift_body1.csv",
+                          delimiter=",")
+        wave = np.loadtxt(root / "SPHERE_MEAN_DRIFT_wave.csv", delimiter=",")
+        coefficients = np.loadtxt(
+            root / "SPHERE_MEAN_DRIFT_excitation_coefficients.csv",
+            delimiter=",",
+        )
+        mass = np.loadtxt(root / "SPHERE_MEAN_DRIFT_mass_properties.csv",
+                          delimiter=",")
+        return hydro, body, wave, coefficients, mass
+    with np.load(PORTABLE / "source.npz") as source:
+        arrays = tuple(source[key].copy() for key in
+                       ("body", "wave", "coefficients", "mass"))
+    return (PORTABLE / "sphere.h5", *arrays)
 
 
 def _ramp(time):
@@ -46,21 +65,13 @@ def _radiation_force(hydro_file, velocity, output_axis):
 
 
 def test_sphere_control_surface_drift_matches_matlab_motion_and_forces():
-    reference = Path(REFERENCE)
-    hydro = (Path(APPLICATIONS) / "Mean_Drift/hydroData/sphere.h5").resolve()
-    source = np.loadtxt(
-        reference / "SPHERE_MEAN_DRIFT_Mean_Drift_body1.csv", delimiter=",",
+    hydro, source, source_wave, coefficients, mass = _paired_data()
+    assert (source.shape, source_wave.shape, coefficients.shape, mass.shape) == (
+        (10_001, 43), (10_001, 2), (6, 3), (4,),
     )
-    source_wave = np.loadtxt(
-        reference / "SPHERE_MEAN_DRIFT_wave.csv", delimiter=",",
-    )
-    coefficients = np.loadtxt(
-        reference / "SPHERE_MEAN_DRIFT_excitation_coefficients.csv",
-        delimiter=",",
-    )
-    mass = np.loadtxt(
-        reference / "SPHERE_MEAN_DRIFT_mass_properties.csv", delimiter=",",
-    )
+    assert all(np.isfinite(values).all() for values in
+               (source, source_wave, coefficients, mass))
+    np.testing.assert_allclose(source_wave[:, 0], source[:, 0], rtol=0, atol=1e-8)
     wec = WEC("Sphere mean drift")
     sphere = wec.body("sphere", hydro, inertia=mass[1:],
                       mean_drift="control_surface")
@@ -123,7 +134,7 @@ def test_sphere_control_surface_drift_matches_matlab_motion_and_forces():
 
 
 def test_sphere_mean_drift_cli_labels_each_force_component(tmp_path):
-    hydro = (Path(APPLICATIONS) / "Mean_Drift/hydroData/sphere.h5").resolve()
+    hydro = _paired_data()[0]
     wec = WEC("Sphere mean drift")
     sphere = wec.body("sphere", hydro, inertia=(837.75804096,) * 3,
                       mean_drift="control_surface")
