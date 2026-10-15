@@ -42,6 +42,7 @@ from wecsim.dynamics.rm3Regular import solve_rm3_regular
 from wecsim.dynamics.subspace_case import _run_linear_subspace
 from wecsim.environment.irregularWave import (
     imported_full_directional_components,
+    imported_spectrum_components,
     pm_equal_energy_components,
     synthesize_full_directional_response,
     synthesize_irregular_response,
@@ -539,7 +540,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
 
     if kind == "floating_joint":
         if len(bodies) != 2 or wave["type"] not in (
-                "regular", "regularCIC", "pm", "jonswap", "none", "elevationImport"):
+                "regular", "regularCIC", "pm", "jonswap", "spectrumImport",
+                "none", "elevationImport"):
             raise ValueError("floating joint needs two bodies and supported regular or irregular waves")
         if hydro[0] != hydro[1]:
             raise ValueError("the current floating-joint layout needs one shared HDF5")
@@ -602,10 +604,18 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             # The solver still requires nominal regular-wave arguments, but
             # the supplied excitation history drives this imported case.
             height, period, direction = 0.0, 8.0, 0.0
-        elif wave["type"] in ("pm", "jonswap"):
-            components, auxiliary_files = _irregular_components_from_case(
-                wave, hydro[0], base,
-            )
+        elif wave["type"] in ("pm", "jonswap", "spectrumImport"):
+            if wave["type"] == "spectrumImport":
+                if (set(wave) != {"type", "file"}
+                        or not isinstance(wave["file"], str) or not wave["file"]):
+                    raise ValueError("floating-joint spectrumImport needs one MAT spectrum file")
+                spectrum_path = (base / wave["file"]).resolve(strict=True)
+                components = imported_spectrum_components(hydro[0], spectrum_path)
+                auxiliary_files = (spectrum_path,)
+            else:
+                components, auxiliary_files = _irregular_components_from_case(
+                    wave, hydro[0], base,
+                )
             if (len(components.directions) != 1
                     or not np.isclose(components.directions[0], 0, atol=1e-12)):
                 raise ValueError("floating-joint dynamics currently support one 0-degree wave heading")
@@ -637,12 +647,14 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         )
         if wave["type"] == "regular" and radiation_method != "constant":
             raise ValueError("regular waves need constant radiation")
-        if (wave["type"] in ("regularCIC", "pm", "jonswap", "none", "elevationImport")
+        if (wave["type"] in ("regularCIC", "pm", "jonswap", "spectrumImport",
+                             "none", "elevationImport")
                 and radiation_method not in ("convolution", "fir", "state_space")):
             raise ValueError("radiation memory needs convolution, FIR, or fitted radiation")
         if wave["type"] == "elevationImport" and radiation_method != "convolution":
             raise ValueError("imported elevation currently requires convolution radiation")
-        if wave["type"] in ("regularCIC", "pm", "jonswap", "none", "elevationImport"):
+        if wave["type"] in ("regularCIC", "pm", "jonswap", "spectrumImport",
+                            "none", "elevationImport"):
             radiation_memory = _number(
                 sim.get("radiation_memory", 60), "simulation.radiation_memory",
                 positive=True,
@@ -671,7 +683,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         )
         if wave["type"] == "none":
             elevation = None
-        elif wave["type"] not in ("elevationImport", "pm", "jonswap"):
+        elif wave["type"] not in ("elevationImport", "pm", "jonswap",
+                                 "spectrumImport"):
             ramp = np.ones(len(solved.time))
             if ramp_time > 0:
                 early = solved.time < ramp_time

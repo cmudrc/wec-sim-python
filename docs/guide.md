@@ -407,6 +407,8 @@ Supported combinations are:
 | `fixed_morison` | `pm` | Stationary bodies without HDF5; body-local Cartesian Morison elements; no PTO | Directional irregular-wave velocity, acceleration, and six-component Morison force; optional single-heading current |
 | `linear_subspace` | `none` or zero-heading `regular` | One hydrodynamic body with body-local Morison elements; still-water pure heave accepts axial elements, while regular-wave heave or surge/heave/pitch accepts axial or normal/tangential elements; optional linear PTO | Radiation convolution or constant-frequency radiation, relative-fluid drag, fluid inertia, and Morison added mass in the acceleration solve; optional regular-wave current for surge/heave/pitch |
 | `floating_joint` | `regular` or `regularCIC` | Two equilibrium-mass bodies, pitch inertias, relative-heave PTO; optional `body_to_body` | Constant-frequency radiation, impulse-response convolution, or sampled FIR radiation |
+| `floating_joint` | `pm` or `jonswap` | Two equilibrium-mass bodies, pitch inertias, relative-heave PTO | Seeded irregular-wave excitation and radiation convolution |
+| `floating_joint` | `spectrumImport` | Two equilibrium-mass bodies, pitch inertias, relative-heave PTO | Saved MAT frequency components and phases drive both bodies through radiation convolution |
 | `floating_joint` | `elevationImport` | Two equilibrium-mass bodies, relative-heave PTO, optional joint surge spring | Imported MAT elevation and radiation convolution |
 | `floating_joint` | `none` | Two equilibrium-mass bodies, named initial coordinates and speeds, relative-heave PTO | Radiation convolution for paired free decay; sampled FIR is also available |
 | `linear_subspace` | `regular`, `regularCIC`, `pm`, `jonswap`, `spectrumImport`, `elevationImport`, or `none` | Any number of six-DOF hydrodynamic bodies; named motions or 6-by-N maps; optional linear or rotational PTOs; selected mean-drift coefficients for regular waves | Constant-frequency radiation or convolution; one body with one unscaled pitch coordinate about a world pivot directly below or above its CG uses exact hinge kinematics |
@@ -786,20 +788,28 @@ discrete FIR calculation; `"convolution"` remains the default. The same
 setting is available for no-wave free decay, without a paired FIR baseline. Both use
 `radiation_memory` (60 s by default). The general dynamics module
 assembles the supported body and PTO forces; it does not parse Simscape models.
-For a `linear_subspace` device, the Python API also accepts a WEC-Sim
-three-column imported spectrum MAT file, including its saved phases:
+For a `floating_joint` or `linear_subspace` device, the Python API also
+accepts a WEC-Sim three-column imported spectrum MAT file with saved phases.
+This RM3 example advances both bodies and the PTO from that spectrum:
 
 ```python
-from wecsim import ImportedSpectrumWave
+from wecsim import ImportedSpectrumWave, WEC
 
+wec = WEC("RM3 imported spectrum")
+float_body = wec.body("float", "path/to/rm3.h5",
+                      inertia=(0, 21_306_090.66, 0))
+spar = wec.body("spar", "path/to/rm3.h5",
+                inertia=(0, 94_407_091.24, 0))
+wec.floating_joint(float_body, spar, damping=1_200_000,
+                   added_mass_scheme="simulink_delay")
 result = wec.run(ImportedSpectrumWave("spectrumData1.mat"),
                  dt=0.1, end_time=400, ramp_time=100,
                  radiation_memory=60, base_dir="path/to/inputs")
 ```
 
-The file path resolves from `base_dir`. This selects an incident sea for the
-configured Python WEC; the specialized RM3 floating-joint MCR runner remains
-the paired solver for the published four-coordinate RM3 sea-state motion.
+The MAT path resolves from `base_dir`. The explicit added-mass delay matches
+the published Simulink timing; the default remains implicit. Full-duration
+motion and PTO gates cover all three published RM3 imported-spectrum MCR seas.
 For a sampled time/elevation MAT record, use the same builder with
 `ImportedElevationWave`:
 

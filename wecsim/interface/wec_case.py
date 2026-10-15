@@ -216,8 +216,9 @@ class _WECCaseMixin:
                 or self._floating_gbm_body is not None):
             raise ValueError("floating_joint cannot combine with other bodies, coordinates, or PTOs")
         if not isinstance(wave, (RegularWave, RegularCICWave, PMWave,
-                                 ImportedElevationWave, NoWave)):
-            raise ValueError("floating_joint supports regular, irregular, imported elevation, or no waves")
+                                 ImportedSpectrumWave, ImportedElevationWave,
+                                 NoWave)):
+            raise ValueError("floating_joint supports regular, irregular, imported spectrum or elevation, or no waves")
         if (not np.isfinite(joint.location.coordinates()).all()
                 or not np.isfinite([joint.damping, joint.stiffness,
                                     joint.equilibrium_position,
