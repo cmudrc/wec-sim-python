@@ -5,13 +5,14 @@ from pathlib import Path
 import numpy as np
 from scipy.integrate import trapezoid
 
-from wecsim import NoWave, WEC
+from wecsim import NoWave, RegularWave, WEC
 
 
 RM3 = Path(__file__).resolve().parents[1] / "examples/data/rm3.h5"
 
 
-def _run_rm3(*, mixed_basis: bool, body_to_body: bool = True):
+def _run_rm3(*, mixed_basis: bool, body_to_body: bool = True,
+             regular_wave: bool = False):
     wec = WEC("RM3 heave basis", body_to_body=body_to_body)
     float_body = wec.body("float", RM3)
     spar = wec.body("spar", RM3)
@@ -31,10 +32,12 @@ def _run_rm3(*, mixed_basis: bool, body_to_body: bool = True):
         speed = {"float_heave": .1, "spar_heave": -.05}
     wec.pto("main", float_body.at(0, 0, 0), spar.at(0, 0, 0),
             axis=(0, 0, 1), stiffness=25_000, damping=100_000)
-    return wec.run(
-        NoWave(), dt=.01, end_time=.5, radiation_memory=.2,
-        initial_coordinate=position, initial_speed=speed,
-    )
+    wave = RegularWave(2.5, 8) if regular_wave else NoWave()
+    simulation = ({"dt": .05, "end_time": 2., "ramp_time": 0.}
+                  if regular_wave else
+                  {"dt": .01, "end_time": .5, "radiation_memory": .2})
+    return wec.run(wave, **simulation,
+                   initial_coordinate=position, initial_speed=speed)
 
 
 def test_two_body_radiation_and_pto_work_are_coordinate_basis_invariant():
@@ -66,3 +69,33 @@ def test_two_body_radiation_and_pto_work_are_coordinate_basis_invariant():
         direct.bodies["spar"].position
         - uncoupled.bodies["spar"].position,
     )) > 1e-4
+
+
+def test_regular_wave_cross_body_damping_is_coordinate_basis_invariant():
+    """The same physical RM3 motion must survive a change of heave basis.
+
+    This exercises the regular-wave cross-body radiation damping matrix,
+    rather than the convolution kernel used by the no-wave test above.
+    """
+    direct = _run_rm3(mixed_basis=False, regular_wave=True)
+    mixed = _run_rm3(mixed_basis=True, regular_wave=True)
+    uncoupled = _run_rm3(mixed_basis=False, body_to_body=False,
+                         regular_wave=True)
+
+    for name in ("float", "spar"):
+        np.testing.assert_allclose(
+            mixed.bodies[name].position, direct.bodies[name].position,
+            rtol=0, atol=1e-10,
+        )
+        np.testing.assert_allclose(
+            mixed.bodies[name].velocity, direct.bodies[name].velocity,
+            rtol=0, atol=1e-10,
+        )
+    for field in ("stroke", "velocity", "force", "absorbed_power"):
+        np.testing.assert_allclose(
+            getattr(mixed.ptos["main"], field),
+            getattr(direct.ptos["main"], field), rtol=0, atol=1e-7,
+        )
+    assert np.ptp(direct.wave_elevation) > .1
+    assert np.max(np.abs(direct.bodies["spar"].position
+                         - uncoupled.bodies["spar"].position)) > 1e-4
