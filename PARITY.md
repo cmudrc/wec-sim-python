@@ -2013,9 +2013,32 @@ pitch and speed still differ from the published 50 ms source by up to
 `0.002867` rad and `0.02969` rad/s. During 10–15 s resistive control, the
 torque request differs by up to `13.905` N m, applied axial PTO force by
 `66.957` N, float pitch by `0.050795` rad, and speed by `0.848815` rad/s.
-Thus the bounded multirate source run does not supply a comparable
-plant-only trajectory for a 225 s published-case gate. WaveStar NMPC
-remains open, and the badge count is unchanged.
+That bounded run alone does not supply a 225 s plant-step comparison;
+WaveStar NMPC remains open and its badge count is unchanged.
+
+A [fresh full 225 s controller-clock audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38737236834)
+first reran the published 50 ms `ode8` plant with that same explicit 50 ms
+controller schedule. All 4,501 saved wave, float position/velocity, and axial
+PTO force/speed samples and all 500 sea components match the archived
+published source exactly at CSV precision; the controller command differs by
+at most `4.98e-14` N m from text rounding. The predeclared
+published-step identity gates pass, so making the controller schedule
+explicit does **not** itself change the published trajectory at the
+published step. With the controller still held at 50 ms, the source's
+25 ms plant run changes float pitch by up to `0.0903275` rad, pitch speed
+by `0.848815` rad/s, axial PTO force by `66.9571` N, and signed PTO work
+by `12.4461%` relative to the published run. The independent Python 1 ms
+plant against that 25 ms source differs by `0.0670469` rad pitch,
+`0.847519` rad/s speed, `66.8813` N force, and `7.4615%` relative work.
+Before controller activation, MATLAB's own first-10-s pitch change is
+`0.00286654` rad while Python versus the 25 ms source differs by
+`0.000629451` rad. A separate local Python step audit from 25 to 1 ms
+keeps its maximum pitch gap near `0.067` rad, so further Python plant-step
+refinement alone does not explain it. This isolates a substantial source
+plant-step effect while preserving controller cadence; it does not prove
+the published closed-loop trajectory is step-converged or establish
+independent Python parity for that trajectory. The case stays `open_motion`
+and its badge count remains unchanged.
 
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
