@@ -16,6 +16,8 @@ The derived 40 s Sphere sampled-elevation comparison is documented in
 [sphere_elevation_import/README.md](sphere_elevation_import/README.md).
 The published 100 s OSWEC two-sea motion and PTO gate is documented in
 [oswec_multi_wave/README.md](oswec_multi_wave/README.md).
+The published 600 s OSWEC regular selected-heading yaw gate is documented in
+[oswec_regular_yaw/README.md](oswec_regular_yaw/README.md).
 The published OSWEC nonlinear visualization facet-pressure samples are
 documented in [oswec_nonlinear_pressure/README.md](oswec_nonlinear_pressure/README.md).
 The published 100 s Sphere mean-drift motion and force gate is documented in
