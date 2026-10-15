@@ -169,3 +169,45 @@ def test_current_irregular_spectrum_against_executed_matlab(
             np.asarray(getattr(wave, attribute))[1], source_markers[:, index + 1],
             rtol=0, atol=2e-12,
         )
+
+
+@pytest.mark.parametrize("height,expected_gamma", [(9, 5), (1, 1)])
+def test_automatic_jonswap_peak_factor_against_executed_matlab(
+    height, expected_gamma,
+):
+    """Cover both constant default-gamma branches through public WEC.run."""
+    label = f"js_auto_height_{height}"
+    bins = _source(f"{label}_bins.csv")
+    phase = _source(f"{label}_phase.csv", ndmin=2)
+    elevation = _source(f"{label}_elevation.csv")
+    assert _source(f"{label}_gamma.csv") == expected_gamma
+
+    hydro = ROOT / "tests/test_objects/test_bodyclass/testData/hydroData/oswec.h5"
+    components = jonswap_equal_energy_components(
+        hydro, significant_height=height, peak_period=8,
+        directions=[0], spreading=[1], count=64, seed=1,
+        phase_generator="matlab", frequency_range=(0.4, 2.0),
+    )
+    np.testing.assert_allclose(
+        np.column_stack((components.omega, components.d_omega,
+                         components.spectral_amplitude / 2)),
+        bins, rtol=2e-12, atol=1e-14,
+    )
+    np.testing.assert_allclose(components.phase, phase, rtol=0, atol=1e-13)
+
+    wec = WEC("Default JONSWAP peak factor")
+    flap = wec.body("flap", hydro, mass=127_000, inertia=(1.85e6,) * 3)
+    base = wec.body("base", hydro, mass=999, inertia=(999,) * 3)
+    wec.fixed_hinge(flap, base, location=WorldPoint(0, 0, -10),
+                    pto_location=WorldPoint(0, 0, -8.9), damping=12_000)
+    wave = JONSWAPWave(
+        height, 8, seed=1, phase_generator="matlab", frequency_count=64,
+        frequency_range=(0.4, 2.0),
+    )
+    assert "gamma" not in wave.as_case()
+    result = wec.run(wave, dt=0.1, end_time=2, ramp_time=1,
+                     radiation_memory=0.2)
+    np.testing.assert_allclose(result.time, elevation[:, 0], rtol=0, atol=1e-12)
+    np.testing.assert_allclose(result.wave_elevation, elevation[:, 1],
+                               rtol=0, atol=2e-12)
+    assert np.isfinite(result.bodies["flap"].position).all()
