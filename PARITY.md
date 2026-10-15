@@ -715,6 +715,12 @@ source-numerical limits are unchanged. MATLAB's held-yaw path remains strongly
 step-sensitive, so this durability gate does not promote the physical default
 or change the OSWEC badge count.
 
+A separate 2 s ordinary-CI invariant now exercises the physical implicit
+held-yaw path through a native heading update. It replays only the accepted
+Python yaw states to check exported excitation and verifies the PTO torque
+and absorbed work. This is an internal consistency check, not a paired
+MATLAB motion gate.
+
 The already gated published OSWEC `Multiple_Wave_Spectra` case now has an
 ordinary-CI, full-duration public `WEC.run(MultiPMWave(...))` gate from the
 pinned source artifact. The exact BEMIO dataset values and all 1,001 MATLAB

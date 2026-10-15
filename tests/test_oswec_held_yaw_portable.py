@@ -19,6 +19,60 @@ SOURCE = FIXTURES / "oswec_held_yaw/source.npz"
 HEADING_EVENTS = {1: 141, 2: 52, 3: 91}
 
 
+def test_default_held_yaw_commits_heading_and_reports_consistent_work():
+    """The physical implicit path must commit each accepted heading once."""
+    wec = WEC("OSWEC implicit held yaw")
+    flap = wec.body(
+        "flap", HYDRO, mass=12700, inertia=(1.85e6,) * 3,
+        passive_yaw=True, passive_yaw_threshold=1,
+    )
+    wec.body("base", HYDRO, mass=999, inertia=(999,) * 3)
+    yaw = wec.coordinate("yaw", flap.move("yaw", pivot=WorldPoint(0, 0, -8.9)))
+    wec.rotational_pto("hinge", yaw, damping=120000)
+    result = wec.run(
+        PMWave(2.5, 8, direction=10, seed=1, phase_generator="matlab"),
+        dt=.05, end_time=2, ramp_time=0, radiation_memory=1,
+        initial_coordinate={"yaw": .02},
+    )
+    assert result.time.shape == (41,)
+    assert np.ptp(result.coordinates["yaw"].position) > .02
+
+    # Replay only the accepted Python yaw states through the held-heading
+    # force model. This checks force logging and commit order, not MATLAB
+    # trajectory parity for the step-sensitive published case.
+    body = BodyClass(str(HYDRO))
+    body.bodyNumber = 1
+    body.bodyTotal = 2
+    body.readH5file()
+    components = pm_equal_energy_components(
+        HYDRO, significant_height=2.5, peak_period=8,
+        directions=[10], spreading=[1], count=500,
+        seed=1, phase_generator="matlab",
+    )
+    sampled = SampledPassiveYawExcitation.from_hydro_data(
+        body.hydroData, components, dt=.05, end_time=2,
+        ramp_time=0, rho=1000, g=9.81,
+    )
+    held = HeldPassiveYawExcitation(sampled, threshold=1)
+    headings = []
+    for instant, angle in zip(result.time,
+                              result.coordinates["yaw"].position, strict=True):
+        held.commit(instant, np.array([angle]))
+        headings.append(held.last_heading)
+    assert np.count_nonzero(np.abs(np.diff(headings)) > 1e-6) == 1
+    np.testing.assert_allclose(
+        dict(result.raw.extra_outputs)["body1_excitation_force"],
+        held.force_history, rtol=0, atol=1e-8,
+    )
+    pto = result.ptos["hinge"]
+    np.testing.assert_allclose(pto.force, -120000 * pto.velocity,
+                               rtol=0, atol=1e-10)
+    np.testing.assert_allclose(pto.absorbed_power,
+                               120000 * pto.velocity**2,
+                               rtol=0, atol=1e-10)
+    assert np.trapezoid(pto.absorbed_power, result.time) > 0
+
+
 def _heading_events(hydro_data, components, time, yaw):
     sampled = SampledPassiveYawExcitation.from_hydro_data(
         hydro_data, components, dt=.01, end_time=250,
