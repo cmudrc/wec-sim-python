@@ -688,7 +688,7 @@ jobs:
         env:
           WEC_SIM_APPLICATIONS_DIR: applications
           WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-reference-model-output
-      - run: python -m pytest -q tests/test_variable_yaw_heading_bank.py -k published
+      - run: python -m pytest -q tests/test_oswec_regular_yaw_portable.py
         if: matrix.model == 'OSWEC_VARIABLE_YAW_PUBLISHED'
         env:
           WEC_SIM_APPLICATIONS_DIR: applications
