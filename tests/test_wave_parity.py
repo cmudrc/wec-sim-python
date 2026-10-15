@@ -248,6 +248,69 @@ def test_wave_surface_grid_matches_matlab_regular_and_irregular_equations():
     )
 
 
+def test_imported_elevation_wave_surface_preserves_origin_and_travel_direction(tmp_path):
+    """The imported time series sets both the FFT amplitudes and phases."""
+    sample_time = np.arange(16) * .25
+    phase = (.35, -.8)
+    elevation = (.7 * np.cos(np.pi * sample_time + phase[0])
+                 + .2 * np.cos(2 * np.pi * sample_time + phase[1]))
+    wave = WaveClass("etaImport")
+    wave.waveAmpTime = [sample_time, elevation]
+    wave.waveDir = [60]
+    wave.waterDepth = 30
+    grid = ParaviewClass(wave)
+
+    # The source FFT reconstruction must recover the imported record at the
+    # origin and propagate each resolved harmonic along the 60-degree heading.
+    origin = np.array([0.0])
+    for time, height in zip(sample_time, elevation):
+        np.testing.assert_allclose(
+            grid.waveElevationGrid(time, origin, origin), [height],
+            rtol=0, atol=2e-15,
+        )
+    X, Y = np.meshgrid([-2.0, 0.0, 2.0], [-1.0, 1.0])
+    instant, gravity = .375, 9.7
+    position = X * np.cos(np.deg2rad(60)) + Y * np.sin(np.deg2rad(60))
+    expected = (
+        .7 * np.cos(-np.pi**2 / gravity * position + np.pi * instant + phase[0])
+        + .2 * np.cos(-(2 * np.pi)**2 / gravity * position
+                        + 2 * np.pi * instant + phase[1])
+    )
+    np.testing.assert_allclose(
+        grid.waveElevationGrid(instant, X, Y, g=gravity), expected,
+        rtol=0, atol=2e-15,
+    )
+
+    path, = grid.write_paraview_vtp_wave(
+        [instant], tmp_path, domain_size=2,
+        num_points_x=3, num_points_y=2, g=gravity,
+    )
+    points = np.fromstring(
+        ElementTree.parse(path).findtext("./PolyData/Piece/Points/DataArray"),
+        sep=" ",
+    ).reshape(-1, 3)
+    writer_x, writer_y = np.meshgrid([-2.0, 0.0, 2.0], [-2.0, 2.0])
+    writer_position = (writer_x * np.cos(np.deg2rad(60))
+                       + writer_y * np.sin(np.deg2rad(60)))
+    writer_expected = (
+        .7 * np.cos(-np.pi**2 / gravity * writer_position
+                      + np.pi * instant + phase[0])
+        + .2 * np.cos(-(2 * np.pi)**2 / gravity * writer_position
+                        + 2 * np.pi * instant + phase[1])
+    )
+    np.testing.assert_allclose(
+        points[:, :2], np.column_stack((writer_x.ravel(), writer_y.ravel())),
+    )
+    np.testing.assert_allclose(
+        points[:, 2], writer_expected.ravel(), rtol=0, atol=5.1e-6,
+    )
+
+    wave.waveAmpTime[0] = sample_time.copy()
+    wave.waveAmpTime[0][3] += .01
+    with pytest.raises(ValueError, match="uniformly spaced"):
+        grid.waveElevationGrid(instant, X, Y)
+
+
 def test_paraview_wave_vtp_matches_published_grid_layout(tmp_path):
     wave = WaveClass("regular")
     wave.A = 1.25
