@@ -1177,6 +1177,22 @@ limits. This checks individual lines that could otherwise compensate in the
 net connection load; the Python trajectory uses the pinned sea phases,
 HDF5, and native mooring input, without source motion or force histories.
 
+A [fresh complete-line gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38751933408)
+extends that independent 80 s trajectory comparison to all 21 nodes and
+20 segment tensions on each of the three MoorDyn lines, at all 801
+published visualization frame times. Between the two refined MATLAB
+steps, the largest node-coordinate and segment-tension changes are
+`0.683` mm and `93.39` N. The independent public Python trajectory differs
+from the finest source by at most `1.975` mm at a node and `573.8` N at a
+segment. These pass the predeclared `5`/`10` mm MATLAB/Python node gates
+and `1.5`/`4` kN segment-tension gates. Unlike the published VTP writer
+comparison on saved source poses, these line states come from Python's own
+coupled motion and native MoorDyn solve. Comparing the same seeded
+[published-step MATLAB scene](https://github.com/cmudrc/wec-sim-python/actions/runs/38114342891)
+with the finest refined MATLAB scene shows a much larger `0.388335` m
+node-coordinate and `12.36181` kN segment-tension difference. The refined
+gate therefore does not establish published-step coupled or VTP parity.
+
 The original 0.01 s MATLAB trajectory differs from the finest MATLAB
 trajectory by up to `203.4` mm float surge and `104.2` kN m MoorDyn pitch
 moment; Python differs from that original by `203.2` mm and `104.0` kN m.
