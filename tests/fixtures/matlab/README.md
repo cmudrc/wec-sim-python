@@ -14,6 +14,8 @@ The full 900 s published Sphere variable-mass comparison is documented in
 [sphere_variable_mass/README.md](sphere_variable_mass/README.md).
 The published 100 s OSWEC two-sea motion and PTO gate is documented in
 [oswec_multi_wave/README.md](oswec_multi_wave/README.md).
+The published 100 s Sphere mean-drift motion and force gate is documented in
+[sphere_mean_drift/README.md](sphere_mean_drift/README.md).
 The four published 500 s RM3 radiation-option motion and PTO gates are
 documented in [rm3_radiation_options/README.md](rm3_radiation_options/README.md).
 The published 400 s RM3 imported-elevation MooringMatrix gate is documented in
