@@ -1369,6 +1369,14 @@ blades and six root-load components at each frame, the largest difference is
 sampled hub states. The coupled turbine controller and time-evolving platform
 are paired separately in the full-duration gate below.
 
+The isolated five-state MATLAB MOST blade-load baseline is also retained as a
+[portable input and output fixture](tests/fixtures/matlab/most_bem/README.md).
+Ordinary Python CI advances all three blades at the pinned still, moved,
+rotated, and spatial-wind states and applies the original `1e-4` N or N m
+absolute load limit. The existing MATLAB workflow continues to check that
+the IEA 15 MW blade files load into the same model. This makes the numerical
+rotor comparison durable without adding a published-case badge.
+
 The pinned `MOST_Lib.slx` wind `From Workspace` blocks specify `Holding final
 value` after their last input sample. The checked-in TurbSim record yields
 19,999 advected frames, with its last input at approximately 999.90 s, while
