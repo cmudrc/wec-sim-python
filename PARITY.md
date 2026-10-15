@@ -595,13 +595,14 @@ five inventoried cases; smaller systems stay in the disjoint remainder.
 
 ### Current priority and feasible closeout
 
-The near-term goal is to close every *feasible investigation*. Badge fractions
-continue to count only full published-input gates. Use the local R2025b
-installation to test distinct, bounded mechanisms in the seven remaining RM3
-and OSWEC published inputs; Sphere is already 12/12. Make existing passing
-full-duration comparisons durable in ordinary CI when source artifacts permit.
-Then address the four remaining
-noncore inputs:
+The working goal is to finish the parity work that can be established with
+independent evidence, rather than require every published badge to reach 100%.
+Badge fractions continue to count only full published-input gates. First use
+local R2025b to resolve distinct, bounded questions in the seven remaining
+RM3 and OSWEC published inputs; Sphere is already 12/12. Prioritize an
+untested physical or solver mechanism, and make passing full-duration
+comparisons durable in ordinary CI when source artifacts permit. Then address
+the four remaining noncore inputs:
 `Nonlinear_Hydro/ode45/Regular`, `Nonlinear_Hydro/ode45/RegularCIC`,
 `OWC/OrificeModel`, and `WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive`.
 Inspect existing artifacts first. Use local R2025b MATLAB for bounded source
@@ -623,15 +624,16 @@ unchanged negative-gap run or tune the physical Python default to a coarse
 MATLAB artifact. A badge need not read 100% for the feasible investigation
 to be closed; its fraction counts only published gates.
 
-After the core investigations, raise meaningful combined Python line-and-branch
-coverage from the current 83% CI badge toward 90%, concentrating on public
-configuration, actual dynamics, and numerical invariants. Coverage tests must
-check behavior rather than merely execute uncovered lines. The feasible phase
-is ready for review when every input is gated, measured as qualified, or
-explicitly open; each open input names a bounded next experiment or an external
-blocker. Tractable fixes have durable CI gates, and the measured coverage and
-important untested paths are reported. This review is not a claim of physical
-parity for qualified or open inputs.
+After the case investigations, raise meaningful combined Python line-and-branch
+coverage toward 90%, concentrating on public configuration, actual dynamics,
+and numerical invariants. Coverage tests must check behavior rather than merely
+execute uncovered lines; removal of unused legacy code is reported separately
+from newly tested behavior. The feasible phase is ready for review when every
+input is gated, measured as qualified, or explicitly open; each open input
+names a bounded next experiment or an external blocker. Tractable fixes have
+durable CI gates, and the measured coverage and important untested paths are
+reported. This review is not a claim of physical parity for qualified or open
+inputs.
 
 A case earns its badge gate only when an independent Python run covers the
 published input and duration and passes predeclared MATLAB motion or
@@ -664,13 +666,15 @@ the irregular published case remains qualified. For each other
 qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
 that could support an independent published-input gate. If the existing
 evidence instead isolates a source numerical artifact, record the limit and
-stop repeating that comparison. The measured combined Python line-and-branch
-coverage is 83% as displayed by CI. The latest rise shares the production
-PM/JONSWAP component parser with the fixed-hinge path and gates its public
+stop repeating that comparison. The last test-driven coverage rise to 83%
+shared the production PM/JONSWAP component parser with the fixed-hinge path
+and gated its public
 equal-energy wave preprocessing against pinned MATLAB phases and elevation.
 These short wave checks do not add a published-case gate. Raise coverage with
 behavior and numerical invariants, including portable full-duration gates for
-already paired cases. Do not add tests written only to execute lines.
+already paired cases. Do not add tests written only to execute lines. The
+subsequent removal of unused legacy wave-reporting methods changes the coverage
+denominator; its badge increase does not represent newly tested dynamics.
 
 The published 250 s OSWEC `PassiveYawRegression` opt-in source-numerical
 comparison now runs in ordinary Python CI for all three seeds. It generates
