@@ -24,9 +24,8 @@ portable gate checks every 50 ms output sample and the full-resolution work
 integral, so it can run on each ordinary Python CI build.
 
 The fixed-crank case passes the unchanged 75 kN m torque and 25 kN cylinder
-force limits on Linux with this exact HDF5. On ARM64 macOS those two peak
-limits remain unmet (`78.77` kN m and `26.92` kN in the measured local run).
-The test records that specific pair as an expected failure there only while
-the torque and force gaps stay below 85 kN m and 29 kN, respectively. Larger
-drift fails; every other output channel and signed work still run through
-their original gates.
+force limits on Linux with this exact HDF5. The one-coordinate scalar mass
+solve also passes locally on ARM64 macOS: maximum fixed-crank torque and
+cylinder-force gaps are `43.62` kN m and `14.27` kN, below the same limits.
+The platform-specific expected failure is removed. All other output channels
+and signed work keep their original gates.

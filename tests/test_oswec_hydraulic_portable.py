@@ -2,8 +2,6 @@
 
 from hashlib import sha256
 from pathlib import Path
-import platform
-import sys
 
 import numpy as np
 import pytest
@@ -161,14 +159,4 @@ def test_published_400s_hydraulic_motion_pressure_and_power(name, fixed_crank):
     )
     source_work = float(source["source_work"])
     assert abs(python_work - source_work) / abs(source_work) < .01
-    errors = {label: error for label, _, error in failures}
-    if (fixed_crank and sys.platform == "darwin"
-            and platform.machine().lower() == "arm64"
-            and errors.keys() == {"crank torque", "cylinder force"}
-            # Diagnostic bounds contain the measured 78.77 kN m / 26.92 kN
-            # platform gap; larger drift fails instead of hiding in xfail.
-            and errors["crank torque"] < 85_000
-            and errors["cylinder force"] < 29_000):
-        pytest.xfail("ARM64 macOS fixed-crank peak force gap: "
-                     + "; ".join(message for _, message, _ in failures))
     assert not failures, "\n".join(message for _, message, _ in failures)
