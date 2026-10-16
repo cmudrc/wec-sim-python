@@ -513,8 +513,9 @@ class WEC(_WECCaseMixin):
     ) -> WECResult:
         """Simulate the WEC and return named NumPy motion and PTO histories.
 
-        ``wecsim_ode4`` is an opt-in source solver for PM sampled yaw;
-        the default remains the implicit physical radiation step.
+        ``wecsim_ode4`` is an opt-in source solver for PM sampled yaw or a
+        regular-wave nonlinear hinge with ``simulink_delay`` added mass.
+        The default remains the implicit physical solve.
         """
         case = self.to_case(
             wave, dt=dt, end_time=end_time, ramp_time=ramp_time,

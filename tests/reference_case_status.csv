@@ -47,7 +47,7 @@ PTO-Sim/OSWEC/OSWEC_Hydraulic_Crank_PTO,independent_motion,Published full-durati
 PTO-Sim/OSWEC/OSWEC_Hydraulic_PTO,independent_motion,
 PTO-Sim/RM3/RM3_DD_PTO,independent_motion,
 PTO-Sim/RM3/RM3_cHydraulic_PTO,independent_motion,
-Paraview_Visualization/OSWEC_NonLinear_Viz,qualified_motion,Published-step independent flap motion is unpaired; refined-step motion and source-pose VTP are gated.
+Paraview_Visualization/OSWEC_NonLinear_Viz,qualified_motion,Published-step opt-in source-ode4 motion is gated; the physical default remains step-sensitive; source-pose VTP is gated.
 Paraview_Visualization/RM3_MoorDyn_Viz,qualified_motion,Published-step independent MoorDyn motion is unpaired; refined-step motion and source-pose VTP are gated.
 Passive_Yaw/PassiveYawOFF,independent_motion,
 Passive_Yaw/PassiveYawON,independent_motion,

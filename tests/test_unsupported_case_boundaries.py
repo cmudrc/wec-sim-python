@@ -24,7 +24,7 @@ def _free_decay():
     ("simulation", "radiation_method", "state_space",
      "currently applies to floating_joint"),
     ("simulation", "solver", "wecsim_ode4",
-     "currently needs linear_subspace"),
+     "needs linear_subspace or a nonlinear regular fixed_hinge"),
     ("simulation", "added_mass_scheme", "implicit", "currently applies to"),
     ("body", "fixed", True, "fixed hydrodynamic body"),
     ("body", "mean_drift", "control_surface", "requires linear_subspace"),
