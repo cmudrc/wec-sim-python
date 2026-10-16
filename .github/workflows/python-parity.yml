@@ -38,7 +38,8 @@ jobs:
       - run: python -m compileall -q wecsim
       - name: Test and measure coverage
         run: >-
-          python -m pytest -q --ignore=tests/test_variable_yaw_140s_portable.py
+          python -m pytest -q -n 2 --dist loadfile
+          --ignore=tests/test_variable_yaw_140s_portable.py
           --cov=wecsim --cov-branch
           --cov-report=term
           --cov-report=xml:coverage.xml
