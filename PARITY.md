@@ -1315,6 +1315,21 @@ from `0.404` to `1.857` mm. This is evidence that tighter error tolerance
 alone does not remove the source step sensitivity; it neither establishes a
 unique physical cause nor closes the published coupled-motion gate.
 
+A separate local 2 s audit traced the rigid hydrodynamic body's acceleration
+through its `10e-8` s Transport Delay and the active `noB2B` path into the
+wave-radiation calculation. A normal-mode R2025b run of the pinned seed-1 case
+matched the [hosted Linux dense source prefix](https://github.com/cmudrc/wec-sim-python/actions/runs/38085085794)
+within `1.0e-12` m in body
+position; all 1,000 phase values and 201 wave samples matched exactly. Saving
+an unchanged copy of the source library reproduced that local run exactly.
+Changing only this delay to `1e-8` s in another library copy shifted the
+float/spar surge by at most `6.985`/`12.543` µm and shared pitch by
+`2.702e-7` rad over all 201 samples. The independent physical Python run
+differs from the original source by `34.47`/`60.56` mm in float/spar surge
+at 2 s. This identifies the active feedback route, but the precise 100 ns
+delay value does not explain the early published-step surge gap. The
+full-duration published case remains qualified.
+
 The same pinned run exports actual published ParaView wave surfaces at 0, 10,
 and 80 s. Python independently rebuilds their 2,000-point grids from the
 exported sea components. All point coordinates match exactly at the source
