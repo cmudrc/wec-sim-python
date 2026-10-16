@@ -2522,6 +2522,25 @@ relative to MATLAB. A diagnostic test requires the small pre-contact gap and
 the large full-duration gap to remain visible. It is not a passing
 published-step motion gate.
 
+A [fresh 120 s R2025b MaxStep audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38849501711)
+holds `simu.dt=0.1` s, the wave and PTO input, 100 s ramp, and the saved
+output grid fixed while changing only `ode45` MaxStep from 0.1 to 0.025 s.
+The unchanged arm reproduces the archived published prefix within the
+predeclared body/PTO identity limits, and both arms have identical wave
+histories. Relative to the previously gated 0.0125 s source trajectory,
+post-contact PTO-stroke RMS falls from 62.625 to 0.877 mm and its maximum
+falls from 160.643 to 2.673 mm; the 120 s damper-work gap falls from 6.262%
+to 0.284%. An independent public Python solve using only the pinned HDF5,
+regular wave, and WEC configuration differs from the MaxStep-only source by
+at most 3.611 mm PTO stroke, 23.953 mm/s PTO speed, 230.15 kN PTO force,
+and 0.378% damper work on local ARM64. Its largest body-heave gap is
+3.512 mm and pitch gap is `4.50e-5` rad. The
+[paired audit](tests/test_rm3_end_stops_maxstep_audit.py) uses the existing
+refined RM3 motion, PTO, and work limits for that derived source arm. This
+isolates a major solver-step mechanism over 120 s; the unchanged 400 s
+published-step trajectory remains qualified, and the RM3 badge count is
+unchanged.
+
 The Python hard-stop model instead applies added mass implicitly and resolves
 contact forces between output samples. Its 0.025 and 0.0125 s output settings
 change PTO stroke by less than 1 µm over 400 s. This physical dynamics
