@@ -1,0 +1,29 @@
+function rm3_pto_extension_force_audit
+% Export forces from the two unchanged published 0.1 s free-decay inputs.
+repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
+addpath(genpath(fullfile(repoRoot, 'matlab-ref', 'source')));
+outDir = fullfile(repoRoot, 'matlab-rm3-pto-extension-force-audit');
+mkdir(outDir);
+for caseName = ["float", "spar"]
+    name = char(caseName);
+    cd(fullfile(repoRoot, 'applications', 'RM3_PTO_Extension', name));
+    wecSim;
+    assert(strcmp(simu.solver, 'ode4') && simu.dt == 0.1 && ...
+        simu.endTime == 30 && strcmp(waves.type, 'noWaveCIC') && ...
+        pto(1).damping == 0 && pto(1).stiffness == 0 && ...
+        pto(1).extension.PositionTargetValue == 5, ...
+        'The pinned PTO-extension input changed');
+    for bodyNumber = 1:2
+        record = output.bodies(bodyNumber);
+        values = [record.time(:), record.position(:, 3), ...
+            record.velocity(:, 3), record.acceleration(:, 3), ...
+            record.forceRadiationDamping(:, 3), ...
+            record.forceAddedMass(:, 3)];
+        assert(isequal(size(values), [301 6]) && ...
+            all(isfinite(values), 'all'), 'Incomplete force export');
+        writematrix(values, fullfile(outDir, sprintf( ...
+            '%s_body%d_forces.csv', name, bodyNumber)));
+    end
+    close_system('RM3', 0);
+end
+end
