@@ -18,6 +18,20 @@ from scipy.integrate import solve_ivp
 from wecsim.components.directLinearGenerator import DirectLinearGenerator
 from wecsim.hydrodynamics.radiation import RadiationStateSpace
 
+
+def _transport_delay_from_major_steps(previous_interval, current_interval,
+                                      prior_acceleration, delay):
+    """Extrapolate the last two major-step accelerations to ``now - delay``.
+
+    Simulink uses its actual solver steps, which can differ from the saved
+    output grid when ode45 takes extra startup or event steps.
+    """
+    factor = (current_interval / previous_interval
+              - delay / previous_interval)
+    return (prior_acceleration[1]
+            + factor * (prior_acceleration[1] - prior_acceleration[0]))
+
+
 @dataclass(frozen=True)
 class BodyMotion:
     """Six-DOF displacement and its generalized-coordinate derivatives."""
@@ -657,12 +671,11 @@ class GeneralizedDynamics:
                 if step == 1:
                     delayed = body_acceleration[0]
                 else:
-                    # Simulink's tiny Transport Delay extrapolates from the
-                    # two preceding major-step acceleration samples.
-                    factor = 1 - self.added_mass_delay / dt
-                    delayed = (body_acceleration[step - 1] + factor
-                               * (body_acceleration[step - 1]
-                                  - body_acceleration[step - 2]))
+                    delayed = _transport_delay_from_major_steps(
+                        dt, dt,
+                        body_acceleration[step - 2:step],
+                        self.added_mass_delay,
+                    )
                 self.delayed_body_acceleration = tuple(delayed)
             known = known_radiation(step)
             def solve_speed(overrides=None):
