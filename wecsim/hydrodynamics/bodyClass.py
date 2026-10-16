@@ -513,6 +513,8 @@ class BodyClass:
         direction = float(np.asarray(waveDir).item())
         if len(directions) == 1 and not np.isclose(directions[0], direction):
             raise ValueError("imported wave direction differs from the hydro database")
+        if len(directions) > 1 and not directions[0] <= direction <= directions[-1]:
+            raise ValueError("imported wave direction is outside the hydro database headings")
         for ii in range(nDOF):
             if len(directions) > 1:
                 sampled_kernel = _directional_interp(

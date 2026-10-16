@@ -450,7 +450,9 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
                 (frequency if regular_memory else
                  components.omega if irregular else []),
                 ([direction] if regular_memory else
-                 components.directions if irregular else [0]),
+                 components.directions if irregular else
+                 [wave.get("direction", 0)] if wave["type"] == "elevationImport"
+                 else [0]),
                 len(convolution_time), convolution_time,
                 len(components.omega) if irregular else [],
                 dt, rho, g, ("regularCIC" if regular_memory else

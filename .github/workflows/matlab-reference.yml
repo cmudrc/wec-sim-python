@@ -11,6 +11,9 @@ on:
       - 'wecsim/environment/waveClass.py'
       - 'wecsim/environment/irregularWave.py'
       - 'wecsim/hydrodynamics/bodyClass.py'
+      - 'wecsim/interface/configuration.py'
+      - 'wecsim/dynamics/case_inputs.py'
+      - 'wecsim/dynamics/subspace_case.py'
       - 'examples/data/rm3.h5'
       - 'examples/data/oswec.h5'
   workflow_dispatch:

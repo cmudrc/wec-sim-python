@@ -6,8 +6,9 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from scipy.io import loadmat
+from scipy.io import loadmat, savemat
 
+from wecsim import ImportedElevationWave, WEC
 from wecsim.hydrodynamics.bodyClass import BodyClass
 
 
@@ -116,3 +117,58 @@ def test_oswec_irregular_directional_excitation_against_matlab(number):
             python, source, rtol=1e-10, atol=1e-5,
             err_msg=f"OSWEC body {number} {field}",
         )
+
+
+def _imported_heading_source(number):
+    if FRESH:
+        values = loadmat(Path(FRESH) / f"core_hydro_oswec_heading_body{number}.mat")
+        return values["waveAmpTime"], values["excitationForce"]
+    with np.load(FIXTURE) as values:
+        return (values[f"oswec_heading_{number}_waveAmpTime"],
+                values[f"oswec_heading_{number}_excitationForce"])
+
+
+@pytest.mark.parametrize("number", (1, 2))
+def test_oswec_imported_elevation_heading_against_matlab(number, tmp_path):
+    """An interior BEM heading changes all six imported-wave force channels."""
+    time = np.arange(201) * .1
+    eta = .4 * np.cos(2 * np.pi * time / 7) + .15 * np.sin(2 * np.pi * time / 3)
+    record = tmp_path / "etaData.mat"
+    savemat(record, {"etaData": np.column_stack((time, eta))})
+    source_wave, source_force = _imported_heading_source(number)
+    assert source_wave.shape == (201, 2)
+    assert source_force.shape == (201, 6)
+    ramp = np.ones_like(time)
+    early = time < 2
+    ramp[early] = (1 - np.cos(np.pi * time[early] / 2)) / 2
+    expected_wave = eta * ramp
+    np.testing.assert_allclose(source_wave[:, 0], time, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(source_wave[:, 1], expected_wave, rtol=0, atol=1e-12)
+
+    body = _configured_body("oswec", number)
+    body.hydroForce["userDefinedFe"] = np.zeros((len(time), 6))
+    body.userDefinedExcitation(
+        np.vstack((time, expected_wave)), .1, [15], 1000, 9.81,
+    )
+    np.testing.assert_allclose(body.hydroForce["userDefinedFe"], source_force,
+                               rtol=1e-10, atol=1e-5)
+    with pytest.raises(ValueError, match="outside the hydro database headings"):
+        body.userDefinedExcitation(
+            np.vstack((time, expected_wave)), .1, [95], 1000, 9.81,
+        )
+
+    if number == 1:
+        # The public wave setting must reach production body preprocessing,
+        # not just the direct BodyClass call above.
+        wec = WEC("OSWEC imported heading")
+        flap = wec.body("flap", ROOT / "examples/data/oswec.h5",
+                        inertia=(1e7, 1e7, 1e7))
+        wec.coordinate("heave", flap.move("heave"))
+        result = wec.run(
+            ImportedElevationWave(record, direction=15),
+            dt=.1, end_time=20, ramp_time=2, radiation_memory=10,
+        )
+        np.testing.assert_allclose(result.wave_elevation, expected_wave,
+                                   rtol=0, atol=1e-12)
+        force = dict(result.raw.extra_outputs)["body1_excitation_force"]
+        np.testing.assert_allclose(force, source_force, rtol=1e-10, atol=1e-5)

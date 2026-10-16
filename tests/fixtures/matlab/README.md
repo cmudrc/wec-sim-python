@@ -77,11 +77,16 @@ The fixture contains all 6×6 restoring and infinite-frequency added-mass
 entries, 101 time samples of each 6×6 radiation kernel, and all six regular
 excitation real and imaginary coefficients for each body. The OSWEC irregular
 entries retain all 3×64×6 excitation coefficients and the frequency grid.
-It was packed from the six source MAT files as float64 without rounding; its
-SHA-256 is
-`6241f9849a9408f0177d0e179efad75b7f599e992c87724cabbd24754e99df95`.
+The [fresh imported-heading run](https://github.com/cmudrc/wec-sim-python/actions/runs/38927257242)
+also supplies all 201 wave and six-component excitation samples for both
+OSWEC bodies at 15°. The two source MAT files have SHA-256
+`3692e404b953c9ab8a07ea1303360974617bc5ba939eac434bc22149bbcbf7d5`
+and `637fb11ada93531f1cc25678f84717e7f622694c3db523c6a0c584d1b638540e`.
+The packed float64 fixture retains the older arrays unchanged and has SHA-256
+`2e09372c5f4e8e74323024c09befcb28b6a5e8ba20f4f86459720467f1ff8d9a`.
 The largest observed absolute Python/source difference is `7.51e-9` in the
-OSWEC radiation kernel; all irregular excitation entries are bit-equal.
+OSWEC radiation kernel; all irregular excitation entries are bit-equal. The
+imported-heading force gap is at most `3.61e-9` N or N m over both bodies.
 Ordinary CI uses the fixture; the fresh MATLAB
 workflow sets `WEC_SIM_MATLAB_REFERENCE_DIR` to compare newly generated MAT
 files against the same Python calculation. This is force preprocessing, not
