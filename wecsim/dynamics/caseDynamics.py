@@ -109,8 +109,12 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             raise ValueError("a fixed hydrodynamic body currently requires a two-body fixed_hinge")
     if "radiation_method" in sim and kind != "floating_joint":
         raise ValueError("radiation_method currently applies to floating_joint")
-    if "solver" in sim and kind != "linear_subspace":
-        raise ValueError("simulation.solver currently needs linear_subspace")
+    if "solver" in sim and kind != "linear_subspace" and not (
+            kind == "fixed_hinge" and wave["type"] == "regular"
+            and sim["solver"] == "wecsim_ode4"):
+        raise ValueError(
+            "simulation.solver needs linear_subspace or a nonlinear regular fixed_hinge"
+        )
     if "added_mass_scheme" in sim and kind not in ("floating_joint", "fixed_hinge"):
         raise ValueError("added_mass_scheme currently applies to floating_joint or fixed_hinge")
     if any(path is None for path in hydro) and not (
@@ -363,7 +367,14 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         hinge = (_location({"location": pto_data["location"]}, "pto.location")
                  if "location" in pto_data else location)
         if wave["type"] == "regular":
-            if sim.get("added_mass_scheme", "implicit") != "implicit":
+            source_ode4 = sim.get("solver") == "wecsim_ode4"
+            scheme = sim.get("added_mass_scheme", "implicit")
+            if source_ode4:
+                if nonlinear != "instantaneous" or scheme != "simulink_delay":
+                    raise ValueError(
+                        "regular source ode4 needs nonlinear mesh pressures and simulink_delay"
+                    )
+            elif scheme != "implicit":
                 raise ValueError("regular fixed-hinge dynamics need implicit added mass")
             height = _number(wave.get("height"), "wave.height", positive=True)
             period = _number(wave.get("period"), "wave.period", positive=True)
@@ -387,6 +398,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 pto_damping=damping, pto_stiffness=stiffness,
                 pto_equilibrium=equilibrium, dt=dt, end_time=end_time,
                 ramp_time=ramp_time, rho=rho, g=g,
+                source_ode4=source_ode4,
             )
             ramp = np.ones(len(solved.time))
             if ramp_time > 0:

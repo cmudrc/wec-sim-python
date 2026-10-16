@@ -1440,6 +1440,21 @@ This establishes independent motion parity for this fixed-hinge regular-wave
 case against a refined MATLAB path. The published coarse-step motion and
 other nonlinear six-DOF layouts have separate numerical and feature limits.
 
+The [portable full-duration published-step gate](tests/test_oswec_nonlinear_source_ode4.py)
+now runs the same 120 s case through public `WEC.run` with opt-in
+`solver="wecsim_ode4"` and fixed-hinge
+`added_mass_scheme="simulink_delay"`. This path evaluates mesh pressures from
+the pinned STL and HDF5 on Python's own motion while extrapolating the two
+previously accepted accelerations at each RK4 stage. No MATLAB poses or
+forces are inputs. Against all 1,201 published R2025b samples, maximum
+surge, heave, and pitch gaps are `1.634` mm, `0.648` mm, and `0.000351`
+rad; their speed gaps are `1.584` mm/s, `0.729` mm/s, and `0.000348`
+rad/s. The paired gates are `2`/`0.8` mm and `0.00045` rad for motion,
+and `2`/`1` mm/s and `0.0005` rad/s for speed. The implicit physical
+default remains unchanged and retains the documented published-step gap.
+This is bounded numerical reproduction of a strongly step-sensitive source
+case, so the qualified label and OSWEC badge count remain unchanged.
+
 The [pinned MoorDyn ParaView writer gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38080388695)
 interpolates two lines with three and four nodes to two intermediate frames.
 Python's public `ParaviewClass.write_paraview_vtp_mooring` matches all source

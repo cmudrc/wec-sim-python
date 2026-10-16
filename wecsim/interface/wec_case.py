@@ -353,10 +353,16 @@ class _WECCaseMixin:
         if not isinstance(wave, (RegularWave, PMWave, MultiPMWave,
                                  FullDirectionalSpectrumWave)):
             raise ValueError("fixed_hinge supports regular, PM, JONSWAP, or full-directional waves")
-        if (isinstance(wave, RegularWave)
-                and (wave.direction != 0
-                     or hinge.added_mass_scheme != "implicit")):
-            raise ValueError("regular fixed_hinge needs zero-heading waves and implicit added mass")
+        if isinstance(wave, RegularWave):
+            source_ode4 = simulation.get("solver") == "wecsim_ode4"
+            delayed = hinge.added_mass_scheme == "simulink_delay"
+            if (wave.direction != 0 or source_ode4 != delayed
+                    or (source_ode4
+                        and hinge.flap.nonlinear_hydro != "instantaneous")):
+                raise ValueError(
+                    "regular fixed_hinge needs either implicit mass or "
+                    "nonlinear source ode4 with simulink_delay"
+                )
         if hinge.base is not None and hinge.base.fixed:
             if (hinge.base.center_gravity is None
                     or not np.isfinite(hinge.base.center_gravity).all()):

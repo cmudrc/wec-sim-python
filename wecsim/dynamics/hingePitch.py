@@ -310,13 +310,14 @@ def solve_hinged_pitch_nonlinear_regular(
     ramp_time: float = 40.0,
     rho: float = 1000.0,
     g: float = 9.81,
+    source_ode4: bool = False,
 ) -> HingePitchResponse:
     """Advance a hinged flap with instantaneous regular-wave mesh pressures.
 
     The pressure and frequency-domain force laws are paired with the pinned
-    nonlinear OSWEC case. The body motion uses implicit added mass and resolves
-    pressure forces between output samples; it does not adopt Simulink's delayed
-    acceleration feedback.
+    nonlinear OSWEC case. The default motion uses implicit added mass and
+    resolves pressure between output samples. ``source_ode4`` instead follows
+    the published fixed-step delayed-acceleration path.
     """
     values = [wave_height, wave_period, hinge_z, body_mass, pitch_inertia,
               pto_damping, pto_stiffness, pto_equilibrium, dt, end_time,
@@ -417,9 +418,14 @@ def solve_hinged_pitch_nonlinear_regular(
         pto_damping=np.array([[pto_damping]]),
         pto_equilibrium=np.array([pto_equilibrium]),
     )
-    solved = device.integrate(
-        dt=dt, end_time=end_time, adaptive_regular=True,
-    )
+    if source_ode4:
+        from wecsim.dynamics.nonlinearHingeOde4 import (
+            integrate_nonlinear_hinge_ode4,
+        )
+        solved = integrate_nonlinear_hinge_ode4(device, dt=dt, end_time=end_time)
+    else:
+        solved = device.integrate(dt=dt, end_time=end_time,
+                                  adaptive_regular=True)
     angle = solved.coordinate[:, 0]
     speed = solved.speed[:, 0]
     excitation_force = np.array([
