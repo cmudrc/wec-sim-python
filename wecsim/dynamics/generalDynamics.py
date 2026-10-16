@@ -322,8 +322,9 @@ class GeneralizedDynamics:
         next coordinate and speed. It advances once per radiation-memory
         step; its force acts during the ensuing implicit body solve. The
         initial external force is zero.
-        ``solver='wecsim_ode4'`` is limited to one-coordinate sampled yaw;
-        source path; it leaves the implicit default unchanged.
+        ``solver='wecsim_ode4'`` selects a source numerical path for
+        sampled yaw or two-body delayed-mass convolution. The implicit
+        physical default is unchanged.
         """
         if not np.isfinite([dt, end_time]).all() or dt <= 0 or end_time < 0:
             raise ValueError("dt must be positive and end_time nonnegative")
@@ -348,12 +349,23 @@ class GeneralizedDynamics:
         memory = any(body.radiation_kernel is not None for body in self.bodies)
         if solver not in ("implicit", "wecsim_ode4"):
             raise ValueError("solver must be implicit or wecsim_ode4")
+        source_cic = (solver == "wecsim_ode4"
+                      and self.added_mass_delay is not None)
         if solver == "wecsim_ode4" and (
                 not memory or radiation_state_space is not None
                 or adaptive_regular or applied_force_history is not None
-                or step_force is not None or self.added_mass_delay is not None
+                or step_force is not None
                 or self.controlled_ptos or self.linear_generators):
-            raise ValueError("wecsim_ode4 needs standalone sampled-yaw radiation memory")
+            raise ValueError("wecsim_ode4 needs standalone radiation memory")
+        if source_cic and (
+                len(self.bodies) != 2 or self.coordinate_count != 4
+                or self.radiation_discretization != "trapezoid"
+                or any(body.radiation_kernel is None for body in self.bodies)
+                or self.nonlinear_force is not None
+                or any(body.state_excitation is not None
+                       or body.state_inertia is not None
+                       for body in self.bodies)):
+            raise ValueError("source CIC ode4 needs a continuous two-body RM3 joint")
         if radiation_state_space is not None and (
                 not isinstance(radiation_state_space, RadiationStateSpace)
                 or len(self.bodies) != 2 or memory or self.controlled_ptos
@@ -379,8 +391,12 @@ class GeneralizedDynamics:
         generator_state = None
         generator_force = None
         if solver == "wecsim_ode4":
-            from wecsim.dynamics.heldYawOde4 import integrate_held_yaw_ode4
-            integrate_held_yaw_ode4(self, time, q, v, a, dt)
+            if source_cic:
+                from wecsim.dynamics.sourceCicOde4 import integrate_source_cic_ode4
+                integrate_source_cic_ode4(self, time, q, v, a, dt)
+            else:
+                from wecsim.dynamics.heldYawOde4 import integrate_held_yaw_ode4
+                integrate_held_yaw_ode4(self, time, q, v, a, dt)
         elif radiation_state_space is not None:
             self._integrate_state_space_radiation(
                 time, q, v, a, dt, radiation_state_space,

@@ -110,10 +110,12 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
     if "radiation_method" in sim and kind != "floating_joint":
         raise ValueError("radiation_method currently applies to floating_joint")
     if "solver" in sim and kind != "linear_subspace" and not (
-            kind == "fixed_hinge" and wave["type"] == "regular"
-            and sim["solver"] == "wecsim_ode4"):
+            sim["solver"] == "wecsim_ode4" and (
+                (kind == "fixed_hinge" and wave["type"] == "regular")
+                or (kind == "floating_joint" and wave["type"] == "none"))):
         raise ValueError(
-            "simulation.solver needs linear_subspace or a nonlinear regular fixed_hinge"
+            "simulation.solver needs linear_subspace, a nonlinear regular "
+            "fixed_hinge, or a no-wave floating_joint"
         )
     if "added_mass_scheme" in sim and kind not in ("floating_joint", "fixed_hinge"):
         raise ValueError("added_mass_scheme currently applies to floating_joint or fixed_hinge")
@@ -688,6 +690,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             b2b=b2b, radiation_memory=radiation_memory,
             radiation_method=radiation_method,
             added_mass_scheme=sim.get("added_mass_scheme", "implicit"),
+            solver=sim.get("solver", "implicit"),
             no_wave=wave["type"] == "none",
             excitation_force=imported_force,
             initial_coordinate=initial_q, initial_speed=initial_v,

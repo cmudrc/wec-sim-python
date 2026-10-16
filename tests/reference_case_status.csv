@@ -52,8 +52,8 @@ Paraview_Visualization/RM3_MoorDyn_Viz,qualified_motion,Published-step independe
 Passive_Yaw/PassiveYawOFF,independent_motion,
 Passive_Yaw/PassiveYawON,independent_motion,
 Passive_Yaw/PassiveYawRegression,qualified_motion,Opt-in source ode4 independently reproduces all three published 250 s held-yaw trajectories; the physical default differs and the MATLAB source is step-sensitive.
-RM3_PTO_Extension/float,qualified_motion,Finest-step free-decay motion is gated; published-step source is step-sensitive.
-RM3_PTO_Extension/spar,qualified_motion,Finest-step free-decay motion is gated; published-step source is step-sensitive.
+RM3_PTO_Extension/float,qualified_motion,Opt-in source ode4 independently pairs the full published 30 s free decay; the physical default differs and the source is step-sensitive.
+RM3_PTO_Extension/spar,qualified_motion,Opt-in source ode4 independently pairs the full published 30 s free decay; the physical default differs and the source is step-sensitive.
 Radiation_Force_Options,independent_motion,"All four radiation modes have motion gates; the fitted state-space option is nonpassive."
 Variable_Hydro/Passive_Yaw,mixed_modes,Published regular-wave motion and opt-in source ode4 numerical irregular motion are gated; the physical default differs and the MATLAB source is step-sensitive.
 Variable_Hydro/Variable_Mass,independent_motion,

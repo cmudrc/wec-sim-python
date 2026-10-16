@@ -225,6 +225,20 @@ class _WECCaseMixin:
                                     joint.mooring_surge_stiffness]).all()
                 or joint.mooring_surge_stiffness < 0):
             raise ValueError("floating_joint location, PTO, and mooring settings must be finite")
+        if simulation.get("solver") == "wecsim_ode4" and (
+                not isinstance(wave, NoWave)
+                or joint.added_mass_scheme != "simulink_delay"
+                or joint.radiation_method not in (None, "convolution")
+                or joint.damping != 0 or joint.stiffness != 0
+                or joint.hard_stops is not None
+                or joint.mooring_surge_stiffness != 0
+                or joint.moordyn is not None or self.body_to_body
+                or np.any(np.asarray(joint.location.coordinates()) != 0)
+                or initial_speed is not None):
+            raise ValueError(
+                "source CIC ode4 needs the no-wave RM3 free-decay layout "
+                "with simulink_delay added mass"
+            )
         bodies = []
         for index, body in enumerate((joint.float_body, joint.spar_body), start=1):
             if (body.fixed or body.hydro_file is None or body.mass != "equilibrium"

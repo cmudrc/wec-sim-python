@@ -2235,6 +2235,24 @@ energy comparison in ordinary Python CI from the exact generated HDF5 and
 all saved source samples. The 0.1 s published case remains qualified, and
 the RM3 badge remains 17/21.
 
+The [public source-ode4 gate](tests/test_rm3_pto_extension_source_ode4.py)
+now runs both published 30 s `RM3_PTO_Extension` free decays through
+`WEC.run(NoWave(), solver="wecsim_ode4")`, with zero PTO force and the
+explicit `simulink_delay` added-mass setting. It uses the pinned HDF5 and
+initial 5 m extension, without saved MATLAB states or forces as inputs.
+WEC-Sim's convolution block evaluates the IRF at accepted steps and
+extrapolates three prior radiation forces with PCHIP at ode4 minor steps;
+the 100 ns added-mass delay carries its accepted value through the first
+stage. Across all 301 published 0.1 s samples, maximum independent
+Python/MATLAB float and spar heave gaps are `4.69e-12` and `6.36e-12` m;
+speed gaps are `5.79e-12` and `6.89e-13` m/s. PTO stroke and speed agree
+within `7.10e-12` m and `5.79e-12` m/s. The same full-duration gates pass
+at the archived 0.05, 0.025, and 0.0125 s source steps, with `1e-8` m and
+m/s body/PTO limits and `1e-7` N/W zero-force/power limits. This establishes
+published-step *numerical* reproduction for these two inputs. The physical
+implicit default still differs substantially, and the MATLAB step audits
+show source sensitivity, so both cases stay qualified and RM3 remains 17/21.
+
 A [portable 30 s PTO-extension step diagnostic](tests/test_rm3_pto_extension_physical_step.py)
 compares both public `WEC.run` free decays with the pinned four-step R2025b
 source audit. It uses the common RM3 HDF5 whose active convolution and mass
