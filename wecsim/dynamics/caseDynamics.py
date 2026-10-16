@@ -332,10 +332,10 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         # The hinge solver follows the flap's curved center-of-gravity path;
         # a constant pitch coordinate map would miss that translation.
         if (len(bodies) not in (1, 2)
-                or wave["type"] not in ("pm", "jonswap", "pm_multi", "regular",
+                or wave["type"] not in ("none", "pm", "jonswap", "pm_multi", "regular",
                                         "spectrumImportFullDir")
                 or b2b):
-            raise ValueError("fixed-hinge pitch needs one flap, optional fixed base, and regular, PM, JONSWAP, multi-PM, or full-directional waves")
+            raise ValueError("fixed-hinge pitch needs one flap, optional fixed base, and no-wave, regular, PM, JONSWAP, multi-PM, or full-directional waves")
         if len(bodies) == 2 and hydro[1] is not None:
             _body_number(bodies[1], 2)
             fixed_body = BodyClass(str(hydro[1]))
@@ -434,7 +434,18 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             )
         if nonlinear is not None:
             raise ValueError("nonlinear fixed hinge currently needs a regular wave")
-        if wave["type"] == "spectrumImportFullDir":
+        if wave["type"] == "none":
+            if set(wave) != {"type"}:
+                raise ValueError("no-wave fixed hinge accepts no wave settings")
+            steps = round(end_time / dt)
+            if steps < 1 or not np.isclose(steps * dt, end_time, rtol=0, atol=1e-10):
+                raise ValueError("no-wave fixed hinge needs end_time to be a positive multiple of dt")
+            # Still water removes excitation but retains the radiation memory
+            # that damps free decay from the supplied initial pitch and speed.
+            excitation_force = np.zeros((steps + 1, 6))
+            elevation = np.zeros(steps + 1)
+            auxiliary_files = []
+        elif wave["type"] == "spectrumImportFullDir":
             if (set(wave) - {"type", "file", "phase_file", "seed", "phase_generator",
                              "excitation_interpolation", "force_quadrature"}
                     or "file" not in wave):
@@ -535,8 +546,11 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 ramp_time=ramp_time, rho=rho, g=g,
                 excitation_interpolation=wave.get("excitation_interpolation", "linear"),
             )
+        if wave["type"] != "none":
+            excitation_force = incident.excitation_force
+            elevation = incident.elevation
         solved = solve_hinged_pitch_from_excitation(
-            hydro[0], incident.excitation_force,
+            hydro[0], excitation_force,
             hinge_z=hinge[2], body_mass=mass, pitch_inertia=inertia,
             pto_damping=damping, pto_stiffness=stiffness,
             pto_equilibrium=equilibrium, dt=dt,
@@ -561,7 +575,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             solved.time, position, velocity,
             tuple(path for path in hydro if path is not None),
             pto_force=solved.pto_torque, pto_label="pto_pitch_torque",
-            wave_elevation=incident.elevation,
+            wave_elevation=elevation,
             auxiliary_files=tuple(auxiliary_files),
         )
 

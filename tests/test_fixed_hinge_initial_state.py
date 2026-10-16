@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from wecsim import PMWave, RegularWave, WEC, WorldPoint
+from wecsim import NoWave, PMWave, RegularWave, WEC, WorldPoint
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -82,6 +82,23 @@ def test_irregular_hinge_starts_memory_and_pto_from_supplied_state():
                                -12_000 * -.02 - 500 * .12)
     assert np.max(np.abs(result.coordinates["pitch"].position
                          - zero.coordinates["pitch"].position)) > .1
+
+
+def test_no_wave_hinge_free_decay_uses_radiation_and_initial_state():
+    result = _hinge().run(
+        NoWave(), dt=.05, end_time=.3, radiation_memory=.2,
+        initial_coordinate={"pitch": .12}, initial_speed={"pitch": -.02},
+    )
+    angle = result.coordinates["pitch"].position
+    speed = result.coordinates["pitch"].velocity
+    assert result.case["wave"] == {"type": "none"}
+    assert angle[0] == .12
+    assert speed[0] == -.02
+    assert np.isfinite(angle).all()
+    assert np.max(np.abs(angle - angle[0])) > 0
+    np.testing.assert_array_equal(result.wave_elevation, np.zeros(len(result.time)))
+    np.testing.assert_allclose(result.ptos["hinge"].force,
+                               -12_000 * speed - 500 * angle)
 
 
 @pytest.mark.parametrize("source_solver", (False, True))
