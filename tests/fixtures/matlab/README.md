@@ -266,6 +266,13 @@ That HDF5 is not byte-identical to the current WEC-Sim example; its regular-wave
 hydrodynamic data still reproduce this source trajectory within the stated
 per-channel gates. The live paired tests continue to use pinned MATLAB inputs.
 
+## RM3 Wave Markers
+
+The [compact RM3 marker fixture](rm3_wave_markers/README.md) keeps all 25
+published 400 s elevation histories, origin elevation, locations, and wave
+parameters in ordinary Python CI. Its body and PTO motion is paired by the
+existing `rm3_regular_wave.npz` gate.
+
 ## OSWEC Wave Markers
 
 `oswec_wave_markers.npz` retains every 0.1 s sample of the published 400 s
