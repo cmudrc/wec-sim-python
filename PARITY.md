@@ -2216,14 +2216,18 @@ their respective MATLAB peaks. This verifies the published regular-wave,
 fixed-frequency-hydrodynamic case, not other seas, radiation-memory settings,
 or arbitrary floating OWC designs.
 
-The same published run's exact two-body HDF5 and all 50,001 wave and
-12 body-excitation samples now have an
+The same published run's exact two-body HDF5, full mass, radiation, and
+hydrostatic matrices, and all 50,001 wave and 12 body-excitation samples now
+have an
 [ordinary-CI portable gate](tests/test_floating_owc_wave_force_portable.py).
 It independently reconstructs both bodies' regular-wave forcing from the
 HDF5 and published sea settings, without native MoorDyn or saved motion as
 inputs. The maximum source gaps are `1.28e-13` m wave elevation and
 `2.69e-6` N or N m excitation, under explicit `1e-11` m and `1e-5`
-N or N m limits. This hardens the input side of the already counted 500 s
+N or N m limits. Total mass, radiation damping, and hydrostatic matrices
+differ by at most `4.77e-6`, `3.35e-8`, and `2.98e-7` in their respective
+units, below `1e-5`, `1e-7`, and `1e-5` gates. This hardens the input side of
+the already counted 500 s
 coupled case; it does not add a case badge or replace the hosted full-motion
 gate.
 
