@@ -65,6 +65,9 @@ with h5py.File(hydro) as h5:
             jacobian[2, 3] = -radius * sine
             jacobian[4, 3] = 1
             acceleration = terms[number - 1][index, 1:7]
+            # MATLAB postprocessing adds the pitch inertia carried in the
+            # Simscape body to forceAddedMass; undo it to recover the applied
+            # hydrodynamic feedback term for this planar diagnostic.
             applied_log = terms[number - 1][index, 19:25].copy()
             applied_log[4] -= added[4, 4] * acceleration[4]
             correction[index] += jacobian.T @ (
