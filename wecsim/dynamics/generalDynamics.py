@@ -296,7 +296,16 @@ class GeneralizedDynamics:
             # Virtual work gives generalized force J.T @ body_force.
             force += j.T @ body_force
         try:
-            answer = np.linalg.solve(mass, force)
+            # A one-coordinate device has a scalar mass equation. Dividing it
+            # directly avoids a platform-specific linear algebra backend for
+            # this trivial solve, whose tiny differences can be amplified by
+            # a tightly coupled, sampled hydraulic PTO.
+            if mass.shape == (1, 1):
+                if mass[0, 0] == 0:
+                    raise np.linalg.LinAlgError("singular scalar mass")
+                answer = force / mass[0, 0]
+            else:
+                answer = np.linalg.solve(mass, force)
         except np.linalg.LinAlgError as exc:
             raise ValueError("the constrained device has a singular mass matrix") from exc
         if not np.isfinite(answer).all():
