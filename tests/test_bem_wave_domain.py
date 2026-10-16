@@ -14,6 +14,8 @@ from wecsim.environment.irregularWave import (
 
 SPHERE = Path(__file__).resolve().parents[1] / "examples/data/sphere.h5"
 OSWEC = Path(__file__).resolve().parents[1] / "examples/data/oswec.h5"
+FULL_CIRCLE_OSWEC = (Path(__file__).parent
+                     / "fixtures/matlab/oswec_multi_wave/oswec.h5")
 
 
 def _heave_wec(hydro_file):
@@ -78,5 +80,41 @@ def test_full_directional_force_rejects_frequency_extrapolation(interpolation, e
         d_theta=components.d_theta, phase=components.phase,
     )
     response = synthesize_full_directional_response(OSWEC, supported, **settings)
+    assert np.isfinite(response.excitation_force).all()
+    assert np.max(np.abs(response.excitation_force)) > 0
+
+
+def _full_directional_components(directions):
+    return FullDirectionalComponents(
+        omega=np.array([.6, .8]),
+        spectral_amplitude=np.full((2, 2), .01),
+        d_omega=np.full(2, .1), directions=np.asarray(directions, dtype=float),
+        d_theta=np.full(2, .1), phase=np.zeros((2, 2)),
+    )
+
+
+@pytest.mark.parametrize("directions", ([0, 120], [-10, 10], [0, 360]))
+def test_full_directional_force_rejects_heading_outside_partial_bem_grid(directions):
+    """The 0–90° HDF5 sector has no coefficients for the missing headings."""
+    with pytest.raises(ValueError, match="full-directional headings"):
+        synthesize_full_directional_response(
+            OSWEC, _full_directional_components(directions),
+            dt=.1, end_time=.1, ramp_time=0,
+        )
+
+    response = synthesize_full_directional_response(
+        OSWEC, _full_directional_components([0, 90]),
+        dt=.1, end_time=.1, ramp_time=0,
+    )
+    assert np.isfinite(response.excitation_force).all()
+    assert np.max(np.abs(response.excitation_force)) > 0
+
+
+def test_full_directional_force_interpolates_across_full_circle_bem_seam():
+    """The 0–350° HDF5 grid supports headings between 350° and 360°."""
+    response = synthesize_full_directional_response(
+        FULL_CIRCLE_OSWEC, _full_directional_components([350, 355]),
+        dt=.1, end_time=.1, ramp_time=0,
+    )
     assert np.isfinite(response.excitation_force).all()
     assert np.max(np.abs(response.excitation_force)) > 0
