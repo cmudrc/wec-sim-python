@@ -1,5 +1,6 @@
 """Pair a fixed monopile with current against pinned MATLAB WEC-Sim."""
 
+from hashlib import sha256
 import os
 from pathlib import Path
 
@@ -12,6 +13,23 @@ from wecsim.hydrodynamics.morison import finite_depth_wavenumber
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
+PORTABLE = Path(__file__).parent / "fixtures/matlab/fixed_morison_current/source.npz"
+PORTABLE_SHA256 = "203e0e7e702655b18c98b47bbc32ea2cab4f447c4859a0f95a34b4f75d972c07"
+
+
+def _source_arrays(profile):
+    if REFERENCE:
+        source = Path(REFERENCE)
+        prefix = f"MORISON_FIXED_CURRENT_{profile}"
+        load = lambda suffix: np.loadtxt(source / f"{prefix}_{suffix}.csv",
+                                        delimiter=",")
+        return (load("components"), load("wave"), load("morison_force"),
+                load("body1"), load("body2"))
+    assert sha256(PORTABLE.read_bytes()).hexdigest() == PORTABLE_SHA256
+    with np.load(PORTABLE, allow_pickle=False) as saved:
+        return (saved["components"].copy(), saved["wave"].copy(),
+                saved[f"{profile}_force"].copy(),
+                saved[f"{profile}_body1"].copy(), saved["body2"].copy())
 
 
 def test_public_fixed_morison_current_reaches_force_solver():
@@ -47,19 +65,13 @@ def _check(actual, expected, tolerance, label):
     assert error < tolerance, f"{label}: {error:.6g} exceeds {tolerance}"
 
 
-@pytest.mark.skipif(not REFERENCE, reason="paired MATLAB current output not provided")
 @pytest.mark.parametrize("profile", ["uniform", "power", "linear"])
 def test_fixed_monopile_current_profiles_against_matlab(tmp_path, profile):
-    source = Path(REFERENCE)
-    prefix = f"MORISON_FIXED_CURRENT_{profile}"
-    components = np.loadtxt(source / f"{prefix}_components.csv", delimiter=",")
-    wave = np.loadtxt(source / f"{prefix}_wave.csv", delimiter=",")
-    force = np.loadtxt(source / f"{prefix}_morison_force.csv", delimiter=",")
-    monopile = np.loadtxt(source / f"{prefix}_body1.csv", delimiter=",")
+    components, wave, force, monopile, tower = _source_arrays(profile)
     assert components.shape == (500, 5)
     assert wave.shape == (2001, 2)
     assert force.shape == (2001, 7)
-    assert monopile.shape == (2001, 25)
+    assert monopile.shape == tower.shape == (2001, 25)
     _check(monopile[:, 13:19], -force[:, 1:7], 1e-8,
            "MATLAB total and Morison force sign")
 
@@ -107,3 +119,9 @@ def test_fixed_monopile_current_profiles_against_matlab(tmp_path, profile):
            "tower force")
     _check(result.bodies["monopile"].position, monopile[:, 1:7], 1e-12,
            "fixed monopile position")
+    _check(result.bodies["tower"].position, tower[:, 1:7], 1e-12,
+           "fixed tower position")
+    _check(result.bodies["monopile"].velocity, monopile[:, 7:13], 1e-12,
+           "fixed monopile velocity")
+    _check(result.bodies["tower"].velocity, tower[:, 7:13], 1e-12,
+           "fixed tower velocity")
