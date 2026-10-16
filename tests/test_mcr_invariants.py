@@ -89,3 +89,15 @@ def test_mcr_rejects_missing_or_duplicate_power_matrix_cells():
                       trace, averaging_start_time=0)
     with pytest.raises(ValueError, match="incomplete"):
         missing.power_matrix(damping=100)
+
+
+@pytest.mark.parametrize("record", (
+    {"cases": np.array([[1, 6, 100, 0]])},
+    {"header": np.array(["waves.height", "waves.period",
+                         "pto(1).damping", "pto(1).stiffness"], dtype=object)},
+))
+def test_mcr_mat_table_reports_missing_fields_as_input_error(tmp_path, record):
+    path = tmp_path / "incomplete-mcr.mat"
+    savemat(path, {"mcr": record})
+    with pytest.raises(ValueError, match="MCR MAT file needs header and cases"):
+        mcr_mat_file(path)
