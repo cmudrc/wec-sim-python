@@ -426,6 +426,7 @@ Supported combinations are:
 | Constraint `kind` | Wave `type` | Bodies and PTO | Integration |
 | --- | --- | --- | --- |
 | `heave` | `none` | One equilibrium-mass body, initial heave displacement, no PTO | Radiation convolution |
+| `fixed_hinge` | `none` | Hydrodynamic flap, optional fixed base, pitch PTO and initial pitch or speed | Still-water free decay with radiation convolution |
 | `fixed_hinge` | `pm`, `jonswap`, or `pm_multi` | Hydrodynamic flap, optional fixed hydrodynamic base, pitch PTO | Directional irregular excitation and radiation convolution; PM and JONSWAP accept EqualEnergy or Traditional bins and an optional frequency range; `pm_multi` sums independently phased PM seas |
 | `fixed_hinge` | `spectrumImportFullDir` | Hydrodynamic flap, optional fixed hydrodynamic base, pitch PTO | Imported frequency-dependent directional spectrum and radiation convolution |
 | `fixed_hinge` | `regular` | One hydrodynamic flap, optional fixed nonhydrodynamic base, pitch PTO | Regular-wave excitation and constant-frequency radiation; optional instantaneous STL mesh hydrostatics and Froude–Krylov force |
@@ -464,6 +465,8 @@ To start the flap away from equilibrium, pass
 `initial_coordinate={"pitch": 0.2}` and `initial_speed={"pitch": -0.01}`
 to `wec.run(...)`. The same keys work with regular, irregular, and nonlinear
 fixed-hinge motion; an unprovided state starts at zero.
+Use `NoWave()` with an initial pitch or speed for still-water free decay;
+this path retains radiation memory and requires a positive duration.
 
 To combine independently phased PM seas on that fixed hinge, pass one
 `PMWave` per sea. Each sea can use its own seed or phase file:

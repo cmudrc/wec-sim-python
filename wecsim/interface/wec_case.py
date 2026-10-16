@@ -363,9 +363,9 @@ class _WECCaseMixin:
                 or self._morison_elements or self._floating_gbm_body is not None
                 or self._floating_joint is not None or self.body_to_body):
             raise ValueError("fixed_hinge needs its selected bodies and no custom coordinates or PTOs")
-        if not isinstance(wave, (RegularWave, PMWave, MultiPMWave,
+        if not isinstance(wave, (NoWave, RegularWave, PMWave, MultiPMWave,
                                  FullDirectionalSpectrumWave)):
-            raise ValueError("fixed_hinge supports regular, PM, JONSWAP, or full-directional waves")
+            raise ValueError("fixed_hinge supports no wave, regular, PM, JONSWAP, or full-directional waves")
         if isinstance(wave, RegularWave):
             source_ode4 = simulation.get("solver") == "wecsim_ode4"
             delayed = hinge.added_mass_scheme == "simulink_delay"
