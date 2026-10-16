@@ -2189,6 +2189,19 @@ halving but does not meet the existing refined-source limits. The opt-in
 delayed-mass path remains the closer numerical comparison. Neither result
 closes the published 0.1 s gap, so both cases remain qualified.
 
+A [fresh published-step force export](tests/fixtures/matlab/rm3_pto_extension_published_forces.md)
+from local R2025b Update 7 reproduces the archived 0.1 s float and spar body
+heave histories within `1e-13` m. The
+[portable force-law gate](tests/test_rm3_pto_extension_published_forces.py)
+reconstructs each active body's convolution radiation force from its saved
+velocity and pinned RM3 IRF within `0.000822` N (float) and `0.000003` N
+(spar), against source peaks of `3.095` MN and `17.319` kN. It reconstructs
+the source's mass-shift and 100 ns delayed added-mass force from saved
+accelerations within `0.0144` N and `0.000009` N, against peaks of `13.885`
+and `2.178` MN. These are prescribed-source-state force checks, so they
+isolate the accepted-step force laws but do not establish independent motion
+parity at the published step. The two cases and RM3 badge remain qualified.
+
 Local MATLAB R2025b Update 7, with the same pinned core and Applications
 commits, independently reproduced the archived 0.0125 s float/spar histories
 to numerical precision before halving only `simu.dt` to 0.00625 s. Over the
