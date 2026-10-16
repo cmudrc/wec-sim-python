@@ -92,6 +92,7 @@ def test_independent_python_against_changed_80s_source(tmp_path):
     with np.load(FIXTURE, allow_pickle=False) as source:
         phase = source["phase"][0].copy()
         expected_wave = source["wave"][1, :, 1].copy()
+        published_position = source["body_position"][0].copy()
         expected_position = source["body_position"][1].copy()
         expected_velocity = source["body_velocity"][1].copy()
         expected_mooring = source["mooring_force"][1].copy()
@@ -121,6 +122,15 @@ def test_independent_python_against_changed_80s_source(tmp_path):
     indices = np.arange(801) * 10
     assert _maximum(result.wave_elevation[indices], expected_wave) < 2e-13
     for body, name in enumerate(("float", "spar")):
+        # The physical Python path should remain much closer to the source
+        # with only ode45 InitialStep changed than to the unchanged published
+        # source. This negative control does not promote published-case parity.
+        actual_surge = result.bodies[name].position[indices, 0]
+        changed_gap = _maximum(actual_surge, expected_position[body, :, 0])
+        published_gap = _maximum(actual_surge, published_position[body, :, 0])
+        assert published_gap > .15, (name, published_gap)
+        assert changed_gap < .1 * published_gap, (name, changed_gap,
+                                                  published_gap)
         for field, expected, limits in (
             ("position", expected_position[body], (.01, .0005, 7e-5)),
             ("velocity", expected_velocity[body], (.002, .0008, 5e-5)),
