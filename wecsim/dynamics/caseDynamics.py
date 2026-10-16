@@ -391,6 +391,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 geometry_path = (base / geometry).resolve(strict=True)
             else:
                 geometry_path = None
+            source_options = {"source_ode4": True} if source_ode4 else {}
             solved = solver(
                 hydro[0], *([geometry_path] if geometry_path is not None else []),
                 wave_height=height, wave_period=period,
@@ -398,7 +399,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 pto_damping=damping, pto_stiffness=stiffness,
                 pto_equilibrium=equilibrium, dt=dt, end_time=end_time,
                 ramp_time=ramp_time, rho=rho, g=g,
-                source_ode4=source_ode4,
+                **source_options,
             )
             ramp = np.ones(len(solved.time))
             if ramp_time > 0:
