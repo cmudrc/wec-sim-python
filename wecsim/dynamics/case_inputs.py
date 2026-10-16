@@ -163,8 +163,6 @@ def _sampled_elevation(wave, base, time, ramp_time):
     if not isinstance(variable, str) or not variable:
         raise ValueError("wave.variable must be a nonempty MAT variable name")
     direction = _number(wave.get("direction", 0), "wave.direction")
-    if direction != 0:
-        raise ValueError("imported elevation currently supports 0-degree waves")
     second_ramp = wave.get("reapply_force_ramp", False)
     if not isinstance(second_ramp, bool):
         raise ValueError("wave.reapply_force_ramp must be a boolean")

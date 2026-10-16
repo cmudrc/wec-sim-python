@@ -475,16 +475,19 @@ class ImportedElevationWave:
 
     ``file`` resolves from ``WEC.run(base_dir=...)``. The named MAT variable
     contains increasing time and elevation columns in seconds and metres.
+    ``direction`` is the incident heading in degrees on the body's BEM grid.
     """
 
     file: str | Path
     variable: str = "etaData"
     reapply_force_ramp: bool = False
+    direction: float = 0.0
 
     def as_case(self) -> dict:
         return {"type": "elevationImport", "file": str(self.file),
                 "variable": self.variable,
-                "reapply_force_ramp": self.reapply_force_ramp}
+                "reapply_force_ramp": self.reapply_force_ramp,
+                "direction": self.direction}
 
 
 @dataclass(frozen=True)

@@ -86,3 +86,32 @@ for number = 1:2
     save(fullfile(outputDir, sprintf('core_hydro_oswec_irregular_body%d.mat', ...
         number)), 'omega', 'excitationReal', 'excitationImag', '-v7');
 end
+
+% An imported elevation is scalar at the origin, but its excitation IRF
+% must interpolate across BEM headings. Use an interior 15-degree heading
+% to exercise the pinned body's directional interpolation branch.
+importTime = (0:dt:20)';
+etaData = [importTime, 0.4*cos(2*pi*importTime/7) + ...
+    0.15*sin(2*pi*importTime/3)];
+etaFile = fullfile(outputDir, 'core_hydro_oswec_heading_eta.mat');
+save(etaFile, 'etaData', '-v7');
+for number = 1:2
+    body = bodyClass(file);
+    body.setNumber(number);
+    body.setDOF(2, 0);
+    body.mass = 'equilibrium';
+    body.inertia = [1 1 1];
+    body.loadHydroData(readBEMIOH5(file, number, 0), 1);
+    wave = waveClass('elevationImport');
+    wave.direction = 15;
+    wave.elevationFile = etaFile;
+    hydro = body.hydroData(1);
+    wave.setup(hydro.simulation_parameters.w, ...
+        hydro.simulation_parameters.waterDepth, 2, dt, ...
+        length(importTime)-1, importTime, 9.81, 1000);
+    body.hydroForcePre(wave, simu, 1);
+    waveAmpTime = wave.waveAmpTime;
+    excitationForce = body.hydroForce.hf1.userDefinedFe;
+    save(fullfile(outputDir, sprintf('core_hydro_oswec_heading_body%d.mat', ...
+        number)), 'waveAmpTime', 'excitationForce', '-v7');
+end
