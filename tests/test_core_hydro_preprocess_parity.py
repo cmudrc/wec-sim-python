@@ -172,3 +172,31 @@ def test_oswec_imported_elevation_heading_against_matlab(number, tmp_path):
                                    rtol=0, atol=1e-12)
         force = dict(result.raw.extra_outputs)["body1_excitation_force"]
         np.testing.assert_allclose(force, source_force, rtol=1e-10, atol=1e-5)
+
+
+def test_imported_heading_reaches_both_bodies_in_public_coupled_run(tmp_path):
+    """The body-two source force survives the public shared-HDF5 path."""
+    time = np.arange(201) * .1
+    eta = .4 * np.cos(2 * np.pi * time / 7) + .15 * np.sin(2 * np.pi * time / 3)
+    record = tmp_path / "etaData.mat"
+    savemat(record, {"etaData": np.column_stack((time, eta))})
+
+    wec = WEC("OSWEC two-body imported heading", body_to_body=True)
+    flap = wec.body("flap", ROOT / "examples/data/oswec.h5",
+                    mass=127_000, inertia=(1e7, 1e7, 1e7))
+    wec.body("base", ROOT / "examples/data/oswec.h5")
+    wec.coordinate("yaw", flap.move("yaw"))
+    settings = dict(dt=.1, end_time=20, ramp_time=2, radiation_memory=10)
+    oblique = wec.run(ImportedElevationWave(record, direction=15), **settings)
+    head_on = wec.run(ImportedElevationWave(record, direction=0), **settings)
+
+    for number in (1, 2):
+        source_force = _imported_heading_source(number)[1]
+        force = dict(oblique.raw.extra_outputs)[f"body{number}_excitation_force"]
+        np.testing.assert_allclose(force, source_force, rtol=1e-10, atol=1e-5)
+    np.testing.assert_array_equal(oblique.wave_elevation, head_on.wave_elevation)
+    np.testing.assert_array_equal(oblique.bodies["base"].velocity, 0)
+    # At oblique incidence the yaw excitation changes the independently
+    # advanced response, while the imported elevation record stays fixed.
+    assert np.max(np.abs(oblique.bodies["flap"].position[:, 5]
+                         - head_on.bodies["flap"].position[:, 5])) > .01
