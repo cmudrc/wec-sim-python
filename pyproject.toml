@@ -19,7 +19,7 @@ dependencies = [
 [project.optional-dependencies]
 excel = ["openpyxl"]
 plot = ["matplotlib"]
-test = ["pytest>=8", "pytest-cov>=5", "openpyxl"]
+test = ["pytest>=8", "pytest-cov>=5", "pytest-xdist>=3", "openpyxl"]
 
 [project.urls]
 Repository = "https://github.com/cmudrc/wec-sim-python"
