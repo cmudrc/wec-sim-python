@@ -530,6 +530,12 @@ def synthesize_full_directional_response(
     if (len(bem_heading) < 2 or np.any(np.diff(bem_heading) <= 0)
             or np.any(np.diff(bem_omega) <= 0)):
         raise ValueError("BEM frequency and heading grids must increase")
+    # Imported MAT spectra are clipped to this range on load. Components can
+    # also be supplied directly, and CubicSpline would otherwise extrapolate.
+    if omega[0] < bem_omega[0] - 1e-10 or omega[-1] > bem_omega[-1] + 1e-10:
+        raise ValueError(
+            "full-directional frequencies are outside the HDF5 hydrodynamic range"
+        )
     query_heading = ((heading - bem_heading[0]) % 360) + bem_heading[0]
     query_frequency, query_direction = np.meshgrid(omega, query_heading,
                                                    indexing="ij")
