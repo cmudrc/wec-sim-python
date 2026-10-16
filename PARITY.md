@@ -1374,6 +1374,26 @@ The [portable source identity and optional native Python gates](tests/test_rm3_m
 preserve this attribution. This short derived source setting does not close
 the unchanged 80 s published-input gate or alter the RM3 badge count.
 
+A [full-duration local R2025b initial-step audit](tests/fixtures/matlab/rm3_moordyn_initial_step_80s/README.md)
+now tests whether that startup effect persists over the published 80 s sea.
+The unchanged `InitialStep=auto` arm reproduces the archived published
+body positions within `3e-12` m or rad and MoorDyn loads within `1e-5` N or
+N m across all 801 samples. Changing only `InitialStep` to `0.01` s moves
+float/spar surge by `209.75`/`186.15` mm, shared pitch by `0.0017973` rad,
+and the MoorDyn pitch moment by `104.05` kN m. Against the fully refined
+MATLAB source, the changed arm's maximum residuals are `6.32`/`7.29` mm
+surge, `4.77e-5` rad pitch, and `9.64` kN m mooring moment. It removes
+`99.921%`/`99.922%`/`99.936%`/`99.611%` of the published-to-refined squared
+gaps in those channels; spar heave improves by only `84.23%`. An independent
+public Python run with live MoorDyn and the same HDF5 and phases differs from
+the changed arm by at most `7.07`/`8.08` mm float/spar surge, `5.60e-5` rad
+pitch, `1.24`/`0.689` kN MoorDyn surge/heave force, `8.85` kN m MoorDyn pitch
+moment, `706.5` N PTO force, and `2.065` kN fairlead tension. The
+[portable source and optional native Python gates](tests/test_rm3_moordyn_initial_step_80s.py)
+preserve the measured attribution. The original published-step coupled
+trajectory is still unpaired, so this changes neither its qualified label nor
+the RM3 badge count.
+
 For the published OSWEC nonlinear visualization case, the pinned source also
 exports flap velocity and all six-component force channels. On all 1,201 saved
 MATLAB poses, Python integrates its independently calculated facet pressures
