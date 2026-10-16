@@ -6,8 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from scipy.io import loadmat
-from scipy.io import savemat
+from scipy.io import loadmat, savemat
 
 from wecsim import ImportedElevationWave, WEC
 from wecsim.hydrodynamics.bodyClass import BodyClass
@@ -153,6 +152,10 @@ def test_oswec_imported_elevation_heading_against_matlab(number, tmp_path):
     )
     np.testing.assert_allclose(body.hydroForce["userDefinedFe"], source_force,
                                rtol=1e-10, atol=1e-5)
+    with pytest.raises(ValueError, match="outside the hydro database headings"):
+        body.userDefinedExcitation(
+            np.vstack((time, expected_wave)), .1, [95], 1000, 9.81,
+        )
 
     if number == 1:
         # The public wave setting must reach production body preprocessing,

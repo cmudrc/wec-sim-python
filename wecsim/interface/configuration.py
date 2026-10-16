@@ -475,7 +475,8 @@ class ImportedElevationWave:
 
     ``file`` resolves from ``WEC.run(base_dir=...)``. The named MAT variable
     contains increasing time and elevation columns in seconds and metres.
-    ``direction`` is the incident heading in degrees on the body's BEM grid.
+    ``direction`` is the incident heading in degrees within the body's BEM
+    heading range.
     """
 
     file: str | Path
