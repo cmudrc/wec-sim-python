@@ -214,6 +214,8 @@ def mcr_mat_file(path: str | Path) -> tuple[MCRCondition, ...]:
     if "mcr" not in data:
         raise ValueError("MAT file has no mcr structure")
     mcr = data["mcr"]
+    if not hasattr(mcr, "header") or not hasattr(mcr, "cases"):
+        raise ValueError("MCR MAT file needs header and cases")
     header = tuple(str(value) for value in np.ravel(mcr.header))
     if header != ("waves.height", "waves.period", "pto(1).damping",
                   "pto(1).stiffness"):
