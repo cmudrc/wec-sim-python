@@ -8,6 +8,7 @@ import pytest
 from wecsim import (
     DeclutchingControl,
     DirectLinearGenerator,
+    HydroState,
     NoWave,
     RegularWave,
     SimpleDirectDrive,
@@ -25,6 +26,36 @@ def _heave_wec():
     body = wec.body("float", HYDRO)
     coordinate = wec.coordinate("heave", body.move("heave"))
     return wec, body, coordinate
+
+
+def test_invalid_case_names_fail_before_changing_public_builder():
+    wec = WEC("name recovery")
+    states = (HydroState(HYDRO), HydroState(HYDRO))
+    with pytest.raises(ValueError, match="body name"):
+        wec.body("", HYDRO)
+    with pytest.raises(ValueError, match="body name"):
+        wec.fixed_body("", center_gravity=(0, 0, 0))
+    with pytest.raises(ValueError, match="body name"):
+        wec.variable_body("", states, switch_times=(.1,))
+    assert not wec.bodies
+
+    body = wec.body("float", HYDRO)
+    with pytest.raises(ValueError, match="coordinate name"):
+        wec.coordinate("bad name", body.move("heave"))
+    assert not wec.coordinates
+    coordinate = wec.coordinate("heave", body.move("heave"))
+    endpoints = (WorldPoint(0, 0, -5), body.at(0, 0, 0))
+    for invalid in ("bad name", "coordinate1"):
+        with pytest.raises(ValueError, match="PTO name"):
+            wec.pto(invalid, *endpoints, damping=500)
+        with pytest.raises(ValueError, match="PTO name"):
+            wec.rotational_pto(invalid, coordinate)
+    assert not wec.ptos and not wec.rotational_ptos
+
+    wec.pto("main", *endpoints, damping=500)
+    result = wec.run(NoWave(), dt=.1, end_time=.2,
+                     initial_coordinate={"heave": .1})
+    assert result.ptos["main"].force.shape == (3,)
 
 
 def test_rejected_body_and_coordinate_do_not_corrupt_builder():
