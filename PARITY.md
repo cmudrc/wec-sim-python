@@ -159,6 +159,14 @@ also gate the orifice force, pressure, flow, power, and Mach flag at both flow
 signs and across the threshold. The published 130 s physical trajectory
 remains unpaired, so this adds no case badge.
 
+The [archived 130 s source trace](tests/fixtures/matlab/owc_orifice_130s/README.md)
+now also gates the full-duration public `WEC.run` opt-in `published_owc` path in
+ordinary Python CI. The existing full-duration rigid/flexible motion, PTO
+reaction and power, signed work, and first-ten-second limits are unchanged;
+the portable test also checks the incident sea. This makes the earlier
+source-convention result durable without closing the physical coupled-path
+gap or changing the `qualified_motion` label and badges.
+
 A short public OWC replay now loads the archived MATLAB phases through
 `PMWave(phase_file=...)` and compares the resulting coupled response with
 the independent MATLAB-compatible seed path. Over the first 2 s, wave
