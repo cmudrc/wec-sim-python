@@ -657,8 +657,10 @@ five inventoried cases; smaller systems stay in the disjoint remainder.
 
 ### Current priority and feasible closeout
 
-The working goal is to finish the parity work that can be established with
-independent evidence, rather than require every published badge to reach 100%.
+The long-term goal remains evidence-backed functional parity. The current
+investigation phase records the work that can be established with independent
+evidence while source numerical limitations keep some published badges below
+100%.
 Badge fractions continue to count only full published-input gates. First use
 local R2025b to resolve distinct, bounded questions in the seven remaining
 RM3 and OSWEC published inputs; Sphere is already 12/12. Prioritize an
@@ -836,6 +838,13 @@ Eight wave-class checks now run in ordinary CI from a pinned R2025b archive:
 regular and finite-depth waves plus six PM/JONSWAP configurations. The same
 tests use fresh MATLAB output when supplied. They check spectral grids,
 phases, power, origin elevation, and gauges without changing case badges.
+The configured RM3 spring-and-pretension example variant now has an
+ordinary-CI 400 s public `WEC.run` gate from a
+[compact pinned source trace](tests/fixtures/matlab/rm3_pto_pretension/README.md).
+It checks both bodies' active positions and speeds and the PTO stroke, speed,
+force, and mechanical power at all 4,001 samples, while retaining the
+fresh-MATLAB CSV route. The variant is not another published input, so the
+RM3 badge count is unchanged.
 The already-gated 400 s RM3 direct linear-generator case now has a portable
 20 s published-source window in ordinary Python CI. Its public `WEC` run
 checks both body heaves and speeds, PTO motion and force, mechanical and
