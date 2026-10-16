@@ -2559,6 +2559,24 @@ isolates a major solver-step mechanism over 120 s; the unchanged 400 s
 published-step trajectory remains qualified, and the RM3 badge count is
 unchanged.
 
+A [fresh full-duration R2025b MaxStep audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38854937372)
+keeps the same published 0.1 s inputs, ramp, wave, and output grid for all
+400 s. Changing only `ode45` MaxStep from 0.1 to 0.025 s reduces the
+post-contact PTO-stroke RMS gap against the archived 0.0125 s source from
+80.892 to 0.945 mm; the maximum falls from 285.615 to 2.683 mm, and the
+damper-work gap from 11.192% to 0.460%. The unchanged and changed arms both
+reproduce their previously archived first 120 s histories. An independent
+public Python run using the pinned HDF5 differs from the changed arm by at
+most 2.881 mm surge, 3.512 mm heave, `9.93e-5` rad pitch, 3.611 mm PTO
+stroke, 23.953 mm/s PTO speed, 230.16 kN PTO force, and 0.606% damper
+work. All predeclared full-duration gates pass, including the tight
+`1e-4` rad pitch and 0.7% work limits. The
+[portable fixture](tests/fixtures/matlab/rm3_end_stops_maxstep_400s.md)
+preserves the derived source and independent Python comparison in ordinary
+CI. This isolates solver-step sensitivity over the complete duration but
+does not pair the unchanged published trajectory; `End_Stops` remains
+qualified and the RM3 badge stays 17/21.
+
 The Python hard-stop model instead applies added mass implicitly and resolves
 contact forces between output samples. Its 0.025 and 0.0125 s output settings
 change PTO stroke by less than 1 µm over 400 s. This physical dynamics
