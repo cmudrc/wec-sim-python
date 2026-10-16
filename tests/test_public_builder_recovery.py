@@ -2,12 +2,14 @@
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from wecsim import (
     DeclutchingControl,
     DirectLinearGenerator,
     NoWave,
+    RegularWave,
     SimpleDirectDrive,
     WEC,
     WorldPoint,
@@ -15,6 +17,7 @@ from wecsim import (
 
 
 HYDRO = Path(__file__).resolve().parents[1] / "examples/data/rm3.h5"
+OSWEC = Path(__file__).resolve().parents[1] / "examples/data/oswec.h5"
 
 
 def _heave_wec():
@@ -88,3 +91,55 @@ def test_floating_joint_rejects_misordered_bodies_and_off_axis_location():
     case = wec.to_case(NoWave(), dt=0.1, end_time=0.2)
     assert case["constraint"]["kind"] == "floating_joint"
     assert case["pto"]["kind"] == "relative_heave"
+
+
+def test_floating_joint_rejects_invalid_solver_and_pto_without_committing_layout():
+    wec = WEC("RM3 layout recovery")
+    float_body = wec.body("float", HYDRO, inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", HYDRO, inertia=(0, 94_407_091.24, 0))
+    bad_settings = (
+        ({"pto_name": ""}, ValueError, "PTO name"),
+        ({"hard_stops": object()}, TypeError, "LinearHardStops"),
+        ({"radiation_method": "unknown"}, ValueError, "radiation method"),
+        ({"moordyn_point": spar.at(0, 0, 21.5)}, ValueError,
+         "needs a MoorDyn session"),
+    )
+    for settings, error_type, message in bad_settings:
+        with pytest.raises(error_type, match=message):
+            wec.floating_joint(float_body, spar, **settings)
+        assert wec._floating_joint is None
+
+    wec.floating_joint(float_body, spar, damping=1_200_000)
+    response = wec.run(RegularWave(0, 8), dt=.1, end_time=.2)
+    assert response.case["constraint"]["kind"] == "floating_joint"
+    assert response.ptos["relative_heave"].force.shape == (3,)
+    np.testing.assert_allclose(
+        response.ptos["relative_heave"].force,
+        -1_200_000 * response.ptos["relative_heave"].velocity,
+        rtol=0, atol=1e-9,
+    )
+
+
+def test_fixed_hinge_rejects_invalid_attachment_and_recovers():
+    wec = WEC("OSWEC layout recovery")
+    flap = wec.body("flap", OSWEC, mass=127_000,
+                    inertia=(0, 1.85e6, 0))
+    base = wec.fixed_body("base", center_gravity=(0, 0, -10.9), mass=999)
+    bad_settings = (
+        ({"location": WorldPoint(1, 0, -10)}, "z axis"),
+        ({"pto_location": WorldPoint(0, 1, -8.9)}, "z axis"),
+        ({"pto_name": ""}, "PTO name"),
+        ({"damping": -1}, "nonnegative damping"),
+        ({"added_mass_scheme": "unknown"}, "added-mass scheme"),
+    )
+    for settings, message in bad_settings:
+        with pytest.raises(ValueError, match=message):
+            wec.fixed_hinge(flap, base, **settings)
+        assert wec._fixed_hinge is None
+
+    wec.fixed_hinge(flap, base, stiffness=500, pretension=-50)
+    response = wec.run(RegularWave(.1, 8), dt=.1, end_time=.2)
+    assert response.case["pto"]["equilibrium_position"] == .1
+    np.testing.assert_allclose(response.ptos["hinge"].force,
+                               -500 * (response.ptos["hinge"].stroke - .1),
+                               rtol=0, atol=1e-10)
