@@ -1,5 +1,10 @@
-function rm3_end_stops_maxstep_audit
+function rm3_end_stops_maxstep_audit(auditEndTime)
 % Isolate ode45 MaxStep from the published End_Stops force/output grid.
+if nargin == 0
+    auditEndTime = 120;
+end
+assert(auditEndTime == 120 || auditEndTime == 400, ...
+    'Unsupported audit duration');
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 addpath(genpath(fullfile(repoRoot, 'matlab-ref', 'source')));
 hydroDir = fullfile(repoRoot, 'applications', '_Common_Input_Files', ...
@@ -10,7 +15,11 @@ if ~isfile('rm3.h5')
 end
 
 sourceDir = fullfile(repoRoot, 'applications', 'End_Stops');
-outDir = fullfile(repoRoot, 'matlab-rm3-end-stops-maxstep');
+if auditEndTime == 120
+    outDir = fullfile(repoRoot, 'matlab-rm3-end-stops-maxstep');
+else
+    outDir = fullfile(repoRoot, 'matlab-rm3-end-stops-maxstep-400s');
+end
 mkdir(outDir);
 for arm = 1:2
     if arm == 1
@@ -18,8 +27,12 @@ for arm = 1:2
     else
         label = 'maxstep_0025';
     end
-    caseDir = fullfile(repoRoot, 'applications', ...
-        ['End_Stops_maxstep_' label]);
+    if auditEndTime == 120
+        caseName = ['End_Stops_maxstep_' label];
+    else
+        caseName = ['End_Stops_maxstep_400s_' label];
+    end
+    caseDir = fullfile(repoRoot, 'applications', caseName);
     assert(~isfolder(caseDir), 'Disposable End_Stops audit case exists');
     mkdir(caseDir);
     for name = {'wecSimInputFile.m', 'RM3.slx'}
@@ -31,8 +44,10 @@ for arm = 1:2
     assert(contains(contents, 'simu.endTime = 400;') && ...
         contains(contents, 'simu.dt = 0.1;'), ...
         'Pinned End_Stops input changed');
-    contents = strrep(contents, 'simu.endTime = 400;', ...
-        'simu.endTime = 120;');
+    if auditEndTime ~= 400
+        contents = strrep(contents, 'simu.endTime = 400;', ...
+            sprintf('simu.endTime = %d;', auditEndTime));
+    end
     fid = fopen(inputFile, 'w');
     assert(fid > 0, 'Could not write bounded End_Stops input');
     cleanup = onCleanup(@() fclose(fid));
@@ -41,7 +56,7 @@ for arm = 1:2
 
     cd(caseDir);
     run('initializeWecSim');
-    assert(simu.dt == .1 && simu.endTime == 120 && ...
+    assert(simu.dt == .1 && simu.endTime == auditEndTime && ...
         simu.rampTime == 100 && strcmp(simu.solver, 'ode45'), ...
         'Published End_Stops settings changed');
     [~, modelName, ~] = fileparts(simu.simMechanicsFile);
@@ -61,9 +76,10 @@ for arm = 1:2
     end
     sim(simu.simMechanicsFile, [], simset('SrcWorkspace', 'parent'));
     run('stopWecSim');
-    assert(numel(output.bodies(1).time) == 1201 && ...
-        numel(output.ptos(1).time) == 1201, ...
-        'Incomplete 120 s End_Stops audit');
+    sampleCount = round(auditEndTime / simu.dt) + 1;
+    assert(numel(output.bodies(1).time) == sampleCount && ...
+        numel(output.ptos(1).time) == sampleCount, ...
+        'Incomplete End_Stops audit');
     writematrix([output.wave.time(:), output.wave.elevation(:)], ...
         fullfile(outDir, [label '_wave.csv']));
     for iBody = 1:2
