@@ -94,3 +94,37 @@ jobs:
           cache-dependency-path: pyproject.toml
       - run: python -m pip install -e ".[test]"
       - run: python -m pytest -q -s tests/test_oswec_hydraulic_portable.py
+
+  rm3-native-moordyn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          sparse-checkout: Paraview_Visualization/RM3_MoorDyn_Viz/Mooring
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/MoorDyn
+          ref: 34c0703c9a5b74fd2cc5bb52caaadaaa356d675e
+          path: MoorDyn
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e ".[test]"
+      - name: Gate independent RM3 motion with live native mooring
+        run: >-
+          python -m pytest -q
+          tests/test_rm3_moordyn_initial_step_portable.py
+          tests/test_rm3_moordyn_initial_step_80s.py
+        env:
+          LD_PRELOAD: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+          WEC_SIM_RM3_H5: examples/data/rm3.h5
+          WEC_SIM_MOORDYN_LIBRARY: MoorDyn/linux_libraries/x86_64/libmoordyn.so
+          WEC_SIM_RM3_MOORDYN_LINES: applications/Paraview_Visualization/RM3_MoorDyn_Viz/Mooring/lines.txt
