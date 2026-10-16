@@ -60,7 +60,9 @@ def _within(actual, expected, limit, label, failures):
     print(f"{label}: {error:.9g} at {index}, limit {limit:.9g}; "
           f"Python {actual[index]:.9g}, MATLAB {expected[index]:.9g}")
     if error >= limit:
-        failures.append((label, f"{label}: {error:.9g} exceeds {limit:.9g} at {index}"))
+        failures.append((
+            label, f"{label}: {error:.9g} exceeds {limit:.9g} at {index}", error,
+        ))
 
 
 @pytest.mark.parametrize("name,fixed_crank", [
@@ -159,10 +161,14 @@ def test_published_400s_hydraulic_motion_pressure_and_power(name, fixed_crank):
     )
     source_work = float(source["source_work"])
     assert abs(python_work - source_work) / abs(source_work) < .01
+    errors = {label: error for label, _, error in failures}
     if (fixed_crank and sys.platform == "darwin"
             and platform.machine().lower() == "arm64"
-            and {label for label, _ in failures}
-            == {"crank torque", "cylinder force"}):
+            and errors.keys() == {"crank torque", "cylinder force"}
+            # Diagnostic bounds contain the measured 78.77 kN m / 26.92 kN
+            # platform gap; larger drift fails instead of hiding in xfail.
+            and errors["crank torque"] < 85_000
+            and errors["cylinder force"] < 29_000):
         pytest.xfail("ARM64 macOS fixed-crank peak force gap: "
-                     + "; ".join(message for _, message in failures))
-    assert not failures, "\n".join(message for _, message in failures)
+                     + "; ".join(message for _, message, _ in failures))
+    assert not failures, "\n".join(message for _, message, _ in failures)
