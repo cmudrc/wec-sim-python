@@ -15,7 +15,9 @@ from wecsim.dynamics.generalDynamics import DynamicsResponse, GeneralizedDynamic
 
 def integrate_nonlinear_hinge_ode4(device: GeneralizedDynamics, *,
                                    dt: float, end_time: float,
-                                   delay: float = 1e-7) -> DynamicsResponse:
+                                   delay: float = 1e-7,
+                                   initial_angle: float = 0.0,
+                                   initial_angular_velocity: float = 0.0) -> DynamicsResponse:
     """Advance one pressure-loaded hinge with source-style delayed inertia."""
     if (len(device.bodies) != 1 or device.coordinate_count != 1
             or device.bodies[0].radiation_kernel is not None
@@ -25,7 +27,8 @@ def integrate_nonlinear_hinge_ode4(device: GeneralizedDynamics, *,
             or device.controlled_ptos or device.linear_generators
             or device.added_mass_delay is not None):
         raise ValueError("source nonlinear ode4 needs one continuous pressure-loaded hinge")
-    if (not np.isfinite([dt, end_time, delay]).all() or dt <= 0
+    if (not np.isfinite([dt, end_time, delay, initial_angle,
+                         initial_angular_velocity]).all() or dt <= 0
             or end_time < 0 or delay <= 0 or delay >= dt):
         raise ValueError("source nonlinear ode4 needs finite time and a shorter delay")
     steps = round(end_time / dt)
@@ -56,6 +59,8 @@ def integrate_nonlinear_hinge_ode4(device: GeneralizedDynamics, *,
     time = np.arange(steps + 1) * dt
     coordinate = np.zeros((steps + 1, 1))
     speed = np.zeros_like(coordinate)
+    coordinate[0, 0] = initial_angle
+    speed[0, 0] = initial_angular_velocity
     acceleration = np.zeros_like(coordinate)
     previous_body_accelerations = []
 

@@ -460,6 +460,10 @@ torque = result.ptos["hinge"].force
 The hinge can also take a `fixed_body(...)` base. Both hinge and PTO points
 currently lie on the world z axis. PTO angle and speed are in radians and
 radians per second; `absorbed_power` reports positive damping dissipation.
+To start the flap away from equilibrium, pass
+`initial_coordinate={"pitch": 0.2}` and `initial_speed={"pitch": -0.01}`
+to `wec.run(...)`. The same keys work with regular, irregular, and nonlinear
+fixed-hinge motion; an unprovided state starts at zero.
 
 To combine independently phased PM seas on that fixed hinge, pass one
 `PMWave` per sea. Each sea can use its own seed or phase file:
