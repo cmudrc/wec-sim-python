@@ -8,6 +8,8 @@ The two configured 400 s Sphere PTO comparisons are documented in
 [sphere_pto_config/README.md](sphere_pto_config/README.md).
 The derived 40 s Sphere moving-Morison regular-wave comparison is documented
 in [sphere_wave_morison/README.md](sphere_wave_morison/README.md).
+The published 400 s fixed Morison monopile comparison is documented in
+[fixed_morison_published/README.md](fixed_morison_published/README.md).
 The public RM3 direct linear generator's published 20 s source window is
 documented in [rm3_direct_generator/README.md](rm3_direct_generator/README.md).
 The full 900 s published Sphere variable-mass comparison is documented in

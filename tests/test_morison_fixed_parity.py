@@ -1,6 +1,7 @@
 """Pair the published no-HDF5 Morison monopile with pinned MATLAB output."""
 
 import os
+from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +15,8 @@ from wecsim.hydrodynamics.morison import (
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
+PORTABLE = Path(__file__).parent / "fixtures/matlab/fixed_morison_published/source.npz"
+PORTABLE_SHA256 = "cc6e2579c0aeddaf4925940334cc135e4f093b708b59c7a48084d7cdcf171de4"
 
 
 def _max_error(actual, expected, limit, label):
@@ -25,19 +28,26 @@ def _max_error(actual, expected, limit, label):
     assert error < limit, f"{label}: {error:.6g} exceeds {limit}"
 
 
-@pytest.mark.skipif(
-    not REFERENCE, reason="paired MATLAB fixed Morison output not provided",
-)
 def test_published_fixed_morison_wave_and_force():
-    source = Path(REFERENCE)
-    components_csv = np.loadtxt(source / "MORISON_FIXED_components.csv", delimiter=",")
-    directions = np.loadtxt(source / "MORISON_FIXED_directions.csv", delimiter=",")
-    wave = np.loadtxt(source / "MORISON_FIXED_wave.csv", delimiter=",")
-    force = np.loadtxt(source / "MORISON_FIXED_morison_force.csv", delimiter=",")
-    monopile = np.loadtxt(source / "MORISON_FIXED_morisonElement_body1.csv",
-                          delimiter=",")
-    tower = np.loadtxt(source / "MORISON_FIXED_morisonElement_body2.csv",
-                       delimiter=",")
+    if REFERENCE:
+        source = Path(REFERENCE)
+        components_csv = np.loadtxt(source / "MORISON_FIXED_components.csv", delimiter=",")
+        directions = np.loadtxt(source / "MORISON_FIXED_directions.csv", delimiter=",")
+        wave = np.loadtxt(source / "MORISON_FIXED_wave.csv", delimiter=",")
+        force = np.loadtxt(source / "MORISON_FIXED_morison_force.csv", delimiter=",")
+        monopile = np.loadtxt(source / "MORISON_FIXED_morisonElement_body1.csv",
+                              delimiter=",")
+        tower = np.loadtxt(source / "MORISON_FIXED_morisonElement_body2.csv",
+                           delimiter=",")
+    else:
+        assert sha256(PORTABLE.read_bytes()).hexdigest() == PORTABLE_SHA256
+        with np.load(PORTABLE, allow_pickle=False) as source:
+            components_csv = source["components"]
+            directions = source["directions"]
+            wave = source["wave"]
+            force = source["force"]
+            monopile = source["monopile"]
+            tower = source["tower"]
     assert components_csv.shape == (500, 7)
     assert directions.shape == (3, 2)
     assert wave.shape == (40001, 2)
