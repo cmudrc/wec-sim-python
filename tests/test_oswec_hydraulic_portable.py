@@ -18,9 +18,9 @@ from wecsim.environment.irregularWave import pm_equal_energy_components
 
 ROOT = Path(__file__).parent
 SOURCE = ROOT / "fixtures/matlab/oswec_hydraulic/source_50ms.npz"
-HYDRO = ROOT / "fixtures/matlab/oswec_multi_wave/oswec.h5"
+HYDRO = ROOT / "fixtures/matlab/oswec_hydraulic/oswec.h5"
 SOURCE_SHA256 = "58c80c44eae64683da6d461b2942dd7c5fcf398fa06e48d9a49d4a389876b392"
-HYDRO_SHA256 = "b9ccf3a32e0893c23b1645c15a2baef4a0c6f678b90d177d5797e3c65de4b7d3"
+HYDRO_SHA256 = "dbe70bac37af3938fe73e6b004ce27e3e607b49650df6d74b603b967136c229c"
 
 
 def _published_pto(fixed_crank):
