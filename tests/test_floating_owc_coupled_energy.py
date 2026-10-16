@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from wecsim import MoorDyn, RegularWave, WEC, solve_floating_owc
 import wecsim.dynamics.floatingOwcDynamics as floating_owc
@@ -129,7 +130,9 @@ def test_coupled_slider_conserves_momentum_and_loses_only_pto_energy(
                                rtol=0, atol=1e-12)
 
 
-def test_public_floating_owc_routes_wave_motion_and_pto_work(tmp_path, monkeypatch):
+@pytest.mark.parametrize("ramp_time", [0, .2])
+def test_public_floating_owc_routes_wave_motion_and_pto_work(
+        tmp_path, monkeypatch, ramp_time):
     """The public builder must preserve slider geometry, force, and energy."""
     monkeypatch.setattr(
         floating_owc, "_body_data", _two_mass_hydro((1000.0, 100.0), 1000.0),
@@ -151,12 +154,20 @@ def test_public_floating_owc_routes_wave_motion_and_pto_work(tmp_path, monkeypat
                       inertia=(1, 1, 1))
     wec.floating_owc(floater, column, moordyn=mooring,
                      column_height=1, column_diameter=1, pto_damping=50)
-    result = wec.run(RegularWave(.5, 8), dt=.01, end_time=.5, ramp_time=0)
+    result = wec.run(RegularWave(.5, 8), dt=.01, end_time=.5,
+                     ramp_time=ramp_time)
 
     assert result.time.shape == (51,)
     assert session.calls == 50 and session.closed
+    envelope = np.ones_like(result.time)
+    if ramp_time:
+        early = result.time < ramp_time
+        envelope[early] = (1 - np.cos(np.pi * result.time[early]
+                                      / ramp_time)) / 2
+        assert result.wave_elevation[0] == 0
     np.testing.assert_allclose(
-        result.wave_elevation, .25 * np.cos(2 * np.pi * result.time / 8),
+        result.wave_elevation,
+        .25 * envelope * np.cos(2 * np.pi * result.time / 8),
         rtol=0, atol=1e-15,
     )
     floater_state = result.bodies["floater"]
@@ -173,7 +184,32 @@ def test_public_floating_owc_routes_wave_motion_and_pto_work(tmp_path, monkeypat
     np.testing.assert_allclose(pto.force, -50 * pto.velocity, rtol=0, atol=1e-12)
     np.testing.assert_allclose(pto.absorbed_power, 50 * pto.velocity**2,
                                rtol=0, atol=1e-12)
-    assert np.ptp(pto.stroke) > .02
+    if ramp_time == 0:
+        assert np.ptp(pto.stroke) > .02
+    # PTO and chamber forces are internal to this two-mass limit. The total
+    # vertical momentum must equal the integral of the ramped incident force.
+    omega = 2 * np.pi / 8
+    if ramp_time:
+        alpha = np.pi / ramp_time
+
+        def ramp_impulse(time):
+            return 125 * (
+                np.sin(omega * time) / omega
+                - (np.sin((omega + alpha) * time) / (omega + alpha)
+                   + np.sin((omega - alpha) * time) / (omega - alpha)) / 2
+            )
+
+        incident_impulse = np.where(
+            result.time < ramp_time, ramp_impulse(result.time),
+            ramp_impulse(ramp_time)
+            + 250 * (np.sin(omega * result.time)
+                     - np.sin(omega * ramp_time)) / omega,
+        )
+    else:
+        incident_impulse = 250 * np.sin(omega * result.time) / omega
+    momentum = (1000 * floater_state.velocity[:, 2]
+                + 100 * column_state.velocity[:, 2])
+    np.testing.assert_allclose(momentum, incident_impulse, rtol=0, atol=1e-4)
     absorbed_work = np.sum(
         .5 * (pto.absorbed_power[1:] + pto.absorbed_power[:-1])
         * np.diff(result.time)
