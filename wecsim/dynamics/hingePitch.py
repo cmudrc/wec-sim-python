@@ -69,16 +69,19 @@ def solve_hinged_pitch_from_excitation(
     added_mass_scheme: str = "implicit",
     rho: float = 1000.0,
     g: float = 9.81,
+    initial_angle: float = 0.0,
+    initial_angular_velocity: float = 0.0,
 ) -> HingePitchResponse:
     """Integrate hinge pitch with hydrodynamic radiation and a linear PTO.
 
     ``excitation_force`` is an ``(N, 6)`` array with columns surge, sway,
     heave, roll, pitch, yaw at uniform ``dt``. The body starts at its HDF5
-    equilibrium position, zero angle, and zero velocity. The hinge is parallel
-    to the global y axis. The model includes nonlinear rigid-body kinematics,
-    hydrostatic restoring, infinite-frequency added mass, and the radiation
-    impulse-response convolution. It assumes a fixed hinge and no body-to-body
-    hydrodynamic interaction, Morison forces, or other DOFs.
+    equilibrium position unless an initial angle or speed is supplied. The
+    hinge is parallel to the global y axis. The model includes nonlinear
+    rigid-body kinematics, hydrostatic restoring, infinite-frequency added
+    mass, and the radiation impulse-response convolution. It assumes a fixed
+    hinge and no body-to-body hydrodynamic interaction, Morison forces, or
+    other DOFs.
 
     The fixed-step trapezoidal update uses a finite memory window. It matches
     the published OSWEC example's 0.1 s step and 30 s radiation memory when
@@ -90,7 +93,8 @@ def solve_hinged_pitch_from_excitation(
     if not np.isfinite(force).all():
         raise ValueError("excitation_force must be finite")
     values = [hinge_z, body_mass, pitch_inertia, pto_damping,
-              pto_stiffness, pto_equilibrium, dt, memory_time, rho, g]
+              pto_stiffness, pto_equilibrium, dt, memory_time, rho, g,
+              initial_angle, initial_angular_velocity]
     if not np.isfinite(values).all():
         raise ValueError("solver parameters must be finite")
     if (body_mass <= 0 or pitch_inertia <= 0 or pto_damping < 0
@@ -165,7 +169,11 @@ def solve_hinged_pitch_from_excitation(
         pto_equilibrium=np.array([pto_equilibrium]),
         added_mass_delay=(1e-7 if added_mass_scheme == "simulink_delay" else None),
     )
-    solved = device.integrate(dt=dt, end_time=(count - 1) * dt)
+    solved = device.integrate(
+        dt=dt, end_time=(count - 1) * dt,
+        initial_coordinate=np.array([initial_angle]),
+        initial_speed=np.array([initial_angular_velocity]),
+    )
     angle = solved.coordinate[:, 0]
     speed = solved.speed[:, 0]
     center_position = solved.body_position[:, 0, :3]
@@ -203,11 +211,13 @@ def solve_hinged_pitch_regular(
     ramp_time: float = 100.0,
     rho: float = 1000.0,
     g: float = 9.81,
+    initial_angle: float = 0.0,
+    initial_angular_velocity: float = 0.0,
 ) -> HingePitchResponse:
     """Integrate the hinged flap under a regular wave and frequency damping."""
     values = [wave_height, wave_period, hinge_z, body_mass, pitch_inertia,
               pto_damping, pto_stiffness, pto_equilibrium, dt, end_time,
-              ramp_time, rho, g]
+              ramp_time, rho, g, initial_angle, initial_angular_velocity]
     if not np.isfinite(values).all():
         raise ValueError("solver parameters must be finite")
     if (wave_height < 0 or wave_period <= 0 or body_mass <= 0
@@ -274,7 +284,11 @@ def solve_hinged_pitch_regular(
         pto_damping=np.array([[pto_damping]]),
         pto_equilibrium=np.array([pto_equilibrium]),
     )
-    solved = device.integrate(dt=dt, end_time=end_time)
+    solved = device.integrate(
+        dt=dt, end_time=end_time,
+        initial_coordinate=np.array([initial_angle]),
+        initial_speed=np.array([initial_angular_velocity]),
+    )
     angle = solved.coordinate[:, 0]
     speed = solved.speed[:, 0]
     force_history = np.array([excitation(at_time) for at_time in time])
@@ -311,6 +325,8 @@ def solve_hinged_pitch_nonlinear_regular(
     rho: float = 1000.0,
     g: float = 9.81,
     source_ode4: bool = False,
+    initial_angle: float = 0.0,
+    initial_angular_velocity: float = 0.0,
 ) -> HingePitchResponse:
     """Advance a hinged flap with instantaneous regular-wave mesh pressures.
 
@@ -321,7 +337,7 @@ def solve_hinged_pitch_nonlinear_regular(
     """
     values = [wave_height, wave_period, hinge_z, body_mass, pitch_inertia,
               pto_damping, pto_stiffness, pto_equilibrium, dt, end_time,
-              ramp_time, rho, g]
+              ramp_time, rho, g, initial_angle, initial_angular_velocity]
     if (not np.isfinite(values).all() or wave_height < 0 or wave_period <= 0
             or body_mass <= 0 or pitch_inertia <= 0 or pto_damping < 0
             or pto_stiffness < 0 or dt <= 0 or end_time < 0
@@ -422,10 +438,17 @@ def solve_hinged_pitch_nonlinear_regular(
         from wecsim.dynamics.nonlinearHingeOde4 import (
             integrate_nonlinear_hinge_ode4,
         )
-        solved = integrate_nonlinear_hinge_ode4(device, dt=dt, end_time=end_time)
+        solved = integrate_nonlinear_hinge_ode4(
+            device, dt=dt, end_time=end_time,
+            initial_angle=initial_angle,
+            initial_angular_velocity=initial_angular_velocity,
+        )
     else:
-        solved = device.integrate(dt=dt, end_time=end_time,
-                                  adaptive_regular=True)
+        solved = device.integrate(
+            dt=dt, end_time=end_time, adaptive_regular=True,
+            initial_coordinate=np.array([initial_angle]),
+            initial_speed=np.array([initial_angular_velocity]),
+        )
     angle = solved.coordinate[:, 0]
     speed = solved.speed[:, 0]
     excitation_force = np.array([

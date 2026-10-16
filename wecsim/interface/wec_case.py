@@ -361,8 +361,7 @@ class _WECCaseMixin:
                 or hinge.base is not None and self.bodies[1] is not hinge.base
                 or self.coordinates or self.ptos or self.rotational_ptos
                 or self._morison_elements or self._floating_gbm_body is not None
-                or self._floating_joint is not None or self.body_to_body
-                or initial_coordinate is not None or initial_speed is not None):
+                or self._floating_joint is not None or self.body_to_body):
             raise ValueError("fixed_hinge needs its selected bodies and no custom coordinates or PTOs")
         if not isinstance(wave, (RegularWave, PMWave, MultiPMWave,
                                  FullDirectionalSpectrumWave)):
@@ -418,11 +417,16 @@ class _WECCaseMixin:
         if base_case is not None:
             bodies.append(base_case)
         simulation["added_mass_scheme"] = hinge.added_mass_scheme
+        constraint = {"kind": "fixed_hinge",
+                      "location": hinge.location.coordinates()}
+        if initial_coordinate is not None:
+            constraint["initial_coordinate"] = _state(initial_coordinate)
+        if initial_speed is not None:
+            constraint["initial_speed"] = _state(initial_speed)
         return {
             "name": self.name, "simulation": simulation,
             "wave": wave.as_case(), "bodies": bodies,
-            "constraint": {"kind": "fixed_hinge",
-                           "location": hinge.location.coordinates()},
+            "constraint": constraint,
             "pto": {"kind": "pitch", "damping": hinge.damping,
                     "stiffness": hinge.stiffness,
                     "equilibrium_position": hinge.equilibrium_angle,

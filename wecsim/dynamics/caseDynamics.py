@@ -357,9 +357,17 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         mass = _number(bodies[0].get("mass"), "body.mass", positive=True)
         inertia = _number(bodies[0].get("pitch_inertia"),
                           "body.pitch_inertia", positive=True)
-        if set(constraint) - {"kind", "location"}:
-            raise ValueError("fixed-hinge initial conditions are not yet supported")
+        if set(constraint) - {"kind", "location", "initial_coordinate", "initial_speed"}:
+            raise ValueError("unsupported fixed-hinge constraint setting")
         location = _location(constraint)
+        initial_angle = initial_coordinate(
+            constraint.get("initial_coordinate", [0]), ("pitch",),
+            "constraint.initial_coordinate",
+        )[0]
+        initial_pitch_speed = initial_coordinate(
+            constraint.get("initial_speed", [0]), ("pitch",),
+            "constraint.initial_speed",
+        )[0]
         pto_data = case.get("pto")
         damping, stiffness, equilibrium = _pto(
             pto_data, "pitch", allow_location=True,
@@ -378,7 +386,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                     )
             elif scheme != "implicit":
                 raise ValueError("regular fixed-hinge dynamics need implicit added mass")
-            height = _number(wave.get("height"), "wave.height", positive=True)
+            height = _number(wave.get("height"), "wave.height", nonnegative=True)
             period = _number(wave.get("period"), "wave.period", positive=True)
             if set(wave) - {"type", "height", "period", "direction"}:
                 raise ValueError("regular waves use height, period, and direction")
@@ -401,6 +409,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 pto_damping=damping, pto_stiffness=stiffness,
                 pto_equilibrium=equilibrium, dt=dt, end_time=end_time,
                 ramp_time=ramp_time, rho=rho, g=g,
+                initial_angle=initial_angle,
+                initial_angular_velocity=initial_pitch_speed,
                 **source_options,
             )
             ramp = np.ones(len(solved.time))
@@ -536,6 +546,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             ),
             added_mass_scheme=sim.get("added_mass_scheme", "implicit"),
             rho=rho, g=g,
+            initial_angle=initial_angle,
+            initial_angular_velocity=initial_pitch_speed,
         )
         position = np.zeros((len(solved.time), len(bodies), 6))
         velocity = np.zeros_like(position)
