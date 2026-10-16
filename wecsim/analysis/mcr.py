@@ -94,20 +94,33 @@ class MCRSeaStateResult:
 def mcr_spectrum_files(path: str | Path) -> tuple[Path, ...]:
     """Read the published Option 3 sea-state MAT table and resolve its files."""
     mat_file = Path(path).expanduser().resolve(strict=True)
-    data = loadmat(mat_file, squeeze_me=True, struct_as_record=False)
+    # Preserve the cell table's two dimensions: squeeze_me turns a valid
+    # one-case (1, 2) table into a flat (2,) array.
+    data = loadmat(mat_file, squeeze_me=False, struct_as_record=False)
     if "mcr" not in data:
         raise ValueError("MAT file has no mcr structure")
-    mcr = data["mcr"]
+
+    def cell_text(value):
+        while isinstance(value, np.ndarray):
+            if value.size != 1:
+                raise ValueError("MCR table cells must contain one string")
+            value = value.item()
+        return str(value)
+
+    records = np.asarray(data["mcr"])
+    if records.size != 1:
+        raise ValueError("MAT file needs one mcr structure")
+    mcr = records.item()
     if (not hasattr(mcr, "header") or not hasattr(mcr, "cases")
-            or tuple(str(value) for value in np.ravel(mcr.header))
+            or tuple(cell_text(value) for value in np.ravel(mcr.header))
             != ("waves.spectrumFile", "simu.solver")):
         raise ValueError("unsupported imported-spectrum MCR fields")
     cases = np.asarray(mcr.cases, dtype=object)
     if cases.ndim != 2 or cases.shape[1] != 2 or len(cases) == 0:
         raise ValueError("imported-spectrum MCR needs spectrum and solver columns")
-    if any(str(solver) != "ode4" for solver in cases[:, 1]):
+    if any(cell_text(solver) != "ode4" for solver in cases[:, 1]):
         raise ValueError("only the published fixed-step ode4 solver is supported")
-    filenames = tuple(str(value) for value in cases[:, 0])
+    filenames = tuple(cell_text(value) for value in cases[:, 0])
     if any(not name or Path(name).name != name for name in filenames):
         raise ValueError("spectrum file names must be local to the MAT table")
     if len(set(filenames)) != len(filenames):

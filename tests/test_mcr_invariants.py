@@ -1,5 +1,7 @@
 """Portable multiple-condition input and signed-power behavior."""
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 from openpyxl import Workbook
@@ -7,7 +9,7 @@ from scipy.io import savemat
 
 from wecsim.analysis.mcr import (
     MCRCondition, MCRTrace, mcr_grid, mcr_mat_file, mcr_wave_statistics,
-    run_mcr,
+    mcr_spectrum_files, run_mcr, run_rm3_spectrum_mcr,
 )
 
 
@@ -101,3 +103,69 @@ def test_mcr_mat_table_reports_missing_fields_as_input_error(tmp_path, record):
     savemat(path, {"mcr": record})
     with pytest.raises(ValueError, match="MCR MAT file needs header and cases"):
         mcr_mat_file(path)
+
+
+def test_single_imported_sea_runs_and_reports_its_own_power(tmp_path):
+    """MATLAB's one-row cell table still represents one complete MCR case."""
+    spectrum = tmp_path / "sea.mat"
+    savemat(spectrum, {"spectrumData": np.array([
+        [.10, .20, .1], [.125, .35, .4], [.15, .20, .7],
+    ])})
+    table = tmp_path / "mcr.mat"
+    savemat(table, {"mcr": {
+        "header": np.array(["waves.spectrumFile", "simu.solver"],
+                           dtype=object),
+        "cases": np.array([[spectrum.name, "ode4"]], dtype=object),
+    }})
+    assert mcr_spectrum_files(table) == (spectrum.resolve(),)
+
+    # Use the bundled HDF5 from the repository, independent of the MAT table.
+    hydro = Path(__file__).resolve().parents[1] / "examples/data/rm3.h5"
+    result = run_rm3_spectrum_mcr(
+        hydro, table, dt=.05, end_time=.2, ramp_time=0,
+        radiation_memory=.1, averaging_start_time=.1,
+    )
+    assert result.spectrum_files == (spectrum.resolve(),)
+    assert len(result.traces) == len(result.wave_elevation) == 1
+    trace = result.traces[0]
+    np.testing.assert_array_equal(trace.time, np.arange(5) * .05)
+    assert np.ptp(result.wave_elevation[0]) > 0
+    np.testing.assert_allclose(
+        result.mean_absorbed_power[0],
+        np.mean(trace.absorbed_power[2:]), rtol=0, atol=1e-12,
+    )
+
+    second_spectrum = tmp_path / "second_sea.mat"
+    savemat(second_spectrum, {"spectrumData": np.array([
+        [.10, .20, 1.1], [.125, .35, 1.4], [.15, .20, 1.7],
+    ])})
+    two_seas = tmp_path / "two_seas.mat"
+    savemat(two_seas, {"mcr": {
+        "header": np.array(["waves.spectrumFile", "simu.solver"],
+                           dtype=object),
+        "cases": np.array([[spectrum.name, "ode4"],
+                           [second_spectrum.name, "ode4"]], dtype=object),
+    }})
+    combined = run_rm3_spectrum_mcr(
+        hydro, two_seas, dt=.05, end_time=.2, ramp_time=0,
+        radiation_memory=.1, averaging_start_time=.1,
+    )
+    assert combined.spectrum_files == (spectrum.resolve(),
+                                       second_spectrum.resolve())
+    np.testing.assert_array_equal(combined.wave_elevation[0],
+                                  result.wave_elevation[0])
+    np.testing.assert_array_equal(combined.traces[0].absorbed_power,
+                                  trace.absorbed_power)
+    assert np.ptp(combined.wave_elevation[0] - combined.wave_elevation[1]) > 0
+
+
+def test_imported_sea_table_requires_case_rows_and_two_columns(tmp_path):
+    """A transposed cell table must not masquerade as one valid sea state."""
+    table = tmp_path / "transposed.mat"
+    savemat(table, {"mcr": {
+        "header": np.array(["waves.spectrumFile", "simu.solver"],
+                           dtype=object),
+        "cases": np.array([["sea.mat"], ["ode4"]], dtype=object),
+    }})
+    with pytest.raises(ValueError, match="spectrum and solver columns"):
+        mcr_spectrum_files(table)
