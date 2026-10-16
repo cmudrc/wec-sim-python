@@ -88,6 +88,7 @@ def solve_rm3_regular(
     radiation_memory: float | None = None,
     radiation_method: str | None = None,
     added_mass_scheme: str = "implicit",
+    solver: str = "implicit",
     excitation_force: np.ndarray | None = None,
     no_wave: bool = False,
     initial_coordinate: np.ndarray | None = None,
@@ -112,6 +113,8 @@ def solve_rm3_regular(
     in the effective inertia. ``"simulink_delay"`` reproduces the pinned
     WEC-Sim model's rigid-body mass split and 1e-7 s delayed acceleration
     feedback for numerical comparison. The delay is not a WEC property.
+    ``solver="wecsim_ode4"`` follows the pinned no-wave PTO-extension
+    convolution and delayed-mass timing without changing the physical default.
     ``radiation_method="fir"`` instead samples the same kernel as a discrete
     FIR filter and holds its force through each RK4 step.
     ``radiation_method="state_space"`` advances the pinned HDF5 fitted
@@ -164,6 +167,20 @@ def solve_rm3_regular(
         raise ValueError("added_mass_scheme must be implicit or simulink_delay")
     if added_mass_scheme == "simulink_delay" and radiation_method != "convolution":
         raise ValueError("simulink_delay requires convolution radiation")
+    if solver not in ("implicit", "wecsim_ode4"):
+        raise ValueError("solver must be implicit or wecsim_ode4")
+    if solver == "wecsim_ode4" and (
+            not no_wave or radiation_method != "convolution"
+            or added_mass_scheme != "simulink_delay" or b2b
+            or pto_damping != 0 or pto_stiffness != 0
+            or pto_hard_stops is not None or mooring_surge_stiffness != 0
+            or moordyn is not None or excitation_force is not None
+            or joint_z != 0 or (initial_speed is not None
+                                and np.any(np.asarray(initial_speed) != 0))):
+        raise ValueError(
+            "source CIC ode4 needs the no-wave RM3 free-decay layout "
+            "with simulink_delay added mass"
+        )
     if ((radiation_method == "constant" and radiation_memory is not None)
             or (radiation_method != "constant" and radiation_memory is None)):
         raise ValueError("constant radiation has no memory; convolution and FIR need it")
@@ -395,6 +412,7 @@ def solve_rm3_regular(
             initial_coordinate=initial_coordinate, initial_speed=initial_speed,
             adaptive_regular=pto_hard_stops is not None,
             radiation_state_space=fitted_radiation,
+            solver=solver,
         )
     q = solved.coordinate
     v = solved.speed

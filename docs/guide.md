@@ -203,6 +203,31 @@ A derived 400 s RM3 run pairs a 50 kN/m spring and 5 kN pretension against
 MATLAB WEC-Sim using `equilibrium_position=-0.1` m; the paired power check
 uses total mechanical exchange as well as damper dissipation.
 
+For the published RM3 PTO Extension free decays, configure the same two
+bodies with zero PTO damping and `added_mass_scheme="simulink_delay"`.
+The explicit source solver then reproduces WEC-Sim's fixed-step convolution
+and delay timing:
+
+```python
+from wecsim import NoWave, WEC
+
+wec = WEC("RM3 PTO Extension")
+float_body = wec.body("float", "path/to/rm3.h5",
+                      inertia=(0, 21_306_090.66, 0))
+spar = wec.body("spar", "path/to/rm3.h5",
+                inertia=(0, 94_407_091.24, 0))
+wec.floating_joint(float_body, spar, damping=0,
+                   added_mass_scheme="simulink_delay")
+result = wec.run(NoWave(), dt=0.1, end_time=30, radiation_memory=60,
+                 initial_coordinate={"float_heave": 5},
+                 solver="wecsim_ode4")
+```
+
+Use `{"spar_heave": -5}` for the other published input. For the physical
+comparison path, configure a separate joint with the default implicit
+added mass and omit `solver`. These 0.1 s source trajectories are
+step-sensitive.
+
 For the published generalized-body-mode barge, generate its HDF5 with the
 Applications `Generalized_Body_Modes/hydroData/bemio.m`, then run:
 
