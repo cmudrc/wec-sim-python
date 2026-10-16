@@ -524,7 +524,8 @@ def synthesize_full_directional_response(
     hydro = body.hydroData["hydro_coeffs"]
     bem = body.hydroData["simulation_parameters"]
     bem_omega = np.asarray(bem["w"], dtype=float).ravel()
-    bem_heading = np.mod(np.asarray(bem["wave_dir"], dtype=float).ravel(), 360)
+    source_heading = np.asarray(bem["wave_dir"], dtype=float).ravel()
+    bem_heading = np.mod(source_heading, 360)
     order = np.argsort(bem_heading)
     bem_heading = bem_heading[order]
     if (len(bem_heading) < 2 or np.any(np.diff(bem_heading) <= 0)
@@ -535,6 +536,18 @@ def synthesize_full_directional_response(
     if omega[0] < bem_omega[0] - 1e-10 or omega[-1] > bem_omega[-1] + 1e-10:
         raise ValueError(
             "full-directional frequencies are outside the HDF5 hydrodynamic range"
+        )
+    # A BEM sector only supports its recorded incidence angles. The periodic
+    # closing interval is valid when the recorded grid covers the whole circle.
+    sorted_source_heading = np.sort(source_heading)
+    heading_step = np.median(np.diff(sorted_source_heading))
+    full_circle = (len(source_heading) >= 3 and
+                   sorted_source_heading[-1] - sorted_source_heading[0]
+                   >= 360 - heading_step - 1e-10)
+    if not full_circle and (heading[0] < sorted_source_heading[0] - 1e-10
+                            or heading[-1] > sorted_source_heading[-1] + 1e-10):
+        raise ValueError(
+            "full-directional headings are outside the HDF5 hydrodynamic range"
         )
     query_heading = ((heading - bem_heading[0]) % 360) + bem_heading[0]
     query_frequency, query_direction = np.meshgrid(omega, query_heading,
