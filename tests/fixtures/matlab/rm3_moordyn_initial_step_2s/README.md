@@ -19,6 +19,8 @@ The saved default arm reproduces the earlier hosted 80-second published-step
 trace on all shared times through 2 seconds: identical phase values, wave
 elevation within `1e-15` m, and body positions within `1e-12` m or rad.
 The two local source arms have exactly identical phases and wave samples.
+The checked-in MATLAB reproducer regenerated both source arms with exact
+agreement to every saved phase, wave, and body-position value in this fixture.
 Changing only `InitialStep` moves float/spar surge by at most 36.419/62.001 mm
 and shared pitch by 0.0012433 rad over the two-second window.
 
