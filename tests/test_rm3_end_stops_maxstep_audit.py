@@ -86,6 +86,10 @@ def test_maxstep_only_source_separation():
                     body[:1201, 1:4], prefix["body_position"][:, index],
                     rtol=0, atol=1e-7,
                 )
+                np.testing.assert_allclose(
+                    body[:1201, 4:7], prefix["body_velocity"][:, index],
+                    rtol=0, atol=1e-6,
+                )
 
     with np.load(REFINED, allow_pickle=False) as refined:
         fine_time = refined["dt00125_time"][::8][:len(time)]
