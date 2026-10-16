@@ -1346,6 +1346,21 @@ by at most `2.7e-15` m; its 20 segment tensions per line differ by at most
 saved line histories. Source poses drive this comparison, so it does not close
 the published coupled-motion gap or change the RM3 badge count.
 
+A [local two-second initial-step audit](tests/fixtures/matlab/rm3_moordyn_initial_step_2s/README.md)
+keeps the seed-1 sea, `simu.dt=0.01` s, ode45 `MaxStep=0.01` s, and live
+MoorDyn unchanged. Its default `InitialStep=auto` source arm reproduces the
+hosted published-step positions within `1e-12` at shared samples. The only
+change in the second arm is `InitialStep=0.01` s after initialization; all
+1,000 phases and 201 wave samples match exactly. Over two seconds that setting
+moves float/spar surge by `36.419`/`62.001` mm and shared pitch by
+`0.0012433` rad. An independent public Python solve with the same HDF5,
+phases, and live native MoorDyn differs from the default source by
+`34.468`/`60.556` mm surge and `0.0012679` rad pitch. Against the changed
+source arm, those gaps fall to `1.950`/`1.446` mm and `2.456e-5` rad.
+The [portable source identity and optional native Python gates](tests/test_rm3_moordyn_initial_step_portable.py)
+preserve this attribution. This short derived source setting does not close
+the unchanged 80 s published-input gate or alter the RM3 badge count.
+
 For the published OSWEC nonlinear visualization case, the pinned source also
 exports flap velocity and all six-component force channels. On all 1,201 saved
 MATLAB poses, Python integrates its independently calculated facet pressures
