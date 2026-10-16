@@ -100,6 +100,22 @@ def test_no_wave_hinge_free_decay_uses_radiation_and_initial_state():
     np.testing.assert_allclose(result.ptos["hinge"].force,
                                -12_000 * speed - 500 * angle)
 
+    # The independent coordinate-map route must produce the same free decay.
+    mapped = WEC("Mapped still-water pitch")
+    flap = mapped.body("flap", HYDRO, mass=127_000, inertia=(0, 1.85e6, 0))
+    pitch = mapped.coordinate(
+        "pitch", flap.move("pitch", pivot=WorldPoint(0, 0, -8.9)),
+    )
+    mapped.rotational_pto("hinge", pitch, damping=12_000, stiffness=500)
+    equivalent = mapped.run(
+        NoWave(), dt=.05, end_time=.3, radiation_memory=.2,
+        initial_coordinate={"pitch": .12}, initial_speed={"pitch": -.02},
+    )
+    np.testing.assert_array_equal(angle, equivalent.coordinates["pitch"].position)
+    np.testing.assert_array_equal(speed, equivalent.coordinates["pitch"].velocity)
+    np.testing.assert_array_equal(result.ptos["hinge"].force,
+                                  equivalent.ptos["hinge"].force)
+
 
 @pytest.mark.parametrize("source_solver", (False, True))
 def test_nonlinear_hinge_preserves_initial_pitch_and_speed(source_solver):
