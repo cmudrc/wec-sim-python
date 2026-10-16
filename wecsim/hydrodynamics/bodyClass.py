@@ -37,6 +37,23 @@ def _directional_interp(frequencies, directions, values, query_frequencies, quer
     return interpolator(points).reshape(direction_grid.shape)
 
 
+def _require_excitation_grid_coverage(hydro_data, frequency, direction):
+    """Reject waves outside the BEM grid before interpolation can zero or extrapolate them."""
+    bem = hydro_data['simulation_parameters']
+    available_direction = np.asarray(bem['wave_dir'], dtype=float).ravel()
+    requested_direction = np.asarray(direction, dtype=float).ravel()
+    available_frequency = np.asarray(bem['w'], dtype=float).ravel()
+    requested_frequency = np.asarray(frequency, dtype=float).ravel()
+    if (not requested_direction.size or not np.isfinite(requested_direction).all()
+            or np.any(requested_direction < available_direction.min() - 1e-10)
+            or np.any(requested_direction > available_direction.max() + 1e-10)):
+        raise ValueError("wave direction is outside the HDF5 hydrodynamic heading range")
+    if (not requested_frequency.size or not np.isfinite(requested_frequency).all()
+            or np.any(requested_frequency < available_frequency.min() - 1e-10)
+            or np.any(requested_frequency > available_frequency.max() + 1e-10)):
+        raise ValueError("wave frequency is outside the HDF5 hydrodynamic frequency range")
+
+
 class BodyClass:
     def hdf5FileProperties(self):#hdf5 file properties
         """
@@ -438,6 +455,7 @@ class BodyClass:
         Used by hydroForcePre       
 
         """
+        _require_excitation_grid_coverage(self.hydroData, w, waveDir)
         nDOF = int(self.dof[0])
         re = self.hydroData['hydro_coeffs']['excitation']['re']*rho*g
         im = self.hydroData['hydro_coeffs']['excitation']['im']*rho*g
@@ -452,7 +470,7 @@ class BodyClass:
                 self.hydroForce['fExt']['re'][ii] = _directional_interp(x, y, np.squeeze(re[ii]), w, waveDir).item()
                 self.hydroForce['fExt']['im'][ii] = _directional_interp(x, y, np.squeeze(im[ii]), w, waveDir).item()
                 self.hydroForce['fExt']['md'][ii] = _directional_interp(x, y, np.squeeze(md[ii]), w, waveDir).item()
-            elif self.hydroData['simulation_parameters']['wave_dir'] == waveDir:
+            else:
                 x = self.hydroData['simulation_parameters']['w'][0]
                 frequency = np.asarray(w).item()
                 s1 = interpolate.CubicSpline(x, np.squeeze(re[ii][0]))# interpolate using CubicSline to get interpolation of spline 3d space
@@ -468,6 +486,7 @@ class BodyClass:
         Used by hydroForcePre
 
         """
+        _require_excitation_grid_coverage(self.hydroData, wv, waveDir)
         nDOF = int(self.dof[0])
         re = self.hydroData['hydro_coeffs']['excitation']['re']*rho*g
         im = self.hydroData['hydro_coeffs']['excitation']['im']*rho*g
@@ -482,7 +501,7 @@ class BodyClass:
                 self.hydroForce['fExt']['re'][:,:,ii] = _directional_interp(x, y, np.squeeze(re[ii]), wv, waveDir)
                 self.hydroForce['fExt']['im'][:,:,ii] = _directional_interp(x, y, np.squeeze(im[ii]), wv, waveDir)
                 self.hydroForce['fExt']['md'][:,:,ii] = _directional_interp(x, y, np.squeeze(md[ii]), wv, waveDir)
-            elif self.hydroData['simulation_parameters']['wave_dir'] == waveDir:
+            else:
                 x = self.hydroData['simulation_parameters']['w'][0]
                 s1 = interpolate.CubicSpline(x, np.squeeze(re[ii][0]))# interpolate using CubicSline to get interpolation of spline 3d space
                 s2 = interpolate.CubicSpline(x, np.squeeze(im[ii][0]))

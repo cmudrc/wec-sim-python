@@ -49,8 +49,11 @@ The [full Python example](../examples/configurable_rm3_pto.py) defines a
 two-body device with a shared pitch pivot and body-local PTO points. Run it
 with `python -m examples.configurable_rm3_pto`. Relative HDF5 paths in
 the Python API resolve from the current directory unless `base_dir` is passed
-to `wec.run`. Body order must match the HDF5 hydrodynamic body order. The
-Python builder covers `linear_subspace`, the single-body `floating_gbm`
+to `wec.run`. Body order must match the HDF5 hydrodynamic body order.
+Regular and irregular wave headings and frequencies must fall within each
+body's HDF5 BEM grid; unsupported inputs raise an error before they can
+produce zero or extrapolated excitation. The Python builder covers
+`linear_subspace`, the single-body `floating_gbm`
 regular-wave layout, the paired two-body `floating_joint`, and the OSWEC
 `fixed_hinge` layout. Mapped
 coordinates use small-motion kinematics and fixed-axis PTOs. The floating
