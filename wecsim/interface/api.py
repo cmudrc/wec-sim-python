@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from numbers import Real
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -51,6 +52,13 @@ from wecsim.interface.results import (
 from wecsim.interface.wec_case import _WECCaseMixin
 
 
+def _case_identifier(name: str, *, pto: bool = False) -> bool:
+    """Apply the case runner's naming rules before mutating a WEC builder."""
+    return (isinstance(name, str)
+            and re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", name) is not None
+            and (not pto or re.fullmatch(r"coordinate[1-9][0-9]*", name) is None))
+
+
 class WEC(_WECCaseMixin):
     """Build supported WEC motion/PTO layouts or fixed Morison bodies.
 
@@ -91,6 +99,8 @@ class WEC(_WECCaseMixin):
              nonlinear_hydro: str | None = None,
              drag_coefficient: float = 0.0,
              drag_area: float = 0.0) -> Body:
+        if not isinstance(name, str) or not name:
+            raise ValueError("body name must be a nonempty string")
         if any(existing.name == name for existing in self.bodies):
             raise ValueError(f"body name already exists: {name}")
         if (isinstance(passive_yaw_threshold, bool)
@@ -124,6 +134,8 @@ class WEC(_WECCaseMixin):
         Current dynamics support one heave-only body in regular waves.
         ``switch_times`` must contain one grid-aligned time per transition.
         """
+        if not isinstance(name, str) or not name:
+            raise ValueError("body name must be a nonempty string")
         ordered = tuple(states)
         if (len(ordered) < 2 or not all(isinstance(s, HydroState) for s in ordered)
                 or len(switch_times) != len(ordered) - 1):
@@ -145,6 +157,8 @@ class WEC(_WECCaseMixin):
 
         Zero inertia is valid because this body never accelerates.
         """
+        if not isinstance(name, str) or not name:
+            raise ValueError("body name must be a nonempty string")
         if any(existing.name == name for existing in self.bodies):
             raise ValueError(f"body name already exists: {name}")
         center = tuple(center_gravity)
@@ -396,6 +410,8 @@ class WEC(_WECCaseMixin):
 
 
     def coordinate(self, name: str, *motions: Motion) -> Coordinate:
+        if not _case_identifier(name):
+            raise ValueError("coordinate name must be an identifier")
         if any(existing.name == name for existing in self.coordinates):
             raise ValueError(f"coordinate name already exists: {name}")
         if not motions:
@@ -425,6 +441,8 @@ class WEC(_WECCaseMixin):
         ``position_control_gain`` may be negative for active reactive control.
         Passive ``stiffness`` remains nonnegative.
         """
+        if not _case_identifier(name, pto=True):
+            raise ValueError("PTO name must be an identifier other than coordinateN")
         if any(existing.name == name for existing in
                (*self.ptos, *self.rotational_ptos)):
             raise ValueError(f"PTO name already exists: {name}")
@@ -488,6 +506,8 @@ class WEC(_WECCaseMixin):
         ``-pretension / stiffness``. The returned history reports angle as
         ``stroke``.
         """
+        if not _case_identifier(name, pto=True):
+            raise ValueError("PTO name must be an identifier other than coordinateN")
         if not any(coordinate is item for item in self.coordinates):
             raise ValueError("rotational PTO coordinate must belong to this WEC")
         if any(existing.name == name for existing in
