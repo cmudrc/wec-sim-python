@@ -143,6 +143,40 @@ def test_opposite_body_local_ptos_superpose_as_one_passive_pto():
     assert np.max(single.absorbed_power) > 0
 
 
+def test_public_coordinate_order_does_not_change_coupled_body_or_pto_motion():
+    """Named initial states and body-local PTO geometry are order independent."""
+    def run(order):
+        wec = WEC("Sphere coordinate order")
+        body = wec.body("sphere", SPHERE)
+        for name in order:
+            wec.coordinate(name, body.move(name))
+        wec.pto(
+            "heave_damper", WorldPoint(0, 0, -5), body.at(0, 0, 0),
+            stiffness=25_000, damping=50_000,
+        )
+        return wec.run(
+            NoWave(), dt=.02, end_time=1, radiation_memory=.2,
+            initial_coordinate={"surge": .1, "heave": .3},
+            initial_speed={"surge": -.02, "heave": .05},
+        )
+
+    surge_first = run(("surge", "heave"))
+    heave_first = run(("heave", "surge"))
+    for field in ("position", "velocity"):
+        np.testing.assert_array_equal(
+            getattr(surge_first.bodies["sphere"], field),
+            getattr(heave_first.bodies["sphere"], field),
+        )
+    for field in ("stroke", "velocity", "force", "absorbed_power"):
+        np.testing.assert_array_equal(
+            getattr(surge_first.ptos["heave_damper"], field),
+            getattr(heave_first.ptos["heave_damper"], field),
+        )
+    assert np.ptp(surge_first.bodies["sphere"].position[:, 0]) > .01
+    assert np.ptp(surge_first.bodies["sphere"].position[:, 2]) > .01
+    assert np.max(surge_first.ptos["heave_damper"].absorbed_power) > 0
+
+
 def test_position_feedback_matches_spring_motion_but_accounts_for_its_work():
     """Equivalent forces need not have the same reported absorbed energy."""
     spring = 25_000.0
