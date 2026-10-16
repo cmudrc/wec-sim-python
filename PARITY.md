@@ -1027,6 +1027,19 @@ entire trajectory gap. On the same 10 s sea, the opt-in output-step
 m for the physical implicit solver. The coupled RM3 trajectory gate remains
 red; matching the source's variable-step delayed feedback requires further
 evidence before changing Python's physical default.
+An [R2025b 2 s signal gate](tests/test_rm3_moordyn_transport_delay_portable.py)
+now logs the acceleration entering and leaving the active `1e-7` s delay,
+plus the radiation input, at all 207 ode45 major steps. Six of those steps
+fall outside the 201 saved output times. At the saved times, the delay input
+equals the independently exported body acceleration exactly; its output
+equals the radiation input exactly. For both bodies and all six acceleration
+channels, linear extrapolation from the two preceding major-step inputs to
+`t - 1e-7` s reconstructs the delayed signal within `1e-12`. Replacing those
+actual solver steps with the `0.01` s output grid misses the float/spar surge
+delay signals at `0.01` s by `0.643`/`0.505` m/s². The opt-in Python helper
+now uses the measured two-interval rule while retaining its existing fixed-
+step calculation. This pins the source numerical mechanism; independently
+advancing the complete adaptive coupled trajectory remains open.
 The reproducible
 [source-driven counterfactual](tools/analyze_rm3_moordyn_feedback.py)
 projects the difference between
