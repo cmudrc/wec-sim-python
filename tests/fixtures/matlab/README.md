@@ -30,6 +30,8 @@ The published 400 s RM3 imported-elevation MooringMatrix gate is documented in
 [rm3_mooring_matrix/README.md](rm3_mooring_matrix/README.md).
 The fixed-input 9.95 s WaveStar internal-step diagnosis is documented in
 [wavestar_fixed_input_step/README.md](wavestar_fixed_input_step/README.md).
+The published 130 s OWC OrificeModel source-convention gate is documented in
+[owc_orifice_130s/README.md](owc_orifice_130s/README.md).
 
 ## Wave-class outputs
 
