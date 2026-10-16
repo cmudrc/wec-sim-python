@@ -1,7 +1,9 @@
 """A configured OSWEC hinge must start at its supplied pitch state."""
 
 from pathlib import Path
+from shutil import copyfile
 
+import h5py
 import numpy as np
 import pytest
 
@@ -14,10 +16,12 @@ NONLINEAR_HYDRO = ROOT / "tests/fixtures/matlab/oswec_multi_wave/oswec.h5"
 FLAP_MESH = ROOT / "tests/test_objects/test_bodyclass/testData/body_3_test/flap.stl"
 
 
-def _hinge(*, nonlinear=False, source_solver=False):
+def _hinge(*, nonlinear=False, source_solver=False, hydro_file=None):
     wec = WEC("OSWEC initial pitch")
+    selected_hydro = (NONLINEAR_HYDRO if nonlinear else
+                      HYDRO if hydro_file is None else hydro_file)
     flap = wec.body(
-        "flap", NONLINEAR_HYDRO if nonlinear else HYDRO,
+        "flap", selected_hydro,
         mass=127_000, inertia=(0, 1.85e6, 0),
         **({"geometry_file": FLAP_MESH, "nonlinear_hydro": "instantaneous"}
            if nonlinear else {}),
@@ -115,6 +119,28 @@ def test_no_wave_hinge_free_decay_uses_radiation_and_initial_state():
     np.testing.assert_array_equal(speed, equivalent.coordinates["pitch"].velocity)
     np.testing.assert_array_equal(result.ptos["hinge"].force,
                                   equivalent.ptos["hinge"].force)
+
+
+def test_no_wave_hinge_free_decay_responds_to_radiation_kernel(tmp_path):
+    # Change only the IRF. Matching body mass, added mass, and restoring force
+    # make this a causal control for radiation memory in still water.
+    without_irf = tmp_path / "oswec-without-radiation.h5"
+    copyfile(HYDRO, without_irf)
+    with h5py.File(without_irf, "r+") as hydro:
+        irf = hydro["body1/hydro_coeffs/radiation_damping/impulse_response_fun/K"]
+        irf[:] = 0
+
+    initial = dict(initial_coordinate={"pitch": .12},
+                   initial_speed={"pitch": -.02})
+    settings = dict(dt=.05, end_time=.3, radiation_memory=.2, **initial)
+    physical = _hinge().run(NoWave(), **settings).coordinates["pitch"]
+    control = _hinge(hydro_file=without_irf).run(
+        NoWave(), **settings,
+    ).coordinates["pitch"]
+    np.testing.assert_array_equal(physical.position[:1], control.position[:1])
+    np.testing.assert_array_equal(physical.velocity[:1], control.velocity[:1])
+    assert physical.position[-1] - control.position[-1] > 1e-4
+    assert np.max(np.abs(physical.velocity - control.velocity)) > 1e-3
 
 
 @pytest.mark.parametrize("source_solver", (False, True))
