@@ -101,7 +101,7 @@ def _hinge_case():
 
 
 @pytest.mark.parametrize("path, value, message", (
-    (("wave", "type"), "none", "fixed-hinge pitch needs one flap"),
+    (("wave", "type"), "none", "no-wave fixed hinge accepts no wave settings"),
     (("bodies", 0, "inertia"), [0, 1.85e6, 0],
      "mass, pitch inertia, and optional mesh hydro"),
     (("bodies", 0, "nonlinear_hydro"), "instantaneous",
