@@ -39,8 +39,8 @@ Multiple_Wave_Spectra,independent_motion,
 Nonhydro_Body,independent_motion,
 Nonlinear_Hydro/ode4/Regular,independent_motion,
 Nonlinear_Hydro/ode4/RegularCIC,independent_motion,
-Nonlinear_Hydro/ode45/Regular,qualified_motion,Full-duration motion gated against derived fine-step MATLAB; published-step force timing differs.
-Nonlinear_Hydro/ode45/RegularCIC,qualified_motion,Full-duration motion gated against derived fine-step MATLAB; published-step force timing differs.
+Nonlinear_Hydro/ode45/Regular,qualified_motion,Full-duration motion gated against derived fine-step MATLAB; published-step force timing differs and MaxStep-only refinement does not close the gap.
+Nonlinear_Hydro/ode45/RegularCIC,qualified_motion,Full-duration motion gated against derived fine-step MATLAB; published-step force timing differs and MaxStep-only refinement does not close the gap.
 OWC/FloatingOWC,independent_motion,
 OWC/OrificeModel,qualified_motion,Physical coupled path diverges; opt-in source-convention route has a full-duration gate.
 PTO-Sim/OSWEC/OSWEC_Hydraulic_Crank_PTO,independent_motion,Published full-duration gates pass on Linux; one-coordinate scalar mass solve also passes all unchanged ARM64 macOS fixed-crank motion and PTO limits locally.
