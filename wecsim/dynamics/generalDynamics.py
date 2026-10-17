@@ -332,8 +332,8 @@ class GeneralizedDynamics:
         step; its force acts during the ensuing implicit body solve. The
         initial external force is zero.
         ``solver='wecsim_ode4'`` selects a source numerical path for
-        sampled yaw or two-body delayed-mass convolution. The implicit
-        physical default is unchanged.
+        sampled yaw or one- and two-body convolution. The implicit physical
+        default is unchanged.
         """
         if not np.isfinite([dt, end_time]).all() or dt <= 0 or end_time < 0:
             raise ValueError("dt must be positive and end_time nonnegative")
@@ -359,7 +359,9 @@ class GeneralizedDynamics:
         if solver not in ("implicit", "wecsim_ode4"):
             raise ValueError("solver must be implicit or wecsim_ode4")
         source_cic = (solver == "wecsim_ode4"
-                      and self.added_mass_delay is not None)
+                      and (self.added_mass_delay is not None
+                           or (len(self.bodies) == self.coordinate_count == 1
+                               and self.bodies[0].state_excitation is None)))
         if solver == "wecsim_ode4" and (
                 not memory or radiation_state_space is not None
                 or adaptive_regular or applied_force_history is not None
@@ -367,14 +369,19 @@ class GeneralizedDynamics:
                 or self.controlled_ptos or self.linear_generators):
             raise ValueError("wecsim_ode4 needs standalone radiation memory")
         if source_cic and (
-                len(self.bodies) != 2 or self.coordinate_count != 4
-                or self.radiation_discretization != "trapezoid"
+                self.radiation_discretization != "trapezoid"
                 or any(body.radiation_kernel is None for body in self.bodies)
                 or self.nonlinear_force is not None
                 or any(body.state_excitation is not None
                        or body.state_inertia is not None
-                       for body in self.bodies)):
-            raise ValueError("source CIC ode4 needs a continuous two-body RM3 joint")
+                       for body in self.bodies)
+                or (self.added_mass_delay is not None
+                    and (len(self.bodies) != 2 or self.coordinate_count != 4))
+                or (self.added_mass_delay is None
+                    and (len(self.bodies) != 1 or self.coordinate_count != 1))):
+            raise ValueError(
+                "source CIC ode4 needs a supported one-body heave or two-body RM3 joint"
+            )
         if radiation_state_space is not None and (
                 not isinstance(radiation_state_space, RadiationStateSpace)
                 or len(self.bodies) != 2 or memory or self.controlled_ptos

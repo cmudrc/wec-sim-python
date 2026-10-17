@@ -46,8 +46,11 @@ pto_force = result.ptos["main"].force
 ```
 
 For mapped-coordinate bodies, `wec.body(...)` also accepts finite 6×6
-`linear_damping` and `quadratic_drag` matrices. They match MATLAB's
-`body.linearDamping` and `body.quadDrag.drag`, respectively. The applied
+`hydrostatic_stiffness`, `linear_damping`, and `quadratic_drag` matrices.
+They match MATLAB's `body.hydroStiffness`, `body.linearDamping`, and
+`body.quadDrag.drag`, respectively. A nonzero hydrostatic matrix replaces
+the HDF5 restoring matrix in N/m and N m/rad; omitting it or passing an
+all-zero matrix uses the HDF5 values. The applied
 quadratic body force is `-D @ (velocity * abs(velocity))`, with six body
 velocities ordered as surge, sway, heave, roll, pitch, yaw. For example,
 `quadratic_drag=np.diag([0, 0, 250_000, 0, 0, 0])` adds heave drag; use
