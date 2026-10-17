@@ -100,8 +100,9 @@ class WEC(_WECCaseMixin):
              nonlinear_hydro: str | None = None,
              drag_coefficient: float = 0.0,
              drag_area: float = 0.0,
-             linear_damping: Sequence[Sequence[float]] | None = None) -> Body:
-        """Add a hydrodynamic body; mapped coordinates support a 6x6 damper."""
+             linear_damping: Sequence[Sequence[float]] | None = None,
+             quadratic_drag: Sequence[Sequence[float]] | None = None) -> Body:
+        """Add a hydrodynamic body with optional 6x6 body drag matrices."""
         if not isinstance(name, str) or not name:
             raise ValueError("body name must be a nonempty string")
         if any(existing.name == name for existing in self.bodies):
@@ -115,6 +116,15 @@ class WEC(_WECCaseMixin):
                 raise ValueError("linear_damping needs a finite 6x6 matrix")
             linear_damping = tuple(tuple(float(value) for value in row)
                                    for row in damping)
+        if quadratic_drag is not None:
+            try:
+                drag = np.asarray(quadratic_drag, dtype=float)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("quadratic_drag needs a finite 6x6 matrix") from exc
+            if drag.shape != (6, 6) or not np.isfinite(drag).all():
+                raise ValueError("quadratic_drag needs a finite 6x6 matrix")
+            quadratic_drag = tuple(tuple(float(value) for value in row)
+                                   for row in drag)
         if (isinstance(passive_yaw_threshold, bool)
                 or not isinstance(passive_yaw_threshold, Real)
                 or not np.isfinite(passive_yaw_threshold)
@@ -135,7 +145,8 @@ class WEC(_WECCaseMixin):
                     drag_coefficient, drag_area,
                     passive_yaw_threshold=passive_yaw_threshold,
                     yaw_heading_bank=yaw_heading_bank,
-                    linear_damping=linear_damping)
+                    linear_damping=linear_damping,
+                    quadratic_drag=quadratic_drag)
         self.bodies.append(body)
         return body
 

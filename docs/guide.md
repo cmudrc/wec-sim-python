@@ -45,6 +45,14 @@ heave = result.bodies["float"].position[:, 2]
 pto_force = result.ptos["main"].force
 ```
 
+For mapped-coordinate bodies, `wec.body(...)` also accepts finite 6×6
+`linear_damping` and `quadratic_drag` matrices. They match MATLAB's
+`body.linearDamping` and `body.quadDrag.drag`, respectively. The applied
+quadratic body force is `-D @ (velocity * abs(velocity))`, with six body
+velocities ordered as surge, sway, heave, roll, pitch, yaw. For example,
+`quadratic_drag=np.diag([0, 0, 250_000, 0, 0, 0])` adds heave drag; use
+`linear_damping` for a force proportional to heave speed.
+
 The [full Python example](../examples/configurable_rm3_pto.py) defines a
 two-body device with a shared pitch pivot and body-local PTO points. Run it
 with `python -m examples.configurable_rm3_pto`. Relative HDF5 paths in

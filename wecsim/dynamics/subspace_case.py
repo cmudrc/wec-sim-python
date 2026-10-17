@@ -386,6 +386,7 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
 
     dynamic_bodies = []
     nonlinear_models = []
+    quadratic_drag_matrices = []
     passive_model = None
     pm_elevation = None
     for index, (body_spec, body, mapping) in enumerate(
@@ -431,6 +432,13 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
             "Drag": np.zeros((6, 6)), "cd": np.zeros(6),
             "characteristicArea": np.zeros(6),
         }
+        quadratic_drag = np.asarray(
+            body_spec.get("quadratic_drag", np.zeros((6, 6))), dtype=float,
+        )
+        if (quadratic_drag.shape != (6, 6)
+                or not np.isfinite(quadratic_drag).all()):
+            raise ValueError("body.quadratic_drag needs a finite 6x6 matrix")
+        body.viscDrag["Drag"] = quadratic_drag
         linear_damping = np.asarray(body_spec.get("linear_damping", np.zeros((6, 6))),
                                     dtype=float)
         if linear_damping.shape != (6, 6) or not np.isfinite(linear_damping).all():
@@ -473,6 +481,7 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         physical_mass = float(np.asarray(body.mass).item())
         rigid_mass = np.diag([physical_mass] * 3 + inertia.tolist())
         hydro_force = body.hydroForce
+        quadratic_drag_matrices.append(np.asarray(hydro_force["visDrag"]))
         # A body-to-body HDF5 contains cross-body added-mass/damping blocks.
         # Independent bodies instead contribute only their diagonal block.
         if b2b:
@@ -636,6 +645,22 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
             state_excitation=state_excitation,
             state_inertia=state_inertia,
         ))
+    quadratic_drag_force = None
+    if any(np.any(matrix) for matrix in quadratic_drag_matrices):
+        drag_bodies = tuple(
+            (body.motion, matrix)
+            for body, matrix in zip(dynamic_bodies, quadratic_drag_matrices)
+            if np.any(matrix)
+        )
+
+        def quadratic_drag_force(coordinate, speed):
+            """Project each body's source-style D(v |v|) drag into q."""
+            force = np.zeros(n)
+            for motion, matrix in drag_bodies:
+                jacobian = motion(coordinate, speed).jacobian
+                velocity = jacobian @ speed
+                force -= jacobian.T @ matrix @ (velocity * np.abs(velocity))
+            return force
     if "ptos" in case:
         connections, stiffness, damping, pto_bias = build_linear_ptos(
             case["ptos"], maps, centers, body_names, coordinate_names,
@@ -673,6 +698,7 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         tuple(dynamic_bodies), n, pto_stiffness=stiffness,
         pto_damping=damping, pto_equilibrium=equilibrium,
         pto_bias=pto_bias,
+        nonlinear_force=quadratic_drag_force,
         controlled_ptos=controlled_connections,
         linear_generators=linear_generators,
     )
