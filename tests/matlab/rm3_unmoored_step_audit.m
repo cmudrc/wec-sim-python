@@ -29,7 +29,7 @@ rm3Rules = {
         'body(2).initial.displacement = [0 0 -0.21];'])
 };
 
-for rm3Label = {'coarse', 'fine'}
+for rm3Label = {'coarse', 'eighth', 'sixteenth', 'fine'}
     rm3Name = rm3Label{1};
     rm3RunDir = fullfile(rm3OutputRoot, rm3Name);
     copyfile(rm3CaseDir, rm3RunDir);
@@ -54,6 +54,10 @@ for rm3Label = {'coarse', 'fine'}
     [~, rm3Model] = fileparts(simu.simMechanicsFile);
     if strcmp(rm3Name, 'fine')
         rm3MaxStep = 0.0003125;
+    elseif strcmp(rm3Name, 'sixteenth')
+        rm3MaxStep = 0.000625;
+    elseif strcmp(rm3Name, 'eighth')
+        rm3MaxStep = 0.00125;
     else
         rm3MaxStep = 0.01;
     end

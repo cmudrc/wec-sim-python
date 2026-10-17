@@ -1331,9 +1331,13 @@ A local [unmoored RM3 negative control](tests/fixtures/matlab/rm3_unmoored_step_
 checks whether MoorDyn is required for a large source solver-step shift. It
 uses the pinned core `RM3.slx`, adjusted to the visualization case's seeded
 2 m/8 s sea, spar initial heave, PTO damping, and `ode45` settings. With
-`simu.dt=0.01` s in both runs, changing only `MaxStep` from `0.01` to
-`0.0003125` s changes float/spar surge by up to `265.844`/`239.644` mm
-over 10 s. All 1,000 source phase values and 1,001 wave samples are identical.
+`simu.dt=0.01` s in all four runs, changing only `MaxStep` from `0.01` to
+`0.00125`, `0.000625`, and `0.0003125` s changes float/spar surge by up to
+`265.844`/`239.644` mm over 10 s. All 1,000 source phase values and 1,001
+wave samples are identical. The 1.25-to-0.625 ms source surge changes are
+`5.257`/`4.235` mm, while 0.625-to-0.3125 ms changes fall to
+`0.785`/`0.695` mm. Only the finest source pair meets the existing 2 mm
+RM3 motion limit; this is bounded step stability, not proof of zero error.
 Independent Python motion from the exact source HDF5 and phases pairs the
 fine-step run within `0.244`/`0.132` mm float/spar surge and `0.090` mm/s
 active translational speed, under the existing RM3 MaxStep-only limits. This
