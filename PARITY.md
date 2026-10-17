@@ -1014,6 +1014,20 @@ qualified and its badge count is unchanged.
 MATLAB's own `0.01`-to-`0.005` s source change becomes large by 250 s, and a
 250 s quarter-step source run remains beyond the current GitHub job budget.
 Neither 250 s source convergence nor native 600 s motion parity is established.
+A [fresh R2025b restart probe](https://github.com/cmudrc/wec-sim-python/actions/runs/38990087225)
+tests a possible way around hosted run limits without extending the unstable
+quarter-step comparison. It saves a complete Simulink operating point at 15 s,
+serializes and reloads it in the same MATLAB process, and resumes to 30 s at
+`dt=0.005` s. Its pinned 250 s half-step wave and trajectory inputs pass
+SHA-256 checks. Across all 6,001 stitched samples, the seven selected-heading
+events match exactly: one occurs at 14.34 s before the checkpoint and six
+after it. The unrounded maximum yaw, yaw-rate, and PTO-torque errors against
+the uninterrupted source are `5.204e-18` rad, `5.204e-18` rad/s, and
+`5.116e-13` N m; relative PTO-work error is `2.877e-16`. These pass the
+predeclared `1e-9` rad, `1e-9` rad/s, `1e-3` N m, and `1e-8` work gates.
+This proves a same-process 15-to-30 s restart, not a fresh-job checkpoint
+restore or a 600 s published-case gate. The 160 s MATLAB source-stability
+failure still stands, so the case remains qualified and badges are unchanged.
 An [ordinary-CI 140 s public `WEC.run` gate](tests/test_variable_yaw_140s_portable.py)
 now independently checks the physical-default selected-heading motion against
 the source-stable quarter-step prefix, using the pinned 40 s OSWEC BEMIO
