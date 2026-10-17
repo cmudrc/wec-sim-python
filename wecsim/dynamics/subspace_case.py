@@ -322,11 +322,20 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
     solver = sim.get("solver", "implicit")
     if solver not in ("implicit", "wecsim_ode4"):
         raise ValueError("simulation.solver must be implicit or wecsim_ode4")
+    source_heave = np.zeros((6, 1))
+    source_heave[2, 0] = 1
     if solver == "wecsim_ode4" and not (
-            wave["type"] == "pm" and len(passive_indices) == 1
-            and (yaw_thresholds[passive_indices[0]] > 0
-                 or yaw_banks[passive_indices[0]] is not None)):
-        raise ValueError("wecsim_ode4 needs PM held yaw or a heading bank")
+            (wave["type"] == "pm" and len(passive_indices) == 1
+             and (yaw_thresholds[passive_indices[0]] > 0
+                  or yaw_banks[passive_indices[0]] is not None))
+            or (wave["type"] == "none" and len(bodies) == n == 1
+                and not passive_indices and not b2b
+                and np.array_equal(maps[0], source_heave)
+                and bodies[0].get("nonlinear_hydro") is None)):
+        raise ValueError(
+            "wecsim_ode4 needs PM held yaw or a heading bank, "
+            "or one no-wave heave body"
+        )
     nonlinear_indices = [
         index for index, spec in enumerate(bodies)
         if spec.get("nonlinear_hydro") is not None
@@ -427,7 +436,16 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         if (inertia.shape != (3,) or not np.isfinite(inertia).all()
                 or np.any(inertia < 0)):
             raise ValueError("body.inertia must have three nonnegative entries")
-        body.hydroStiffness = np.zeros((6, 6))
+        hydrostatic_stiffness = np.asarray(
+            body_spec.get("hydrostatic_stiffness", np.zeros((6, 6))), dtype=float,
+        )
+        if (hydrostatic_stiffness.shape != (6, 6)
+                or not np.isfinite(hydrostatic_stiffness).all()):
+            raise ValueError(
+                "body.hydrostatic_stiffness needs a finite 6x6 matrix"
+            )
+        # BodyClass uses any nonzero override; an all-zero matrix means HDF5.
+        body.hydroStiffness = hydrostatic_stiffness
         body.viscDrag = {
             "Drag": np.zeros((6, 6)), "cd": np.zeros(6),
             "characteristicArea": np.zeros(6),

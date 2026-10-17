@@ -1,9 +1,9 @@
-"""Fixed-step WEC-Sim convolution and delayed-mass integration.
+"""Fixed-step WEC-Sim convolution and optional delayed-mass integration.
 
 The source evaluates its convolution at accepted major steps and extrapolates
-three saved radiation forces with PCHIP during ode4's minor stages. Its tiny
-added-mass delay likewise uses accepted accelerations, with the value at the
-first stage carried forward from the preceding step.
+three saved radiation forces with PCHIP during ode4's minor stages. When
+configured, its tiny added-mass delay uses accepted accelerations, with the
+value at the first stage carried forward from the preceding step.
 """
 
 import numpy as np
@@ -12,7 +12,7 @@ from scipy.interpolate import PchipInterpolator
 
 def integrate_source_cic_ode4(device, time, coordinate, speed, acceleration,
                               dt):
-    """Advance a two-body CIC system through the source's numerical path."""
+    """Advance a CIC system through the source's numerical path."""
     bodies = device.bodies
     count = len(bodies)
     kernels = [body.radiation_kernel for body in bodies]
@@ -88,6 +88,8 @@ def integrate_source_cic_ode4(device, time, coordinate, speed, acceleration,
         radiation_end = tuple(extrapolator(1))
 
         def delayed(fraction):
+            if device.added_mass_delay is None:
+                return zero_acceleration
             if fraction == 0:
                 return accepted_delay
             if index == 0:
