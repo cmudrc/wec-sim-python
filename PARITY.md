@@ -675,10 +675,20 @@ the four remaining noncore inputs:
 `Nonlinear_Hydro/ode45/Regular`, `Nonlinear_Hydro/ode45/RegularCIC`,
 `OWC/OrificeModel`, and `WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive`.
 Inspect existing artifacts first. Use local R2025b MATLAB for bounded source
-experiments supported by its Simulink and Simscape installation. Its missing
-Control System and Optimization toolboxes require hosted R2025b for WaveStar
-NMPC. Give each new run one distinct physical or solver question, with limits
-fixed before results are inspected; avoid repeating timed-out or already
+experiments supported by its Simulink and Simscape installation. Control System
+and Optimization toolboxes are now installed on mali: local calls to `dlqr`
+and `quadprog`, including the Sphere MPC `interior-point-convex` option,
+succeed. Statistics and Machine Learning,
+Stateflow, and System Identification are still absent. The published Sphere
+MPC source calls `regress`, so its unchanged-source gate still needs hosted
+MATLAB. A local disposable copy using only the ordinary least-squares fallback
+`X \ Y` completed its 400 s run and passed the existing independent Python
+gate; its heave position and PTO force differ from the pinned hosted source
+by at most `3.45e-12` m and `2.61e-6` N. This is a local operational check,
+not a new published-source gate. The unchanged WaveStar NMPC source still
+requires hosted R2025b. Give each new run one distinct physical or solver
+question, with limits fixed before results are inspected; avoid repeating
+timed-out or already
 diagnosed jobs unchanged. Preserve source checksums and trajectories, and add
 ordinary Python regression gates for passing independent comparisons.
 
