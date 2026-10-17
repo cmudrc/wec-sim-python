@@ -85,6 +85,7 @@ class Body:
     fixed: bool = False
     center_gravity: tuple[float, float, float] | None = None
     volume: float = 0.0
+    linear_damping: tuple[tuple[float, ...], ...] | None = None
 
     def at(self, x: float, y: float, z: float) -> BodyPoint:
         """Locate an attachment or Morison point relative to this body's CG."""

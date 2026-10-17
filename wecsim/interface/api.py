@@ -99,11 +99,22 @@ class WEC(_WECCaseMixin):
              geometry_file: str | Path | None = None,
              nonlinear_hydro: str | None = None,
              drag_coefficient: float = 0.0,
-             drag_area: float = 0.0) -> Body:
+             drag_area: float = 0.0,
+             linear_damping: Sequence[Sequence[float]] | None = None) -> Body:
+        """Add a hydrodynamic body; mapped coordinates support a 6x6 damper."""
         if not isinstance(name, str) or not name:
             raise ValueError("body name must be a nonempty string")
         if any(existing.name == name for existing in self.bodies):
             raise ValueError(f"body name already exists: {name}")
+        if linear_damping is not None:
+            try:
+                damping = np.asarray(linear_damping, dtype=float)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("linear_damping needs a finite 6x6 matrix") from exc
+            if damping.shape != (6, 6) or not np.isfinite(damping).all():
+                raise ValueError("linear_damping needs a finite 6x6 matrix")
+            linear_damping = tuple(tuple(float(value) for value in row)
+                                   for row in damping)
         if (isinstance(passive_yaw_threshold, bool)
                 or not isinstance(passive_yaw_threshold, Real)
                 or not np.isfinite(passive_yaw_threshold)
@@ -123,7 +134,8 @@ class WEC(_WECCaseMixin):
                     mean_drift, passive_yaw, geometry_file, nonlinear_hydro,
                     drag_coefficient, drag_area,
                     passive_yaw_threshold=passive_yaw_threshold,
-                    yaw_heading_bank=yaw_heading_bank)
+                    yaw_heading_bank=yaw_heading_bank,
+                    linear_damping=linear_damping)
         self.bodies.append(body)
         return body
 
