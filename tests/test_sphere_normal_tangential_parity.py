@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from wecsim import RegularWave, WEC
 from wecsim.hydrodynamics.morison import (
@@ -13,12 +12,27 @@ from wecsim.hydrodynamics.morison import (
 )
 
 
-SPHERE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")
+ROOT = Path(__file__).resolve().parents[1]
+PORTABLE = ROOT / "tests/fixtures/matlab/sphere_normal_current/source.npz"
+SOURCE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (SPHERE_H5 and REFERENCE),
-    reason="paired normal/tangential Sphere output and HDF5 absent",
-)
+if bool(SOURCE_H5) != bool(REFERENCE):
+    raise ValueError("live Morison comparison needs both HDF5 and source output")
+SPHERE_H5 = SOURCE_H5 or ROOT / "examples/data/sphere.h5"
+
+
+def _source():
+    """Use fresh MATLAB output when supplied, otherwise the pinned 40 s trace."""
+    if REFERENCE:
+        folder = Path(REFERENCE)
+        return (
+            np.loadtxt(folder / "SPHERE_MOVING_MORISON_NORMAL_1m-ME_body1.csv",
+                       delimiter=","),
+            np.loadtxt(folder / "SPHERE_MOVING_MORISON_NORMAL_wave.csv",
+                       delimiter=","),
+        )
+    with np.load(PORTABLE, allow_pickle=False) as saved:
+        return saved["no_current_body"].copy(), saved["no_current_wave"].copy()
 
 
 def _max_error(actual, expected, limit, label):
@@ -29,17 +43,10 @@ def _max_error(actual, expected, limit, label):
 
 
 def test_sphere_moving_normal_tangential_trajectory():
-    reference = Path(REFERENCE)
-    source = np.loadtxt(
-        reference / "SPHERE_MOVING_MORISON_NORMAL_1m-ME_body1.csv",
-        delimiter=",",
-    )
-    source_wave = np.loadtxt(
-        reference / "SPHERE_MOVING_MORISON_NORMAL_wave.csv",
-        delimiter=",",
-    )
+    source, source_wave = _source()
     assert source.shape == (4001, 37)
     assert source_wave.shape == (4001, 2)
+    assert np.isfinite(source).all() and np.isfinite(source_wave).all()
 
     wec = WEC("Sphere with moving normal/tangential Morison element")
     sphere = wec.body(
