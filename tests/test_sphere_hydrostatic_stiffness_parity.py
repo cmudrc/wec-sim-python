@@ -11,6 +11,7 @@ from wecsim import NoWave, WEC
 ROOT = Path(__file__).resolve().parents[1]
 HYDRO = ROOT / "examples/data/sphere.h5"
 SOURCE = ROOT / "tests/fixtures/matlab/sphere_hydrostatic_stiffness/source.npz"
+HALF_STEP = ROOT / "tests/fixtures/matlab/sphere_hydrostatic_stiffness/half_step.npz"
 PUBLISHED = ROOT / "tests/fixtures/matlab/sphere_free_decay.npz"
 
 
@@ -36,6 +37,41 @@ def test_body_hydrostatic_stiffness_matches_derived_sphere_free_decay():
     for dof in range(6):
         position_limit = 1e-8 if dof == 2 else 1e-10
         speed_limit = 1e-8 if dof == 2 else 1e-10
+        assert np.max(np.abs(actual.position[:, dof] - position[:, dof])) < position_limit
+        assert np.max(np.abs(actual.velocity[:, dof] - velocity[:, dof])) < speed_limit
+
+
+def test_physical_solver_pairs_with_matched_half_step_sphere_source():
+    """Resolve the physical solver's published-step miss without changing its force law."""
+    with np.load(SOURCE, allow_pickle=False) as coarse:
+        coarse_time = coarse["time"].copy()
+        coarse_position = coarse["position"].copy()
+        coarse_velocity = coarse["velocity"].copy()
+        stiffness = coarse["hydrostatic_stiffness"].copy()
+    with np.load(HALF_STEP, allow_pickle=False) as refined:
+        time = refined["time"].copy()
+        position = refined["position"].copy()
+        velocity = refined["velocity"].copy()
+    assert time.shape == (8001,) and position.shape == velocity.shape == (8001, 6)
+    np.testing.assert_allclose(time, np.arange(8001) * .005, rtol=0, atol=1e-10)
+    np.testing.assert_allclose(time[::2], coarse_time, rtol=0, atol=1e-10)
+    assert np.isfinite(position).all() and np.isfinite(velocity).all()
+
+    # The MATLAB source itself changes less than the original 0.12 mm and
+    # 0.16 mm/s motion limits when only its 0.01 s step is halved.
+    assert np.max(np.abs(position[::2, 2] - coarse_position[:, 2])) < 0.00012
+    assert np.max(np.abs(velocity[::2, 2] - coarse_velocity[:, 2])) < 0.00016
+
+    wec = WEC("Sphere matched-step restoring audit")
+    sphere = wec.body("sphere", HYDRO, hydrostatic_stiffness=stiffness)
+    wec.coordinate("heave", sphere.move("heave"))
+    result = wec.run(NoWave(), dt=.005, end_time=40,
+                     radiation_memory=15, initial_coordinate={"heave": 1})
+    np.testing.assert_allclose(result.time, time, rtol=0, atol=1e-10)
+    actual = result.bodies["sphere"]
+    for dof in range(6):
+        position_limit = 0.00012 if dof == 2 else 1e-10
+        speed_limit = 0.00016 if dof == 2 else 1e-10
         assert np.max(np.abs(actual.position[:, dof] - position[:, dof])) < position_limit
         assert np.max(np.abs(actual.velocity[:, dof] - velocity[:, dof])) < speed_limit
 

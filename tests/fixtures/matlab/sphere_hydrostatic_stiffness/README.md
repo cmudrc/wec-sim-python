@@ -31,3 +31,27 @@ source-numerical gates. The default integrator and its failed limits were not
 changed. This variant adds no published case or badge count.
 
 ![Derived Sphere hydrostatic trajectory and solver errors](../../../../docs/figures/sphere-body-hydrostatic-stiffness-parity.png)
+
+## Matched half-step audit
+
+A second local R2025b run copied the same pinned model, geometry, HDF5, and
+derived stiffness input into an isolated directory. Its **only input change**
+was `simu.dt = 0.005` s instead of 0.01 s. The modified input SHA-256 is
+`2b7e7b917f33a3d1c3fd7ba860a9e56728edbb11a7ee357be6fbfa5e96b4ac16`.
+The 8,001-row source CSV SHA-256 is
+`e461361e5033a9644fcd2cfe85266ed7472ca843ae65122e58918ea359639bca`;
+the unrounded `half_step.npz` SHA-256 is
+`bd9caab618fda0fd3293c5e2df8610179f91e12a5598afa1e13265cb117867ee`.
+The reusable MATLAB exporter accepts this step as its optional fourth
+argument: `sphere_hydrostatic_stiffness_reference(caseDir, sourceDir, outputCsv, 0.005)`.
+A second run through that committed exporter produced a byte-identical CSV.
+
+At shared 0.01 s times, MATLAB's own source heave and speed change by at most
+`5.3253e-6` m and `9.4768e-6` m/s. The unchanged physical Python solver,
+run at the matching 0.005 s step, differs from the new source by at most
+`4.9750e-5` m and `8.8929e-5` m/s. Both pass the original 0.12 mm and
+0.16 mm/s limits without changing the force law or using the opt-in source
+solver. Python's self-refinement to 0.0025 s reduces its gap to the original
+0.01 s source to `6.1469e-6` m and `1.1089e-5` m/s; that is a diagnostic,
+not a matched-step source gate. The published-step physical-default result
+still misses its original limits, and this derived case adds no badge count.

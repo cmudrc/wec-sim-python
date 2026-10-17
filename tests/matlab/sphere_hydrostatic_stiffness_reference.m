@@ -1,10 +1,15 @@
-function sphere_hydrostatic_stiffness_reference(caseDir, sourceDir, outputCsv)
+function sphere_hydrostatic_stiffness_reference(caseDir, sourceDir, outputCsv, expectedDt)
 % Run the pinned Sphere 1 m free decay with a derived heave restoring term.
+if nargin < 4
+    expectedDt = 0.01;
+end
+assert(ismember(expectedDt, [0.01, 0.005]), ...
+    'Only the published and half-step source inputs are audited');
 addpath(genpath(sourceDir));
 priorDir = pwd;
 cd(caseDir);
 run('initializeWecSim');
-assert(simu.dt == .01 && simu.endTime == 40 && ...
+assert(simu.dt == expectedDt && simu.endTime == 40 && ...
     strcmp(waves.type, 'noWaveCIC'), 'Published case settings changed');
 assert(isequal(body(1).hydroStiffness, ...
     diag([0 0 1155583.665 0 0 0])), ...
@@ -17,7 +22,8 @@ end
 sim(simu.simMechanicsFile, [], simset('SrcWorkspace', 'parent'));
 run('stopWecSim');
 record = output.bodies(1);
-assert(numel(record.time) == 4001, 'Incomplete source run');
+assert(numel(record.time) == round(40 / expectedDt) + 1, ...
+    'Incomplete source run');
 writematrix([record.time(:), record.position, record.velocity], outputCsv);
 close_system(modelName, 0);
 cd(priorDir);
