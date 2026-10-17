@@ -39,6 +39,7 @@ from wecsim.interface.configuration import (
 from wecsim.control.controls import DeclutchingControl, LatchingControl
 from wecsim.dynamics.caseDynamics import run_case
 from wecsim.dynamics.hardStops import LinearHardStops
+from wecsim.dynamics.linearCoordinates import AXES
 from wecsim.dynamics.moorDyn import MoorDyn
 from wecsim.hydrodynamics.morison import MorisonElement
 from wecsim.interface.results import (
@@ -410,6 +411,7 @@ class WEC(_WECCaseMixin):
 
 
     def coordinate(self, name: str, *motions: Motion) -> Coordinate:
+        """Map one coordinate to body motions; ``scale`` sets their leverage."""
         if not _case_identifier(name):
             raise ValueError("coordinate name must be an identifier")
         if any(existing.name == name for existing in self.coordinates):
@@ -420,6 +422,20 @@ class WEC(_WECCaseMixin):
                or not any(motion.body is body for body in self.bodies)
                for motion in motions):
             raise ValueError("coordinate motions must use bodies in this WEC")
+        seen = set()
+        for motion in motions:
+            if not isinstance(motion.dof, str) or motion.dof not in AXES:
+                raise ValueError("coordinate motion has unsupported DOF")
+            try:
+                scale = float(motion.scale)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("coordinate motion needs a finite nonzero scale") from exc
+            if isinstance(motion.scale, bool) or not np.isfinite(scale) or scale == 0:
+                raise ValueError("coordinate motion needs a finite nonzero scale")
+            key = (id(motion.body), motion.dof)
+            if key in seen:
+                raise ValueError("coordinate repeats one body motion")
+            seen.add(key)
         coordinate = Coordinate(name, tuple(motions))
         self.coordinates.append(coordinate)
         return coordinate

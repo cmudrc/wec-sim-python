@@ -96,6 +96,27 @@ def test_rotational_pto_rejects_translation_before_reserving_its_name():
     }]
 
 
+def test_coordinate_rejects_invalid_motion_before_reserving_its_name():
+    wec, body, heave = _heave_wec()
+    invalid = (
+        ((body.move("diagonal"),), "unsupported DOF"),
+        ((body.move("pitch", scale=0),), "finite nonzero scale"),
+        ((body.move("pitch", scale=np.nan),), "finite nonzero scale"),
+        ((body.move("pitch", scale=True),), "finite nonzero scale"),
+        ((body.move("pitch"), body.move("pitch")), "repeats one body motion"),
+    )
+    for motions, message in invalid:
+        with pytest.raises(ValueError, match=message):
+            wec.coordinate("pitch", *motions)
+        assert wec.coordinates == [heave]
+
+    wec.coordinate("pitch", body.move("pitch"))
+    case = wec.to_case(NoWave(), dt=.1, end_time=.2)
+    assert [item["name"] for item in case["constraint"]["coordinates"]] == [
+        "heave", "pitch",
+    ]
+
+
 @pytest.mark.parametrize("settings,error", [
     ({"control": DeclutchingControl(100, 0.2), "stiffness": 10},
      "sampled PTO control sets its own gain"),
