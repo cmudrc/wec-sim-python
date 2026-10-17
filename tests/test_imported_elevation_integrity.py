@@ -12,12 +12,13 @@ from wecsim import ImportedElevationWave, WEC
 SPHERE = Path(__file__).resolve().parents[1] / "examples/data/sphere.h5"
 
 
-def _run(path, *, second_force_ramp=False):
+def _run(path, *, second_force_ramp=False, variable="etaData", file_name=None):
     wec = WEC("sampled Sphere sea")
     sphere = wec.body("sphere", SPHERE)
     wec.coordinate("heave", sphere.move("heave"))
     return wec.run(
-        ImportedElevationWave(path.name,
+        ImportedElevationWave(path.name if file_name is None else file_name,
+                              variable=variable,
                               reapply_force_ramp=second_force_ramp),
         dt=.01, end_time=.2, ramp_time=.1, radiation_memory=.2,
         base_dir=path.parent,
@@ -67,3 +68,30 @@ def test_imported_elevation_rejects_ambiguous_or_short_records(
     savemat(path, {"etaData": np.asarray(samples)})
     with pytest.raises(ValueError, match=message):
         _run(path)
+
+
+def test_imported_elevation_rejects_missing_or_nonphysical_channels(tmp_path):
+    path = tmp_path / "measured.mat"
+    samples = np.array([[0, 0], [.1, 1], [.2, 0]])
+    savemat(path, {"etaData": samples})
+    with pytest.raises(ValueError, match="nonempty MAT variable name"):
+        _run(path, variable="")
+    with pytest.raises(ValueError, match="is absent"):
+        _run(path, variable="wrong_channel")
+    with pytest.raises(ValueError, match="must be a boolean"):
+        _run(path, second_force_ramp="yes")
+
+    complex_samples = samples.astype(complex)
+    complex_samples[1, 1] += 1j
+    savemat(path, {"etaData": complex_samples})
+    with pytest.raises(ValueError, match="real numeric samples"):
+        _run(path)
+
+
+def test_imported_elevation_rejects_paths_that_are_not_mat_files(tmp_path):
+    path = tmp_path / "measured.mat"
+    savemat(path, {"etaData": np.array([[0, 0], [.2, 1]])})
+    with pytest.raises(ValueError, match="MAT file path"):
+        _run(path, file_name="")
+    with pytest.raises(ValueError, match="is not a file"):
+        _run(tmp_path)
