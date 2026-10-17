@@ -23,7 +23,7 @@ for waveType = {'noWave', 'noWaveCIC', 'regularCIC'}
         waves.marker.location = [4 0; 0 5; -3 2];
     end
     % noWaveCIC leaves period unset: the source selects the minimum BEM
-    % frequency used for its radiation-memory preprocessing.
+    % frequency for its no-wave reference properties.
     waves.setup(bemFrequency, 25, 1, 0.1, 20, time, 9.81, 1000);
     writematrix([waves.omega, waves.period, waves.wavenumber, ...
                  waves.amplitude], ...
