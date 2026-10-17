@@ -129,6 +129,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         raise ValueError("configurable PTO connections require linear_subspace")
     if kind != "linear_subspace" and any("mean_drift" in body for body in bodies):
         raise ValueError("body.mean_drift currently requires linear_subspace")
+    if kind != "linear_subspace" and any("linear_damping" in body for body in bodies):
+        raise ValueError("body.linear_damping currently requires linear_subspace")
     if "mooring" in case and kind not in ("floating_joint", "floating_owc"):
         raise ValueError("the configured mooring requires a floating_joint or floating_owc")
 

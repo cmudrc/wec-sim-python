@@ -102,6 +102,8 @@ class _WECCaseMixin:
                 "mass": body.mass,
                 "inertia": list(body.inertia),
             }
+            if body.linear_damping is not None:
+                body_case["linear_damping"] = [list(row) for row in body.linear_damping]
             if body.mean_drift != "none":
                 body_case["mean_drift"] = body.mean_drift
             if body.passive_yaw:
@@ -245,7 +247,8 @@ class _WECCaseMixin:
                     or body.mean_drift != "none" or body.passive_yaw
                     or body.geometry_file is not None or body.nonlinear_hydro is not None
                     or body.variable_hydro is not None or body.drag_coefficient
-                    or body.drag_area or body.passive_yaw_threshold
+                    or body.drag_area or body.linear_damping is not None
+                    or body.passive_yaw_threshold
                     or body.yaw_heading_bank is not None):
                 raise ValueError("floating_joint needs equilibrium-mass hydrodynamic bodies without extra force models")
             inertia = np.asarray(body.inertia, dtype=float)
@@ -304,7 +307,8 @@ class _WECCaseMixin:
                     or body.passive_yaw or body.geometry_file is not None
                     or body.nonlinear_hydro is not None
                     or body.variable_hydro is not None or body.drag_coefficient
-                    or body.drag_area or body.passive_yaw_threshold
+                    or body.drag_area or body.linear_damping is not None
+                    or body.passive_yaw_threshold
                     or body.yaw_heading_bank is not None):
                 raise ValueError("floating_owc bodies cannot add other force models")
         if layout.floater.mass != "equilibrium":
@@ -387,6 +391,8 @@ class _WECCaseMixin:
                 "volume": hinge.base.volume,
             }
         elif hinge.base is not None:
+            if hinge.base.linear_damping is not None:
+                raise ValueError("fixed_hinge does not support body linear_damping")
             base_case = {"name": hinge.base.name,
                          "hydro_file": str(hinge.base.hydro_file),
                          "hydro_body": hinge.base.hydro_body or 2,
@@ -405,7 +411,7 @@ class _WECCaseMixin:
                 or flap.nonlinear_hydro not in (None, "instantaneous")
                 or (flap.geometry_file is None) != (flap.nonlinear_hydro is None)
                 or flap.mean_drift != "none" or flap.drag_coefficient
-                or flap.drag_area):
+                or flap.drag_area or flap.linear_damping is not None):
             raise ValueError("fixed_hinge needs positive flap mass and pitch inertia with supported mesh hydro settings")
         bodies = [{"name": flap.name, "hydro_file": str(flap.hydro_file),
                    "hydro_body": flap.hydro_body or 1,

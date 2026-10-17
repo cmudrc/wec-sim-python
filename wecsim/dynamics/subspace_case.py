@@ -431,7 +431,11 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
             "Drag": np.zeros((6, 6)), "cd": np.zeros(6),
             "characteristicArea": np.zeros(6),
         }
-        body.linearDamping = np.zeros((6, 6))
+        linear_damping = np.asarray(body_spec.get("linear_damping", np.zeros((6, 6))),
+                                    dtype=float)
+        if linear_damping.shape != (6, 6) or not np.isfinite(linear_damping).all():
+            raise ValueError("body.linear_damping needs a finite 6x6 matrix")
+        body.linearDamping = linear_damping
         wave_amp = np.vstack((
             time, imported_elevation if imported_elevation is not None
             else np.zeros_like(time),
@@ -496,6 +500,11 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
                 kernel = independent_kernel
         else:
             kernel = None
+        # MATLAB applies user linear damping in addition to radiation,
+        # including when radiation comes from a convolution kernel.
+        radiation_damping = list(radiation_damping)
+        radiation_damping[index - 1] = (radiation_damping[index - 1]
+                                        + np.asarray(hydro_force["linearDamping"]))
         center = centers[index - 1]
 
         if exact_pitch_motion is not None:
