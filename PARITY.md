@@ -678,39 +678,16 @@ the four remaining noncore inputs:
 `Nonlinear_Hydro/ode45/Regular`, `Nonlinear_Hydro/ode45/RegularCIC`,
 `OWC/OrificeModel`, and `WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive`.
 Inspect existing artifacts first. Use local R2025b MATLAB for bounded source
-experiments supported by its Simulink and Simscape installation. Control System
-and Optimization toolboxes are now installed on mali: local calls to `dlqr`
-and `quadprog`, including the Sphere MPC `interior-point-convex` option,
-succeed. The WaveStar model loads locally and `sfroot` finds all ten embedded
-MATLAB charts; the earlier claim that Stateflow chart access was absent was
-incorrect. Statistics `regress` and System Identification `ar`/`forecast`
-are unavailable locally. The published Sphere MPC source calls `regress`,
-so its unchanged-source gate still needs hosted
-MATLAB. A local disposable copy using only the ordinary least-squares fallback
-`X \ Y` completed its 400 s run and passed the existing independent Python
-gate; its heave position and PTO force differ from the pinned hosted source
-by at most `3.45e-12` m and `2.61e-6` N. This is a local operational check,
-not a new published-source gate. The unchanged WaveStar NMPC source still
-requires hosted R2025b for its System Identification calls. A
-[test-only local AR fallback](tests/matlab/wavestar_local_sysid/README.md)
-now permits diagnostic local runs without modifying either pinned checkout.
-Given all 4,501 archived MATLAB estimator states, it reconstructs the
-40-step source forecast within `2.02e-11` N m after the unstable 10–11 s
-startup fit; that fit differs by at most `0.0525` N m against a
-`5.24e6` N m peak. A local full 225 s Simulink run with this substitution
-matches all 500 archived wave components and 4,501 wave samples exactly at
-stored precision. Its first 20 s body and PTO columns differ from the
-unchanged hosted source by at most `1.5e-7` in their logged units, and its
-controller command by `3.1e-8` N m. Closed-loop trajectories then separate:
-the command first differs by more than `1e-4` N m at 39.2 s, and full-run
-maximum pitch, pitch-speed, command, and axial-force differences reach
-`0.01412` rad, `0.0651` rad/s, `0.882` N m, and `4.24` N. This local route
-supports bounded source experiments but does not replace the unchanged
-hosted baseline or establish published closed-loop parity. Give each new
-run one distinct physical or solver
-question, with limits fixed before results are inspected; avoid repeating
-timed-out or already
-diagnosed jobs unchanged. Preserve source checksums and trajectories, and add
+experiments supported by its Simulink and Simscape installation. Local R2025b
+now runs `dlqr`, `quadprog`, `regress`, `ar`, and `forecast`, including the
+Sphere MPC `interior-point-convex` option and all ten embedded WaveStar
+Stateflow charts. The full published WaveStar NMPC input ran locally; its
+source comparison and independent Python gaps are reported below. The
+earlier [test-only AR fallback](tests/matlab/wavestar_local_sysid/README.md)
+remains an archived diagnostic, not the basis of the new source run. Give each
+new run one distinct physical or solver question, with limits fixed before
+results are inspected; avoid repeating timed-out or already diagnosed jobs
+unchanged. Preserve source checksums and trajectories, and add
 ordinary Python regression gates for passing independent comparisons.
 
 For each of the 63 inputs, record an independent full-duration published
@@ -2320,6 +2297,19 @@ rad pitch, `0.4431` rad/s, `13.626` N force, and `2.825` N m command; its
 signed PTO work differs by `5.95%`. The [local audit record](tests/fixtures/matlab/wavestar_nmpc_full_step/README.md)
 contains the full windows and reproduction commands. This does not close the
 published case or change its badge.
+
+A fresh local `quadprog` replay of the pinned `NMPC.m` on all 4,201 saved
+15–225 s observer-state and AR-forecast inputs reproduces the source torque
+requests within `4.39e-11` N m. Given the same inputs, Python's independent
+QP path differs from that direct MATLAB replay by at most `0.0007652` N m
+(`0.0000203` N m RMS), below `0.001` and `0.00005` N m full-duration gates;
+the 15–20 s maximum is below `5e-6` N m. The [portable direct-controller
+fixture](tests/fixtures/matlab/wavestar_nmpc_full_step/README.md) and test
+lock down this source-input component. The observer, forecast, and plant still
+run independently only in their separate checks, and published WaveStar
+closed-loop motion remains open.
+
+![Full-duration direct WaveStar NMPC controller replay](docs/figures/wavestar-nmpc-direct-controller-gap.png)
 
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
