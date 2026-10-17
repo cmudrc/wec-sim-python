@@ -3,12 +3,36 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 import trimesh
 
 from wecsim import RegularWave, WEC
+from wecsim.hydrodynamics.nonlinearHydro import HeaveMeshHydro
 
 
 HYDRO = Path(__file__).resolve().parents[1] / "examples/data/oswec.h5"
+
+
+@pytest.mark.parametrize("center_z", [-0.25, 0, 0.25])
+def test_mesh_waterline_mass_and_restoring_follow_displaced_box_volume(
+        tmp_path, center_z):
+    geometry = tmp_path / "box.stl"
+    trimesh.creation.box(extents=(2, 2, 2)).export(geometry)
+    mesh = HeaveMeshHydro.from_stl(
+        geometry, center_z=center_z, rho=1000, gravity=9.81,
+        depth=70, period=6, height=0, ramp_time=0, mass=None,
+    )
+
+    # A 2 m square waterplane displaces 4(1-z) m³ while the box straddles
+    # still water. Moving it by h changes buoyancy by -rho*g*4*h.
+    np.testing.assert_allclose(mesh.mass, 4000 * (1 - center_z),
+                               rtol=0, atol=1e-10)
+    for heave in (-0.1, 0, 0.1):
+        restoring, wave_force, drag = mesh.forces(0, heave, 0)
+        np.testing.assert_allclose(restoring, -1000 * 9.81 * 4 * heave,
+                                   rtol=0, atol=1e-8)
+        np.testing.assert_allclose((wave_force, drag), (0, 0),
+                                   rtol=0, atol=1e-12)
 
 
 def test_submerged_mesh_drag_opposes_motion_without_a_wave(tmp_path):
