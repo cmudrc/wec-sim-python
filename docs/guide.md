@@ -437,7 +437,7 @@ Supported combinations are:
 | `linear_subspace` | `none` or zero-heading `regular` | One hydrodynamic body with body-local Morison elements; still-water pure heave accepts axial elements, while regular-wave heave or surge/heave/pitch accepts axial or normal/tangential elements; optional linear PTO | Radiation convolution or constant-frequency radiation, relative-fluid drag, fluid inertia, and Morison added mass in the acceleration solve; optional regular-wave current for surge/heave/pitch |
 | `floating_joint` | `regular` or `regularCIC` | Two equilibrium-mass bodies, pitch inertias, relative-heave PTO; optional `body_to_body` | Constant-frequency radiation, impulse-response convolution, or sampled FIR radiation |
 | `floating_joint` | `pm` or `jonswap` | Two equilibrium-mass bodies, pitch inertias, relative-heave PTO | Seeded irregular-wave excitation and radiation convolution |
-| `floating_joint` | `spectrumImport` | Two equilibrium-mass bodies, pitch inertias, relative-heave PTO | Saved MAT frequency components and phases drive both bodies through radiation convolution |
+| `floating_joint` | `spectrumImport` | Two equilibrium-mass bodies, pitch inertias, relative-heave PTO | Two-column MAT frequency/density data with generated phases, or three-column data with saved phases; radiation convolution |
 | `floating_joint` | `elevationImport` | Two equilibrium-mass bodies, relative-heave PTO, optional joint surge spring | Imported MAT elevation and radiation convolution |
 | `floating_joint` | `none` | Two equilibrium-mass bodies, named initial coordinates and speeds, relative-heave PTO | Radiation convolution for paired free decay; sampled FIR is also available |
 | `linear_subspace` | `regular`, `regularCIC`, `pm`, `jonswap`, `spectrumImport`, `elevationImport`, or `none` | Any number of six-DOF hydrodynamic bodies; named motions or 6-by-N maps; optional linear or rotational PTOs; selected mean-drift coefficients for regular waves | Constant-frequency radiation or convolution; one body with one unscaled pitch coordinate about a world pivot directly below or above its CG uses exact hinge kinematics |
@@ -824,7 +824,8 @@ setting is available for no-wave free decay, without a paired FIR baseline. Both
 `radiation_memory` (60 s by default). The general dynamics module
 assembles the supported body and PTO forces; it does not parse Simscape models.
 For a `floating_joint` or `linear_subspace` device, the Python API also
-accepts a WEC-Sim three-column imported spectrum MAT file with saved phases.
+accepts WEC-Sim two-column frequency/density MAT files with generated phases,
+or three-column files with saved phases.
 This RM3 example advances both bodies and the PTO from that spectrum:
 
 ```python
@@ -845,6 +846,8 @@ result = wec.run(ImportedSpectrumWave("spectrumData1.mat"),
 The MAT path resolves from `base_dir`. The explicit added-mass delay matches
 the published Simulink timing; the default remains implicit. Full-duration
 motion and PTO gates cover all three published RM3 imported-spectrum MCR seas.
+For a two-column MAT file, request a repeatable MATLAB phase realization with
+`ImportedSpectrumWave("spectrum.mat", seed=1, phase_generator="matlab")`.
 For a sampled time/elevation MAT record, use the same builder with
 `ImportedElevationWave`:
 
@@ -1082,8 +1085,11 @@ first_float = sea_states.traces[0].response.body_position[:, 0, :]
 
 The three `spectrumData*.mat` files must sit beside `mcrExample.mat`. Their
 third column supplies the exact phase used for each wave component; no random
-seed is needed. The runner uses the same 60 s convolution radiation model as
-the validated RM3 cases 3 and 4.
+seed is needed. A table of two-column spectra can instead use
+`run_rm3_spectrum_mcr(..., seed=1, phase_generator="matlab")`; each sea draws
+its phases from that substream after filtering to the HDF5 frequency range.
+The runner uses the same 60 s convolution radiation model as the validated
+RM3 cases 3 and 4.
 
 For a no-wave floating joint, `constraint.initial_coordinate` and
 `constraint.initial_speed` accept four values or dictionaries keyed by

@@ -1,6 +1,7 @@
 """Portable multiple-condition input and signed-power behavior."""
 
 from pathlib import Path
+from shutil import copyfile
 
 import numpy as np
 import pytest
@@ -157,6 +158,35 @@ def test_single_imported_sea_runs_and_reports_its_own_power(tmp_path):
     np.testing.assert_array_equal(combined.traces[0].absorbed_power,
                                   trace.absorbed_power)
     assert np.ptp(combined.wave_elevation[0] - combined.wave_elevation[1]) > 0
+
+
+def test_two_column_mcr_seed_matches_local_matlab_sea(tmp_path):
+    """MCR must pass its requested phase realization through to the solver."""
+    root = Path(__file__).resolve().parents[1]
+    source = root / "tests/fixtures/matlab/imported_spectrum_two_column"
+    copyfile(source / "spectrum.mat", tmp_path / "sea.mat")
+    table = tmp_path / "mcr.mat"
+    savemat(table, {"mcr": {
+        "header": np.array(["waves.spectrumFile", "simu.solver"],
+                           dtype=object),
+        "cases": np.array([["sea.mat", "ode4"]], dtype=object),
+    }})
+    hydro = root / "examples/data/rm3.h5"
+    settings = dict(dt=.1, end_time=2, ramp_time=1,
+                    radiation_memory=1, averaging_start_time=1)
+    first = run_rm3_spectrum_mcr(
+        hydro, table, seed=1, phase_generator="matlab", **settings,
+    )
+    matlab = np.loadtxt(source / "elevation.csv", delimiter=",")
+    np.testing.assert_allclose(first.wave_elevation[0], matlab[:21, 1],
+                               rtol=0, atol=1e-12)
+    assert np.isfinite(first.traces[0].absorbed_power).all()
+
+    second = run_rm3_spectrum_mcr(
+        hydro, table, seed=2, phase_generator="matlab", **settings,
+    )
+    assert not np.array_equal(second.wave_elevation[0],
+                              first.wave_elevation[0])
 
 
 def test_imported_sea_table_requires_case_rows_and_two_columns(tmp_path):
