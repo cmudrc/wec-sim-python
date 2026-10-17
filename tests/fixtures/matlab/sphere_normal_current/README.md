@@ -21,9 +21,24 @@ The source HDF5 container SHA-256 is
 all 46 datasets, including NaN locations, are exactly equal to the bundled
 `examples/data/sphere.h5`. The portable test therefore uses that bundled file.
 
-The test advances both Python trajectories independently from the wave and
-current inputs, and retains the original position, speed, current-effect, and
-source-force limits. It also checks that the source control and current waves
-are identical. Saved MATLAB states are used only by the separate force-law
-diagnostic, not to drive the coupled Python motion. This is a derived case and
-does not change a published-case badge.
+The portable normal/tangential and current tests advance the Python body
+independently from the wave and current inputs. They retain the original
+full-duration position, speed, Morison-force, and current-effect limits. The
+current test also checks that the source control and current waves are
+identical. Saved MATLAB states are used only by the separate force-law
+diagnostics, not to drive coupled Python motion. These are derived cases and
+do not change published-case badges.
+
+## Local source reproduction
+
+On 2026-10-17, R2025b on macOS ARM64 reran both source arms from disposable
+copies of the pinned `Free_Decay/1m-ME` input and Sphere model, using the exact
+HDF5 from the archived artifact. The input file was reset to its pinned state
+between `reference_model_baseline('SPHERE_MOVING_MORISON_NORMAL')` and
+`reference_model_baseline('SPHERE_MOVING_MORISON_NORMAL_CURRENT')`.
+The no-current 4,001-row body CSV and both wave CSVs are byte-identical to
+the hosted artifact. Across all 37 logged current-body columns, the largest
+local-to-hosted numerical difference is `1.001e-11` in its logged units; the
+seven-column direct current-force increment differs by at most `1.019e-10`.
+Both paired Python tests also pass against the local source CSVs. This checks
+the portability of the pinned MATLAB source data; it does not add a new case.
