@@ -19,6 +19,7 @@ from wecsim import (
 
 HYDRO = Path(__file__).resolve().parents[1] / "examples/data/rm3.h5"
 OSWEC = Path(__file__).resolve().parents[1] / "examples/data/oswec.h5"
+GBM = Path(__file__).resolve().parents[1] / "tests/fixtures/matlab/gbm_barge.h5"
 
 
 def _heave_wec():
@@ -174,3 +175,39 @@ def test_fixed_hinge_rejects_invalid_attachment_and_recovers():
     np.testing.assert_allclose(response.ptos["hinge"].force,
                                -500 * (response.ptos["hinge"].stroke - .1),
                                rtol=0, atol=1e-10)
+
+
+def test_rejected_passive_yaw_bank_does_not_reserve_body_name():
+    wec = WEC("heading bank recovery")
+    for settings in (
+        {"passive_yaw_threshold": 1},
+        {"passive_yaw": True, "yaw_heading_bank": [0, 10, 10]},
+        {"passive_yaw": True, "yaw_heading_bank": [-20, np.nan, 20]},
+    ):
+        with pytest.raises(ValueError, match="passive_yaw_threshold|yaw_heading_bank"):
+            wec.body("flap", OSWEC, **settings)
+        assert wec.bodies == []
+
+    flap = wec.body("flap", OSWEC, passive_yaw=True,
+                    yaw_heading_bank=[-20, 0, 20])
+    assert wec.bodies == [flap]
+    assert flap.yaw_heading_bank == (-20.0, 0.0, 20.0)
+
+
+def test_rejected_gbm_force_settings_do_not_select_layout():
+    wec = WEC("GBM recovery")
+    barge = wec.body("barge", GBM, inertia=(6.667e7, 2.167e9, 2.167e9))
+    for settings, error_type, message in (
+        ({"orifice": object()}, TypeError, "OrificePTO"),
+        ({"orifice_force_path": "published_owc"}, ValueError, "needs an orifice"),
+        ({"heave_drag_area": 1}, ValueError, "need an orifice"),
+        ({"heave_linear_damping": np.nan}, ValueError, "nonnegative and finite"),
+        ({"pto_name": ""}, ValueError, "nonempty"),
+    ):
+        with pytest.raises(error_type, match=message):
+            wec.floating_gbm(barge, **settings)
+
+    wec.floating_gbm(barge)
+    response = wec.run(RegularWave(0, 8), dt=.1, end_time=.2, ramp_time=0)
+    assert response.case["constraint"]["kind"] == "floating_gbm"
+    assert np.isfinite(response.bodies["barge"].position).all()
