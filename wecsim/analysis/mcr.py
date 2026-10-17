@@ -307,11 +307,15 @@ def run_rm3_spectrum_mcr(
     pto_damping: float = 1_200_000.0,
     averaging_start_time: float = 199.9,
     added_mass_scheme: str = "implicit",
+    seed: int | None = None,
+    phase_generator: str = "numpy",
 ) -> MCRSeaStateResult:
-    """Run the published three imported-spectrum RM3 MCR sea states.
+    """Run imported-spectrum RM3 MCR sea states.
 
-    Spectrum frequencies, densities, and phases come from each source MAT
-    file. The three cases share the published RM3 floating joint and PTO.
+    Spectrum frequencies and densities come from each source MAT file. Saved
+    phase columns are used as supplied. For two-column files, ``seed`` and
+    ``phase_generator`` select a repeatable sea realization in every case.
+    The cases share the published RM3 floating joint and PTO.
     """
     if (not np.isfinite(averaging_start_time)
             or averaging_start_time < 0
@@ -322,7 +326,10 @@ def run_rm3_spectrum_mcr(
     means = []
     elevations = []
     for spectrum_file in files:
-        components = imported_spectrum_components(h5_file, spectrum_file)
+        components = imported_spectrum_components(
+            h5_file, spectrum_file, seed=seed,
+            phase_generator=phase_generator,
+        )
         wave = tuple(
             synthesize_irregular_response(
                 h5_file, components, dt=dt, end_time=end_time,
