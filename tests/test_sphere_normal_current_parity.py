@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from wecsim import Current, RegularWave, WEC
 from wecsim.hydrodynamics.morison import (
@@ -13,12 +12,30 @@ from wecsim.hydrodynamics.morison import (
 )
 
 
-SPHERE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")
+ROOT = Path(__file__).resolve().parents[1]
+PORTABLE = ROOT / "tests/fixtures/matlab/sphere_normal_current/source.npz"
+SOURCE_H5 = os.environ.get("WEC_SIM_SPHERE_H5")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (SPHERE_H5 and REFERENCE),
-    reason="paired normal/tangential current Sphere output and HDF5 absent",
-)
+if bool(SOURCE_H5) != bool(REFERENCE):
+    raise ValueError("live Morison current comparison needs both HDF5 and source output")
+SPHERE_H5 = SOURCE_H5 or ROOT / "examples/data/sphere.h5"
+
+
+def _source():
+    """Prefer fresh MATLAB output, with the same full history pinned for CI."""
+    if REFERENCE:
+        folder = Path(REFERENCE)
+        filenames = {
+            "no_current_body": "SPHERE_MOVING_MORISON_NORMAL_1m-ME_body1.csv",
+            "current_body": "SPHERE_MOVING_MORISON_NORMAL_CURRENT_1m-ME_body1.csv",
+            "direct_delta": "SPHERE_MOVING_MORISON_NORMAL_CURRENT_direct_delta.csv",
+            "current_wave": "SPHERE_MOVING_MORISON_NORMAL_CURRENT_wave.csv",
+            "no_current_wave": "SPHERE_MOVING_MORISON_NORMAL_wave.csv",
+        }
+        return {key: np.loadtxt(folder / filename, delimiter=",")
+                for key, filename in filenames.items()}
+    with np.load(PORTABLE, allow_pickle=False) as saved:
+        return {key: saved[key].copy() for key in saved.files}
 
 
 def _response(current):
@@ -48,24 +65,19 @@ def _max_error(actual, expected, limit, label):
 
 
 def test_normal_current_source_force_and_independent_motion():
-    reference = Path(REFERENCE)
-    prefix = "SPHERE_MOVING_MORISON_NORMAL"
-    no_current = np.loadtxt(
-        reference / f"{prefix}_1m-ME_body1.csv", delimiter=",",
-    )
-    current = np.loadtxt(
-        reference / f"{prefix}_CURRENT_1m-ME_body1.csv", delimiter=",",
-    )
-    direct_delta = np.loadtxt(
-        reference / f"{prefix}_CURRENT_direct_delta.csv", delimiter=",",
-    )
-    wave = np.loadtxt(
-        reference / f"{prefix}_CURRENT_wave.csv", delimiter=",",
-    )
+    source = _source()
+    no_current = source["no_current_body"]
+    current = source["current_body"]
+    direct_delta = source["direct_delta"]
+    wave = source["current_wave"]
+    control_wave = source["no_current_wave"]
     assert no_current.shape == current.shape == (4001, 37)
     assert direct_delta.shape == (4001, 7)
-    assert wave.shape == (4001, 2)
-    assert all(np.isfinite(a).all() for a in (no_current, current, direct_delta, wave))
+    assert wave.shape == control_wave.shape == (4001, 2)
+    assert all(np.isfinite(a).all() for a in source.values())
+    np.testing.assert_allclose(wave[:, 0], np.arange(4001) * .01,
+                               rtol=0, atol=1e-10)
+    np.testing.assert_array_equal(wave, control_wave)
 
     element = MorisonElement(
         point=(0, 0, -2), axis=(0, 1, 0),
