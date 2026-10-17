@@ -4,17 +4,37 @@ import os
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from wecsim import RegularWave, WEC, WorldPoint
 
 
 APPLICATIONS = os.environ.get("WEC_SIM_APPLICATIONS_DIR")
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-pytestmark = pytest.mark.skipif(
-    not (APPLICATIONS and REFERENCE),
-    reason="configured OSWEC MATLAB output and HDF5 not provided",
-)
+ROOT = Path(__file__).resolve().parents[1]
+FIXTURE = ROOT / "tests/fixtures/matlab/oswec_hinge_pretension/source.npz"
+PINNED_HYDRO = ROOT / "tests/fixtures/matlab/oswec_multi_wave/oswec.h5"
+
+
+def _source():
+    """Prefer fresh MATLAB CSVs; keep the same full-duration gate in CI."""
+    if APPLICATIONS and REFERENCE:
+        folder = Path(REFERENCE)
+        if (folder / "OSWEC_Nonhydro_Pretension_parameters.csv").is_file():
+            paths = {
+                "flap": "OSWEC_Nonhydro_Pretension_body1.csv",
+                "base": "OSWEC_Nonhydro_Pretension_body2.csv",
+                "pto": "OSWEC_Nonhydro_Pretension_pto1.csv",
+                "published_flap": "OSWEC_Nonhydro_Nonhydro_body1.csv",
+                "parameters": "OSWEC_Nonhydro_Pretension_parameters.csv",
+            }
+            records = {name: np.loadtxt(folder / filename, delimiter=",")
+                       for name, filename in paths.items()}
+            hydro = (Path(APPLICATIONS)
+                     / "_Common_Input_Files/OSWEC/hydroData/oswec.h5")
+            return records, hydro.resolve()
+    with np.load(FIXTURE, allow_pickle=False) as saved:
+        records = {name: saved[name].copy() for name in saved.files}
+    return records, PINNED_HYDRO
 
 
 def _max_error(actual, expected, limit, label):
@@ -26,24 +46,14 @@ def _max_error(actual, expected, limit, label):
 
 
 def test_configured_hinge_spring_and_pretension_against_matlab():
-    source = Path(REFERENCE)
-    parameters = np.loadtxt(
-        source / "OSWEC_Nonhydro_Pretension_parameters.csv",
-        delimiter=",", ndmin=1,
-    )
+    source, hydro = _source()
+    parameters = source["parameters"]
     np.testing.assert_allclose(
         parameters, [50_000, 12_000, -5_000, 0.1], rtol=0, atol=1e-12,
     )
-    bodies = [np.loadtxt(
-        source / f"OSWEC_Nonhydro_Pretension_body{number}.csv",
-        delimiter=",",
-    ) for number in (1, 2)]
-    published_flap = np.loadtxt(
-        source / "OSWEC_Nonhydro_Nonhydro_body1.csv", delimiter=",",
-    )
-    pto = np.loadtxt(
-        source / "OSWEC_Nonhydro_Pretension_pto1.csv", delimiter=",",
-    )
+    bodies = [source["flap"], source["base"]]
+    published_flap = source["published_flap"]
+    pto = source["pto"]
     assert all(values.shape == (4001, 25) for values in (*bodies, pto))
     assert published_flap.shape == (4001, 25)
     # The pinned rotational mask treats equilibriumPosition as degrees and
@@ -63,8 +73,6 @@ def test_configured_hinge_spring_and_pretension_against_matlab():
     )
     assert abs(pto[0, 17] + parameters[2]) > 1_000
 
-    hydro = (Path(APPLICATIONS)
-             / "_Common_Input_Files/OSWEC/hydroData/oswec.h5").resolve()
     wec = WEC("OSWEC configured hinge PTO")
     flap = wec.body("flap", hydro, mass=127_000,
                     inertia=(0, 1.85e6, 0))
@@ -150,15 +158,9 @@ def test_configured_hinge_spring_and_pretension_against_matlab():
 
 def test_general_coordinate_hinge_and_rotational_pto_against_matlab():
     """The public coordinate route must use the same nonlinear hinge motion."""
-    source = Path(REFERENCE)
-    flap_source = np.loadtxt(
-        source / "OSWEC_Nonhydro_Pretension_body1.csv", delimiter=",",
-    )
-    pto_source = np.loadtxt(
-        source / "OSWEC_Nonhydro_Pretension_pto1.csv", delimiter=",",
-    )
-    hydro = (Path(APPLICATIONS)
-             / "_Common_Input_Files/OSWEC/hydroData/oswec.h5").resolve()
+    source, hydro = _source()
+    flap_source = source["flap"]
+    pto_source = source["pto"]
     wec = WEC("OSWEC coordinate hinge")
     flap = wec.body("flap", hydro, mass=127_000,
                     inertia=(0, 1.85e6, 0))
