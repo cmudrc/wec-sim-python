@@ -141,6 +141,30 @@ def test_pto_rejects_conflicting_or_invalid_force_laws_atomically(settings, erro
     assert len(wec.ptos) == 1
 
 
+def test_linear_pto_rejects_invalid_attachment_and_force_before_reserving_name():
+    wec, body, _ = _heave_wec()
+    from_point = body.at(0, 0, 0)
+    to_point = WorldPoint(0, 0, 10)
+    invalid = (
+        ((body.at(np.nan, 0, 0), to_point), {}, "finite three-vector"),
+        ((from_point, WorldPoint(0, 0, np.inf)), {}, "finite three-vector"),
+        ((from_point, to_point), {"axis": (0, 0, 0)}, "finite nonzero axis"),
+        ((from_point, to_point), {"axis": (np.nan, 0, 1)}, "finite nonzero axis"),
+        ((from_point, to_point), {"damping": -1}, "nonnegative damping"),
+        ((from_point, to_point), {"stiffness": np.inf}, "stiffness must be finite"),
+        ((from_point, to_point), {"pretension": 1}, "needs positive stiffness"),
+    )
+    for endpoints, settings, message in invalid:
+        with pytest.raises(ValueError, match=message):
+            wec.pto("main", *endpoints, **{"damping": 500, **settings})
+        assert wec.ptos == []
+
+    wec.pto("main", from_point, to_point, damping=500)
+    result = wec.run(NoWave(), dt=.1, end_time=.2,
+                     initial_coordinate={"heave": .1})
+    assert result.ptos["main"].force.shape == (3,)
+
+
 def test_floating_joint_rejects_misordered_bodies_and_off_axis_location():
     wec = WEC("RM3")
     float_body = wec.body("float", HYDRO, inertia=(0, 1, 0))
