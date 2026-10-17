@@ -1434,6 +1434,19 @@ preserve the measured attribution. The original published-step coupled
 trajectory is still unpaired, so this changes neither its qualified label nor
 the RM3 badge count.
 
+A [fresh R2025b callback audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38997785596)
+logged the native MoorDyn inputs and outputs for both two-second source arms.
+The logging wrapper preserved the archived phases, waves, and body trajectories
+within its explicit gates. Both arms made exactly 200 calls at the same
+`0.01` s coupling times. At the first call, the connection surge position and
+speed already differed by `14.33` micrometers and `3.459` mm/s; MoorDyn's
+returned pitch moment then differed by `14.25` kN m. Thus the source
+startup-step change alters the Simulink connection state before the first
+MoorDyn call. A changed callback schedule is not the cause of this bounded
+prefix gap. [Upstream issue #1665](https://github.com/WEC-Sim/WEC-Sim/issues/1665)
+tracks the published default's larger 80 s sensitivity; this diagnostic
+does not establish independent parity for that published input.
+
 For the published OSWEC nonlinear visualization case, the pinned source also
 exports flap velocity and all six-component force channels. On all 1,201 saved
 MATLAB poses, Python integrates its independently calculated facet pressures
