@@ -52,6 +52,12 @@ quadratic body force is `-D @ (velocity * abs(velocity))`, with six body
 velocities ordered as surge, sway, heave, roll, pitch, yaw. For example,
 `quadratic_drag=np.diag([0, 0, 250_000, 0, 0, 0])` adds heave drag; use
 `linear_damping` for a force proportional to heave speed.
+For WEC-Sim's `body.quadDrag.cd` and `body.quadDrag.area` form, pass both
+`quadratic_drag_coefficient` and `quadratic_drag_area` as six-component
+vectors instead of the matrix. The diagonal drag matrix is then computed as
+`0.5 * rho * coefficient * area` at run time, so it follows the selected
+water density. For example, heave coefficient `1` and area `500` m² give
+the 250,000 N s²/m² term above at `rho=1000` kg/m³.
 
 The [full Python example](../examples/configurable_rm3_pto.py) defines a
 two-body device with a shared pitch pivot and body-local PTO points. Run it
