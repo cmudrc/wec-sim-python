@@ -6,9 +6,11 @@ import numpy as np
 import pytest
 
 from wecsim import PMWave, RegularWave, WEC
+from wecsim.environment.irregularWave import pm_equal_energy_components
 
 
 HYDRO = Path(__file__).resolve().parents[1] / "examples/data/rm3.h5"
+REFERENCE = Path(__file__).parent / "fixtures/matlab/rm3_small_wave_scaling"
 PTO_DAMPING = 1_200_000
 
 
@@ -37,6 +39,32 @@ def test_small_wave_amplitude_scales_rm3_motion_and_pto_work(mode):
     np.testing.assert_allclose(high.wave_elevation, 2 * low.wave_elevation,
                                rtol=0, atol=1e-14)
     assert np.ptp(high.wave_elevation) > .001
+
+    if mode == "pm":
+        source_phase = np.loadtxt(REFERENCE / "phase_seed4.csv", delimiter=",")
+        for index, result in enumerate((low, high), start=1):
+            source_wave = np.loadtxt(
+                REFERENCE / f"wave_{index:03d}.csv", delimiter=",")
+            source_bins = np.loadtxt(
+                REFERENCE / f"bins_{index:03d}.csv", delimiter=",")
+            assert source_wave.shape == (201, 2)
+            assert source_bins.shape == (32, 3)
+            np.testing.assert_allclose(result.time, source_wave[:, 0],
+                                       rtol=0, atol=1e-12)
+            np.testing.assert_allclose(result.wave_elevation, source_wave[:, 1],
+                                       rtol=0, atol=1e-13)
+            components = pm_equal_energy_components(
+                HYDRO, significant_height=.01 * index, peak_period=8,
+                directions=(0,), spreading=(1,), count=32, seed=4,
+                phase_generator="matlab",
+            )
+            np.testing.assert_allclose(components.phase[:, 0], source_phase,
+                                       rtol=0, atol=1e-14)
+            np.testing.assert_allclose(
+                np.column_stack((components.omega, components.d_omega,
+                                 components.spectral_amplitude / 2)),
+                source_bins, rtol=0, atol=1e-13,
+            )
 
     # The RM3 slider geometry is nonlinear, so the body response is only
     # approximately linear even though the wave elevation scales exactly.
