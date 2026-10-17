@@ -510,6 +510,9 @@ class WEC(_WECCaseMixin):
             raise ValueError("PTO name must be an identifier other than coordinateN")
         if not any(coordinate is item for item in self.coordinates):
             raise ValueError("rotational PTO coordinate must belong to this WEC")
+        if not any(motion.dof in ("roll", "pitch", "yaw")
+                   for motion in coordinate.motions):
+            raise ValueError("rotational PTO requires rotational motion")
         if any(existing.name == name for existing in
                (*self.ptos, *self.rotational_ptos)):
             raise ValueError(f"PTO name already exists: {name}")
