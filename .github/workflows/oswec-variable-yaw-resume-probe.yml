@@ -1,4 +1,4 @@
-name: MATLAB OSWEC selected-heading restart probe
+name: MATLAB OSWEC fresh-process restart probe
 
 on:
   pull_request:
@@ -50,11 +50,20 @@ jobs:
         with:
           release: R2025b
           products: Simulink Simscape Simscape_Multibody
-      - uses: matlab-actions/run-command@v3
+      - name: Save complete operating point in first MATLAB process
+        uses: matlab-actions/run-command@v3
         with:
-          command: addpath('tests/matlab'); oswec_variable_yaw_resume_probe
+          command: addpath('tests/matlab'); oswec_variable_yaw_resume_probe('first')
+      - name: Resume and gate trajectory in fresh MATLAB process
+        uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); oswec_variable_yaw_resume_probe('second')
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: matlab-oswec-variable-yaw-resume-probe
-          path: matlab-oswec-variable-yaw-resume-probe/
+          path: |
+            matlab-oswec-variable-yaw-resume-probe/first_trajectory.csv
+            matlab-oswec-variable-yaw-resume-probe/stitched_trajectory.csv
+            matlab-oswec-variable-yaw-resume-probe/metrics.json
+          if-no-files-found: ignore

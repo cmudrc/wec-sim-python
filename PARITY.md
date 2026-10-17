@@ -1025,9 +1025,19 @@ after it. The unrounded maximum yaw, yaw-rate, and PTO-torque errors against
 the uninterrupted source are `5.204e-18` rad, `5.204e-18` rad/s, and
 `5.116e-13` N m; relative PTO-work error is `2.877e-16`. These pass the
 predeclared `1e-9` rad, `1e-9` rad/s, `1e-3` N m, and `1e-8` work gates.
-This proves a same-process 15-to-30 s restart, not a fresh-job checkpoint
-restore or a 600 s published-case gate. The 160 s MATLAB source-stability
-failure still stands, so the case remains qualified and badges are unchanged.
+That run proves a same-process 15-to-30 s restart. A separate local R2025b
+Update 7 audit then saved the 15 s operating point to disk, exited MATLAB,
+started a fresh MATLAB process, and resumed through 30 s with the same pinned
+model, hydrodynamic bank, and incident sea. The first segment matches the
+archived source with one heading event and at most `9.98e-18` rad yaw and
+`8.02e-12` N m torque error. The stitched fresh-process run matches all seven
+heading events and differs by at most `3.99e-17` rad yaw, `9.98e-18` rad/s
+yaw rate, and `2.96e-11` N m PTO torque; relative PTO-work difference is zero
+at saved precision. The MATLAB source workflow is set up to gate this process
+boundary in two separate action steps. The local result makes long runs
+segmentable, but it does not establish a 600 s
+published-case physical-motion gate. The 160 s MATLAB source-stability failure
+still stands, so the case remains qualified and badges are unchanged.
 An [ordinary-CI 140 s public `WEC.run` gate](tests/test_variable_yaw_140s_portable.py)
 now independently checks the physical-default selected-heading motion against
 the source-stable quarter-step prefix, using the pinned 40 s OSWEC BEMIO
