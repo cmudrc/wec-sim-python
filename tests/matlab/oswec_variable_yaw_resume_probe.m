@@ -1,7 +1,8 @@
-function oswec_variable_yaw_resume_probe()
 % Test whether a complete Simulink operating point can split the pinned
 % selected-heading run without changing its subsequent trajectory. This is
 % a short restart feasibility gate, not a 600 s source convergence result.
+% Keep this as a script: WEC-Sim's sim(..., SrcWorkspace='parent') resolves
+% body, waves, and simu from the caller workspace used by initializeWecSim.
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 addpath(genpath(fullfile(repoRoot, 'matlab-ref', 'source')));
 outDir = fullfile(repoRoot, 'matlab-oswec-variable-yaw-resume-probe');
@@ -114,7 +115,6 @@ fprintf('OSWEC selected-heading restart identity: %s\n', jsonencode(metrics));
 assert(yawError < 1e-9 && rateError < 1e-9 && ...
     torqueError < 1e-3 && workError < 1e-8, ...
     'Complete-state restart did not reproduce pinned source motion and PTO');
-end
 
 function write_input(path, contents)
 fid = fopen(path, 'w');

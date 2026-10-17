@@ -51,7 +51,7 @@ jobs:
           products: Simulink Simscape Simscape_Multibody
       - uses: matlab-actions/run-command@v3
         with:
-          command: addpath('tests/matlab'); oswec_variable_yaw_resume_probe()
+          command: run('tests/matlab/oswec_variable_yaw_resume_probe.m')
       - uses: actions/upload-artifact@v4
         if: always()
         with:
