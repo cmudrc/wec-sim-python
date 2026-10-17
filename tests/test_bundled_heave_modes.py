@@ -76,6 +76,33 @@ def test_short_variable_hydro_switch_changes_motion_only_after_switch():
     assert np.isfinite(changed.ptos["damper"].force).all()
 
 
+def test_switching_to_identical_hydro_state_preserves_sphere_motion():
+    """A scheduled state change with identical data has no physical effect."""
+    switched = _variable_sphere("equilibrium", height=2.5)
+    fixed = WEC("single-state sphere")
+    sphere = fixed.body("sphere", SPHERE)
+    fixed.coordinate("heave", sphere.move("heave"))
+    fixed.pto("damper", WorldPoint(0, 0, 2), sphere.at(0, 0, 0),
+              axis=(0, 0, 1), damping=200_000)
+    constant = fixed.run(RegularWave(2.5, 8), dt=.01, end_time=.2,
+                         ramp_time=0)
+
+    selected = dict(switched.raw.extra_outputs)["body1_hydro_state"]
+    np.testing.assert_array_equal(selected[:10], 1)
+    np.testing.assert_array_equal(selected[10:], 2)
+    assert np.ptp(switched.bodies["sphere"].position[:, 2]) > .01
+    for field in ("position", "velocity"):
+        np.testing.assert_allclose(
+            getattr(switched.bodies["sphere"], field),
+            getattr(constant.bodies["sphere"], field), rtol=0, atol=1e-12,
+        )
+    for field in ("stroke", "velocity", "force", "absorbed_power"):
+        np.testing.assert_allclose(
+            getattr(switched.ptos["damper"], field),
+            getattr(constant.ptos["damper"], field), rtol=0, atol=1e-9,
+        )
+
+
 def test_variable_hydro_wave_ramp_changes_excitation_before_state_switch():
     """The incident ramp applies to force and elevation, not the state clock."""
     hydro = BodyClass(str(SPHERE))

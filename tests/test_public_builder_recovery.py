@@ -10,6 +10,7 @@ from wecsim import (
     DirectLinearGenerator,
     HydroState,
     NoWave,
+    PMWave,
     RegularWave,
     SimpleDirectDrive,
     WEC,
@@ -20,6 +21,7 @@ from wecsim import (
 HYDRO = Path(__file__).resolve().parents[1] / "examples/data/rm3.h5"
 OSWEC = Path(__file__).resolve().parents[1] / "examples/data/oswec.h5"
 GBM = Path(__file__).resolve().parents[1] / "tests/fixtures/matlab/gbm_barge.h5"
+SPHERE = Path(__file__).resolve().parents[1] / "examples/data/sphere.h5"
 
 
 def _heave_wec():
@@ -79,6 +81,60 @@ def test_rejected_body_and_coordinate_do_not_corrupt_builder():
     wec.pto("damper", body.at(0, 0, 0), WorldPoint(0, 0, 10), damping=500)
     case = wec.to_case(NoWave(), dt=0.1, end_time=0.2)
     assert [item["name"] for item in case["ptos"]] == ["damper"]
+
+
+def test_variable_body_rejects_incomplete_state_clock_then_runs():
+    wec = WEC("Sphere state clock recovery")
+    states = (HydroState(SPHERE), HydroState(SPHERE))
+    for configured_states, switch_times in (
+        (states[:1], ()),
+        (states, ()),
+        (states, (.1, .2)),
+    ):
+        with pytest.raises(ValueError, match="states and one fewer switch times"):
+            wec.variable_body("sphere", configured_states,
+                              switch_times=switch_times)
+        assert not wec.bodies
+
+    body = wec.variable_body("sphere", states, switch_times=(.1,))
+    wec.coordinate("heave", body.move("heave"))
+    wec.pto("damper", WorldPoint(0, 0, 2), body.at(0, 0, 0),
+            axis=(0, 0, 1), damping=200_000)
+    result = wec.run(RegularWave(0, 8), dt=.01, end_time=.2, ramp_time=0,
+                     initial_coordinate={"heave": .5})
+    np.testing.assert_array_equal(
+        dict(result.raw.extra_outputs)["body1_hydro_state"][10:], 2,
+    )
+    assert np.ptp(result.bodies["sphere"].position[:, 2]) > .01
+
+
+def test_morison_attachment_recovery_prevents_silent_zero_load():
+    wec = WEC("fixed Morison recovery")
+    monopile = wec.fixed_body("monopile", center_gravity=(0, 0, -15))
+    other = WEC("other")
+    foreign = other.fixed_body("foreign", center_gravity=(0, 0, -15))
+    parameters = dict(
+        drag_coefficient=(1, 1, 1), added_mass_coefficient=(1, 1, 1),
+        area=(100, 100, 100), volume=1000,
+    )
+    for body, point, axis, message in (
+        (foreign, foreign.at(0, 0, 10), None, "must belong"),
+        (monopile, foreign.at(0, 0, 10), None, "must belong"),
+        (monopile, monopile.at(0, 0, 10), (0, 0, 0), "finite nonzero"),
+    ):
+        with pytest.raises(ValueError, match=message):
+            wec.morison_element(body, point=point, axis=axis, **parameters)
+        assert not wec._morison_elements
+
+    wave = PMWave(2, 5, frequency_count=8, frequency_range=(.1, 2),
+                  water_depth=30)
+    with pytest.raises(ValueError, match="at least one element"):
+        wec.run(wave, dt=.1, end_time=.2, ramp_time=0)
+    wec.morison_element(monopile, point=monopile.at(0, 0, 10),
+                        **parameters)
+    result = wec.run(wave, dt=.1, end_time=.2, ramp_time=0)
+    assert len(result.time) == 3
+    assert np.max(np.abs(result.body_forces["monopile"])) > 0
 
 
 def test_rotational_pto_rejects_translation_before_reserving_its_name():
