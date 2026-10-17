@@ -2321,6 +2321,19 @@ signed PTO work differs by `5.95%`. The [local audit record](tests/fixtures/matl
 contains the full windows and reproduction commands. This does not close the
 published case or change its badge.
 
+A fresh local `quadprog` replay of the pinned `NMPC.m` on all 4,201 saved
+15–225 s observer-state and AR-forecast inputs reproduces the source torque
+requests within `4.39e-11` N m. Given the same inputs, Python's independent
+QP path differs from that direct MATLAB replay by at most `0.0007652` N m
+(`0.0000203` N m RMS), below `0.001` and `0.00005` N m full-duration gates;
+the 15–20 s maximum is below `5e-6` N m. The [portable direct-controller
+fixture](tests/fixtures/matlab/wavestar_nmpc_full_step/README.md) and test
+lock down this source-input component. The observer, forecast, and plant still
+run independently only in their separate checks, and published WaveStar
+closed-loop motion remains open.
+
+![Full-duration direct WaveStar NMPC controller replay](docs/figures/wavestar-nmpc-direct-controller-gap.png)
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001
