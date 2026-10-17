@@ -2307,6 +2307,20 @@ the published closed-loop trajectory is step-converged or establish
 independent Python parity for that trajectory. The case stays `open_motion`
 and its badge count remains unchanged.
 
+A local R2025b run on mali now executes the full published 225 s WaveStar NMPC
+input with the installed `quadprog`, `dlqr`, `regress`, `ar`, and `forecast`
+functions. It uses the pinned application and exact archived hydrodynamic
+file, with only geometry filename case and post-run plotting adjusted in a
+disposable copy. The first-20-s source identity gates pass, but the local and
+hosted MATLAB closed-loop traces first separate by `1e-4` rad pitch at 41.6 s;
+their full-duration maximum pitch, speed, axial PTO force, and command gaps
+are `0.007543` rad, `0.05022` rad/s, `2.858` N, and `0.5884` N m. Independent
+Python compared directly with the local source still differs by `0.04138`
+rad pitch, `0.4431` rad/s, `13.626` N force, and `2.825` N m command; its
+signed PTO work differs by `5.95%`. The [local audit record](tests/fixtures/matlab/wavestar_nmpc_full_step/README.md)
+contains the full windows and reproduction commands. This does not close the
+published case or change its badge.
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001

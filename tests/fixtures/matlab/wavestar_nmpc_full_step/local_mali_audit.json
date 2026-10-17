@@ -1,0 +1,433 @@
+{
+  "source": "Local pinned R2025b with installed Statistics/System Identification toolboxes",
+  "input_identity_gate": "passed",
+  "early_20s_gate": "passed",
+  "windows": {
+    "pre_control": {
+      "float_pitch_rad": {
+        "max_abs": 4.0072112295064244e-16,
+        "max_time_s": 1.4,
+        "rms": 1.3857303037762015e-16,
+        "first_above_1e-4_s": null
+      },
+      "float_pitch_speed_rad_s": {
+        "max_abs": 2.779027008514845e-15,
+        "max_time_s": 1.7,
+        "rms": 9.170132913369554e-16,
+        "first_above_1e-4_s": null
+      },
+      "pto_stroke_m": {
+        "max_abs": 2.259477327459791e-16,
+        "max_time_s": 9.05,
+        "rms": 7.574244326699721e-17,
+        "first_above_1e-4_s": null
+      },
+      "pto_actuation_N": {
+        "max_abs": 0.0,
+        "max_time_s": 0.0,
+        "rms": 0.0,
+        "first_above_1e-4_s": null
+      },
+      "controller_command_Nm": {
+        "max_abs": 0.0,
+        "max_time_s": 0.0,
+        "rms": 0.0,
+        "first_above_1e-4_s": null
+      }
+    },
+    "resistive": {
+      "float_pitch_rad": {
+        "max_abs": 1.304512053934559e-15,
+        "max_time_s": 12.75,
+        "rms": 4.935807726433259e-16,
+        "first_above_1e-4_s": null
+      },
+      "float_pitch_speed_rad_s": {
+        "max_abs": 2.7401692026529645e-14,
+        "max_time_s": 12.7,
+        "rms": 1.124579052486611e-14,
+        "first_above_1e-4_s": null
+      },
+      "pto_stroke_m": {
+        "max_abs": 3.3003114130458755e-16,
+        "max_time_s": 12.15,
+        "rms": 1.278180950688658e-16,
+        "first_above_1e-4_s": null
+      },
+      "pto_actuation_N": {
+        "max_abs": 7.59037277475727e-12,
+        "max_time_s": 11.6,
+        "rms": 2.5468582611451453e-12,
+        "first_above_1e-4_s": null
+      },
+      "controller_command_Nm": {
+        "max_abs": 1.5620837956475953e-12,
+        "max_time_s": 11.6,
+        "rms": 5.263777476392104e-13,
+        "first_above_1e-4_s": null
+      }
+    },
+    "nmpc": {
+      "float_pitch_rad": {
+        "max_abs": 0.0075426092928777,
+        "max_time_s": 165.6,
+        "rms": 0.0013121531462756705,
+        "first_above_1e-4_s": 41.6
+      },
+      "float_pitch_speed_rad_s": {
+        "max_abs": 0.0502184950923229,
+        "max_time_s": 185.5,
+        "rms": 0.007887434620642338,
+        "first_above_1e-4_s": 40.45
+      },
+      "pto_stroke_m": {
+        "max_abs": 0.0015071344653540594,
+        "max_time_s": 165.6,
+        "rms": 0.0002613107105558427,
+        "first_above_1e-4_s": 45.25
+      },
+      "pto_actuation_N": {
+        "max_abs": 2.85836422885946,
+        "max_time_s": 185.15,
+        "rms": 0.4925605918429859,
+        "first_above_1e-4_s": 35.65
+      },
+      "controller_command_Nm": {
+        "max_abs": 0.5883834327382331,
+        "max_time_s": 185.15,
+        "rms": 0.10082024009001322,
+        "first_above_1e-4_s": 38.25
+      }
+    },
+    "full": {
+      "float_pitch_rad": {
+        "max_abs": 0.0075426092928777,
+        "max_time_s": 165.6,
+        "rms": 0.0012676704312800386,
+        "first_above_1e-4_s": 41.6
+      },
+      "float_pitch_speed_rad_s": {
+        "max_abs": 0.0502184950923229,
+        "max_time_s": 185.5,
+        "rms": 0.007620046238979299,
+        "first_above_1e-4_s": 40.45
+      },
+      "pto_stroke_m": {
+        "max_abs": 0.0015071344653540594,
+        "max_time_s": 165.6,
+        "rms": 0.00025245213341798804,
+        "first_above_1e-4_s": 45.25
+      },
+      "pto_actuation_N": {
+        "max_abs": 2.85836422885946,
+        "max_time_s": 185.15,
+        "rms": 0.4758625162508032,
+        "first_above_1e-4_s": 35.65
+      },
+      "controller_command_Nm": {
+        "max_abs": 0.5883834327382331,
+        "max_time_s": 185.15,
+        "rms": 0.09740237837284668,
+        "first_above_1e-4_s": 38.25
+      }
+    }
+  },
+  "independent_python": {
+    "integration": "independent public WaveStar plant and NMPC, 1 ms plant, 50 ms controller",
+    "differences": {
+      "pre_control": {
+        "float_pitch_rad": {
+          "python_vs_local": {
+            "max_abs": 0.003416487356685821,
+            "max_time_s": 9.6,
+            "rms": 0.0011865788667779302,
+            "first_above_1e-4_s": 0.05
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.003416487356685821,
+            "max_time_s": 9.6,
+            "rms": 0.0011865788667779825,
+            "first_above_1e-4_s": 0.05
+          }
+        },
+        "float_pitch_speed_rad_s": {
+          "python_vs_local": {
+            "max_abs": 0.03530488270323181,
+            "max_time_s": 9.75,
+            "rms": 0.01060115519428861,
+            "first_above_1e-4_s": 0.05
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.03530488270323231,
+            "max_time_s": 9.75,
+            "rms": 0.010601155194289025,
+            "first_above_1e-4_s": 0.05
+          }
+        },
+        "pto_stroke_m": {
+          "python_vs_local": {
+            "max_abs": 0.000680732826453002,
+            "max_time_s": 9.6,
+            "rms": 0.00023646694881727053,
+            "first_above_1e-4_s": 0.1
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.000680732826453002,
+            "max_time_s": 9.6,
+            "rms": 0.0002364669488172838,
+            "first_above_1e-4_s": 0.1
+          }
+        },
+        "pto_actuation_N": {
+          "python_vs_local": {
+            "max_abs": 0.0,
+            "max_time_s": 0.0,
+            "rms": 0.0,
+            "first_above_1e-4_s": null
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.0,
+            "max_time_s": 0.0,
+            "rms": 0.0,
+            "first_above_1e-4_s": null
+          }
+        },
+        "controller_command_Nm": {
+          "python_vs_local": {
+            "max_abs": 0.0,
+            "max_time_s": 0.0,
+            "rms": 0.0,
+            "first_above_1e-4_s": null
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.0,
+            "max_time_s": 0.0,
+            "rms": 0.0,
+            "first_above_1e-4_s": null
+          }
+        }
+      },
+      "resistive": {
+        "float_pitch_rad": {
+          "python_vs_local": {
+            "max_abs": 0.0025875517771878154,
+            "max_time_s": 10.25,
+            "rms": 0.0008235501168115293,
+            "first_above_1e-4_s": 10.0
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.002587551777187935,
+            "max_time_s": 10.25,
+            "rms": 0.0008235501168115204,
+            "first_above_1e-4_s": 10.0
+          }
+        },
+        "float_pitch_speed_rad_s": {
+          "python_vs_local": {
+            "max_abs": 0.03563367917669079,
+            "max_time_s": 10.3,
+            "rms": 0.011052754869031116,
+            "first_above_1e-4_s": 10.0
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.03563367917669098,
+            "max_time_s": 10.3,
+            "rms": 0.011052754869030342,
+            "first_above_1e-4_s": 10.0
+          }
+        },
+        "pto_stroke_m": {
+          "python_vs_local": {
+            "max_abs": 0.0005154708304085833,
+            "max_time_s": 10.25,
+            "rms": 0.00016408325521657434,
+            "first_above_1e-4_s": 10.0
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.0005154708304085933,
+            "max_time_s": 10.25,
+            "rms": 0.00016408325521657485,
+            "first_above_1e-4_s": 10.0
+          }
+        },
+        "pto_actuation_N": {
+          "python_vs_local": {
+            "max_abs": 3.6105718418664567,
+            "max_time_s": 10.35,
+            "rms": 1.0630105259262541,
+            "first_above_1e-4_s": 10.0
+          },
+          "python_vs_hosted": {
+            "max_abs": 3.610571841864137,
+            "max_time_s": 10.35,
+            "rms": 1.0630105259262304,
+            "first_above_1e-4_s": 10.0
+          }
+        },
+        "controller_command_Nm": {
+          "python_vs_local": {
+            "max_abs": 0.7452556346292423,
+            "max_time_s": 10.35,
+            "rms": 0.21936233879248937,
+            "first_above_1e-4_s": 10.0
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.7452556346287594,
+            "max_time_s": 10.35,
+            "rms": 0.21936233879248446,
+            "first_above_1e-4_s": 10.0
+          }
+        }
+      },
+      "nmpc": {
+        "float_pitch_rad": {
+          "python_vs_local": {
+            "max_abs": 0.04138114447788291,
+            "max_time_s": 45.85,
+            "rms": 0.008969516184191235,
+            "first_above_1e-4_s": 15.0
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.04110253018929591,
+            "max_time_s": 45.85,
+            "rms": 0.008800973845732484,
+            "first_above_1e-4_s": 15.0
+          }
+        },
+        "float_pitch_speed_rad_s": {
+          "python_vs_local": {
+            "max_abs": 0.4431389370852552,
+            "max_time_s": 46.0,
+            "rms": 0.06006510080476665,
+            "first_above_1e-4_s": 15.0
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.4355707624171432,
+            "max_time_s": 46.0,
+            "rms": 0.05913626591959116,
+            "first_above_1e-4_s": 15.0
+          }
+        },
+        "pto_stroke_m": {
+          "python_vs_local": {
+            "max_abs": 0.008270123843365548,
+            "max_time_s": 45.85,
+            "rms": 0.001782076534418293,
+            "first_above_1e-4_s": 15.15
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.008214493025592448,
+            "max_time_s": 45.85,
+            "rms": 0.0017482085367201304,
+            "first_above_1e-4_s": 15.15
+          }
+        },
+        "pto_actuation_N": {
+          "python_vs_local": {
+            "max_abs": 13.626227606192053,
+            "max_time_s": 28.75,
+            "rms": 2.564925535982896,
+            "first_above_1e-4_s": 15.0
+          },
+          "python_vs_hosted": {
+            "max_abs": 13.626227614485948,
+            "max_time_s": 28.75,
+            "rms": 2.516432507729831,
+            "first_above_1e-4_s": 15.0
+          }
+        },
+        "controller_command_Nm": {
+          "python_vs_local": {
+            "max_abs": 2.8247359672277508,
+            "max_time_s": 28.75,
+            "rms": 0.5236319592728964,
+            "first_above_1e-4_s": 15.0
+          },
+          "python_vs_hosted": {
+            "max_abs": 2.824735968837903,
+            "max_time_s": 28.75,
+            "rms": 0.5133983517311743,
+            "first_above_1e-4_s": 15.0
+          }
+        }
+      },
+      "full": {
+        "float_pitch_rad": {
+          "python_vs_local": {
+            "max_abs": 0.04138114447788291,
+            "max_time_s": 45.85,
+            "rms": 0.008669922829967664,
+            "first_above_1e-4_s": 0.05
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.04110253018929591,
+            "max_time_s": 45.85,
+            "rms": 0.008507179883312887,
+            "first_above_1e-4_s": 0.05
+          }
+        },
+        "float_pitch_speed_rad_s": {
+          "python_vs_local": {
+            "max_abs": 0.4431389370852552,
+            "max_time_s": 46.0,
+            "rms": 0.058095237140312096,
+            "first_above_1e-4_s": 0.05
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.4355707624171432,
+            "max_time_s": 46.0,
+            "rms": 0.05719893160329607,
+            "first_above_1e-4_s": 0.05
+          }
+        },
+        "pto_stroke_m": {
+          "python_vs_local": {
+            "max_abs": 0.008270123843365548,
+            "max_time_s": 45.85,
+            "rms": 0.0017225582201414334,
+            "first_above_1e-4_s": 0.1
+          },
+          "python_vs_hosted": {
+            "max_abs": 0.008214493025592448,
+            "max_time_s": 45.85,
+            "rms": 0.0016898556969864383,
+            "first_above_1e-4_s": 0.1
+          }
+        },
+        "pto_actuation_N": {
+          "python_vs_local": {
+            "max_abs": 13.626227606192053,
+            "max_time_s": 28.75,
+            "rms": 2.483033679735311,
+            "first_above_1e-4_s": 10.0
+          },
+          "python_vs_hosted": {
+            "max_abs": 13.626227614485948,
+            "max_time_s": 28.75,
+            "rms": 2.436281906598669,
+            "first_above_1e-4_s": 10.0
+          }
+        },
+        "controller_command_Nm": {
+          "python_vs_local": {
+            "max_abs": 2.8247359672277508,
+            "max_time_s": 28.75,
+            "rms": 0.5069361105085617,
+            "first_above_1e-4_s": 10.0
+          },
+          "python_vs_hosted": {
+            "max_abs": 2.824735968837903,
+            "max_time_s": 28.75,
+            "rms": 0.4970704233993848,
+            "first_above_1e-4_s": 10.0
+          }
+        }
+      }
+    },
+    "pto_work_J": {
+      "python": -159.66611370276257,
+      "local_matlab": -169.75909013451468,
+      "hosted_matlab": -169.70225039032243
+    }
+  }
+}

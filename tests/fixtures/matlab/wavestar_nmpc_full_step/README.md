@@ -15,3 +15,37 @@ rad pitch, `13.63` N PTO force, and `5.91%` PTO work. Relative to the 25 ms
 MATLAB trace, the same Python run differs by `0.16693` rad, `70.66` N, and
 `17.81%` work. The portable test checks this separation without claiming
 published-case parity.
+
+## Local MATLAB source run on mali
+
+On 2026-10-17, R2025b on an Apple silicon Mac ran the unchanged published
+225 s `ode8`/50 ms input after installing the Statistics and Machine Learning
+and System Identification toolboxes. The source used the pinned WEC-Sim and
+Applications commits above, copied the exact archived `wavestar.h5`, fixed
+only the `.stl` filename case in a disposable application copy, and disabled
+post-run plotting. `quadprog`, `dlqr`, `regress`, `ar`, and `forecast` all ran
+from the installed MathWorks toolboxes. The source simulation took 337 s.
+
+The local wave and 500 components match the hosted archive within `1e-12`.
+The predeclared first-20-s body, PTO, force, and command gates passed. Through
+10 s, float pitch differs from the hosted source by at most `4.1e-16` rad;
+the source traces first differ by `1e-4` rad at 41.6 s. Over all 225 s, local
+versus hosted source maxima are `0.007543` rad pitch, `0.05022` rad/s speed,
+`1.507` mm PTO stroke, `2.858` N axial force, and `0.5884` N m command. The
+closed-loop source is therefore sensitive to execution environment even with
+identical published inputs and toolboxes.
+
+An independent public Python 1 ms plant and 50 ms controller run against the
+same waves differs from local MATLAB by at most `0.04138` rad pitch,
+`0.4431` rad/s speed, `8.270` mm PTO stroke, `13.626` N axial force, and
+`2.825` N m command. Its signed PTO work is `-159.666` J versus `-169.759` J
+locally and `-169.702` J on the hosted run, a `5.95%` or `5.91%` relative
+gap. The independent Python gap remains larger than the measured source
+spread. This is diagnostic evidence; the full published case stays open.
+
+`local_mali_audit.json` records every window and signal difference. Reproduce
+it locally with `tests/matlab/wavestar_local_published_source.m` followed by
+`tools/wavestar_local_source_audit.py --independent-python`. The MATLAB script
+requires four arguments: the pinned WEC-Sim checkout, pinned Applications
+checkout, this repository, and a fresh output directory. The Python script
+takes that output directory as its positional argument.
