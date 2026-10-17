@@ -132,6 +132,9 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
     if kind != "linear_subspace" and any("linear_damping" in body for body in bodies):
         raise ValueError("body.linear_damping currently requires linear_subspace")
     if kind != "linear_subspace" and any(
+            "hydrostatic_stiffness" in body for body in bodies):
+        raise ValueError("body.hydrostatic_stiffness currently requires linear_subspace")
+    if kind != "linear_subspace" and any(
         {"quadratic_drag", "quadratic_drag_coefficient", "quadratic_drag_area"}
         & body.keys() for body in bodies
     ):

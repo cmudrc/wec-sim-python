@@ -100,15 +100,26 @@ class WEC(_WECCaseMixin):
              nonlinear_hydro: str | None = None,
              drag_coefficient: float = 0.0,
              drag_area: float = 0.0,
+             hydrostatic_stiffness: Sequence[Sequence[float]] | None = None,
              linear_damping: Sequence[Sequence[float]] | None = None,
              quadratic_drag: Sequence[Sequence[float]] | None = None,
              quadratic_drag_coefficient: Sequence[float] | None = None,
              quadratic_drag_area: Sequence[float] | None = None) -> Body:
-        """Add a body with a drag matrix or WEC-Sim's coefficient/area vectors."""
+        """Add a body with optional hydrostatic, damping, and drag settings."""
         if not isinstance(name, str) or not name:
             raise ValueError("body name must be a nonempty string")
         if any(existing.name == name for existing in self.bodies):
             raise ValueError(f"body name already exists: {name}")
+        if hydrostatic_stiffness is not None:
+            try:
+                stiffness = np.asarray(hydrostatic_stiffness, dtype=float)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("hydrostatic_stiffness needs a finite 6x6 matrix") from exc
+            if stiffness.shape != (6, 6) or not np.isfinite(stiffness).all():
+                raise ValueError("hydrostatic_stiffness needs a finite 6x6 matrix")
+            hydrostatic_stiffness = tuple(
+                tuple(float(value) for value in row) for row in stiffness
+            )
         if linear_damping is not None:
             try:
                 damping = np.asarray(linear_damping, dtype=float)
@@ -170,6 +181,7 @@ class WEC(_WECCaseMixin):
                     drag_coefficient, drag_area,
                     passive_yaw_threshold=passive_yaw_threshold,
                     yaw_heading_bank=yaw_heading_bank,
+                    hydrostatic_stiffness=hydrostatic_stiffness,
                     linear_damping=linear_damping,
                     quadratic_drag=quadratic_drag,
                     quadratic_drag_coefficient=quadratic_drag_coefficient,
@@ -623,8 +635,8 @@ class WEC(_WECCaseMixin):
         """Simulate the WEC and return named NumPy motion and PTO histories.
 
         ``wecsim_ode4`` is an opt-in source solver for PM sampled yaw,
-        a regular-wave nonlinear hinge, or no-wave RM3 free decay with
-        ``simulink_delay`` added mass.
+        a regular-wave nonlinear hinge, one-body no-wave heave decay, or
+        no-wave RM3 free decay with ``simulink_delay`` added mass.
         The default remains the implicit physical solve.
         """
         case = self.to_case(

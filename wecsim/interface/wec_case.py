@@ -102,6 +102,10 @@ class _WECCaseMixin:
                 "mass": body.mass,
                 "inertia": list(body.inertia),
             }
+            if body.hydrostatic_stiffness is not None:
+                body_case["hydrostatic_stiffness"] = [
+                    list(row) for row in body.hydrostatic_stiffness
+                ]
             if body.linear_damping is not None:
                 body_case["linear_damping"] = [list(row) for row in body.linear_damping]
             if body.quadratic_drag is not None:
@@ -252,7 +256,8 @@ class _WECCaseMixin:
                     or body.mean_drift != "none" or body.passive_yaw
                     or body.geometry_file is not None or body.nonlinear_hydro is not None
                     or body.variable_hydro is not None or body.drag_coefficient
-                    or body.drag_area or body.linear_damping is not None
+                    or body.drag_area or body.hydrostatic_stiffness is not None
+                    or body.linear_damping is not None
                     or body.quadratic_drag is not None
                     or body.quadratic_drag_coefficient is not None
                     or body.passive_yaw_threshold
@@ -314,7 +319,8 @@ class _WECCaseMixin:
                     or body.passive_yaw or body.geometry_file is not None
                     or body.nonlinear_hydro is not None
                     or body.variable_hydro is not None or body.drag_coefficient
-                    or body.drag_area or body.linear_damping is not None
+                    or body.drag_area or body.hydrostatic_stiffness is not None
+                    or body.linear_damping is not None
                     or body.quadratic_drag is not None
                     or body.quadratic_drag_coefficient is not None
                     or body.passive_yaw_threshold
@@ -400,6 +406,8 @@ class _WECCaseMixin:
                 "volume": hinge.base.volume,
             }
         elif hinge.base is not None:
+            if hinge.base.hydrostatic_stiffness is not None:
+                raise ValueError("fixed_hinge does not support body hydrostatic_stiffness")
             if hinge.base.linear_damping is not None:
                 raise ValueError("fixed_hinge does not support body linear_damping")
             if (hinge.base.quadratic_drag is not None
@@ -423,7 +431,8 @@ class _WECCaseMixin:
                 or flap.nonlinear_hydro not in (None, "instantaneous")
                 or (flap.geometry_file is None) != (flap.nonlinear_hydro is None)
                 or flap.mean_drift != "none" or flap.drag_coefficient
-                or flap.drag_area or flap.linear_damping is not None
+                or flap.drag_area or flap.hydrostatic_stiffness is not None
+                or flap.linear_damping is not None
                 or flap.quadratic_drag is not None
                 or flap.quadratic_drag_coefficient is not None):
             raise ValueError("fixed_hinge needs positive flap mass and pitch inertia with supported mesh hydro settings")
