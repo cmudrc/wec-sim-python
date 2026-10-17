@@ -26,6 +26,9 @@ for arm = 1:2
             'userDefinedFunctions.m'}
         copyfile(fullfile(sourceDir, name{1}), fullfile(caseDir, name{1}));
     end
+    copyfile(fullfile(repoRoot, 'tests', 'matlab', ...
+        'instrumented_moordyn', 'MoorDyn_caller.m'), ...
+        fullfile(caseDir, 'MoorDyn_caller.m'));
     mkdir(fullfile(caseDir, 'Mooring'));
     copyfile(fullfile(sourceDir, 'Mooring', 'lines.txt'), ...
         fullfile(caseDir, 'Mooring', 'lines.txt'));
@@ -48,6 +51,9 @@ for arm = 1:2
     fwrite(fid, contents);
     clear cleanup;
     cd(caseDir);
+    assert(strcmp(which('MoorDyn_caller'), ...
+        fullfile(caseDir, 'MoorDyn_caller.m')), ...
+        'The callback logger did not shadow the pinned caller');
     run('initializeWecSim');
     assert(simu.dt == .01 && simu.dtOut == .01 && simu.endTime == 2 && ...
         strcmp(simu.solver, 'ode45') && strcmp(simu.mode, 'normal') && ...
@@ -69,6 +75,9 @@ for arm = 1:2
     run('stopWecSim');
     assert(numel(output.bodies(1).time) == 201, ...
         'Incomplete source prefix');
+    callbackLog = fullfile(caseDir, 'moordyn_calls.csv');
+    assert(isfile(callbackLog), 'No MoorDyn callbacks were recorded');
+    copyfile(callbackLog, fullfile(outDir, [label '_moordyn_calls.csv']));
     writematrix(waves.phase(:), fullfile(outDir, [label '_phase.csv']));
     writematrix([output.wave.time(:), output.wave.elevation(:)], ...
         fullfile(outDir, [label '_wave.csv']));
