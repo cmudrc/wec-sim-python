@@ -40,6 +40,41 @@ def test_axial_still_water_drag_and_added_mass_follow_body_velocity():
     np.testing.assert_array_equal(dry_mass, 0)
 
 
+def test_pitched_axial_element_keeps_rigid_geometry_and_resists_relative_motion():
+    """An axial element rotates without changing length or creating a spurious moment."""
+    pitch = .3
+    axis = np.array([np.sin(pitch), 0., np.cos(pitch)])
+    element = MorisonElement(
+        point=(0, 0, -1), drag_coefficient=(0, 0, 2),
+        added_mass_coefficient=(0, 0, 0), area=(0, 0, 3), volume=1,
+    )
+    settings = dict(
+        position=_state(pitch=pitch), time=1, wave_height=0,
+        wave_period=8, ramp_time=0, water_depth=100, rho=1000,
+    )
+    current, current_mass = regular_wave_axial_morison_terms(
+        [element], velocity=np.zeros(6), current_speed=1, **settings,
+    )
+    # The body-local one-meter arm and drag force both follow the pitched
+    # axis. Horizontal current has axial speed sin(pitch), so no moment is
+    # generated about the body center for this collinear element.
+    expected = 3000 * np.sin(pitch)**2 * axis
+    np.testing.assert_allclose(current[:3], expected, rtol=0, atol=1e-10)
+    np.testing.assert_allclose(current[3:], 0, rtol=0, atol=1e-10)
+    np.testing.assert_array_equal(current_mass, 0)
+
+    body_velocity = np.array([.8, 0, 0, 0, 0, 0])
+    still, _ = regular_wave_axial_morison_terms(
+        [element], velocity=body_velocity, **settings,
+    )
+    np.testing.assert_allclose(
+        still[:3], -3000 * (.8 * np.sin(pitch))**2 * axis,
+        rtol=0, atol=1e-10,
+    )
+    np.testing.assert_allclose(still[3:], 0, rtol=0, atol=1e-10)
+    assert still[:3] @ body_velocity[:3] < 0
+
+
 def test_normal_tangential_drag_rotates_with_body_and_mass_stays_passive():
     element = MorisonElement(
         point=(0, 0, -1), axis=(1, 0, 0),
