@@ -26,7 +26,9 @@ def _max_error(actual, expected, limit, label):
 
 def _source():
     if APPLICATIONS and REFERENCE:
-        root = Path(APPLICATIONS)
+        # WEC.run resolves input files against base_dir, so it must be an
+        # absolute checkout path when the CI environment uses "applications".
+        root = Path(APPLICATIONS).resolve()
         reference = Path(REFERENCE)
         body = np.loadtxt(
             reference / "SPHERE_ELEVATION_IMPORT_0m_body1.csv", delimiter=",",

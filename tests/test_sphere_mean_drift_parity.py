@@ -24,7 +24,9 @@ def _paired_data():
         if not (APPLICATIONS and REFERENCE):
             raise ValueError("both Applications and MATLAB output are required")
         root = Path(REFERENCE)
-        hydro = Path(APPLICATIONS) / "Mean_Drift/hydroData/sphere.h5"
+        # The CLI test writes its case to tmp_path. Keep the source checkout
+        # address stable when CI supplies a relative Applications directory.
+        hydro = Path(APPLICATIONS).resolve() / "Mean_Drift/hydroData/sphere.h5"
         body = np.loadtxt(root / "SPHERE_MEAN_DRIFT_Mean_Drift_body1.csv",
                           delimiter=",")
         wave = np.loadtxt(root / "SPHERE_MEAN_DRIFT_wave.csv", delimiter=",")
