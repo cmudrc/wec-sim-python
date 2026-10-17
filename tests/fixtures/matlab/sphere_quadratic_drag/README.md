@@ -60,3 +60,32 @@ cases or a proposed physical body default.
 ![Sphere quadratic-drag source and Python trajectories](../../../../docs/figures/sphere-body-quadratic-drag-parity.png)
 
 ![Sphere off-diagonal quadratic-drag paired trajectories](../../../../docs/figures/sphere-body-quadratic-drag-cross-parity.png)
+
+## Coefficient and area input
+
+The `source_cd_area.npz` fixture uses the same pinned 40 s Sphere case, model,
+HDF5, and local R2025b installation. Its only input change after
+`adjMassFactor` is `body(1).quadDrag.cd = [0 0 1 0 0 0]` and
+`body(1).quadDrag.area = [0 0 500 0 0 0]`. The explicit drag matrix remains
+zero, so WEC-Sim computes the heave entry from `0.5 * rho * cd * area` at
+its default `rho=1000` kg/m³. The modified input SHA-256 is
+`37e7060050ae659249b476267c44850ce8bc19c87019460aac1d78cfdc66a883`;
+the model and HDF5 hashes are the same as above. Run
+`sphere_quadratic_drag_reference(caseDir, sourceDir, motionCsv, forceCsv,
+zeros(6), [0 0 1 0 0 0], [0 0 500 0 0 0])` to reproduce the export.
+The runner adds only pinned WEC-Sim `source/` to the MATLAB path because
+`stopWecSim` invokes any unrelated `userDefinedFunctions.m` it can find.
+
+The 4,001-row motion and viscous-force CSVs are **byte-identical** to the
+explicit-matrix source files above, with SHA-256 values
+`824c674a2f6b82b5edd89a0b36dc5771827cd6b6e0dcfa530e4e73b3d9e1c6e6`
+and `0b5ad390cd5d10a56ead60e9492d0e104a727e7d92edbdc1d34da02d3fbff461`.
+The committed coefficient/area fixture SHA-256 is
+`c7e711916bab0c46bcd8b18153174e3772979e04a655a91327865e682161de5a`.
+MATLAB's logged force matches the density-scaled diagonal law within
+`2.45e-9` N. Independent public Python heave and speed differ by at most
+`0.0289` mm and `0.0377` mm/s over 40 s, below predeclared `0.1` mm and
+`0.1` mm/s gates. A separate public-API invariant checks that changing
+`rho` to 1025 scales the effective matrix accordingly; it is not a second
+MATLAB source run. This derived input-form gate does not promote a published
+case badge or establish coupled Cable or nonlinear-hydro motion parity.

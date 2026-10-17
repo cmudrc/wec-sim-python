@@ -438,6 +438,28 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         if (quadratic_drag.shape != (6, 6)
                 or not np.isfinite(quadratic_drag).all()):
             raise ValueError("body.quadratic_drag needs a finite 6x6 matrix")
+        coefficient_raw = body_spec.get("quadratic_drag_coefficient")
+        area_raw = body_spec.get("quadratic_drag_area")
+        has_coefficient = "quadratic_drag_coefficient" in body_spec
+        has_area = "quadratic_drag_area" in body_spec
+        if has_coefficient != has_area:
+            raise ValueError("body quadratic drag coefficient and area must be supplied together")
+        if "quadratic_drag" in body_spec and has_coefficient:
+            raise ValueError("use either body.quadratic_drag or its coefficient and area vectors")
+        if has_coefficient:
+            vectors = []
+            for name, raw in (("coefficient", coefficient_raw), ("area", area_raw)):
+                try:
+                    vector = np.asarray(raw, dtype=float)
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(f"body quadratic drag {name} needs six finite nonnegative values") from exc
+                if (vector.shape != (6,) or not np.isfinite(vector).all()
+                        or np.any(vector < 0)
+                        or any(isinstance(item, (bool, np.bool_))
+                               for item in np.asarray(raw, dtype=object).flat)):
+                    raise ValueError(f"body quadratic drag {name} needs six finite nonnegative values")
+                vectors.append(vector)
+            body.viscDrag["cd"], body.viscDrag["characteristicArea"] = vectors
         body.viscDrag["Drag"] = quadratic_drag
         linear_damping = np.asarray(body_spec.get("linear_damping", np.zeros((6, 6))),
                                     dtype=float)

@@ -86,7 +86,8 @@ def _hydro_file(body, base_dir):
               "passive_yaw", "passive_yaw_threshold", "yaw_heading_bank",
               "geometry_file", "nonlinear_hydro",
               "drag_coefficient", "drag_area", "variable_hydro", "morison_elements",
-              "linear_damping", "quadratic_drag"})
+              "linear_damping", "quadratic_drag", "quadratic_drag_coefficient",
+              "quadratic_drag_area"})
     raw = body["hydro_file"]
     if not isinstance(raw, str) or not raw:
         raise ValueError("body.hydro_file must be a file path")

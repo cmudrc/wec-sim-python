@@ -101,8 +101,10 @@ class WEC(_WECCaseMixin):
              drag_coefficient: float = 0.0,
              drag_area: float = 0.0,
              linear_damping: Sequence[Sequence[float]] | None = None,
-             quadratic_drag: Sequence[Sequence[float]] | None = None) -> Body:
-        """Add a hydrodynamic body with optional 6x6 body drag matrices."""
+             quadratic_drag: Sequence[Sequence[float]] | None = None,
+             quadratic_drag_coefficient: Sequence[float] | None = None,
+             quadratic_drag_area: Sequence[float] | None = None) -> Body:
+        """Add a body with a drag matrix or WEC-Sim's coefficient/area vectors."""
         if not isinstance(name, str) or not name:
             raise ValueError("body name must be a nonempty string")
         if any(existing.name == name for existing in self.bodies):
@@ -125,6 +127,29 @@ class WEC(_WECCaseMixin):
                 raise ValueError("quadratic_drag needs a finite 6x6 matrix")
             quadratic_drag = tuple(tuple(float(value) for value in row)
                                    for row in drag)
+        if (quadratic_drag_coefficient is None) != (quadratic_drag_area is None):
+            raise ValueError("quadratic drag coefficient and area must be supplied together")
+        if quadratic_drag is not None and quadratic_drag_coefficient is not None:
+            raise ValueError("use either quadratic_drag or its coefficient and area vectors")
+        for label, values in (
+            ("quadratic_drag_coefficient", quadratic_drag_coefficient),
+            ("quadratic_drag_area", quadratic_drag_area),
+        ):
+            if values is None:
+                continue
+            try:
+                vector = np.asarray(values, dtype=float)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"{label} needs six finite nonnegative values") from exc
+            if (vector.shape != (6,) or not np.isfinite(vector).all()
+                    or np.any(vector < 0)
+                    or any(isinstance(item, (bool, np.bool_))
+                           for item in np.asarray(values, dtype=object).flat)):
+                raise ValueError(f"{label} needs six finite nonnegative values")
+            if label == "quadratic_drag_coefficient":
+                quadratic_drag_coefficient = tuple(float(item) for item in vector)
+            else:
+                quadratic_drag_area = tuple(float(item) for item in vector)
         if (isinstance(passive_yaw_threshold, bool)
                 or not isinstance(passive_yaw_threshold, Real)
                 or not np.isfinite(passive_yaw_threshold)
@@ -146,7 +171,9 @@ class WEC(_WECCaseMixin):
                     passive_yaw_threshold=passive_yaw_threshold,
                     yaw_heading_bank=yaw_heading_bank,
                     linear_damping=linear_damping,
-                    quadratic_drag=quadratic_drag)
+                    quadratic_drag=quadratic_drag,
+                    quadratic_drag_coefficient=quadratic_drag_coefficient,
+                    quadratic_drag_area=quadratic_drag_area)
         self.bodies.append(body)
         return body
 

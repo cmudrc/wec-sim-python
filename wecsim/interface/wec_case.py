@@ -106,6 +106,9 @@ class _WECCaseMixin:
                 body_case["linear_damping"] = [list(row) for row in body.linear_damping]
             if body.quadratic_drag is not None:
                 body_case["quadratic_drag"] = [list(row) for row in body.quadratic_drag]
+            if body.quadratic_drag_coefficient is not None:
+                body_case["quadratic_drag_coefficient"] = list(body.quadratic_drag_coefficient)
+                body_case["quadratic_drag_area"] = list(body.quadratic_drag_area)
             if body.mean_drift != "none":
                 body_case["mean_drift"] = body.mean_drift
             if body.passive_yaw:
@@ -251,6 +254,7 @@ class _WECCaseMixin:
                     or body.variable_hydro is not None or body.drag_coefficient
                     or body.drag_area or body.linear_damping is not None
                     or body.quadratic_drag is not None
+                    or body.quadratic_drag_coefficient is not None
                     or body.passive_yaw_threshold
                     or body.yaw_heading_bank is not None):
                 raise ValueError("floating_joint needs equilibrium-mass hydrodynamic bodies without extra force models")
@@ -312,6 +316,7 @@ class _WECCaseMixin:
                     or body.variable_hydro is not None or body.drag_coefficient
                     or body.drag_area or body.linear_damping is not None
                     or body.quadratic_drag is not None
+                    or body.quadratic_drag_coefficient is not None
                     or body.passive_yaw_threshold
                     or body.yaw_heading_bank is not None):
                 raise ValueError("floating_owc bodies cannot add other force models")
@@ -397,7 +402,8 @@ class _WECCaseMixin:
         elif hinge.base is not None:
             if hinge.base.linear_damping is not None:
                 raise ValueError("fixed_hinge does not support body linear_damping")
-            if hinge.base.quadratic_drag is not None:
+            if (hinge.base.quadratic_drag is not None
+                    or hinge.base.quadratic_drag_coefficient is not None):
                 raise ValueError("fixed_hinge does not support body quadratic_drag")
             base_case = {"name": hinge.base.name,
                          "hydro_file": str(hinge.base.hydro_file),
@@ -418,7 +424,8 @@ class _WECCaseMixin:
                 or (flap.geometry_file is None) != (flap.nonlinear_hydro is None)
                 or flap.mean_drift != "none" or flap.drag_coefficient
                 or flap.drag_area or flap.linear_damping is not None
-                or flap.quadratic_drag is not None):
+                or flap.quadratic_drag is not None
+                or flap.quadratic_drag_coefficient is not None):
             raise ValueError("fixed_hinge needs positive flap mass and pitch inertia with supported mesh hydro settings")
         bodies = [{"name": flap.name, "hydro_file": str(flap.hydro_file),
                    "hydro_body": flap.hydro_body or 1,

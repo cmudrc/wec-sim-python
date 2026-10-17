@@ -131,7 +131,10 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         raise ValueError("body.mean_drift currently requires linear_subspace")
     if kind != "linear_subspace" and any("linear_damping" in body for body in bodies):
         raise ValueError("body.linear_damping currently requires linear_subspace")
-    if kind != "linear_subspace" and any("quadratic_drag" in body for body in bodies):
+    if kind != "linear_subspace" and any(
+        {"quadratic_drag", "quadratic_drag_coefficient", "quadratic_drag_area"}
+        & body.keys() for body in bodies
+    ):
         raise ValueError("body.quadratic_drag currently requires linear_subspace")
     if "mooring" in case and kind not in ("floating_joint", "floating_owc"):
         raise ValueError("the configured mooring requires a floating_joint or floating_owc")
