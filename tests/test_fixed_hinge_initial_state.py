@@ -16,7 +16,8 @@ NONLINEAR_HYDRO = ROOT / "tests/fixtures/matlab/oswec_multi_wave/oswec.h5"
 FLAP_MESH = ROOT / "tests/test_objects/test_bodyclass/testData/body_3_test/flap.stl"
 
 
-def _hinge(*, nonlinear=False, source_solver=False, hydro_file=None):
+def _hinge(*, nonlinear=False, source_solver=False, hydro_file=None,
+           with_base=True):
     wec = WEC("OSWEC initial pitch")
     selected_hydro = (NONLINEAR_HYDRO if nonlinear else
                       HYDRO if hydro_file is None else hydro_file)
@@ -26,7 +27,8 @@ def _hinge(*, nonlinear=False, source_solver=False, hydro_file=None):
         **({"geometry_file": FLAP_MESH, "nonlinear_hydro": "instantaneous"}
            if nonlinear else {}),
     )
-    base = wec.fixed_body("base", center_gravity=(0, 0, -10.9), mass=999)
+    base = (wec.fixed_body("base", center_gravity=(0, 0, -10.9), mass=999)
+            if with_base else None)
     wec.fixed_hinge(
         flap, base, location=WorldPoint(0, 0, -10),
         pto_location=WorldPoint(0, 0, -8.9), damping=12_000,
@@ -34,6 +36,29 @@ def _hinge(*, nonlinear=False, source_solver=False, hydro_file=None):
         added_mass_scheme="simulink_delay" if source_solver else "implicit",
     )
     return wec
+
+
+def test_optional_fixed_base_does_not_change_oswec_flap_or_pto_motion():
+    """A world-fixed hinge and an explicit fixed base describe one device."""
+    settings = dict(dt=.05, end_time=2, ramp_time=0,
+                    initial_coordinate={"pitch": .1})
+    bare = _hinge(with_base=False).run(RegularWave(2.5, 8), **settings)
+    with_base = _hinge().run(RegularWave(2.5, 8), **settings)
+
+    assert len(bare.bodies) == 1
+    assert len(with_base.bodies) == 2
+    assert np.ptp(bare.bodies["flap"].position[:, 4]) > .01
+    for field in ("position", "velocity"):
+        np.testing.assert_array_equal(
+            getattr(bare.bodies["flap"], field),
+            getattr(with_base.bodies["flap"], field),
+        )
+    for field in ("stroke", "velocity", "force", "absorbed_power"):
+        np.testing.assert_array_equal(
+            getattr(bare.ptos["hinge"], field),
+            getattr(with_base.ptos["hinge"], field),
+        )
+    assert np.max(np.abs(with_base.bodies["base"].velocity)) == 0
 
 
 def test_regular_hinge_free_decay_matches_the_equivalent_named_coordinate():
