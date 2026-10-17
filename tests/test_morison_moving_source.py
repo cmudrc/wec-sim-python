@@ -1,6 +1,7 @@
 """Pinned MATLAB regWaveMorison option-1 force at prescribed moving states."""
 
 import os
+from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
@@ -13,14 +14,21 @@ from wecsim.hydrodynamics.morison import (
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
+ARCHIVED = (Path(__file__).parent / "fixtures/matlab/morison_moving_regular"
+            / "MORISON_MOVING_REGULAR_states.csv")
+ARCHIVED_SHA256 = "466ff5a912ca07062d699f9275e6ea2db2ae42b20ee3b6844a967e53f96ca827"
 
 
-@pytest.mark.skipif(not REFERENCE, reason="paired MATLAB Morison states absent")
 def test_moving_regular_source_force():
-    rows = np.loadtxt(Path(REFERENCE) / "MORISON_MOVING_REGULAR_states.csv",
-                      delimiter=",")
+    if REFERENCE:
+        reference = Path(REFERENCE) / "MORISON_MOVING_REGULAR_states.csv"
+    else:
+        reference = ARCHIVED
+        assert sha256(reference.read_bytes()).hexdigest() == ARCHIVED_SHA256
+    rows = np.loadtxt(reference, delimiter=",")
     assert rows.shape == (8, 25)
     assert np.isfinite(rows).all()
+    assert np.any(np.linalg.norm(rows[:, 4:7], axis=1) > .1)
     element = MorisonElement(
         point=(.8, -.5, 1.2),
         drag_coefficient=(1.1, .7, 1.3),
