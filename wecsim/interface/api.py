@@ -468,6 +468,22 @@ class WEC(_WECCaseMixin):
             if (isinstance(point, BodyPoint)
                     and not any(point.body is body for body in self.bodies)):
                 raise ValueError("PTO body point must belong to this WEC")
+            try:
+                coordinates = np.asarray(point.coordinates(), dtype=float)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("PTO endpoint needs a finite three-vector") from exc
+            if coordinates.shape != (3,) or not np.isfinite(coordinates).all():
+                raise ValueError("PTO endpoint needs a finite three-vector")
+        if axis is not None:
+            try:
+                axis_vector = np.asarray(axis, dtype=float)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("PTO axis needs a finite nonzero axis") from exc
+            if axis_vector.shape != (3,) or not np.isfinite(axis_vector).all():
+                raise ValueError("PTO axis needs a finite nonzero axis")
+            axis_norm = np.linalg.norm(axis_vector)
+            if not np.isfinite(axis_norm) or axis_norm == 0:
+                raise ValueError("PTO axis needs a finite nonzero axis")
         try:
             gain = (float(velocity_control_gain)
                     if not isinstance(velocity_control_gain, bool) else np.nan)
@@ -501,9 +517,13 @@ class WEC(_WECCaseMixin):
             if (control is not None or damping or stiffness or gain or position_gain
                     or equilibrium_position is not None or pretension is not None):
                 raise ValueError("linear generator supplies its own PTO force")
+        if (not isinstance(damping, Real) or isinstance(damping, bool)
+                or not np.isfinite(damping) or damping < 0):
+            raise ValueError("PTO needs finite nonnegative damping")
+        _pto_equilibrium(stiffness, equilibrium_position, pretension, "linear")
         pto = LinearPTO(
             name, from_point, to_point,
-            tuple(axis) if axis is not None else None,
+            tuple(float(value) for value in axis_vector) if axis is not None else None,
             damping, stiffness, equilibrium_position, pretension, control,
             direct_drive, linear_generator, gain, position_gain,
         )
