@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/oswec-variable-yaw-resume-probe.yml'
       - 'tests/matlab/oswec_variable_yaw_resume_probe.m'
+      - 'tests/matlab/oswec_variable_yaw_resume_simulate.m'
   workflow_dispatch:
 
 permissions:
@@ -51,7 +52,7 @@ jobs:
           products: Simulink Simscape Simscape_Multibody
       - uses: matlab-actions/run-command@v3
         with:
-          command: run('tests/matlab/oswec_variable_yaw_resume_probe.m')
+          command: addpath('tests/matlab'); oswec_variable_yaw_resume_probe
       - uses: actions/upload-artifact@v4
         if: always()
         with:

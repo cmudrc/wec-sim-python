@@ -1,10 +1,10 @@
+function oswec_variable_yaw_resume_probe()
 % Test whether a complete Simulink operating point can split the pinned
 % selected-heading run without changing its subsequent trajectory. This is
 % a short restart feasibility gate, not a 600 s source convergence result.
-% Keep this as a script: WEC-Sim's sim(..., SrcWorkspace='parent') resolves
-% body, waves, and simu from the caller workspace used by initializeWecSim.
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 addpath(genpath(fullfile(repoRoot, 'matlab-ref', 'source')));
+addpath(fullfile(repoRoot, 'tests', 'matlab'));
 outDir = fullfile(repoRoot, 'matlab-oswec-variable-yaw-resume-probe');
 fine = readmatrix(fullfile(outDir, 'fine_trajectory.csv'));
 fineWave = readmatrix(fullfile(outDir, 'fine_wave.csv'));
@@ -62,7 +62,7 @@ assert(max(abs(waves.waveAmpTime - fineWave(1:6001, :)), [], 'all') < 1e-12, ...
 set_param(model, 'SaveFinalState', 'on', ...
     'SaveOperatingPoint', 'on', 'FinalStateName', 'checkpoint');
 set_param(model, 'StopTime', '15');
-sim(model, [], simset('SrcWorkspace', 'parent'));
+oswec_variable_yaw_resume_simulate;
 first = raw_trajectory(body1_out, pto1_out, ...
     body1_hydroForceIndex, bemDirections);
 assert(isequal(size(first), [3001, 7]) && ...
@@ -76,7 +76,7 @@ clear checkpoint;
 load(fullfile(outDir, 'checkpoint.mat'), 'checkpoint');
 set_param(model, 'StartTime', '15', 'StopTime', '30', ...
     'LoadInitialState', 'on', 'InitialState', 'checkpoint');
-sim(model, [], simset('SrcWorkspace', 'parent'));
+oswec_variable_yaw_resume_simulate;
 second = raw_trajectory(body1_out, pto1_out, ...
     body1_hydroForceIndex, bemDirections);
 assert(isequal(size(second), [3001, 7]) && ...
@@ -115,6 +115,7 @@ fprintf('OSWEC selected-heading restart identity: %s\n', jsonencode(metrics));
 assert(yawError < 1e-9 && rateError < 1e-9 && ...
     torqueError < 1e-3 && workError < 1e-8, ...
     'Complete-state restart did not reproduce pinned source motion and PTO');
+end
 
 function write_input(path, contents)
 fid = fopen(path, 'w');
