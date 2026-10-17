@@ -76,10 +76,14 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         )
         auxiliary_files.extend(phase_files)
     elif wave["type"] == "spectrumImport":
-        if set(wave) != {"type", "file"} or not isinstance(wave["file"], str) or not wave["file"]:
-            raise ValueError("spectrumImport needs one MAT spectrum file")
+        if (set(wave) - {"type", "file", "seed", "phase_generator"}
+                or not isinstance(wave.get("file"), str) or not wave["file"]):
+            raise ValueError("spectrumImport needs a MAT spectrum file and optional phase seed")
         spectrum_file = (base_dir / wave["file"]).expanduser().resolve(strict=True)
-        components = imported_spectrum_components(hydro[0], spectrum_file)
+        components = imported_spectrum_components(
+            hydro[0], spectrum_file, seed=wave.get("seed"),
+            phase_generator=wave.get("phase_generator", "numpy"),
+        )
         auxiliary_files.append(spectrum_file)
     elif wave["type"] == "elevationImport":
         pass  # The sampled record is loaded after the simulation grid is built.

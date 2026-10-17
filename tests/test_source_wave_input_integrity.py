@@ -87,16 +87,19 @@ def test_imported_spectrum_keeps_saved_phases_after_bem_filtering(tmp_path):
 
 @pytest.mark.parametrize("damage, message", (
     ("missing", "needs spectrumData"),
-    ("two_columns", "three finite columns"),
-    ("nonfinite_phase", "three finite columns"),
+    ("one_column", "two or three finite columns"),
+    ("four_columns", "two or three finite columns"),
+    ("nonfinite_phase", "two or three finite columns"),
     ("negative_density", "nonnegative density"),
     ("repeated_frequency", "increasing frequencies"),
     ("one_bem_bin", "increasing frequencies"),
 ))
 def test_imported_spectrum_rejects_corrupt_matlab_bins(tmp_path, damage, message):
     values = np.array([[.1, .2, .1], [.15, .4, 1.2], [.2, .2, 2.1]])
-    if damage == "two_columns":
-        values = values[:, :2]
+    if damage == "one_column":
+        values = values[:, :1]
+    elif damage == "four_columns":
+        values = np.column_stack((values, np.zeros(3)))
     elif damage == "nonfinite_phase":
         values[1, 2] = np.nan
     elif damage == "negative_density":

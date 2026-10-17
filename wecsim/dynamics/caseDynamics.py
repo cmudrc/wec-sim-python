@@ -647,11 +647,14 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             height, period, direction = 0.0, 8.0, 0.0
         elif wave["type"] in ("pm", "jonswap", "spectrumImport"):
             if wave["type"] == "spectrumImport":
-                if (set(wave) != {"type", "file"}
-                        or not isinstance(wave["file"], str) or not wave["file"]):
-                    raise ValueError("floating-joint spectrumImport needs one MAT spectrum file")
+                if (set(wave) - {"type", "file", "seed", "phase_generator"}
+                        or not isinstance(wave.get("file"), str) or not wave["file"]):
+                    raise ValueError("floating-joint spectrumImport needs a MAT spectrum file and optional phase seed")
                 spectrum_path = (base / wave["file"]).resolve(strict=True)
-                components = imported_spectrum_components(hydro[0], spectrum_path)
+                components = imported_spectrum_components(
+                    hydro[0], spectrum_path, seed=wave.get("seed"),
+                    phase_generator=wave.get("phase_generator", "numpy"),
+                )
                 auxiliary_files = (spectrum_path,)
             else:
                 components, auxiliary_files = _irregular_components_from_case(

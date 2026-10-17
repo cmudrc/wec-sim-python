@@ -142,21 +142,27 @@ def imported_full_directional_components(
 def imported_spectrum_components(
     h5_file: str | Path,
     spectrum_file: str | Path,
+    *,
+    seed: int | None = None,
+    phase_generator: str = "numpy",
 ) -> IrregularComponents:
-    """Read a three-column WEC-Sim spectrumImport MAT file with saved phases.
+    """Read WEC-Sim's imported MAT spectrum, including two-column seas.
 
-    The columns are frequency in Hz, spectral density in m²/Hz, and phase in
-    radians. The current MATLAB wave class keeps only BEM-range frequencies,
-    computes midpoint bin widths in rad/s, and converts density to m²/(rad/s).
-    Its phase column makes the realized sea state deterministic.
+    The columns are frequency in Hz, spectral density in m²/Hz, and optionally
+    phase in radians. MATLAB filters to BEM-range frequencies before drawing
+    seeded phases for a two-column input.
     """
     source = loadmat(spectrum_file)
     if "spectrumData" not in source:
         raise ValueError("imported spectrum MAT file needs spectrumData")
     values = np.asarray(source["spectrumData"], dtype=float)
-    if (values.ndim != 2 or values.shape[1] != 3
+    if (values.ndim != 2 or values.shape[1] not in (2, 3)
             or not np.isfinite(values).all()):
-        raise ValueError("spectrumData must have three finite columns")
+        raise ValueError("spectrumData must have two or three finite columns")
+    if phase_generator not in ("numpy", "matlab"):
+        raise ValueError("phase_generator must be 'numpy' or 'matlab'")
+    if values.shape[1] == 3 and seed is not None:
+        raise ValueError("saved spectrum phases cannot be overridden by seed")
 
     body = BodyClass(str(h5_file))
     body.bodyNumber = 1
@@ -176,13 +182,15 @@ def imported_spectrum_components(
     width[0] = omega[1] - omega[0]
     width[-1] = omega[-1] - omega[-2]
     width[1:-1] = (omega[2:] - omega[:-2]) / 2
+    phase = (selected[:, 2, None] if values.shape[1] == 3
+             else _random_phases((len(selected), 1), seed, phase_generator))
     return IrregularComponents(
         omega=omega,
         spectral_amplitude=selected[:, 1] / np.pi,
         d_omega=width,
         directions=np.array([0.0]),
         spreading=np.array([1.0]),
-        phase=selected[:, 2, None],
+        phase=phase,
     )
 
 

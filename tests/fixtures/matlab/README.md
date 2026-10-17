@@ -16,6 +16,8 @@ The full 900 s published Sphere variable-mass comparison is documented in
 [sphere_variable_mass/README.md](sphere_variable_mass/README.md).
 The derived 40 s Sphere sampled-elevation comparison is documented in
 [sphere_elevation_import/README.md](sphere_elevation_import/README.md).
+The seeded two-column imported-spectrum wave input is documented in
+[imported_spectrum_two_column/README.md](imported_spectrum_two_column/README.md).
 The published 100 s OSWEC two-sea motion and PTO gate is documented in
 [oswec_multi_wave/README.md](oswec_multi_wave/README.md).
 The published 600 s OSWEC regular selected-heading yaw gate is documented in
