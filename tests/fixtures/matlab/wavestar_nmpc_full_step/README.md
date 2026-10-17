@@ -49,3 +49,36 @@ it locally with `tests/matlab/wavestar_local_published_source.m` followed by
 requires four arguments: the pinned WEC-Sim checkout, pinned Applications
 checkout, this repository, and a fresh output directory. The Python script
 takes that output directory as its positional argument.
+
+## Full-duration direct controller replay
+
+`direct_controller_inputs.npz` retains all 4,201 active NMPC samples from the
+same local R2025b source run, from 15 through 225 s. It contains the logged
+five observer states, 40-step excitation forecast, and torque request, plus
+the controller matrices used for an independent call to the pinned MATLAB
+`NMPC.m` and `simulate_and_linearise.m`. The original source `controller.mat`
+SHA-256 is `cf62ed39db7ddb9f0c0e9730bb60a9989a796a2c04d013bf4c800f4117a4c4b0`.
+The pinned `NMPC.m` and `simulate_and_linearise.m` SHA-256 values are
+`ca9a530630c46fefcd52a6f7791ecd523fa059027da91bd8921cdf70ae3157f4`
+and `fa613a03240139303cd60edb43cd8838d703e3624702b06312f963def3862295`.
+The compact fixture SHA-256 is
+`3ff8f4ba8654ef66bf9058a9fe717cfa6c60868300d19e64a089fcb06781dbf0`.
+
+The fresh direct MATLAB replay used the saved states and forecasts but
+recomputed every QP with local `quadprog`; its 4,201 commands reproduce the
+logged source within `4.39e-11` N m. The exported direct-command CSV SHA-256
+is `e3e6bc5ddb902c3dd5c616b9a2bbb002d09af6dc0cfb398d1c9bf81f728d0160`.
+To repeat it, save the fixture's `A`, `Bu`, `Bw`, `R`, transposed
+`estimated_state`, `forecast`, and column `source_command` as `A`, `Bu`,
+`Bw`, `R`, `states`, `forecasts`, and `source` in a MAT file; then call
+`wavestar_nmpc_direct_replay(applicationDir, inputMat, outputCsv)` from
+`tests/matlab` with the pinned application function directory.
+
+Given these saved source inputs, independent Python `WaveStarNmpcController`
+commands differ from the fresh direct MATLAB replay by at most `0.0007652`
+N m and `0.0000203` N m RMS over all 225 s. The CI limits are `0.001` N m
+maximum and `0.00005` N m RMS, plus `5e-6` N m maximum through 20 s. This
+is a direct-input controller gate. It does not advance the Python observer,
+predictor, or plant, and does not close published WaveStar motion parity.
+
+![Full-duration direct controller torque and gap](../../../../docs/figures/wavestar-nmpc-direct-controller-gap.png)
