@@ -412,16 +412,29 @@ class MultiPMWave:
 
 @dataclass(frozen=True)
 class ImportedSpectrumWave:
-    """WEC-Sim three-column MAT spectrum with its saved phase realization.
+    """WEC-Sim two- or three-column MAT spectrum.
 
     ``file`` resolves from ``WEC.run(base_dir=...)``. The MAT file contains
-    frequency in Hz, density in m²/Hz, and phase in radians.
+    frequency in Hz and density in m²/Hz. A third phase column in radians
+    fixes the realization. For two columns, ``seed`` generates phases;
+    ``phase_generator="matlab"`` reproduces WEC-Sim's Threefry substream.
     """
 
     file: str | Path
+    seed: int | None = None
+    phase_generator: str = "numpy"
 
     def as_case(self) -> dict:
-        return {"type": "spectrumImport", "file": str(self.file)}
+        if not str(self.file):
+            raise ValueError("imported spectrum needs a MAT file")
+        if self.phase_generator not in ("numpy", "matlab"):
+            raise ValueError("phase_generator must be 'numpy' or 'matlab'")
+        wave = {"type": "spectrumImport", "file": str(self.file)}
+        if self.seed is not None:
+            wave["seed"] = self.seed
+        if self.phase_generator != "numpy":
+            wave["phase_generator"] = self.phase_generator
+        return wave
 
 
 @dataclass(frozen=True)
