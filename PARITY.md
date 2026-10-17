@@ -678,15 +678,33 @@ Inspect existing artifacts first. Use local R2025b MATLAB for bounded source
 experiments supported by its Simulink and Simscape installation. Control System
 and Optimization toolboxes are now installed on mali: local calls to `dlqr`
 and `quadprog`, including the Sphere MPC `interior-point-convex` option,
-succeed. Statistics and Machine Learning,
-Stateflow, and System Identification are still absent. The published Sphere
-MPC source calls `regress`, so its unchanged-source gate still needs hosted
+succeed. The WaveStar model loads locally and `sfroot` finds all ten embedded
+MATLAB charts; the earlier claim that Stateflow chart access was absent was
+incorrect. Statistics `regress` and System Identification `ar`/`forecast`
+are unavailable locally. The published Sphere MPC source calls `regress`,
+so its unchanged-source gate still needs hosted
 MATLAB. A local disposable copy using only the ordinary least-squares fallback
 `X \ Y` completed its 400 s run and passed the existing independent Python
 gate; its heave position and PTO force differ from the pinned hosted source
 by at most `3.45e-12` m and `2.61e-6` N. This is a local operational check,
 not a new published-source gate. The unchanged WaveStar NMPC source still
-requires hosted R2025b. Give each new run one distinct physical or solver
+requires hosted R2025b for its System Identification calls. A
+[test-only local AR fallback](tests/matlab/wavestar_local_sysid/README.md)
+now permits diagnostic local runs without modifying either pinned checkout.
+Given all 4,501 archived MATLAB estimator states, it reconstructs the
+40-step source forecast within `2.02e-11` N m after the unstable 10–11 s
+startup fit; that fit differs by at most `0.0525` N m against a
+`5.24e6` N m peak. A local full 225 s Simulink run with this substitution
+matches all 500 archived wave components and 4,501 wave samples exactly at
+stored precision. Its first 20 s body and PTO columns differ from the
+unchanged hosted source by at most `1.5e-7` in their logged units, and its
+controller command by `3.1e-8` N m. Closed-loop trajectories then separate:
+the command first differs by more than `1e-4` N m at 39.2 s, and full-run
+maximum pitch, pitch-speed, command, and axial-force differences reach
+`0.01412` rad, `0.0651` rad/s, `0.882` N m, and `4.24` N. This local route
+supports bounded source experiments but does not replace the unchanged
+hosted baseline or establish published closed-loop parity. Give each new
+run one distinct physical or solver
 question, with limits fixed before results are inspected; avoid repeating
 timed-out or already
 diagnosed jobs unchanged. Preserve source checksums and trajectories, and add
