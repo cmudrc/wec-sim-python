@@ -1479,6 +1479,15 @@ and integrated hydrostatic restoring force on saved MATLAB poses. The
 full-history source workflow remains the broader gate; this portable sample
 does not close the published-step independent-motion gap or change a badge.
 
+A separate [local deep-water facet check](tests/fixtures/matlab/deep_water_mesh_pressure/README.md)
+calls the pinned R2025b `nonFKForce` function on two simple facets at a
+wave crest, a trough, and after upward heave. Python's independently
+evaluated moving-surface pressure, mean-surface linear pressure, and
+nonlinear-minus-linear force correction differ by at most `1.82e-12` Pa or
+N, below the `1e-8` portable limits. The shallow facet dries in the latter
+two states. This extends the prescribed-pose force law to the deep-water
+branch; it is not a published-body motion gate and changes no badge.
+
 A [four-step R2025b refinement](https://github.com/cmudrc/wec-sim-python/actions/runs/38093454463)
 keeps the published 120 s, 2.5 m/8 s regular wave, 40 s ramp, hinge, and mesh
 hydrodynamics. Disabling pressure and VTP output leaves all 1,201 samples of
