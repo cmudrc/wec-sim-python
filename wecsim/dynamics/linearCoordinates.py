@@ -121,6 +121,11 @@ def initial_coordinate(value, names, label):
         values = [value.get(name, 0) for name in names]
     else:
         values = value
+    # A boolean silently becomes 0 or 1 when converted to float. Initial
+    # displacement and speed are physical quantities, so reject that typo.
+    if any(isinstance(item, (bool, np.bool_))
+           for item in np.asarray(values, dtype=object).flat):
+        raise ValueError(f"{label} must have one finite value per coordinate")
     coordinates = np.asarray(values, dtype=float)
     if (coordinates.shape != (len(names),)
             or not np.isfinite(coordinates).all()):
