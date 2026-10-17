@@ -1,0 +1,59 @@
+name: MATLAB OSWEC selected-heading restart probe
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/oswec-variable-yaw-resume-probe.yml'
+      - 'tests/matlab/oswec_variable_yaw_resume_probe.m'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: |
+            _Common_Input_Files/OSWEC
+            Variable_Hydro/Passive_Yaw
+      - uses: actions/download-artifact@v4
+        with:
+          name: matlab-oswec-variable-yaw-250s-step-audit
+          run-id: 38127365821
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: matlab-oswec-variable-yaw-resume-probe
+      - name: Verify pinned 250 s half-step source
+        run: |
+          cd matlab-oswec-variable-yaw-resume-probe
+          echo '2276cace8ac5254002ff9e939ff3db51eeba417b1b6aa5f64003f9219802039d  fine_trajectory.csv' | sha256sum --check
+          echo 'f430c5813c1f616711b1c4974f4c9ad9b81471b9d23fa4b9e02942fec9781df6  fine_wave.csv' | sha256sum --check
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); oswec_variable_yaw_resume_probe()
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: matlab-oswec-variable-yaw-resume-probe
+          path: matlab-oswec-variable-yaw-resume-probe/
