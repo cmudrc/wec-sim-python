@@ -1327,6 +1327,20 @@ positions, `0.7` mm/s and `5e-5` rad/s speeds, and `1.5` kN or `10` kN m
 MoorDyn loads. These load gates are looser than the fully refined pair;
 original-step independent Python motion parity remains unestablished.
 
+A local [unmoored RM3 negative control](tests/fixtures/matlab/rm3_unmoored_step_10s/README.md)
+checks whether MoorDyn is required for a large source solver-step shift. It
+uses the pinned core `RM3.slx`, adjusted to the visualization case's seeded
+2 m/8 s sea, spar initial heave, PTO damping, and `ode45` settings. With
+`simu.dt=0.01` s in both runs, changing only `MaxStep` from `0.01` to
+`0.0003125` s changes float/spar surge by up to `265.844`/`239.644` mm
+over 10 s. All 1,000 source phase values and 1,001 wave samples are identical.
+Independent Python motion from the exact source HDF5 and phases pairs the
+fine-step run within `0.244`/`0.132` mm float/spar surge and `0.090` mm/s
+active translational speed, under the existing RM3 MaxStep-only limits. This
+shows substantial coarse-step sensitivity without MoorDyn; it does not turn
+the unmoored core model into the published `RM3MoorDyn.slx` case or close that
+case's published-step gap. Counts and physical defaults remain unchanged.
+
 A [full 80 s MaxStep-only run](https://github.com/cmudrc/wec-sim-python/actions/runs/38117328859)
 keeps the same seed-1 sea, `simu.dt=0.01` s, and WEC settings, while setting
 only ode45 `MaxStep=0.0003125` s. It records at 0.01 s and disables ParaView
