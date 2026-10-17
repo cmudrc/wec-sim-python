@@ -81,6 +81,21 @@ def test_rejected_body_and_coordinate_do_not_corrupt_builder():
     assert [item["name"] for item in case["ptos"]] == ["damper"]
 
 
+def test_rotational_pto_rejects_translation_before_reserving_its_name():
+    wec, body, heave = _heave_wec()
+    with pytest.raises(ValueError, match="requires rotational motion"):
+        wec.rotational_pto("hinge", heave, damping=500)
+
+    assert wec.rotational_ptos == []
+    pitch = wec.coordinate("pitch", body.move("pitch"))
+    wec.rotational_pto("hinge", pitch, damping=500)
+    case = wec.to_case(NoWave(), dt=.1, end_time=.2)
+    assert case["ptos"] == [{
+        "name": "hinge", "kind": "coordinate_torque", "coordinate": "pitch",
+        "damping": 500, "stiffness": 0.0, "equilibrium_position": 0.0,
+    }]
+
+
 @pytest.mark.parametrize("settings,error", [
     ({"control": DeclutchingControl(100, 0.2), "stiffness": 10},
      "sampled PTO control sets its own gain"),
