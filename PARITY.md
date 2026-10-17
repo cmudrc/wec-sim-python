@@ -2658,6 +2658,17 @@ CI. This isolates solver-step sensitivity over the complete duration but
 does not pair the unchanged published trajectory; `End_Stops` remains
 qualified and the RM3 badge stays 17/21.
 
+The same pinned 120 and 400 s MaxStep audit was regenerated locally with
+R2025b on macOS using disposable copies of the Applications inputs. At 400 s,
+the local published PTO CSV is byte-identical to the archived Linux run;
+the MaxStep-only wave CSV is also byte-identical. The largest local-to-archive
+MaxStep differences are `1.03e-13` in active body position, `9.99e-15` in
+body speed, `2.05e-15` m PTO stroke, and `1.60e-7` N PTO force. The local
+published-to-MaxStep PTO-stroke difference still reaches `285.45` mm. The
+[platform audit record](tests/fixtures/matlab/rm3_end_stops_maxstep_400s.md#local-r2025b-platform-audit)
+preserves the source hashes and limits. A material macOS-versus-Linux source
+difference does not explain the published-step gap; the case remains qualified.
+
 The Python hard-stop model instead applies added mass implicitly and resolves
 contact forces between output samples. Its 0.025 and 0.0125 s output settings
 change PTO stroke by less than 1 µm over 400 s. This physical dynamics

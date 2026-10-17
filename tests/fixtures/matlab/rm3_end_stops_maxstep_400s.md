@@ -24,3 +24,38 @@ The portable test advances the physical Python default from the HDF5 and
 case configuration; MATLAB states and loads enter only the comparison. This
 is a derived solver-setting gate. The unchanged published case remains
 qualified.
+
+## Local R2025b platform audit
+
+On 2026-10-17, the same `rm3_end_stops_maxstep_audit.m` ran at both 120 and
+400 s on macOS R2025b. The pinned WEC-Sim source was
+`0753b2e47f2457c078751dcfe5d251d1767b80ab`; Applications was
+`d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The End Stops model and
+RM3 common inputs were copied into a disposable case tree before the run, so
+the pinned checkouts were not changed. The predeclared cross-platform limits
+were 1 mm for active position and PTO stroke, 1 mm/s for speed, 10 kN for PTO
+force, and `1e-12` m for the wave. All 120 and 400 s comparisons passed.
+
+| 400 s comparison with archived Linux R2025b | Maximum absolute difference |
+| --- | ---: |
+| Published PTO stroke, speed, and force | 0 (byte-identical CSV) |
+| MaxStep-only active body position | `1.03e-13` m or rad |
+| MaxStep-only active body speed | `9.99e-15` m/s or rad/s |
+| MaxStep-only PTO stroke | `2.05e-15` m |
+| MaxStep-only PTO speed | `1.30e-14` m/s |
+| MaxStep-only PTO force | `1.60e-7` N |
+| Wave elevation | 0 (byte-identical CSV) |
+
+The local 400 s published-versus-MaxStep-only gap reaches `0.2854494` m PTO
+stroke, `0.8601823` m/s PTO speed, and `8.006595` MN PTO force. The source
+platform therefore does not account for the previously measured published
+step sensitivity. No Python motion gate or badge count changes from this
+source-to-source check.
+
+Local CSV SHA-256 values: published PTO
+`683849829f7de3a6a92cd9c6a284cf66d8a817f94980a71033db0a145fd663b2`,
+MaxStep-only float
+`fa582914862208fb3ea7fa2f146ab9bfaa9c0e27f8fa609424f1f8d823a07ea9`,
+spar `552fbf305ef8e74e24c8dc74a2688abf2b97e8b117b33cf41f22c92e8241c560`,
+PTO `61234a9237b6ab0fb707943338369311cdb3e6fb5a3037bf868c3a2b18770716`,
+and wave `a265719696773b356e697d02a5a79b2d88da855bd1a9086b12dbcb244ba9f119`.
