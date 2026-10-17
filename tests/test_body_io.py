@@ -1,5 +1,6 @@
 """Read the RM3 hydrodynamic file included with the original port."""
 
+from copy import deepcopy
 from pathlib import Path
 import sys
 
@@ -24,12 +25,19 @@ def test_rm3_hydrodynamic_bodies_load():
         assert body.hydroData["hydro_coeffs"]["excitation"]["re"].shape[0] == 6
 
 
-def test_rm3_regular_cic_force_preprocessing_matches_matlab_fixture():
+@pytest.mark.parametrize("source", ("hdf5", "memory"))
+def test_rm3_regular_cic_force_preprocessing_matches_matlab_fixture(source):
     fixture = ROOT / "tests/test_objects/test_bodyclass/testData"
     case = fixture / "body_1_test"
     body = BodyClass(str(fixture / "hydroData/rm3.h5"))
     body.bodyNumber = 1
     body.readH5file()
+    if source == "memory":
+        # MCR can hand preloaded BEM data to the body instead of an HDF5 path.
+        loaded = BodyClass(None)
+        loaded.bodyNumber = 1
+        loaded.loadHydroData(deepcopy(body.hydroData))
+        body = loaded
     body.hydroStiffness = np.zeros((6, 6))
     body.viscDrag = {
         "Drag": np.zeros((6, 6)),
