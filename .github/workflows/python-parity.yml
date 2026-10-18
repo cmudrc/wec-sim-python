@@ -72,6 +72,34 @@ jobs:
             coverage.json
           if-no-files-found: ignore
 
+  wavestar-autonomous-x86:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e ".[test]"
+      - name: Gate autonomous WaveStar window work and envelope
+        run: python -m pytest -q -s tests/test_wavestar_nmpc_window_envelope.py
+
+  wavestar-autonomous-m1:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e ".[test]"
+      - name: Verify Apple silicon runner
+        run: python -c 'import platform; assert platform.machine() == "arm64"'
+      - name: Gate autonomous WaveStar window work and envelope
+        run: python -m pytest -q -s tests/test_wavestar_nmpc_window_envelope.py
+
   variable-yaw-prefix:
     runs-on: ubuntu-latest
     steps:
