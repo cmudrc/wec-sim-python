@@ -2468,8 +2468,9 @@ claim. The interval gates remain enforced on both Linux x86 and hosted Apple
 silicon, and WaveStar stays open.
 
 The next WaveStar change remains a [draft, unmerged PR](https://github.com/cmudrc/wec-sim-python/pull/525).
-It paired the first 9.95 s of the published 50 ms source within `6.77e-8`
-rad pitch using smooth solver-stage excitation and the light BC rod and motor.
+Its earlier head `1462b9d5` paired the first 9.95 s of the published 50 ms
+source within `6.77e-8` rad pitch using smooth solver-stage excitation and
+the light BC rod and motor.
 Two independent full-duration gates then failed on that same head: ordinary
 Linux CI measured `0.014996` rad peak pitch difference against its `0.012`
 rad bounded source-ode8 gate, and a fresh MATLAB fine-step run measured
@@ -2490,11 +2491,30 @@ to the pinned MATLAB source are `0.007632` and `0.016416` rad; the latter
 also misses the unchanged `0.012` rad gate. This supports strong closed-loop
 amplification of platform floating-point differences, but does not remove
 the source/Python discrepancy already visible at 20 s or establish physical
-parity. Local x86 emulation could not run its NumPy wheel, so native Linux
-ARM64 is a platform diagnostic rather than a reproduction of the x86 CI
-runner. The next bounded work should isolate the source/Python difference
-before changing delayed-added-mass coupling; repeating the same MATLAB
-source run unchanged would add no evidence.
+parity. In that platform audit, local x86 emulation could not run its NumPy
+wheel, so native Linux ARM64 was a platform diagnostic rather than a
+reproduction of the x86 CI runner. This motivated isolating the source/Python
+difference before changing delayed-added-mass coupling; repeating the same
+MATLAB source run unchanged would add no evidence.
+
+The current draft head `4e702382` evaluates the pinned `irregExcF` component
+sum directly at `ode8` stage times. Five off-grid local R2025b force samples
+match within `4.98e-14` N or N m. Its unchanged bounded autonomous tests now
+pass on hosted Linux x86 and macOS, including the former x86 `0.012` rad
+pitch limit. A [fresh full-duration R2025b split-step run](https://github.com/cmudrc/wec-sim-python/actions/runs/39153812298)
+still fails the physical-default aggregate pitch-peak limit: `0.5705%`
+versus `0.5%` on hosted Linux. The other six aggregate motion, force, command,
+and PTO-work measures pass their unchanged `0.5%` limits. Its strict
+independent pointwise trajectory remains unpaired, with maximum pitch,
+pitch-speed, and requested-torque differences of `0.009900` rad,
+`0.06089` rad/s, and `0.7853` N m. Prescribing the source torque request
+reduces the plant pitch gap to `0.0002407` rad, but that is a diagnostic.
+In separate local 1 and 0.5 ms physical plant runs with the same 50 ms
+controller and pinned sea, pitch differs by at most `6.11e-8` rad through
+20 s yet by `0.00708` rad over 225 s; controller torque differs by up to
+`0.542` N m over the full run. Closed-loop sensitivity remains a measured
+limitation. The physical gate, `open_motion` status, and case badges are
+unchanged.
 
 ![Full-duration direct WaveStar NMPC controller replay](docs/figures/wavestar-nmpc-direct-controller-gap.png)
 
