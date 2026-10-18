@@ -8,6 +8,7 @@ import numpy as np
 from scipy.sparse import block_diag, csr_matrix
 
 from wecsim.environment.irregularWave import IrregularComponents, synthesize_irregular_response
+from wecsim.dynamics.rkdp87 import A as ODE8_A, B as ODE8_B, C as ODE8_C
 
 
 @dataclass(frozen=True)
@@ -85,6 +86,7 @@ def run_wavestar_published(
     sensor_dropout=None,
     fault_joint_friction=None,
     output_stride: int = 1,
+    solver: str = "rk4",
 ) -> WaveStarResponse:
     """Integrate the published WECCCOMP WaveStar linkage.
 
@@ -92,7 +94,9 @@ def run_wavestar_published(
     damping is positive, but the fit differs in magnitude from the BEM table.
     This runner uses that fit, with zero direct feedthrough as in the pinned
     WEC-Sim block, for comparison with the application. It does not change the
-    general WEC radiation default.
+    general WEC radiation default. ``solver="wecsim_ode8"`` follows the
+    pinned Simulink fixed-step solver and its delayed added-mass feedback;
+    the default keeps the physical mass-matrix solve.
     """
     if (not np.isfinite([dt, end_time, ramp_time, rho, g]).all()
             or dt <= 0 or end_time <= 0 or ramp_time < 0
@@ -104,6 +108,8 @@ def run_wavestar_published(
     if (not isinstance(output_stride, int) or output_stride < 1
             or steps % output_stride):
         raise ValueError("WaveStar output_stride must divide the step count")
+    if solver not in ("rk4", "wecsim_ode8"):
+        raise ValueError("WaveStar solver must be rk4 or wecsim_ode8")
     if pto_controller is None:
         if sensor_noise is not None or sensor_dropout is not None:
             raise ValueError("WaveStar sensor inputs need a PTO controller")
@@ -175,7 +181,19 @@ def run_wavestar_published(
     float_inertia, arm_inertia = .001450, .0606
     float_rigid = np.diag([float_mass] * 3 + [0., float_inertia, 0.])
     arm_rigid = np.diag([arm_mass] * 3 + [0., arm_inertia, 0.])
-    float_effective = float_rigid + added_mass
+    source_ode8 = solver == "wecsim_ode8"
+    if source_ode8:
+        # WEC-Sim moves twice the translational A_inf trace into Simscape's
+        # rigid mass. The remainder is fed back through a short delay.
+        adjustment = 2 * np.trace(added_mass[:3, :3])
+        float_effective = np.diag([float_mass + adjustment] * 3 +
+                                  [0., float_inertia + added_mass[4, 4], 0.])
+        delayed_added_mass = added_mass.copy()
+        delayed_added_mass[:3, :3] -= adjustment * np.eye(3)
+        for axis in range(3, 6):
+            delayed_added_mass[axis, axis] = 0.
+    else:
+        float_effective = float_rigid + added_mass
     pitch_damping = np.diag([0., 0., 0., 0., 1.8, 0.])
     restoring_bias = np.zeros(6)
     restoring_bias[2] = (float_mass - rho * volume) * g
@@ -191,7 +209,8 @@ def run_wavestar_published(
         bias_acceleration = np.array([bias[0], 0., bias[1], 0., 0., 0.])
         return position, jacobian, bias_acceleration
 
-    def derivative(state, excitation, time, pto_force):
+    def derivative(state, excitation, time, pto_force,
+                   delayed_acceleration=None):
         angle, speed = state[:2]
         float_position, float_jacobian, float_bias = body_motion(
             float_center, angle, speed,
@@ -209,6 +228,8 @@ def run_wavestar_published(
                 + arm_jacobian @ arm_rigid @ arm_jacobian)
         torque = (float_jacobian @ (force - float_effective @ float_bias)
                   + arm_jacobian @ (arm_gravity - arm_rigid @ arm_bias))
+        if delayed_acceleration is not None:
+            torque -= float_jacobian @ (delayed_added_mass @ delayed_acceleration)
         torque += pto_force * linkage.pto_speed(angle, 1.)
         if fault_joint_friction is not None:
             rod = (linkage.point_position(linkage.pto_arm, angle)
@@ -231,6 +252,7 @@ def run_wavestar_published(
     sample_count = steps // output_stride + 1
     history = np.zeros((sample_count, count + 2))
     pto_forces = np.zeros(sample_count)
+    body_acceleration_history = []
     # The NMPC motor holds torque; its axial force follows rod geometry.
     force_at_stroke = (None if pto_controller is None else
                        getattr(pto_controller, "force_at_stroke", None))
@@ -245,6 +267,45 @@ def run_wavestar_published(
         if index == steps:
             break
         time = index * dt
+        if source_ode8:
+            stage = np.zeros((13, state.size))
+            for number, fraction in enumerate(ODE8_C):
+                trial = state + dt * (ODE8_A[number, :number] @ stage[:number])
+                # The source delay uses the preceding accepted accelerations.
+                # At the first stage of a major step, its logged value still
+                # belongs to the preceding interval; the remaining stages
+                # linearly extrapolate from the newest accepted acceleration.
+                if fraction == 0:
+                    delayed = (np.zeros(6) if index == 0 else
+                               body_acceleration_history[0] if index == 1 else
+                               2 * body_acceleration_history[index - 1]
+                               - body_acceleration_history[index - 2])
+                elif index == 0:
+                    delayed = body_acceleration_history[0]
+                else:
+                    delayed = ((1 + fraction) * body_acceleration_history[index]
+                               - fraction * body_acceleration_history[index - 1])
+                sampled_index = 2 * index + 2 * fraction
+                lower = int(np.floor(sampled_index))
+                upper = min(lower + 1, len(incident.excitation_force) - 1)
+                weight = sampled_index - lower
+                excitation = ((1 - weight) * incident.excitation_force[lower]
+                              + weight * incident.excitation_force[upper])
+                stage_force = (pto_force if force_at_stroke is None else
+                               force_at_stroke(linkage.pto_stroke(trial[0])))
+                stage[number] = derivative(
+                    trial, excitation, time + fraction * dt,
+                    stage_force, delayed,
+                )
+                if number == 0:
+                    _, jacobian, bias = body_motion(
+                        float_center, state[0], state[1],
+                    )
+                    body_acceleration_history.append(
+                        jacobian * stage[0, 1] + bias
+                    )
+            state += dt * (ODE8_B @ stage)
+            continue
         first = derivative(state, incident.excitation_force[2 * index],
                            time, pto_force)
         second_state = state + dt * first / 2

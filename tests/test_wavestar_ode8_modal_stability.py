@@ -11,6 +11,8 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import linear_sum_assignment
 
+from wecsim.dynamics.rkdp87 import A as ODE8_A, B as ODE8_B
+
 
 ROOT = Path(__file__).parent / "fixtures/matlab"
 HYDRO = ROOT / "wavestar_fixed_input_step/wavestar.h5"
@@ -76,3 +78,17 @@ def test_source_ode8_and_python_step_amplification_on_pinned_modes():
     # bounds what a differently integrated Python plant can match exactly.
     exact_gap = np.max(np.abs(np.exp(z) - source_ode8))
     assert .012 < exact_gap < .014
+
+
+def test_source_ode8_tableau_matches_all_pinned_radiation_modes():
+    with np.load(SOURCE, allow_pickle=False) as saved:
+        poles = saved["eigenvalues"]
+        source_ode8 = saved["ode8_amplification"]
+    scaled_poles = poles * .05
+    stages = np.zeros((13, len(poles)), dtype=complex)
+    for index in range(13):
+        stages[index] = scaled_poles * (
+            1 + ODE8_A[index, :index] @ stages[:index]
+        )
+    amplification = 1 + ODE8_B @ stages
+    assert np.max(np.abs(amplification - source_ode8)) < 1e-10
