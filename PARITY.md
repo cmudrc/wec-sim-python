@@ -2386,7 +2386,7 @@ portable gates are `0.0003` rad, `0.002` rad/s, `60` µm, `0.005` N, and
 gap to the controller-input and plant-feedback loop; it does **not** establish
 independent closed-loop parity or change the open case label and badge count.
 
-An [autonomous full-duration functional gate](tests/test_wavestar_nmpc_functional_energy.py)
+An [autonomous full-duration functional check](tests/test_wavestar_nmpc_window_envelope.py)
 now runs the merged 50 ms source-style `wecsim_ode8` plant and public NMPC
 controller for the published 225 s input. The only source runtime input is
 the incident-wave phase matrix; Python independently advances the plant,
@@ -2395,24 +2395,27 @@ source, a local Apple silicon run produced `-169.812` J signed PTO work
 versus `-169.702` J (`0.0647%` difference). In three consecutive controlled
 windows, the largest signed-work difference is `0.1684%`; the largest
 window RMS differences are `0.5448%` pitch, `0.5842%` pitch speed, and
-`1.0090%` axial PTO force. The test requires under `0.1%` full-run work,
-`0.5%` work in each window, and `1%` motion and `2%` force RMS differences
-in each window. These are **functional energy and envelope gates**. The
+`1.0090%` axial PTO force. The unchanged test limits are `0.5%` signed work
+in each window, `1%` motion RMS, and `2%` force RMS. The complete-run signed
+work is printed as a diagnostic. These are **window-work and envelope gates**. The
 same run's pointwise pitch difference reaches `0.01536` rad, and the source
 closed loop varies across execution environments, so this does not establish
 trajectory parity or change the `open_motion` label or badge count.
 
-The full-duration signed-work gate is qualified by numerical backend. A
+The former `<0.1%` complete-run signed-work gate is **retracted** after
+independent numerical-backend counterexamples. A
 [Linux x86 diagnostic](https://github.com/cmudrc/wec-sim-python/actions/runs/39130161541)
 produced `-169.809` J on an EPYC 9V45, but `-169.496` J when that same
 runner used NumPy's x86-v3 dispatch with a Haswell BLAS kernel. The latter
-misses the unchanged `0.1%` work limit against `-169.702` J MATLAB; it also
+misses the former total-work limit against `-169.702` J MATLAB; it also
 appeared in the independent [EPYC 7763 run](https://github.com/cmudrc/wec-sim-python/actions/runs/39129639938).
 Changing BLAS thread count alone did not change the result on one EPYC 9V74.
-The strict test therefore runs as a separate Apple silicon check, matching
-the architecture of the measured local gate, and is excluded from the Linux
-coverage suite. It is an architecture-qualified functional check, not a
-portable published-motion parity claim. The WaveStar case stays open.
+A [hosted Apple silicon run](https://github.com/cmudrc/wec-sim-python/actions/runs/39130835055)
+returned `-169.957` J (`0.150%` from source), although its three work windows
+were within `0.409%` and all motion/force RMS windows met their unchanged
+limits. The total is too cancellation-sensitive to support a portable parity
+claim. The interval gates remain enforced on both Linux x86 and hosted Apple
+silicon, and WaveStar stays open.
 
 The next WaveStar change remains a [draft, unmerged PR](https://github.com/cmudrc/wec-sim-python/pull/525).
 It paired the first 9.95 s of the published 50 ms source within `6.77e-8`
