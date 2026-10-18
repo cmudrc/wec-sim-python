@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from scipy.integrate import solve_ivp
+from scipy.integrate import cumulative_trapezoid, solve_ivp
 
 from wecsim.dynamics.generalDynamics import (
     BodyMotion, DynamicBody, GeneralizedDynamics,
@@ -162,6 +162,91 @@ def test_two_body_fitted_radiation_matches_independent_state_equation():
                                rtol=0, atol=1e-7)
     np.testing.assert_allclose(response.body_position[:, 1, 2], -expected.y[0],
                                rtol=0, atol=1e-7)
+
+
+def test_two_body_cross_hydrodynamics_and_pto_obey_energy_balance():
+    """Cross-body inertia, radiation damping and PTO share one work balance."""
+    rigid = np.diag([2.0, 3.0])
+    added = np.array([[0.5, 0.2], [0.2, 0.7]])
+    radiation = np.array([[0.3, 0.1], [0.1, 0.2]])
+    body_spring = np.diag([8.0, 12.0])
+    pto_axis = np.array([1.0, -1.0])
+    pto_spring, pto_damper = 5.0, 0.4
+
+    def heave_body(index):
+        jacobian = np.zeros((6, 2))
+        jacobian[2, index] = 1.0
+        rigid_block = np.zeros((6, 6))
+        rigid_block[2, 2] = rigid[index, index]
+        restoring = np.zeros((6, 6))
+        restoring[2, 2] = body_spring[index, index]
+        added_blocks = []
+        damping_blocks = []
+        for other in range(2):
+            block = np.zeros((6, 6))
+            block[2, 2] = added[index, other]
+            added_blocks.append(block)
+            block = np.zeros((6, 6))
+            block[2, 2] = radiation[index, other]
+            damping_blocks.append(block)
+
+        def motion(coordinate, speed):
+            return BodyMotion(jacobian @ coordinate, jacobian, np.zeros(6))
+
+        return DynamicBody(
+            rigid_mass=rigid_block, added_mass=tuple(added_blocks),
+            damping=tuple(damping_blocks),
+            restoring=restoring, static_force=np.zeros(6),
+            reference_position=np.zeros(6), motion=motion,
+            excitation=lambda time: np.zeros(6),
+        )
+
+    system = GeneralizedDynamics(
+        (heave_body(0), heave_body(1)), 2,
+        pto_stiffness=pto_spring * np.outer(pto_axis, pto_axis),
+        pto_damping=pto_damper * np.outer(pto_axis, pto_axis),
+    )
+    initial_q = np.array([0.6, -0.25])
+    initial_v = np.array([0.0, 0.15])
+    mass = rigid + added
+    stiffness = body_spring + pto_spring * np.outer(pto_axis, pto_axis)
+    damping = radiation + pto_damper * np.outer(pto_axis, pto_axis)
+    np.testing.assert_allclose(
+        system.acceleration(0, initial_q, initial_v),
+        np.linalg.solve(mass, -stiffness @ initial_q - damping @ initial_v),
+        rtol=0, atol=1e-12,
+    )
+
+    response = system.integrate(
+        dt=0.005, end_time=5,
+        initial_coordinate=initial_q, initial_speed=initial_v,
+    )
+    reference = solve_ivp(
+        lambda time, state: np.r_[
+            state[2:], np.linalg.solve(mass,
+                                       -stiffness @ state[:2] - damping @ state[2:])
+        ],
+        (0, 5), np.r_[initial_q, initial_v], t_eval=response.time,
+        rtol=1e-11, atol=1e-13,
+    )
+    assert reference.success
+    np.testing.assert_allclose(response.coordinate, reference.y[:2].T,
+                               rtol=0, atol=1e-8)
+    np.testing.assert_allclose(response.speed, reference.y[2:].T,
+                               rtol=0, atol=1e-8)
+    np.testing.assert_allclose(response.body_position[:, :, 2],
+                               response.coordinate, rtol=0, atol=1e-12)
+    kinetic = np.einsum("ti,ij,tj->t", response.speed, mass, response.speed) / 2
+    potential = np.einsum("ti,ij,tj->t", response.coordinate,
+                          stiffness, response.coordinate) / 2
+    energy = kinetic + potential
+    dissipated = cumulative_trapezoid(
+        np.einsum("ti,ij,tj->t", response.speed, damping, response.speed),
+        x=response.time, initial=0,
+    )
+    assert dissipated[-1] > 0.1
+    assert np.max(np.diff(energy)) < 1e-8
+    assert np.max(np.abs(energy + dissipated - energy[0])) < 5e-5
 
 
 def test_discontinuous_sampled_force_uses_accepted_selection_only_on_failure():
