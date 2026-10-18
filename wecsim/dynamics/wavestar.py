@@ -5,6 +5,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+from scipy.interpolate import CubicSpline
 from scipy.sparse import block_diag, csr_matrix
 
 from wecsim.environment.irregularWave import IrregularComponents, synthesize_irregular_response
@@ -95,8 +96,10 @@ def run_wavestar_published(
     This runner uses that fit, with zero direct feedthrough as in the pinned
     WEC-Sim block, for comparison with the application. It does not change the
     general WEC radiation default. ``solver="wecsim_ode8"`` follows the
-    pinned Simulink fixed-step solver and its delayed added-mass feedback;
-    the default keeps the physical mass-matrix solve.
+    pinned Simulink fixed-step solver, its delayed added-mass feedback, and
+    smooth wave forcing at solver stages; the default keeps the physical
+    mass-matrix solve. Both paths include the published light BC rod and
+    motor's projected inertia and gravity.
     """
     if (not np.isfinite([dt, end_time, ramp_time, rho, g]).all()
             or dt <= 0 or end_time <= 0 or ramp_time < 0
@@ -175,14 +178,25 @@ def run_wavestar_published(
     state_matrix = block_diag(blocks, format="csr")
 
     linkage = WaveStarLinkage()
+    auxiliary_base = np.asarray(linkage.pto_base)
+    auxiliary_tip0 = np.asarray(linkage.pto_arm)
+    auxiliary_rod0 = auxiliary_tip0 - auxiliary_base
+    auxiliary_rod0_length_squared = auxiliary_rod0 @ auxiliary_rod0
     float_center = center[[0, 2]]
     arm_center = np.array([-.3301, .2551])
     float_mass, arm_mass = 3.075, 1.157
     float_inertia, arm_inertia = .001450, .0606
+    rod_mass = motor_mass = rod_inertia = motor_inertia = .0001
     float_rigid = np.diag([float_mass] * 3 + [0., float_inertia, 0.])
     arm_rigid = np.diag([arm_mass] * 3 + [0., arm_inertia, 0.])
     source_ode8 = solver == "wecsim_ode8"
     if source_ode8:
+        # irregExcF evaluates the sea at each Simulink solver stage. A cubic
+        # interpolant of the half-step samples follows that smooth forcing
+        # without building a separate, very fine excitation time grid.
+        excitation_spline = CubicSpline(
+            incident.time, incident.excitation_force, axis=0,
+        )
         # WEC-Sim moves twice the translational A_inf trace into Simscape's
         # rigid mass. The remainder is fed back through a short delay.
         adjustment = 2 * np.trace(added_mass[:3, :3])
@@ -209,6 +223,58 @@ def run_wavestar_published(
         bias_acceleration = np.array([bias[0], 0., bias[1], 0., 0., 0.])
         return position, jacobian, bias_acceleration
 
+    def auxiliary_dynamics(angle, speed):
+        """Project the published BC rod and motor onto the arm coordinate.
+
+        Both bodies rotate with the B-to-C rod. The motor origin rotates about
+        B; the rod origin also translates so its C joint follows the arm.
+        Their small masses affect gravity as well as generalized inertia.
+        """
+        tip = linkage.point_position(auxiliary_tip0, angle)
+        tip_prime = linkage.point_velocity(auxiliary_tip0, angle, 1.)
+        tip_second = -(tip - linkage.pivot)
+        rod = tip - auxiliary_base
+        length_squared = rod @ rod
+        scale = np.sqrt(auxiliary_rod0_length_squared * length_squared)
+        cosine = (auxiliary_rod0 @ rod) / scale
+        sine = (auxiliary_rod0[1] * rod[0]
+                - auxiliary_rod0[0] * rod[1]) / scale
+        rotated_tip0 = np.array([
+            cosine * auxiliary_tip0[0] + sine * auxiliary_tip0[1],
+            -sine * auxiliary_tip0[0] + cosine * auxiliary_tip0[1],
+        ])
+        rotated_base = np.array([
+            cosine * auxiliary_base[0] + sine * auxiliary_base[1],
+            -sine * auxiliary_base[0] + cosine * auxiliary_base[1],
+        ])
+        tip_tangent = np.array([rotated_tip0[1], -rotated_tip0[0]])
+        base_tangent = np.array([rotated_base[1], -rotated_base[0]])
+
+        numerator = rod[1] * tip_prime[0] - rod[0] * tip_prime[1]
+        theta_prime = numerator / length_squared
+        numerator_prime = (rod[1] * tip_second[0]
+                           - rod[0] * tip_second[1])
+        theta_second = (numerator_prime * length_squared
+                        - 2 * numerator * (rod @ tip_prime)) / length_squared**2
+        rod_prime = tip_prime - theta_prime * tip_tangent
+        motor_prime = -theta_prime * base_tangent
+        rod_second = (tip_second - theta_second * tip_tangent
+                      + theta_prime**2 * rotated_tip0)
+        motor_second = (-theta_second * base_tangent
+                        + theta_prime**2 * rotated_base)
+        inertia = (rod_mass * (rod_prime @ rod_prime)
+                   + motor_mass * (motor_prime @ motor_prime)
+                   + (rod_inertia + motor_inertia) * theta_prime**2)
+        inertia_prime = 2 * (
+            rod_mass * (rod_prime @ rod_second)
+            + motor_mass * (motor_prime @ motor_second)
+            + (rod_inertia + motor_inertia) * theta_prime * theta_second
+        )
+        load = (.5 * inertia_prime * speed**2
+                + g * (rod_mass * rod_prime[1]
+                       + motor_mass * motor_prime[1]))
+        return inertia, load
+
     def derivative(state, excitation, time, pto_force,
                    delayed_acceleration=None):
         angle, speed = state[:2]
@@ -228,6 +294,9 @@ def run_wavestar_published(
                 + arm_jacobian @ arm_rigid @ arm_jacobian)
         torque = (float_jacobian @ (force - float_effective @ float_bias)
                   + arm_jacobian @ (arm_gravity - arm_rigid @ arm_bias))
+        auxiliary_mass, auxiliary_load = auxiliary_dynamics(angle, speed)
+        mass += auxiliary_mass
+        torque -= auxiliary_load
         if delayed_acceleration is not None:
             torque -= float_jacobian @ (delayed_added_mass @ delayed_acceleration)
         torque += pto_force * linkage.pto_speed(angle, 1.)
@@ -285,12 +354,7 @@ def run_wavestar_published(
                 else:
                     delayed = ((1 + fraction) * body_acceleration_history[index]
                                - fraction * body_acceleration_history[index - 1])
-                sampled_index = 2 * index + 2 * fraction
-                lower = int(np.floor(sampled_index))
-                upper = min(lower + 1, len(incident.excitation_force) - 1)
-                weight = sampled_index - lower
-                excitation = ((1 - weight) * incident.excitation_force[lower]
-                              + weight * incident.excitation_force[upper])
+                excitation = excitation_spline(time + fraction * dt)
                 stage_force = (pto_force if force_at_stroke is None else
                                force_at_stroke(linkage.pto_stroke(trial[0])))
                 stage[number] = derivative(

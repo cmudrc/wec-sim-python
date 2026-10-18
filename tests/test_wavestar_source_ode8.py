@@ -35,8 +35,8 @@ def test_public_source_ode8_closes_the_precontrol_motion_gap():
     np.testing.assert_allclose(response.time, body[:, 0], rtol=0, atol=1e-10)
     # Source motion is never fed to the Python solve. Only pinned HDF5
     # hydrodynamics and the published wave phases set its inputs.
-    assert np.max(np.abs(response.angle - body[:, 5])) < 2e-5
-    assert np.max(np.abs(response.angular_speed - body[:, 11])) < 1.5e-4
+    assert np.max(np.abs(response.angle - body[:, 5])) < 1e-7
+    assert np.max(np.abs(response.angular_speed - body[:, 11])) < 1e-6
 
 
 def test_source_ode8_precontrol_motion_on_two_refined_steps():
@@ -87,6 +87,29 @@ def test_source_ode8_with_independent_nmpc_through_20s():
     np.testing.assert_allclose(response.time, body[:, 0], rtol=0, atol=1e-10)
     # NMPC activates at 15 s. This bounded diagnostic does not gate the
     # chaotic full 225 s closed-loop motion.
-    assert np.max(np.abs(response.angle - body[:, 5])) < .002
-    assert np.max(np.abs(response.angular_speed - body[:, 11])) < .012
-    assert np.max(np.abs(response.pto_force - pto[:, 33])) < 1.
+    assert np.max(np.abs(response.angle - body[:, 5])) < .0008
+    assert np.max(np.abs(response.angular_speed - body[:, 11])) < .007
+    assert np.max(np.abs(response.pto_force - pto[:, 33])) < .5
+
+
+def test_source_ode8_full_published_nmpc_bounded_diagnostic():
+    """Check all 225 s without treating chaotic pointwise motion as parity."""
+    with np.load(FULL_SOURCE, allow_pickle=False) as published:
+        body = published["body"]
+        pto = published["pto"]
+        sea = _published_sea(published["components"])
+    response = run_wavestar_published(
+        HYDRO, sea, dt=.05, end_time=225, ramp_time=25,
+        g=9.80665, solver="wecsim_ode8",
+        pto_controller=WaveStarNmpcPTO(plant_dt=.05, control_dt=.05),
+    )
+    np.testing.assert_allclose(response.time, body[:, 0],
+                               rtol=0, atol=1e-10)
+    assert np.max(np.abs(response.angle - body[:, 5])) < .012
+    assert np.max(np.abs(response.angular_speed - body[:, 11])) < .08
+    assert np.max(np.abs(response.pto_force - pto[:, 33])) < 5.
+    python_work = np.trapezoid(
+        response.pto_force * response.pto_speed, response.time,
+    )
+    source_work = np.trapezoid(pto[:, 33] * pto[:, 9], pto[:, 0])
+    assert abs(python_work - source_work) / abs(source_work) < .002

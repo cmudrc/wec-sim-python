@@ -2349,34 +2349,40 @@ physical solver with DOP853 would reproduce the published 225 s case.
 
 An opt-in `run_wavestar_published(..., solver="wecsim_ode8")` path now
 advances the pinned plant with the Prince-Dormand 8(7)13M tableau and
-WEC-Sim's delayed added-mass history. Its tableau reproduces all 92
-archived Simulink `ode8` modal amplification factors within `1e-10`.
-Without reading source poses, forces, or accelerations, it reproduces the
-published first 9.95 s before NMPC activation to within `1.42e-5` rad
-float pitch and `1.19e-4` rad/s pitch speed. These are direct paired gates
-using only pinned HDF5 hydrodynamics and wave phases as inputs; the default
-physical mass-matrix solver remains unchanged. The same source-style path
-also pairs the existing 25 and 12.5 ms MATLAB
-precontrol prefixes: maximum pitch gaps are `4.72e-6` and `2.30e-6` rad,
-and pitch-speed gaps are `2.11e-5` and `8.94e-6` rad/s, respectively. The
-cross-step gates check that the numerical route is not confined to the
-published 50 ms step; they do not establish physical convergence.
-A local 20 s run with the
-Python NMPC active from 15 s still has maximum pitch, pitch-speed, and PTO
-force gaps of `0.001187` rad, `0.009704` rad/s, and `0.8224` N. An
+WEC-Sim's delayed added-mass history. Its tableau reproduces all 92 archived
+Simulink `ode8` modal amplification factors within `1e-10`. The pinned
+`irregExcF` evaluates the sea at solver-stage time; a cubic interpolant of
+Python's half-step excitation samples reproduces that smooth forcing without
+resampling the entire sea at every stage. The published BC rod and motor are
+also represented through their B-to-C linkage kinematics, generalized mass,
+gravity, and centrifugal load. Their geometry was checked against local
+R2025b body poses, speeds, and accelerations; no saved MATLAB state is fed to
+the Python solve. Without reading source poses, forces, or accelerations, the
+published first 9.95 s before NMPC activation now pairs within `6.77e-8` rad
+float pitch and `4.42e-7` rad/s pitch speed. These direct gates use only the
+pinned HDF5 and wave phases; the default physical mass-matrix solver remains
+separate and includes the light auxiliary bodies too. At 25 and 12.5 ms, the
+maximum precontrol pitch gaps are `1.79e-8` and `1.75e-8` rad, and pitch-speed
+gaps are `1.44e-7` and `1.27e-7` rad/s. The cross-step gates check the source
+numerical route, not physical convergence. A local 20 s run with Python NMPC
+active from 15 s has maximum pitch, pitch-speed, and PTO-force gaps of
+`0.000523` rad, `0.004805` rad/s, and `0.260` N. An
 additional local [direct QP check](tests/fixtures/matlab/wavestar_nmpc_independent_qp/README.md)
 feeds the published MATLAB `NMPC.m` the observer states and forecasts produced
 by Python's own 30 s source-style run. Across all 301 active samples, MATLAB
 `quadprog` and independent Python QP commands differ by at most
 `1.03e-5` N m (`6.06e-7` N m RMS). This supports the controller optimization
 implementation on independent motion inputs; it does not close the coupled
-trajectory gap. An
-independent full 225 s Python run remains finite and reduces the maximum
-published-source gaps to `0.01536` rad pitch, `0.07490` rad/s pitch speed,
-and `6.358` N axial PTO force; signed PTO work differs by `0.0647%`.
-These full-duration differences are measured diagnostics, not a passing
-pointwise parity gate. The case remains `open_motion`, and no badge count
-changes.
+trajectory gap. An independent full 225 s Python run remains finite with
+maximum published-source differences of `0.007632` rad pitch, `0.06967`
+rad/s pitch speed, and `3.259` N axial PTO force; signed PTO work differs by
+`0.0511%`. A full-duration diagnostic gates these below `0.012` rad,
+`0.08` rad/s, `5` N, and `0.2%`, respectively. The pinned MATLAB source
+itself changes by up to `0.007543` rad pitch, `0.05022` rad/s speed, and
+`2.858` N PTO force across identical-input hosted and local runs. Thus the
+225 s gate bounds the autonomous trajectory but does not establish close
+pointwise published-case parity or step-converged behavior. The case remains
+`open_motion`, and no badge count changes.
 
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
