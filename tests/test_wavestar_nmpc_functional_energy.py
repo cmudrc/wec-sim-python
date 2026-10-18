@@ -1,0 +1,74 @@
+"""Full-duration WaveStar NMPC energy and operating-envelope comparison.
+
+This is an autonomous closed-loop check. It measures integrated behavior
+without claiming that the individual motion samples match the source.
+"""
+
+from pathlib import Path
+
+import numpy as np
+
+from wecsim import WaveStarNmpcPTO
+from wecsim.dynamics.wavestar import run_wavestar_published
+from wecsim.environment.irregularWave import jonswap_equal_energy_components
+
+
+FIXTURES = Path(__file__).parent / "fixtures/matlab"
+HYDRO = FIXTURES / "wavestar_fixed_input_step/wavestar.h5"
+SOURCE = FIXTURES / "wavestar_nmpc_full_step/baseline.npz"
+
+
+def _rms(values):
+    return np.sqrt(np.mean(np.square(values)))
+
+
+def test_autonomous_nmpc_full_duration_energy_and_envelope():
+    with np.load(SOURCE, allow_pickle=False) as source:
+        source_body = source["body"]
+        source_pto = source["pto"]
+        phase = source["components"][:, 3, None]
+
+    sea = jonswap_equal_energy_components(
+        HYDRO, significant_height=.1042, peak_period=1.836,
+        directions=np.array([0.]), spreading=np.array([1.]),
+        gamma=3.3, phase=phase,
+    )
+    response = run_wavestar_published(
+        HYDRO, sea, dt=.05, end_time=225, ramp_time=25,
+        g=9.80665, solver="wecsim_ode8",
+        pto_controller=WaveStarNmpcPTO(plant_dt=.05, control_dt=.05),
+    )
+    np.testing.assert_allclose(response.time, source_body[:, 0],
+                               rtol=0, atol=1e-10)
+
+    source_power = source_pto[:, 33] * source_pto[:, 9]
+    python_power = response.pto_force * response.pto_speed
+    # The full-run signed work can conceal cancellation. Require agreement
+    # on three consecutive controlled intervals as well as on the total.
+    source_work = np.trapezoid(source_power, response.time)
+    python_work = np.trapezoid(python_power, response.time)
+    assert source_work < -100
+    assert abs(python_work - source_work) / abs(source_work) < .001
+
+    for start, stop in ((15, 75), (75, 150), (150, 225)):
+        window = (response.time >= start) & (response.time <= stop)
+        source_window_work = np.trapezoid(
+            source_power[window], response.time[window],
+        )
+        python_window_work = np.trapezoid(
+            python_power[window], response.time[window],
+        )
+        assert source_window_work < -10
+        assert (abs(python_window_work - source_window_work)
+                / abs(source_window_work)) < .005
+
+        # Compare motion/force scale in each interval. The source's
+        # step-sensitive NMPC feedback still prevents pointwise parity.
+        for actual, expected, tolerance in (
+            (response.angle, source_body[:, 5], .01),
+            (response.angular_speed, source_body[:, 11], .01),
+            (response.pto_force, source_pto[:, 33], .02),
+        ):
+            source_rms = _rms(expected[window])
+            assert source_rms > 0
+            assert abs(_rms(actual[window]) - source_rms) / source_rms < tolerance
