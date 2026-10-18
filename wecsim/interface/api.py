@@ -60,6 +60,34 @@ def _case_identifier(name: str, *, pto: bool = False) -> bool:
             and (not pto or re.fullmatch(r"coordinate[1-9][0-9]*", name) is None))
 
 
+def _rigid_body_properties(mass, inertia, *, fixed: bool = False):
+    """Validate physical inputs before a body reserves its builder name."""
+    mass_error = ("body mass must be equilibrium or a finite nonnegative number"
+                  if fixed else
+                  "body mass must be equilibrium or a finite positive number")
+    if isinstance(mass, str):
+        if mass != "equilibrium":
+            raise ValueError(mass_error)
+    else:
+        if isinstance(mass, (bool, np.bool_)) or not isinstance(mass, Real):
+            raise ValueError(mass_error)
+        mass = float(mass)
+        if not np.isfinite(mass) or mass < 0 or (mass == 0 and not fixed):
+            raise ValueError(mass_error)
+    try:
+        values = tuple(inertia)
+    except TypeError as exc:
+        raise ValueError("body inertia needs three nonnegative values that are finite") from exc
+    if (len(values) != 3
+            or any(isinstance(value, (bool, np.bool_))
+                   or not isinstance(value, Real) for value in values)):
+        raise ValueError("body inertia needs three nonnegative values that are finite")
+    values = tuple(float(value) for value in values)
+    if not np.isfinite(values).all() or any(value < 0 for value in values):
+        raise ValueError("body inertia needs three nonnegative values that are finite")
+    return mass, values
+
+
 class WEC(_WECCaseMixin):
     """Build supported WEC motion/PTO layouts or fixed Morison bodies.
 
@@ -110,6 +138,7 @@ class WEC(_WECCaseMixin):
             raise ValueError("body name must be a nonempty string")
         if any(existing.name == name for existing in self.bodies):
             raise ValueError(f"body name already exists: {name}")
+        mass, inertia = _rigid_body_properties(mass, inertia)
         if hydrostatic_stiffness is not None:
             try:
                 stiffness = np.asarray(hydrostatic_stiffness, dtype=float)
@@ -176,7 +205,7 @@ class WEC(_WECCaseMixin):
                     or headings[0] < -180 or headings[-1] > 180):
                 raise ValueError("yaw_heading_bank needs passive_yaw, no threshold, and ordered directions in [-180, 180]")
             yaw_heading_bank = tuple(float(value) for value in headings)
-        body = Body(name, hydro_file, mass, tuple(inertia), hydro_body,
+        body = Body(name, hydro_file, mass, inertia, hydro_body,
                     mean_drift, passive_yaw, geometry_file, nonlinear_hydro,
                     drag_coefficient, drag_area,
                     passive_yaw_threshold=passive_yaw_threshold,
@@ -224,10 +253,11 @@ class WEC(_WECCaseMixin):
             raise ValueError("body name must be a nonempty string")
         if any(existing.name == name for existing in self.bodies):
             raise ValueError(f"body name already exists: {name}")
+        mass, inertia = _rigid_body_properties(mass, inertia, fixed=True)
         center = tuple(center_gravity)
         if len(center) != 3 or not np.isfinite(center).all():
             raise ValueError("center_gravity needs three finite coordinates")
-        body = Body(name, None, mass, tuple(inertia), fixed=True,
+        body = Body(name, None, mass, inertia, fixed=True,
                     center_gravity=center, volume=volume)
         self.bodies.append(body)
         return body
