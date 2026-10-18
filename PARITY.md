@@ -2352,6 +2352,18 @@ optimizer from the growing closed-loop trajectory gap, but it does not feed
 MATLAB commands back into Python motion or establish published-case motion
 parity. WaveStar NMPC remains open.
 
+A [full-duration independent-input predictor gate](tests/fixtures/matlab/wavestar_nmpc_independent_predictor/README.md)
+reconstructs the excitation estimate from that autonomous Python run's
+saved pitch and requested torque, then gives all 4,501 estimates to local
+R2025b `ar`/`forecast`. At each of the 216 one-second refits from 10 through
+225 s, Python's own order-18, 180-sample predictor is paired with MATLAB's
+40-step forecast. Across all 8,640 values, maximum and RMS differences are
+`5.77560e-8` and `2.06425e-9` N m, below `1e-6` and `1e-7` N m gates.
+The active observer states also match the independent QP fixture. This
+isolates the AR forecast implementation on Python-generated motion inputs;
+it does not close the published autonomous closed-loop motion gap or change
+the WaveStar case label.
+
 A [portable published-command plant gate](tests/test_wavestar_published_command_replay.py)
 now advances the full 225 s WaveStar plant through the public `wecsim_ode8`
 route using only the pinned hydrodynamic file, wave phases, and **saved MATLAB
