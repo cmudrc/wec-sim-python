@@ -830,8 +830,9 @@ outputs. It uses the exact source-generated HDF5 and a compact MATLAB trace;
 the original full source gate and Sphere badge count are unchanged. The portable
 gate also integrates mechanical shaft power, source-signed electrical power,
 and winding loss over the complete run, the 50 s ramp, and two developed-wave
-windows. Each independent Python/MATLAB work gap is below 0.01%, against a
-fixed 0.1% relative limit. This strengthens energy accounting for the same
+windows. On local ARM64, the largest independent Python/MATLAB work gap is
+0.0098%; ordinary CI applies a fixed 0.1% relative limit to every window.
+This strengthens energy accounting for the same
 published input without adding a case to the badge.
 The public floating-OWC builder now has ordinary-CI checks for the published
 two-body order, floater-local MoorDyn attachment, column geometry, PTO settings,
