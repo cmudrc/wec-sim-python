@@ -77,14 +77,14 @@ def _rigid_body_properties(mass, inertia, *, fixed: bool = False):
     try:
         values = tuple(inertia)
     except TypeError as exc:
-        raise ValueError("body inertia needs three finite nonnegative values") from exc
+        raise ValueError("body inertia needs three nonnegative values that are finite") from exc
     if (len(values) != 3
             or any(isinstance(value, (bool, np.bool_))
                    or not isinstance(value, Real) for value in values)):
-        raise ValueError("body inertia needs three finite nonnegative values")
+        raise ValueError("body inertia needs three nonnegative values that are finite")
     values = tuple(float(value) for value in values)
     if not np.isfinite(values).all() or any(value < 0 for value in values):
-        raise ValueError("body inertia needs three finite nonnegative values")
+        raise ValueError("body inertia needs three nonnegative values that are finite")
     return mass, values
 
 
