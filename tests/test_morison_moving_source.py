@@ -14,18 +14,30 @@ from wecsim.hydrodynamics.morison import (
 
 
 REFERENCE = os.environ.get("WEC_SIM_MATLAB_MODEL_OUTPUT_DIR")
-ARCHIVED = (Path(__file__).parent / "fixtures/matlab/morison_moving_regular"
-            / "MORISON_MOVING_REGULAR_states.csv")
-ARCHIVED_SHA256 = "466ff5a912ca07062d699f9275e6ea2db2ae42b20ee3b6844a967e53f96ca827"
+ARCHIVED = Path(__file__).parent / "fixtures/matlab/morison_moving_regular"
+ARCHIVED_SHA256 = {
+    "MORISON_MOVING_REGULAR_states.csv":
+        "466ff5a912ca07062d699f9275e6ea2db2ae42b20ee3b6844a967e53f96ca827",
+    "MORISON_MOVING_NORMAL_TANGENTIAL_states.csv":
+        "ce0014df5dea6638b747b33c42166bfca6563c86e5fdc3c970de8f8221e0d81e",
+    "MORISON_MOVING_REGULAR_CURRENT_uniform_states.csv":
+        "a9bc61ea3822c9f39c7c97e5e08ebf4de3bb7c5abaec54dffc641f6f4328c48f",
+    "MORISON_MOVING_REGULAR_CURRENT_power_states.csv":
+        "3c69e1d2cdcf6effa396e5f0dc3938fc36c9749e5c769bb3b78ddc53ff0b30b2",
+    "MORISON_MOVING_REGULAR_CURRENT_linear_states.csv":
+        "8e9e01f85122e13c86c8176356d75aa8ac19feb7efaa382bace253b6fca3acff",
+}
+
+
+def _source_rows(filename):
+    reference = Path(REFERENCE) / filename if REFERENCE else ARCHIVED / filename
+    if not REFERENCE:
+        assert sha256(reference.read_bytes()).hexdigest() == ARCHIVED_SHA256[filename]
+    return np.loadtxt(reference, delimiter=",")
 
 
 def test_moving_regular_source_force():
-    if REFERENCE:
-        reference = Path(REFERENCE) / "MORISON_MOVING_REGULAR_states.csv"
-    else:
-        reference = ARCHIVED
-        assert sha256(reference.read_bytes()).hexdigest() == ARCHIVED_SHA256
-    rows = np.loadtxt(reference, delimiter=",")
+    rows = _source_rows("MORISON_MOVING_REGULAR_states.csv")
     assert rows.shape == (8, 25)
     assert np.isfinite(rows).all()
     assert np.any(np.linalg.norm(rows[:, 4:7], axis=1) > .1)
@@ -49,12 +61,8 @@ def test_moving_regular_source_force():
     np.testing.assert_array_equal(actual[-2], 0)
 
 
-@pytest.mark.skipif(not REFERENCE, reason="paired MATLAB Morison states absent")
 def test_moving_regular_normal_tangential_source_force():
-    rows = np.loadtxt(
-        Path(REFERENCE) / "MORISON_MOVING_NORMAL_TANGENTIAL_states.csv",
-        delimiter=",",
-    )
+    rows = _source_rows("MORISON_MOVING_NORMAL_TANGENTIAL_states.csv")
     assert rows.shape == (8, 25)
     assert np.isfinite(rows).all()
     element = MorisonElement(
@@ -78,12 +86,8 @@ def test_moving_regular_normal_tangential_source_force():
     np.testing.assert_array_equal(actual[-2], 0)
 
 
-@pytest.mark.skipif(not REFERENCE, reason="paired MATLAB Morison states absent")
 def test_physical_normal_tangential_force_on_unrotated_source_states():
-    rows = np.loadtxt(
-        Path(REFERENCE) / "MORISON_MOVING_NORMAL_TANGENTIAL_states.csv",
-        delimiter=",",
-    )
+    rows = _source_rows("MORISON_MOVING_NORMAL_TANGENTIAL_states.csv")
     element = MorisonElement(
         point=(.8, -.5, 1.2),
         drag_coefficient=(1.1, .7, 1.3),
@@ -107,13 +111,9 @@ def test_physical_normal_tangential_force_on_unrotated_source_states():
         assert np.linalg.eigvalsh(mass).min() > -1e-9
 
 
-@pytest.mark.skipif(not REFERENCE, reason="paired MATLAB Morison states absent")
 @pytest.mark.parametrize("profile", ["uniform", "power", "linear"])
 def test_moving_regular_source_current_force(profile):
-    rows = np.loadtxt(
-        Path(REFERENCE) / f"MORISON_MOVING_REGULAR_CURRENT_{profile}_states.csv",
-        delimiter=",",
-    )
+    rows = _source_rows(f"MORISON_MOVING_REGULAR_CURRENT_{profile}_states.csv")
     assert rows.shape == (8, 25)
     element = MorisonElement(
         point=(.8, -.5, 1.2), drag_coefficient=(1.1, .7, 1.3),
