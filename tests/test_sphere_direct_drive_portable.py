@@ -81,3 +81,44 @@ def test_published_reactive_direct_drive_through_public_wec():
             + source["resistance_loss"],
             rtol=0, atol=1e-8,
         )
+
+
+def test_direct_drive_public_initial_state_reaches_pto_and_generator():
+    """A configured heave release must reach the coupled drive, not just the body."""
+    wec = WEC("Sphere direct-drive release")
+    # Use the fixture's displaced-volume mass through the explicit mass route.
+    sphere = wec.body("sphere", FIXTURE / "sphere.h5", mass=261_724)
+    wec.coordinate("heave", sphere.move("heave"))
+    wec.pto(
+        "PTO1", WorldPoint(0, 0, -2), sphere.at(0, 0, 0),
+        axis=(0, 0, 1),
+        direct_drive=SimpleDirectDrive(
+            kp=3.8e5, ki=-1.52e5, torque_constant=7.186,
+            gear_ratio=100, drivetrain_inertia=2,
+            drivetrain_friction=1, winding_resistance=.483,
+            winding_inductance=5.223e-3,
+        ),
+    )
+    result = wec.run(
+        RegularWave(0, 9.6664), dt=.01, end_time=.2, ramp_time=0,
+        initial_coordinate={"heave": .3}, initial_speed={"heave": -.2},
+    )
+    body = result.bodies["sphere"]
+    pto = result.ptos["PTO1"]
+    drive = pto.direct_drive
+    assert drive is not None
+    np.testing.assert_allclose(result.coordinates["heave"].position[0],
+                               .3, atol=1e-12)
+    np.testing.assert_allclose(body.velocity[0, 2], -.2, atol=1e-12)
+    np.testing.assert_allclose(pto.stroke[0], .3, atol=1e-12)
+    np.testing.assert_allclose(pto.velocity[0], -.2, atol=1e-12)
+    np.testing.assert_allclose(drive.shaft_velocity[0], -20, atol=1e-12)
+    np.testing.assert_allclose(drive.current[0], 0, atol=1e-12)
+    np.testing.assert_allclose(drive.voltage[0], -143.72, atol=1e-12)
+    np.testing.assert_allclose(
+        dict(result.raw.extra_outputs)["body1_controller_force"][0],
+        121_600, atol=1e-9,
+    )
+    np.testing.assert_allclose(
+        pto.absorbed_power, -drive.mechanical_power, rtol=0, atol=1e-8,
+    )
