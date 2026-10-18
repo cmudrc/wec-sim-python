@@ -102,6 +102,9 @@ class DynamicPressureReliefValve:
 
     def next_area(self, pressure: float, previous_area: float, dt: float) -> float:
         """Backward Euler update of the pressure-controlled orifice area."""
+        if (not np.isfinite([pressure, previous_area, dt]).all()
+                or previous_area < 0 or dt <= 0):
+            raise ValueError("relief opening needs finite pressure and area, and positive dt")
         opening = np.clip((pressure - self.set_pressure)
                           / self.regulation_range, 0, 1)
         target = self.leakage_area + (self.max_area - self.leakage_area) * opening
@@ -110,6 +113,8 @@ class DynamicPressureReliefValve:
 
     def flow(self, pressure_drop: float, area: float) -> float:
         """Signed source orifice flow at the current dynamic opening."""
+        if not np.isfinite([pressure_drop, area]).all() or area < 0:
+            raise ValueError("relief flow needs finite pressure drop and nonnegative area")
         dp = float(pressure_drop)
         critical = ((self.atmospheric_pressure + dp / 2)
                     * (1 - self.laminar_pressure_ratio))
