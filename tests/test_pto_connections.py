@@ -328,11 +328,12 @@ def test_connection_rejects_unknown_body():
     ({"from": {"body": 1, "point": [0, 0, float("nan")]}},
      "finite three-vector"),
     ({"damping": -1}, "outside its supported range"),
+    ({"damping": np.bool_(True)}, "must be numeric"),
     ({"pretension": 100}, "pretension needs positive stiffness"),
     ({"equilibrium_position": 0.1}, "equilibrium needs positive stiffness"),
 ], ids=["coincident-points", "uncoupled-axis", "boolean-body",
-        "nonfinite-attachment", "negative-damping", "unsupported-pretension",
-        "unsupported-equilibrium"])
+        "nonfinite-attachment", "negative-damping", "boolean-damping",
+        "unsupported-pretension", "unsupported-equilibrium"])
 def test_pto_configuration_rejects_nonphysical_force_paths(change, message):
     """A user-defined actuator must have a finite, movable line of action."""
     mapping = np.zeros((6, 1))
