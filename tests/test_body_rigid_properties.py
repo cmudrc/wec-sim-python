@@ -61,9 +61,20 @@ def test_variable_body_validates_every_draft_before_running():
                 wec.variable_body("sphere", states, switch_times=(.1,))
             assert not wec.bodies
 
+    for switch_times in ((True,), (np.bool_(True),), (0,), (-.1,),
+                         (np.nan,), (np.inf,), (".1",)):
+        with pytest.raises(ValueError, match="switch times.*finite, positive"):
+            wec.variable_body("sphere", valid, switch_times=switch_times)
+        assert not wec.bodies
+    for switch_times in ((.2, .1), (.1, .1)):
+        with pytest.raises(ValueError, match="switch times.*increasing"):
+            wec.variable_body("sphere", (*valid, valid[0]),
+                              switch_times=switch_times)
+        assert not wec.bodies
+
     states = (HydroState(SPHERE, mass=np.float64(250_000),
                          inertia=(0, np.int64(10), 0)), valid[1])
-    body = wec.variable_body("sphere", states, switch_times=(.1,))
+    body = wec.variable_body("sphere", states, switch_times=(np.float64(.1),))
     wec.coordinate("heave", body.move("heave"))
     wec.pto("damper", WorldPoint(0, 0, 2), body.at(0, 0, 0),
             axis=(0, 0, 1), damping=200_000)
@@ -71,6 +82,7 @@ def test_variable_body_validates_every_draft_before_running():
     case = wec.to_case(wave, dt=.01, end_time=.2, ramp_time=0)
     json.dumps(case)
     assert case["bodies"][0]["variable_hydro"]["states"][0]["mass"] == 250_000.0
+    assert case["bodies"][0]["variable_hydro"]["switch_times"] == [0.1]
     result = wec.run(wave, dt=.01, end_time=.2, ramp_time=0,
                      initial_coordinate={"heave": .5})
     assert np.isfinite(result.bodies["sphere"].position).all()
