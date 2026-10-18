@@ -2378,6 +2378,20 @@ These full-duration differences are measured diagnostics, not a passing
 pointwise parity gate. The case remains `open_motion`, and no badge count
 changes.
 
+A [local R2025b auxiliary-mass probe](tests/fixtures/matlab/wavestar_auxiliary_mass/README.md)
+keeps the 50 ms published `ode8` sea and linkage but reduces only the BC rod
+and motor's `0.0001` kg masses and inertia entries to `1e-9`. MATLAB's initial
+pitch acceleration moves from `0.3383701634` to `0.3384090166` rad/s²,
+almost exactly the reduced Python linkage's `0.3384090170`. Over 9.95 s,
+however, the maximum Python/source pitch gap changes from `1.42056e-5` to
+`1.44994e-5` rad and the pitch-speed gap remains about `1.18e-4` rad/s.
+The probe changes auxiliary gravity and inertia together. A linkage-based
+decomposition attributes about `3.85e-5` rad/s² of the initial acceleration
+gap to their gravity and `3.42e-7` rad/s² to their inertia. It identifies
+the omitted light bodies as the initial-derivative cause, but neither effect
+closes the remaining precontrol trajectory gap in this piecewise-linear
+forcing run. The physical default and case status are unchanged.
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001
