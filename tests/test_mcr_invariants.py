@@ -199,3 +199,47 @@ def test_imported_sea_table_requires_case_rows_and_two_columns(tmp_path):
     }})
     with pytest.raises(ValueError, match="spectrum and solver columns"):
         mcr_spectrum_files(table)
+
+
+@pytest.mark.parametrize("header, cases, message", [
+    (["waves.spectrumFile", "simu.solver"], [["sea.mat", "ode45"]],
+     "fixed-step ode4"),
+    (["waves.spectrumFile", "simu.solver"], [["../sea.mat", "ode4"]],
+     "local to the MAT table"),
+    (["waves.spectrumFile", "simu.solver"],
+     [["sea.mat", "ode4"], ["sea.mat", "ode4"]], "duplicated"),
+    (["waves.spectrumFile", "simu.step"], [["sea.mat", "ode4"]],
+     "unsupported imported-spectrum MCR fields"),
+])
+def test_imported_sea_table_rejects_cases_that_change_published_inputs(
+        tmp_path, header, cases, message):
+    """MCR must not silently substitute a solver or leave its input folder."""
+    table = tmp_path / "invalid-mcr.mat"
+    savemat(table, {"mcr": {
+        "header": np.asarray(header, dtype=object),
+        "cases": np.asarray(cases, dtype=object),
+    }})
+    with pytest.raises(ValueError, match=message):
+        mcr_spectrum_files(table)
+
+
+@pytest.mark.parametrize("time, power, averaging_start, message", [
+    ([0, 1, 1], [0, 1, 2], 0, "increasing time"),
+    ([0, 1, 2], [0, np.nan, 2], 0, "finite absorbed power"),
+    ([0, 1, 2], [0, 1], 0, "finite absorbed power"),
+    ([0, 1, 2], [0, 1, 2], 3, "beyond an MCR trace"),
+])
+def test_mcr_rejects_traces_that_would_corrupt_averaged_power(
+        time, power, averaging_start, message):
+    condition = MCRCondition(1, 6, 100)
+    simulate = lambda _: MCRTrace(np.asarray(time), np.asarray(power))
+    with pytest.raises(ValueError, match=message):
+        run_mcr([condition], simulate, averaging_start_time=averaging_start)
+
+
+def test_mcr_rejects_nonphysical_settings_and_missing_trace():
+    with pytest.raises(ValueError, match="physical wave and PTO settings"):
+        MCRCondition(1, 0, 100)
+    with pytest.raises(TypeError, match="MCRTrace"):
+        run_mcr([MCRCondition(1, 6, 100)], lambda _: None,
+                averaging_start_time=0)
