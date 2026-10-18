@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import numpy as np
+from scipy.io import loadmat
 
 from wecsim import WaveStarNmpcObserver, WaveStarNmpcPredictor
 from wecsim.dynamics.wavestar import WaveStarLinkage
@@ -62,3 +63,14 @@ def test_full_duration_matlab_forecast_on_independent_python_motion():
     gap = forecast[refits] - matlab[:, 1:]
     assert np.max(np.abs(gap)) < 1e-6  # N m, all 8,640 forecasts.
     assert np.sqrt(np.mean(gap**2)) < 1e-7  # N m RMS.
+
+    # MATLAB's pinned predictor.m holds its fitted AR model between one-second
+    # refits. The controller consumes every 0.05 s forecast from 15 s onward.
+    active = loadmat(FIXTURE / "matlab_active_forecast.mat")["activeRows"]
+    assert active.shape == (4201, 41)
+    np.testing.assert_allclose(active[:, 0], time[300:],
+                               rtol=0, atol=1e-10)
+    assert np.isfinite(active).all()
+    active_gap = forecast[300:] - active[:, 1:]
+    assert np.max(np.abs(active_gap)) < 1e-6  # N m, 168,040 values.
+    assert np.sqrt(np.mean(active_gap**2)) < 1e-7  # N m RMS.

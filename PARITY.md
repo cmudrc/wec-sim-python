@@ -2357,10 +2357,15 @@ reconstructs the excitation estimate from that autonomous Python run's
 saved pitch and requested torque, then gives all 4,501 estimates to local
 R2025b `ar`/`forecast`. At each of the 216 one-second refits from 10 through
 225 s, Python's own order-18, 180-sample predictor is paired with MATLAB's
-40-step forecast. Across all 8,640 values, maximum and RMS differences are
-`5.77560e-8` and `2.06425e-9` N m, below `1e-6` and `1e-7` N m gates.
+40-step forecast. Across all 8,640 refit values, maximum and RMS differences
+are `5.77560e-8` and `2.06425e-9` N m. A replay of the pinned MATLAB
+`predictor.m` at every 50 ms active controller sample from 15 through 225 s
+also pairs all 168,040 consumed forecasts: maximum `4.55458e-12` N m and
+RMS `3.85620e-13` N m. Both gates retain `1e-6` N m maximum and `1e-7`
+N m RMS limits. The first 10–11 s precontrol hold interval differs by up to
+`0.09197` N m off-refit; the predictor refits before the controller activates.
 The active observer states also match the independent QP fixture. This
-isolates the AR forecast implementation on Python-generated motion inputs;
+isolates the consumed AR forecasts on Python-generated motion inputs;
 it does not close the published autonomous closed-loop motion gap or change
 the WaveStar case label.
 
