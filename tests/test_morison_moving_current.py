@@ -46,6 +46,16 @@ def test_depth_profiles_and_public_wave_configuration():
         _force(10, "linear")
 
 
+@pytest.mark.parametrize("current", [
+    Current(True), Current(1, True), Current(1, 0, "power", True),
+    Current(np.bool_(True)),
+])
+def test_public_wave_rejects_boolean_current_quantities(current):
+    # A boolean must not become 1 m/s, 1 degree, or 1 m when the wave is run.
+    with pytest.raises(ValueError, match="numeric speed, direction, and depth"):
+        RegularWave(0, 8, current=current).as_case()
+
+
 def test_public_runner_accepts_current_with_finite_depth_hydro():
     hydro = (Path(__file__).parent / "test_objects/test_bodyclass/testData"
              / "hydroData/ellipsoid.h5")
