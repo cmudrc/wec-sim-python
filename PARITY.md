@@ -2355,7 +2355,13 @@ Without reading source poses, forces, or accelerations, it reproduces the
 published first 9.95 s before NMPC activation to within `1.42e-5` rad
 float pitch and `1.19e-4` rad/s pitch speed. These are direct paired gates
 using only pinned HDF5 hydrodynamics and wave phases as inputs; the default
-physical mass-matrix solver remains unchanged. A local 20 s run with the
+physical mass-matrix solver remains unchanged. The same source-style path
+also pairs the existing 25 and 12.5 ms MATLAB
+precontrol prefixes: maximum pitch gaps are `4.72e-6` and `2.30e-6` rad,
+and pitch-speed gaps are `2.11e-5` and `8.94e-6` rad/s, respectively. The
+cross-step gates check that the numerical route is not confined to the
+published 50 ms step; they do not establish physical convergence.
+A local 20 s run with the
 Python NMPC active from 15 s still has maximum pitch, pitch-speed, and PTO
 force gaps of `0.001187` rad, `0.009704` rad/s, and `0.8224` N. An
 independent full 225 s Python run remains finite and reduces the maximum
