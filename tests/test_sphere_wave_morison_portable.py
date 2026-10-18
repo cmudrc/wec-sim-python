@@ -81,3 +81,48 @@ def test_independent_public_sphere_heave_and_force_over_40_seconds():
             "heave speed")
     _within(result.body_forces["sphere"][100:, 2], -body[100:, 27], 1000,
             "moving Morison force after startup")
+
+
+def test_independent_public_sphere_three_coordinate_motion_and_force():
+    """Gate the published planar joint without prescribing source motion."""
+    body, wave, _ = _source()
+    wec = WEC("Sphere three-coordinate moving Morison")
+    sphere = wec.body(
+        "sphere", FIXTURE / "sphere.h5",
+        inertia=(20907301, 21306090.66, 37085481.11),
+    )
+    for axis in ("surge", "heave", "pitch"):
+        wec.coordinate(axis, sphere.move(axis))
+    wec.morison_element(
+        sphere, point=sphere.at(0, 0, -2),
+        drag_coefficient=(0, 0, 1),
+        added_mass_coefficient=(0, 0, 1),
+        area=(0, 0, 100), volume=20,
+    )
+    result = wec.run(
+        RegularWave(1, 8), dt=.01, end_time=40, ramp_time=10,
+        initial_coordinate={"heave": 1},
+    )
+    _within(result.time, body[:, 0], 1e-12, "time")
+    _within(result.wave_elevation, wave[:, 1], 1e-10, "wave elevation")
+    for axis, name, position_limit, speed_limit, force_limit in (
+        (0, "surge", .015, .002, 500),
+        (2, "heave", .0015, .002, 200),
+        (4, "pitch", .00015, .00006, 250),
+    ):
+        _within(result.bodies["sphere"].position[:, axis],
+                body[:, 1 + axis], position_limit, f"{name} position")
+        _within(result.bodies["sphere"].velocity[:, axis],
+                body[:, 7 + axis], speed_limit, f"{name} speed")
+        # The source logs the reaction on the body with the opposite sign.
+        # Its startup acceleration feedback is compared separately, so the
+        # physical force gate begins after the first second.
+        _within(result.body_forces["sphere"][100:, axis],
+                -body[100:, 25 + axis], force_limit, f"{name} Morison load")
+    for axis in (1, 3, 5):
+        _within(result.bodies["sphere"].position[:, axis],
+                body[:, 1 + axis], 1e-12, f"inactive position {axis}")
+        _within(result.bodies["sphere"].velocity[:, axis],
+                body[:, 7 + axis], 1e-12, f"inactive speed {axis}")
+    assert np.max(np.abs(body[:, 1])) > 1
+    assert np.max(np.abs(body[:, 5])) > .02
