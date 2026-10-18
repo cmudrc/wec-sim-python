@@ -920,6 +920,12 @@ closed-loop NMPC. The held-heading OSWEC case now has an opt-in published-step
 numerical gate but remains qualified by source step sensitivity; the RM3
 state-space fit has opt-in numerical motion gates but remains nonpassive in
 active joint modes.
+For WaveStar, a local published-step precontrol replay closes the projected
+float, arm, rod, and motor force balance within `1.89e-10` N m over 9.95 s;
+the remaining 225 s failure occurs after NMPC feedback begins. Draft
+[PR #525](https://github.com/cmudrc/wec-sim-python/pull/525) still fails its
+original x86 motion and derived split-step Python/source gates, so the case
+remains open and the passing-case count is unchanged.
 Published-step RM3 MoorDyn visualization motion and nonlinear-hydro timing
 also remain qualified. The Python dynamics API still lacks arbitrary Simscape
 joints and general six-DOF mooring and moving Morison layouts.

@@ -59,6 +59,6 @@ Variable_Hydro/Passive_Yaw,mixed_modes,Published regular-wave motion and opt-in 
 Variable_Hydro/Variable_Mass,independent_motion,
 WECCCOMP/WECCCOMP,independent_motion,
 WECCCOMP/WECCCOMP_Fault_Implementation,independent_motion,
-WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive,open_motion,Derived source-command plant and controller gates pass but the published full closed loop remains unpaired; draft PR 525 fails unchanged 225 s source-ode8 and physical-default aggregate limits; pinned native Linux ARM64 and macOS Python paths separate after NMPC starts and differ by up to 0.016892 rad pitch; isolate the source/Python gap before revising delayed-added-mass coupling.
+WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive,open_motion,Published 225 s autonomous NMPC motion remains unpaired. Draft PR 525 fails its unchanged x86 source-ode8 pitch gate (0.014996 versus 0.012 rad) and derived split-step Python/source pitch-peak gate (1.5238% versus 0.5%). The 9.95 s source joint balance closes within 1.89e-10 N m; full-duration prescribed-command plant and matched-input controller gates pass. Independent closed-loop feedback still amplifies small plant and observer differences across platforms; a cross-platform stable autonomous 225 s gate is missing.
 Wave_Markers/OSWEC,independent_motion,
 Wave_Markers/RM3,independent_motion,
