@@ -281,6 +281,11 @@ class Current:
     depth: float | None = None
 
     def as_case(self) -> dict:
+        # bool is a numeric subclass in Python; accepting it silently turns
+        # a mistyped setting into a physical current speed, heading, or depth.
+        if any(isinstance(value, (bool, np.bool_))
+               for value in (self.speed, self.direction, self.depth)):
+            raise ValueError("current needs numeric speed, direction, and depth")
         try:
             speed = float(self.speed)
             direction = float(self.direction)
