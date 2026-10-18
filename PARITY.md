@@ -2258,6 +2258,16 @@ avoid an algebraic loop in [WEC-Sim issue 909](https://github.com/WEC-Sim/WEC-Si
 this probe does not establish that it is a defect or that reproducing it
 would close the published 225 s parity gap.
 
+The WaveStar reduced joint now includes the published light BC rod and motor's
+projected inertia, velocity-dependent load, and gravity. A pinned 200-sample
+R2025b trace independently checks both bodies' positions, velocities, and
+accelerations against the B-to-C linkage reconstruction. With only this
+dynamics change, the independent 12.5 ms NMPC precontrol pitch gap falls from
+`2.30e-6` to `9.82e-7` rad; the unchanged published 50 ms gap remains
+`1.45e-5` rad. The full 141.2 s WaveStar base gate still passes, with a
+`1.46e-5` rad maximum pitch gap. This closes a missing mechanical load in
+the reduced model, not the autonomous 225 s NMPC case or its failed gates.
+
 ![Published WaveStar NMPC float pitch and controller-command differences](docs/figures/wavestar-nmpc-published-gap.png)
 
 A subsequent [full 225 s `ode8` internal-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38591012516)

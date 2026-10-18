@@ -20,6 +20,13 @@ extrapolation of the two preceding acceleration samples. With factor 1, the
 initial pitch acceleration changes from 0.338370 to 0.519208 rad/s² and the
 first-9.95-s pitch history changes by 0.00272635 rad.
 
+The default run also saves the BC rod and motor's six-component positions,
+velocities, and accelerations at all 200 samples. Their body origins start at
+the world origin. The rod rotates with the B-to-C direction and translates so
+its C joint follows the arm; the motor origin rotates about B. A separate
+portable kinematics gate compares this geometry with the saved source poses
+and velocities before those bodies' mass and gravity enter the Python solve.
+
 This is a source numerical diagnostic, not proof that the published trajectory
 is physically converged or that the Python model should adopt the delayed
 feedback. It does not close the 225 s WaveStar parity case.
@@ -53,6 +60,12 @@ np.savez_compressed(
     factor_one_pitch=factor_one['pitch'].ravel(),
     factor_one_speed=factor_one['speed'].ravel(),
     factor_one_acceleration=factor_one['acceleration'],
+    aux4_position=default['aux4Position'],
+    aux4_velocity=default['aux4Velocity'],
+    aux4_acceleration=default['aux4Acceleration'],
+    aux5_position=default['aux5Position'],
+    aux5_velocity=default['aux5Velocity'],
+    aux5_acceleration=default['aux5Acceleration'],
 )
 ```
 

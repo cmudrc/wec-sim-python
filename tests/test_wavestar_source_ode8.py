@@ -117,7 +117,9 @@ def test_source_ode8_precontrol_motion_on_two_refined_steps():
     errors = {}
     for label, dt, stride, pitch_limit, speed_limit in (
         ("25ms", .025, 2, 1e-5, 3e-5),
-        ("12p5ms", .0125, 4, 5e-6, 1.5e-5),
+        # The rod and motor's projected load removes most of the remaining
+        # refined-step pitch gap in this independently advanced source path.
+        ("12p5ms", .0125, 4, 1.5e-6, 1.5e-5),
     ):
         response = run_wavestar_published(
             HYDRO, sea, dt=dt, end_time=9.95, ramp_time=25,
