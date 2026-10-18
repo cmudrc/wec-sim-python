@@ -2334,6 +2334,19 @@ closed-loop motion remains open.
 
 ![Full-duration direct WaveStar NMPC controller replay](docs/figures/wavestar-nmpc-direct-controller-gap.png)
 
+A separate [R2025b Simulink modal probe](tests/matlab/wavestar_ode8_modal_probe.m)
+isolates the published WaveStar radiation fit from its plant and controller.
+All 92 active fitted radiation poles damp under one fixed-step `ode8` update
+at the published 50 ms step (largest amplification `0.99405`). The Python
+runner's RK4 update makes 18 of those modes unstable (largest amplification
+`8.697`); at 25 ms, RK4 keeps all 92 stable. A forced one-step SciPy DOP853
+update also keeps all 92 stable at 50 ms, but differs from source `ode8` by
+up to `0.04190` in complex amplification; even exact linear evolution differs
+by `0.01304`. The [portable gate and pinned source factors](tests/fixtures/matlab/wavestar_ode8_modes/README.md)
+make this solver distinction reproducible. This is an uncoupled one-step
+diagnostic, not a closed-loop motion gate or evidence that replacing the
+physical solver with DOP853 would reproduce the published 225 s case.
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001
