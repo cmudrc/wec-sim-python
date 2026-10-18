@@ -254,6 +254,8 @@ def jonswap_equal_energy_components(
                  else np.exp(5.75 - 1.15 * ratio))
     if not np.isfinite(gamma) or gamma <= 0:
         raise ValueError("JONSWAP gamma must be positive and finite")
+    if 1 - .287 * np.log(gamma) <= 0:
+        raise ValueError("JONSWAP gamma makes spectral normalization nonpositive")
     return _equal_energy_components(
         h5_file, significant_height=significant_height,
         peak_period=peak_period, directions=directions, spreading=spreading,
