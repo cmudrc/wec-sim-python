@@ -47,8 +47,10 @@ def test_autonomous_nmpc_full_duration_energy_and_envelope():
     # on three consecutive controlled intervals as well as on the total.
     source_work = np.trapezoid(source_power, response.time)
     python_work = np.trapezoid(python_power, response.time)
+    print(f"total signed PTO work: MATLAB {source_work:.12f} J, "
+          f"Python {python_work:.12f} J")
     assert source_work < -100
-    assert abs(python_work - source_work) / abs(source_work) < .001
+    total_gap = abs(python_work - source_work) / abs(source_work)
 
     for start, stop in ((15, 75), (75, 150), (150, 225)):
         window = (response.time >= start) & (response.time <= stop)
@@ -58,17 +60,22 @@ def test_autonomous_nmpc_full_duration_energy_and_envelope():
         python_window_work = np.trapezoid(
             python_power[window], response.time[window],
         )
+        window_gap = abs(python_window_work - source_window_work) / abs(source_window_work)
+        print(f"{start}–{stop} s signed-work gap: {window_gap:.6%}")
         assert source_window_work < -10
-        assert (abs(python_window_work - source_window_work)
-                / abs(source_window_work)) < .005
+        assert window_gap < .005
 
         # Compare motion/force scale in each interval. The source's
         # step-sensitive NMPC feedback still prevents pointwise parity.
-        for actual, expected, tolerance in (
-            (response.angle, source_body[:, 5], .01),
-            (response.angular_speed, source_body[:, 11], .01),
-            (response.pto_force, source_pto[:, 33], .02),
+        for label, actual, expected, tolerance in (
+            ("pitch", response.angle, source_body[:, 5], .01),
+            ("pitch speed", response.angular_speed, source_body[:, 11], .01),
+            ("PTO force", response.pto_force, source_pto[:, 33], .02),
         ):
             source_rms = _rms(expected[window])
             assert source_rms > 0
-            assert abs(_rms(actual[window]) - source_rms) / source_rms < tolerance
+            rms_gap = abs(_rms(actual[window]) - source_rms) / source_rms
+            print(f"{start}–{stop} s {label} RMS gap: "
+                  f"{rms_gap:.6%}")
+            assert rms_gap < tolerance
+    assert total_gap < .001
