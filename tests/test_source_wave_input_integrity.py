@@ -9,6 +9,7 @@ from scipy.io import savemat
 from wecsim.environment.irregularWave import (
     imported_full_directional_components,
     imported_spectrum_components,
+    jonswap_equal_energy_components,
     synthesize_irregular_response,
 )
 
@@ -112,3 +113,12 @@ def test_imported_spectrum_rejects_corrupt_matlab_bins(tmp_path, damage, message
     savemat(path, {} if damage == "missing" else {"spectrumData": values})
     with pytest.raises(ValueError, match=message):
         imported_spectrum_components(SPHERE, path)
+
+
+def test_jonswap_rejects_gamma_that_would_create_negative_spectral_density():
+    with pytest.raises(ValueError, match="spectral normalization nonpositive"):
+        jonswap_equal_energy_components(
+            SPHERE, significant_height=2.5, peak_period=8,
+            directions=np.array([0.]), spreading=np.array([1.]),
+            count=8, gamma=100, phase=np.zeros((8, 1)),
+        )
