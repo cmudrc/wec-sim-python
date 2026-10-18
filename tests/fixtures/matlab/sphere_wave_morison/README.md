@@ -16,10 +16,20 @@ and `c1ceb085a6ac0e488f46cbd7d03b4a976d22eeae496bb0a2a86ae3419e313618`.
 The workflow pins WEC-Sim core `0753b2e47f2457c078751dcfe5d251d1767b80ab`
 and Applications `d53d4d4c9eda2581f04204f5d394a6ef84bb099e`.
 
-The ordinary Python test independently advances the 40 s heave-only WEC
-from the HDF5 and published wave parameters. Saved source motion and force
-are comparison targets, never simulation inputs. It retains the existing
-full-duration wave, heave, speed, and post-startup force limits, and checks
-the source Morison law on the source's projected heave states. The source
-joint also permits surge and pitch, so this is a reduced-heave comparison;
-it does not add a published-case badge gate.
+The ordinary Python tests independently advance the 40 s heave-only and
+published surge/heave/pitch WEC configurations from the HDF5 and wave
+parameters. Saved source motion and force are comparison targets, never
+simulation inputs. The heave-only test retains its wave, motion, and
+post-startup force limits and checks the source Morison law on projected
+heave states.
+
+The three-coordinate test now gates all 4,001 wave and active-body samples.
+Maximum position differences are 12.19 mm surge, 1.003 mm heave, and
+`9.78e-5` rad pitch; speed differences are 1.312/1.316 mm/s and
+`4.57e-5` rad/s. After the first second, physical Morison load differences
+are 429 N surge, 149 N heave, and 175 N m pitch. It uses the same explicit
+limits as the earlier external-source three-coordinate test: 15/1.5 mm,
+`1.5e-4` rad, 2/2 mm/s, `6e-5` rad/s, and 500/200 N plus 250 N m.
+Inactive motion channels match zero. The source's startup acceleration
+feedback and nonorthogonal rotation convention remain documented limits;
+this strengthens an already counted Sphere case without adding a badge gate.
