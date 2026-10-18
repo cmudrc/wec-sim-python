@@ -1,5 +1,6 @@
 """Guard the MATLAB MAT sea inputs used by paired motion comparisons."""
 
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -7,9 +8,12 @@ import pytest
 from scipy.io import savemat
 
 from wecsim.environment.irregularWave import (
+    FullDirectionalComponents,
     imported_full_directional_components,
     imported_spectrum_components,
     jonswap_equal_energy_components,
+    pm_equal_energy_components,
+    synthesize_full_directional_response,
     synthesize_irregular_response,
 )
 
@@ -122,3 +126,91 @@ def test_jonswap_rejects_gamma_that_would_create_negative_spectral_density():
             directions=np.array([0.]), spreading=np.array([1.]),
             count=8, gamma=100, phase=np.zeros((8, 1)),
         )
+
+
+def test_pm_sea_rejects_corrupt_energy_and_phase_before_bem_read(tmp_path):
+    sea = pm_equal_energy_components(
+        SPHERE, significant_height=1, peak_period=8,
+        directions=np.array([0.]), spreading=np.array([1.]),
+        count=8, seed=17,
+    )
+    settings = dict(dt=.1, end_time=.2, ramp_time=.1)
+    valid = synthesize_irregular_response(SPHERE, sea, **settings)
+    assert valid.elevation[0] == 0
+    assert np.isfinite(valid.excitation_force).all()
+    assert np.max(np.abs(valid.excitation_force)) > 0
+
+    # No BEM file is available to the bad calls. The input error must be
+    # reported first, before an invalid sea can enter an equation of motion.
+    missing_bem = tmp_path / "missing.h5"
+    bad_seas = (
+        replace(sea, spectral_amplitude=np.full(8, -.01)),
+        replace(sea, d_omega=np.zeros(8)),
+        replace(sea, omega=sea.omega[::-1]),
+        replace(sea, phase=np.zeros((8, 2))),
+        replace(sea, spreading=np.array([.9])),
+    )
+    for bad in bad_seas:
+        with pytest.raises(ValueError, match="wave components|directions and spreading"):
+            synthesize_irregular_response(missing_bem, bad, **settings)
+
+
+def test_pm_seed_and_explicit_phases_identify_the_same_realized_sea():
+    settings = dict(
+        significant_height=1, peak_period=8,
+        directions=np.array([0.]), spreading=np.array([1.]), count=8,
+    )
+    seeded = pm_equal_energy_components(SPHERE, **settings, seed=17)
+    explicit = pm_equal_energy_components(SPHERE, **settings,
+                                          phase=seeded.phase)
+    np.testing.assert_array_equal(explicit.omega, seeded.omega)
+    np.testing.assert_array_equal(explicit.phase, seeded.phase)
+    source = synthesize_irregular_response(
+        SPHERE, seeded, dt=.1, end_time=.2, ramp_time=0,
+    )
+    replay = synthesize_irregular_response(
+        SPHERE, explicit, dt=.1, end_time=.2, ramp_time=0,
+    )
+    np.testing.assert_array_equal(replay.elevation, source.elevation)
+    np.testing.assert_array_equal(replay.excitation_force,
+                                  source.excitation_force)
+
+    # Ambiguous or malformed bins must fail before a realization can be
+    # mistaken for the pinned MATLAB phase record.
+    bad_settings = (
+        ({"seed": 17, "phase": seeded.phase}, "either phase or seed"),
+        ({"count": 1}, "count must be"),
+        ({"phase": np.zeros((8, 2))}, "phase must have shape"),
+        ({"frequency_range": (.8, .6)}, "frequency_range needs"),
+    )
+    for change, message in bad_settings:
+        with pytest.raises(ValueError, match=message):
+            pm_equal_energy_components(SPHERE, **{**settings, **change})
+
+
+def test_full_directional_sea_rejects_corrupt_quadrature_before_bem_read(tmp_path):
+    sea = FullDirectionalComponents(
+        omega=np.array([.6, .8]),
+        spectral_amplitude=np.full((2, 2), .01),
+        d_omega=np.full(2, .1),
+        directions=np.array([0., 30.]),
+        d_theta=np.full(2, np.deg2rad(30)),
+        phase=np.zeros((2, 2)),
+    )
+    settings = dict(dt=.1, end_time=.2, ramp_time=.1)
+    valid = synthesize_full_directional_response(OSWEC, sea, **settings)
+    assert valid.elevation[0] == 0
+    assert np.isfinite(valid.excitation_force).all()
+    assert np.max(np.abs(valid.excitation_force)) > 0
+
+    missing_bem = tmp_path / "missing.h5"
+    bad_seas = (
+        replace(sea, spectral_amplitude=np.full((2, 2), -.01)),
+        replace(sea, d_theta=np.zeros(2)),
+        replace(sea, omega=sea.omega[::-1]),
+        replace(sea, directions=sea.directions[::-1]),
+        replace(sea, phase=np.zeros((2, 1))),
+    )
+    for bad in bad_seas:
+        with pytest.raises(ValueError, match="full-directional components"):
+            synthesize_full_directional_response(missing_bem, bad, **settings)
