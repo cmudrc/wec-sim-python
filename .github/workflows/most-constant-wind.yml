@@ -68,6 +68,11 @@ jobs:
       - uses: matlab-actions/run-command@v3
         with:
           command: cd('applications/MOST/mostData/windTurbine/turbine_properties'); WTproperties_IEA15MW; BladeData_IEA15MW; cd('../control'); Steady_States_IEA15MW; Controller_IEA15MW; cd('../../../../..')
+      - name: Pin sustained-pitch controller inputs
+        if: matrix.label == 'sustained-pitch'
+        run: |
+          cp tests/fixtures/most/sustained_pitch/Control_IEA15MW.mat applications/MOST/mostData/windTurbine/control/Control_IEA15MW.mat
+          cp tests/fixtures/most/sustained_pitch/SteadyStates_IEA15MW.mat applications/MOST/mostData/windTurbine/control/SteadyStates_IEA15MW.mat
       - uses: matlab-actions/run-command@v3
         with:
           command: addpath(genpath(fullfile(pwd,'matlab-ref','source'))); addpath(fullfile(pwd,'tests','matlab')); most_wind_advection_baseline; most_constant_wind_source_baseline(${{ matrix.wind_speed }}, ${{ matrix.end_time }})

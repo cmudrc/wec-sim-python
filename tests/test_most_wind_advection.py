@@ -50,6 +50,23 @@ def test_most_wind_advection_sample_order_and_bounds():
         field.at_index(field.n_time)
 
 
+def test_single_cell_cross_section_interpolates_only_along_advection_axis():
+    from wecsim.environment.turbSim import TurbSimWind
+
+    components = np.array([1., 2., 3.])
+    velocity = np.arange(30)[:, None, None, None] * components[None, :, None, None]
+    wind = TurbSimWind(velocity, np.empty((30, 3, 0)),
+                       np.array([100.]), np.array([2.]),
+                       1., 10., 8., "")
+    field = MostWindField(wind, speed=10)
+    spatial_midpoint = field.at_index(0)[:, :2, 0, 0].mean(axis=1)
+    np.testing.assert_allclose(field.sampler(0)([-25., 100., 2.]),
+                               spatial_midpoint, rtol=0, atol=1e-14)
+    np.testing.assert_allclose(field.sampler_at(.5)([-25., 100., 2.]),
+                               spatial_midpoint + .5 * components,
+                               rtol=0, atol=1e-14)
+
+
 @pytest.mark.skipif(not os.environ.get("WEC_SIM_MOST_ADVECTION_DIR"),
                     reason="pinned MATLAB MOST advection output not provided")
 def test_most_wind_planes_against_run_turbsim():
