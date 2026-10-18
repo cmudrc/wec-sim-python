@@ -64,6 +64,11 @@ for arm = 1:2
         'Published ode45 maximum step changed');
     if arm == 2
         set_param(modelName, 'MaxStep', '0.025');
+    elseif auditEndTime == 400
+        % Retain the accepted solver times so the saved-grid added-mass
+        % recurrence can be checked against actual off-grid steps.
+        set_param(modelName, 'SaveTime', 'on', 'TimeSaveName', 'tout', ...
+            'Decimation', '1', 'Refine', '1');
     end
     maxStep = str2double(get_param(modelName, 'MaxStep'));
     writematrix([simu.dt, simu.endTime, simu.rampTime, maxStep], ...
@@ -75,6 +80,10 @@ for arm = 1:2
         assignin('base', names{j}, eval(names{j}));
     end
     sim(simu.simMechanicsFile, [], simset('SrcWorkspace', 'parent'));
+    if arm == 1 && auditEndTime == 400
+        assert(exist('tout', 'var') == 1, 'Solver times were not logged');
+        writematrix(tout(:), fullfile(outDir, 'published_internal_times.csv'));
+    end
     run('stopWecSim');
     sampleCount = round(auditEndTime / simu.dt) + 1;
     assert(numel(output.bodies(1).time) == sampleCount && ...
@@ -92,6 +101,17 @@ for arm = 1:2
     writematrix([record.time(:), record.position(:, 3), ...
         record.velocity(:, 3), record.forceInternalMechanics(:, 3)], ...
         fullfile(outDir, [label '_pto.csv']));
+    if arm == 1 && auditEndTime == 400
+        for iBody = 1:2
+            writematrix(output.bodies(iBody).acceleration, ...
+                fullfile(outDir, sprintf('published_body%d_acceleration.csv', iBody)));
+            applied = body(iBody).hydroForce.hf1.storage;
+            writematrix(applied.output_forceAddedMass, ...
+                fullfile(outDir, sprintf('published_body%d_added_force.csv', iBody)));
+            writematrix(applied.hydroForce_fAddedMass, ...
+                fullfile(outDir, sprintf('published_body%d_added_matrix.csv', iBody)));
+        end
+    end
     close_system(modelName, 0);
     clear output;
 end
