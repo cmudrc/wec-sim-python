@@ -138,9 +138,15 @@ def replay_rm3_fitted_radiation(
             A = np.asarray(fit["A/all"])
             B = np.asarray(fit["B/all"])
             C = np.asarray(fit["C/all"])
-            if (orders.shape != (6, 12) or A.shape[:2] != (6, 12)
-                    or B.shape[:2] != (6, 12) or C.shape[:2] != (6, 12)
-                    or not np.all(orders == np.floor(orders))):
+            if (orders.shape != (6, 12)
+                    or not np.isfinite(orders).all()
+                    or not np.all(orders == np.floor(orders))
+                    or A.ndim != 4 or A.shape[:2] != (6, 12)
+                    or A.shape[2] != A.shape[3]
+                    or B.shape != (6, 12, A.shape[2], 1)
+                    or C.shape != (6, 12, 1, A.shape[2])
+                    or not all(np.isfinite(matrix).all()
+                               for matrix in (A, B, C))):
                 raise ValueError("expected a two-body six-DOF radiation fit")
             for output_dof in range(6):
                 for input_body in range(2):

@@ -76,3 +76,37 @@ def test_fitted_radiation_replay_matches_first_order_step_response(
          1025 * 6 * 4 * 2 / 3],
         rtol=1e-12, atol=1e-9,
     )
+
+
+@pytest.mark.parametrize("coefficient", ("A/all", "B/all", "C/all"))
+def test_fitted_radiation_rejects_nonfinite_hdf5_coefficients(tmp_path,
+                                                              coefficient):
+    """A corrupted fit must not return a nonfinite force history as a result."""
+    hydro = tmp_path / "corrupted_rm3.h5"
+    _first_order_fit(hydro)
+    with h5py.File(hydro, "r+") as h5:
+        fit = h5["body1/hydro_coeffs/radiation_damping/state_space"]
+        fit[coefficient][1, 1, 0, 0] = np.nan
+
+    time = np.arange(3) * .1
+    velocity = np.ones((3, 2, 6))
+    with pytest.raises(ValueError, match="radiation fit"):
+        RadiationStateSpace.from_rm3_hdf5(hydro)
+    with pytest.raises(ValueError, match="radiation fit"):
+        replay_rm3_fitted_radiation(hydro, time, velocity)
+
+
+def test_fitted_radiation_rejects_mismatched_hdf5_state_dimensions(tmp_path):
+    hydro = tmp_path / "mismatched_rm3.h5"
+    _first_order_fit(hydro)
+    with h5py.File(hydro, "r+") as h5:
+        fit = h5["body1/hydro_coeffs/radiation_damping/state_space"]
+        del fit["B/all"]
+        fit.create_dataset("B/all", data=np.zeros((6, 12, 2, 1)))
+
+    time = np.arange(3) * .1
+    velocity = np.ones((3, 2, 6))
+    with pytest.raises(ValueError, match="radiation fit"):
+        RadiationStateSpace.from_rm3_hdf5(hydro)
+    with pytest.raises(ValueError, match="radiation fit"):
+        replay_rm3_fitted_radiation(hydro, time, velocity)
