@@ -2347,6 +2347,24 @@ make this solver distinction reproducible. This is an uncoupled one-step
 diagnostic, not a closed-loop motion gate or evidence that replacing the
 physical solver with DOP853 would reproduce the published 225 s case.
 
+An opt-in `run_wavestar_published(..., solver="wecsim_ode8")` path now
+advances the pinned plant with the Prince-Dormand 8(7)13M tableau and
+WEC-Sim's delayed added-mass history. Its tableau reproduces all 92
+archived Simulink `ode8` modal amplification factors within `1e-10`.
+Without reading source poses, forces, or accelerations, it reproduces the
+published first 9.95 s before NMPC activation to within `1.42e-5` rad
+float pitch and `1.19e-4` rad/s pitch speed. These are direct paired gates
+using only pinned HDF5 hydrodynamics and wave phases as inputs; the default
+physical mass-matrix solver remains unchanged. A local 20 s run with the
+Python NMPC active from 15 s still has maximum pitch, pitch-speed, and PTO
+force gaps of `0.001187` rad, `0.009704` rad/s, and `0.8224` N. An
+independent full 225 s Python run remains finite and reduces the maximum
+published-source gaps to `0.01536` rad pitch, `0.07490` rad/s pitch speed,
+and `6.358` N axial PTO force; signed PTO work differs by `0.0647%`.
+These full-duration differences are measured diagnostics, not a passing
+pointwise parity gate. The case remains `open_motion`, and no badge count
+changes.
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001
