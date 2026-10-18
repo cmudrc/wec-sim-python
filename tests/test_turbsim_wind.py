@@ -7,7 +7,8 @@ import numpy as np
 import pytest
 from scipy.io import loadmat
 
-from wecsim import read_turbsim_bts
+from wecsim import MostWindField, read_turbsim_bts
+from wecsim.environment.turbSim import TurbSimWind
 
 
 def test_small_bts_grid_order_scaling_and_tower(tmp_path):
@@ -32,6 +33,28 @@ def test_small_bts_grid_order_scaling_and_tower(tmp_path):
     short.write_bytes(path.read_bytes()[:-2])
     with pytest.raises(ValueError, match="file size"):
         read_turbsim_bts(short)
+
+
+@pytest.mark.parametrize("dz, dy, dt", [
+    (5., 4., 0.), (5., -4., .5), (np.nan, 4., .5),
+])
+def test_bts_rejects_invalid_spacing_before_advection(tmp_path, dz, dy, dt):
+    path = tmp_path / "invalid-spacing.bts"
+    header = struct.pack(
+        "<h4i12fi", 7, 2, 2, 0, 2, dz, dy, dt, 8, 20, 10,
+        2, 10, 4, -2, 5, 1, 0,
+    )
+    path.write_bytes(header + np.zeros(2 * 3 * 2 * 2, dtype="<i2").tobytes())
+    with pytest.raises(ValueError, match="spatial or time metadata"):
+        read_turbsim_bts(path)
+
+
+def test_advection_rejects_zero_time_step_from_direct_wind_data():
+    wind = TurbSimWind(np.zeros((30, 3, 2, 2)), np.empty((30, 3, 0)),
+                       np.array([-100., 100.]), np.array([0., 1.]),
+                       0., 10., 8., "")
+    with pytest.raises(ValueError, match="time step"):
+        MostWindField(wind)
 
 
 @pytest.mark.skipif(
