@@ -2364,6 +2364,13 @@ published 50 ms step; they do not establish physical convergence.
 A local 20 s run with the
 Python NMPC active from 15 s still has maximum pitch, pitch-speed, and PTO
 force gaps of `0.001187` rad, `0.009704` rad/s, and `0.8224` N. An
+additional local [direct QP check](tests/fixtures/matlab/wavestar_nmpc_independent_qp/README.md)
+feeds the published MATLAB `NMPC.m` the observer states and forecasts produced
+by Python's own 30 s source-style run. Across all 301 active samples, MATLAB
+`quadprog` and independent Python QP commands differ by at most
+`1.03e-5` N m (`6.06e-7` N m RMS). This supports the controller optimization
+implementation on independent motion inputs; it does not close the coupled
+trajectory gap. An
 independent full 225 s Python run remains finite and reduces the maximum
 published-source gaps to `0.01536` rad pitch, `0.07490` rad/s pitch speed,
 and `6.358` N axial PTO force; signed PTO work differs by `0.0647%`.
