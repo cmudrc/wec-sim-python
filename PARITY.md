@@ -2402,6 +2402,18 @@ same run's pointwise pitch difference reaches `0.01536` rad, and the source
 closed loop varies across execution environments, so this does not establish
 trajectory parity or change the `open_motion` label or badge count.
 
+The full-duration signed-work gate is qualified by numerical backend. A
+[Linux x86 diagnostic](https://github.com/cmudrc/wec-sim-python/actions/runs/39130161541)
+produced `-169.809` J on an EPYC 9V45, but `-169.496` J when that same
+runner used NumPy's x86-v3 dispatch with a Haswell BLAS kernel. The latter
+misses the unchanged `0.1%` work limit against `-169.702` J MATLAB; it also
+appeared in the independent [EPYC 7763 run](https://github.com/cmudrc/wec-sim-python/actions/runs/39129639938).
+Changing BLAS thread count alone did not change the result on one EPYC 9V74.
+The strict test therefore runs as a separate Apple silicon check, matching
+the architecture of the measured local gate, and is excluded from the Linux
+coverage suite. It is an architecture-qualified functional check, not a
+portable published-motion parity claim. The WaveStar case stays open.
+
 The next WaveStar change remains a [draft, unmerged PR](https://github.com/cmudrc/wec-sim-python/pull/525).
 It paired the first 9.95 s of the published 50 ms source within `6.77e-8`
 rad pitch using smooth solver-stage excitation and the light BC rod and motor.
