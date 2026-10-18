@@ -59,6 +59,6 @@ Variable_Hydro/Passive_Yaw,mixed_modes,Published regular-wave motion and opt-in 
 Variable_Hydro/Variable_Mass,independent_motion,
 WECCCOMP/WECCCOMP,independent_motion,
 WECCCOMP/WECCCOMP_Fault_Implementation,independent_motion,
-WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive,open_motion,Derived full-duration source-command plant motion and autonomous aggregate outputs are gated; a full-duration direct-input controller command gate passes; a 225 s matched controller-clock audit isolates substantial MATLAB plant-step sensitivity while the published full closed-loop trajectory remains unpaired.
+WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive,open_motion,Derived source-command plant and controller gates pass but the published full closed loop remains unpaired; draft PR 525 fails unchanged 225 s source-ode8 and physical-default aggregate limits; compare pinned Linux and macOS Python trajectories to locate their first divergence before revising delayed-added-mass coupling.
 Wave_Markers/OSWEC,independent_motion,
 Wave_Markers/RM3,independent_motion,

@@ -675,6 +675,14 @@ The long-term goal remains evidence-backed functional parity. The current
 investigation phase records the work that can be established with independent
 evidence while source numerical limitations keep some published badges below
 100%.
+The current ledger classifies all 63 inputs: 50 have independent motion gates,
+two stationary cases have full-duration force gates, ten are qualified or
+mixed-mode, and WaveStar NMPC remains open. The core RM3, OSWEC, and Sphere
+published-motion count is 39/46. A qualified result documents a measured
+limit; it does not add to the passing badge fraction. Case investigation is
+reasonably closed when every open input has a specific remaining experiment
+or external blocker. Only then does the next phase prioritize behavior-focused
+line-and-branch coverage toward 90%.
 Badge fractions continue to count only full published-input gates. First use
 local R2025b to resolve distinct, bounded questions in the seven remaining
 RM3 and OSWEC published inputs; Sphere is already 12/12. Prioritize an
@@ -2331,6 +2339,24 @@ fixture](tests/fixtures/matlab/wavestar_nmpc_full_step/README.md) and test
 lock down this source-input component. The observer, forecast, and plant still
 run independently only in their separate checks, and published WaveStar
 closed-loop motion remains open.
+
+The next WaveStar change remains a [draft, unmerged PR](https://github.com/cmudrc/wec-sim-python/pull/525).
+It paired the first 9.95 s of the published 50 ms source within `6.77e-8`
+rad pitch using smooth solver-stage excitation and the light BC rod and motor.
+Two independent full-duration gates then failed on that same head: ordinary
+Linux CI measured `0.014996` rad peak pitch difference against its `0.012`
+rad bounded source-ode8 gate, and a fresh MATLAB fine-step run measured
+`1.5238%` physical-default split-step pitch-peak difference against the
+existing `0.5%` aggregate gate. The source itself changes by `0.007543` rad
+between identical-input hosted and local 225 s runs, and changing its plant
+step with the controller clock fixed changes pitch by `0.0903275` rad. These
+measurements explain why a single pointwise full-duration target is unstable;
+they do not establish parity for the physical default, whose local published
+PTO-work gap remains `5.95%`. The numerical gates remain unchanged and the
+case stays `open_motion`. The bounded next experiment is to locate the first
+Linux-versus-macOS divergence under the pinned Python input before revising
+the source-style delayed-added-mass coupling; there is no reason to repeat the
+same MATLAB source run unchanged.
 
 ![Full-duration direct WaveStar NMPC controller replay](docs/figures/wavestar-nmpc-direct-controller-gap.png)
 
