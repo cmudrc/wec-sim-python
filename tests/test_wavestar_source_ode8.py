@@ -14,6 +14,8 @@ ROOT = Path(__file__).parent / "fixtures/matlab"
 HYDRO = ROOT / "wavestar_fixed_input_step/wavestar.h5"
 SOURCE = ROOT / "wavestar_fixed_input_step/source.npz"
 FULL_SOURCE = ROOT / "wavestar_nmpc_full_step/baseline.npz"
+AUXILIARY = ROOT / "wavestar_auxiliary_mass/source.npz"
+ORIGINAL_AUXILIARY = ROOT / "wavestar_added_mass_delay/source.npz"
 
 
 def _published_sea(components):
@@ -37,6 +39,39 @@ def test_public_source_ode8_closes_the_precontrol_motion_gap():
     # hydrodynamics and the published wave phases set its inputs.
     assert np.max(np.abs(response.angle - body[:, 5])) < 2e-5
     assert np.max(np.abs(response.angular_speed - body[:, 11])) < 1.5e-4
+
+
+def test_light_auxiliary_bodies_have_bounded_precontrol_effect():
+    """A source run removes BC/motor inertia while keeping the 50 ms sea."""
+    with np.load(SOURCE, allow_pickle=False) as published, \
+            np.load(AUXILIARY, allow_pickle=False) as auxiliary, \
+            np.load(ORIGINAL_AUXILIARY, allow_pickle=False) as original:
+        sea = _published_sea(published["50ms_components"])
+        source_time = published[
+            "50ms_WECCCOMP_Nonlinear_Model_Predictive_body1"
+        ][:, 0]
+        assert auxiliary["auxiliary_mass"] == 1e-9
+        np.testing.assert_allclose(auxiliary["time"], source_time,
+                                   rtol=0, atol=1e-12)
+        initial_change = (auxiliary["acceleration"][0, 4]
+                          - original["acceleration"][0, 4])
+        assert 3.8e-5 < initial_change < 4e-5
+        assert np.max(np.abs(
+            auxiliary["pitch"] - original["pitch"]
+        )) < 3e-6
+        assert np.max(np.abs(
+            auxiliary["speed"] - original["speed"]
+        )) < 1.1e-5
+        response = run_wavestar_published(
+            HYDRO, sea, dt=.05, end_time=9.95, ramp_time=25,
+            g=9.80665, solver="wecsim_ode8",
+        )
+        # This is a diagnostic source variant. The published case is gated
+        # separately above, and its original small bodies remain in source.
+        assert np.max(np.abs(response.angle - auxiliary["pitch"])) < 2e-5
+        assert np.max(np.abs(
+            response.angular_speed - auxiliary["speed"]
+        )) < 1.5e-4
 
 
 def test_source_ode8_precontrol_motion_on_two_refined_steps():
