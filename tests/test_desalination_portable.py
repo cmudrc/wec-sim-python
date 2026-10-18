@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from wecsim.components.crank import PitchRodLinkage
 from wecsim.components.desalination import (
@@ -58,6 +59,25 @@ def test_desalination_network_conserves_instantaneous_flow():
     np.testing.assert_allclose(forward, reverse[::-1], rtol=0, atol=1e-7)
     np.testing.assert_allclose(valves.rod_force(.1, step.pressure),
                                .02 * (forward[0] - forward[1]))
+
+
+def test_relief_valve_keeps_finite_opening_and_signed_flow():
+    valve = _hydraulics()[0].relief
+    area = valve.next_area(2.2e6, valve.leakage_area, .01)
+    assert valve.leakage_area < area < valve.max_area
+    assert valve.flow(0, area) == 0
+    assert valve.flow(1e5, area) > 0
+    assert valve.flow(-1e5, area) < 0
+
+    for pressure, previous_area, dt in (
+        (np.nan, area, .01), (2e6, np.inf, .01),
+        (2e6, -area, .01), (2e6, area, 0),
+    ):
+        with pytest.raises(ValueError, match="relief opening"):
+            valve.next_area(pressure, previous_area, dt)
+    for pressure_drop, flow_area in ((np.nan, area), (1e5, -area)):
+        with pytest.raises(ValueError, match="relief flow"):
+            valve.flow(pressure_drop, flow_area)
 
 
 def test_short_desalination_run_maps_rod_speed_and_force():

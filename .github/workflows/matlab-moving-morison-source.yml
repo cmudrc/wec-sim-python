@@ -1,0 +1,65 @@
+name: MATLAB moving Morison source
+
+on:
+  push:
+    paths:
+      - '.github/workflows/matlab-moving-morison-source.yml'
+      - 'tests/matlab/morison_moving_force_probe.m'
+      - 'tests/test_morison_moving_source.py'
+      - 'tests/fixtures/matlab/morison_moving_regular/**'
+      - 'wecsim/hydrodynamics/morison/**'
+  workflow_dispatch:
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: |
+            source/functions/BEMIO
+            source/functions/simulink/model
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            addpath('tests/matlab');
+            morison_moving_force_probe('matlab-ref',
+            'tests/fixtures/matlab/morison_moving_regular/MORISON_MOVING_REGULAR_states.csv',
+            'matlab-morison-output')
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -e . pytest
+      - run: python -m pytest -q tests/test_morison_moving_source.py
+        env:
+          WEC_SIM_MATLAB_MODEL_OUTPUT_DIR: matlab-morison-output
+      - name: Check fresh source against archived portable baselines
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import numpy as np
+
+          archived = Path('tests/fixtures/matlab/morison_moving_regular')
+          fresh = Path('matlab-morison-output')
+          for baseline in sorted(archived.glob('*.csv')):
+              expected = np.loadtxt(baseline, delimiter=',')
+              actual = np.loadtxt(fresh / baseline.name, delimiter=',')
+              assert expected.shape == actual.shape == (8, 25), baseline.name
+              error = float(np.max(np.abs(actual - expected)))
+              assert error < 1e-9, (baseline.name, error)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: matlab-moving-morison-source
+          path: matlab-morison-output/*.csv

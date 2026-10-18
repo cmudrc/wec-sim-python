@@ -59,6 +59,6 @@ Variable_Hydro/Passive_Yaw,mixed_modes,Published regular-wave motion and opt-in 
 Variable_Hydro/Variable_Mass,independent_motion,
 WECCCOMP/WECCCOMP,independent_motion,
 WECCCOMP/WECCCOMP_Fault_Implementation,independent_motion,
-WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive,open_motion,Derived full-duration source-command plant motion and autonomous aggregate outputs are gated; a full-duration direct-input controller command gate passes; a 225 s matched controller-clock audit isolates substantial MATLAB plant-step sensitivity while the published full closed-loop trajectory remains unpaired.
+WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive,open_motion,Published 225 s autonomous NMPC motion remains unpaired. Draft PR 525 fails its unchanged x86 source-ode8 pitch gate (0.014996 versus 0.012 rad) and derived split-step Python/source pitch-peak gate (1.5238% versus 0.5%). Full-duration reciprocal prescribed-command plant and matched-input controller gates pass; a single 0.0001 N m MATLAB request pulse grows to 0.0131 rad pitch difference. Independent closed-loop feedback amplifies small numerical differences across platforms; a cross-platform stable autonomous 225 s pointwise gate is missing.
 Wave_Markers/OSWEC,independent_motion,
 Wave_Markers/RM3,independent_motion,

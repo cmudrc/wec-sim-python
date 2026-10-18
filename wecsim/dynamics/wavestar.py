@@ -187,12 +187,23 @@ def run_wavestar_published(
         restoring = (np.asarray(hydro["linear_restoring_stiffness"])
                      * rho * g)
         fit = hydro["radiation_damping/state_space"]
-        order = np.asarray(fit["it"], dtype=int)
+        raw_order = np.asarray(fit["it"])
         matrix_a = np.asarray(fit["A/all"])
         matrix_b = np.asarray(fit["B/all"])
         matrix_c = np.asarray(fit["C/all"]) * rho
+    if (raw_order.shape != (6, 6) or not np.isfinite(raw_order).all()
+            or not np.all(raw_order == np.floor(raw_order))
+            or matrix_a.ndim != 4 or matrix_a.shape[:2] != (6, 6)
+            or matrix_a.shape[2] != matrix_a.shape[3]
+            or matrix_b.shape != (6, 6, matrix_a.shape[2], 1)
+            or matrix_c.shape != (6, 6, 1, matrix_a.shape[2])
+            or not all(np.isfinite(matrix).all()
+                       for matrix in (matrix_a, matrix_b, matrix_c))
+            or np.any(raw_order < 0)
+            or np.any(raw_order > matrix_a.shape[2])):
+        raise ValueError("WaveStar HDF5 needs a finite six-DOF radiation fit")
+    order = raw_order.astype(int)
     if (added_mass.shape != (6, 6) or restoring.shape != (6, 6)
-            or order.shape != (6, 6) or np.any(order < 0)
             or not np.isfinite(added_mass).all()
             or not np.isfinite(restoring).all()):
         raise ValueError("WaveStar HDF5 needs six-DOF hydrodynamics")

@@ -152,6 +152,17 @@ def test_rotational_pto_rejects_translation_before_reserving_its_name():
     }]
 
 
+@pytest.mark.parametrize("damping", [True, np.bool_(True), -1, np.nan])
+def test_rotational_pto_rejects_invalid_damping_before_reserving_name(damping):
+    wec, body, _ = _heave_wec()
+    pitch = wec.coordinate("pitch", body.move("pitch"))
+    with pytest.raises(ValueError, match="finite nonnegative damping"):
+        wec.rotational_pto("hinge", pitch, damping=damping)
+    assert wec.rotational_ptos == []
+    wec.rotational_pto("hinge", pitch, damping=500)
+    assert wec.rotational_ptos[0].damping == 500
+
+
 def test_coordinate_rejects_invalid_motion_before_reserving_its_name():
     wec, body, heave = _heave_wec()
     invalid = (
@@ -181,7 +192,11 @@ def test_coordinate_rejects_invalid_motion_before_reserving_its_name():
     ({"linear_generator": DirectLinearGenerator(1, -1, 1, 1, 1, -1),
       "damping": 10}, "linear generator supplies its own PTO force"),
     ({"velocity_control_gain": -1}, "velocity_control_gain must be finite"),
+    ({"velocity_control_gain": np.bool_(True)},
+     "velocity_control_gain must be finite"),
     ({"position_control_gain": float("nan")},
+     "position_control_gain must be finite"),
+    ({"position_control_gain": np.bool_(True)},
      "position_control_gain must be finite"),
 ])
 def test_pto_rejects_conflicting_or_invalid_force_laws_atomically(settings, error):
@@ -327,3 +342,69 @@ def test_rejected_gbm_force_settings_do_not_select_layout():
     response = wec.run(RegularWave(0, 8), dt=.1, end_time=.2, ramp_time=0)
     assert response.case["constraint"]["kind"] == "floating_gbm"
     assert np.isfinite(response.bodies["barge"].position).all()
+
+
+def test_rejected_physical_body_arrays_do_not_reserve_the_body_name():
+    wec = WEC("body input recovery")
+    valid_drag = (1, 1, 1, 0, 0, 0)
+    invalid = (
+        ({"hydrostatic_stiffness": "not a matrix"}, "finite 6x6 matrix"),
+        ({"linear_damping": "not a matrix"}, "finite 6x6 matrix"),
+        ({"quadratic_drag": "not a matrix"}, "finite 6x6 matrix"),
+        ({"quadratic_drag_coefficient": ("bad",) * 6,
+          "quadratic_drag_area": valid_drag}, "six finite nonnegative values"),
+        ({"quadratic_drag_coefficient": valid_drag,
+          "quadratic_drag_area": ("bad",) * 6}, "six finite nonnegative values"),
+    )
+    for settings, message in invalid:
+        with pytest.raises(ValueError, match=message):
+            wec.body("sphere", SPHERE, **settings)
+        assert not wec.bodies
+
+    damping = np.zeros((6, 6))
+    damping[2, 2] = 100_000
+    body = wec.body(
+        "sphere", SPHERE, linear_damping=damping,
+        quadratic_drag_coefficient=valid_drag,
+        quadratic_drag_area=(100, 100, 100, 0, 0, 0),
+    )
+    wec.coordinate("heave", body.move("heave"))
+    result = wec.run(NoWave(), dt=.05, end_time=.2,
+                     radiation_memory=.1, initial_coordinate={"heave": .1})
+    assert wec.bodies == [body]
+    assert np.isfinite(result.bodies["sphere"].position).all()
+
+    reference = WEC("undamped reference")
+    plain = reference.body("sphere", SPHERE)
+    reference.coordinate("heave", plain.move("heave"))
+    undamped = reference.run(NoWave(), dt=.05, end_time=.2,
+                             radiation_memory=.1,
+                             initial_coordinate={"heave": .1})
+    # The accepted body settings must affect dynamics, not merely serialize.
+    assert (abs(result.bodies["sphere"].velocity[-1, 2])
+            < abs(undamped.bodies["sphere"].velocity[-1, 2]))
+
+
+def test_rejected_pto_force_settings_do_not_reserve_its_name():
+    wec, body, _ = _heave_wec()
+    endpoints = (WorldPoint(0, 0, -5), body.at(0, 0, 0))
+    invalid = (
+        ({"axis": ("bad", 0, 1)}, ValueError, "finite nonzero axis"),
+        ({"axis": (0, 0, 0)}, ValueError, "finite nonzero axis"),
+        ({"velocity_control_gain": "bad"}, ValueError,
+         "velocity_control_gain must be finite"),
+        ({"position_control_gain": "bad"}, ValueError,
+         "position_control_gain must be finite"),
+        ({"control": object()}, TypeError, "supported control law"),
+        ({"direct_drive": object()}, TypeError, "SimpleDirectDrive"),
+        ({"linear_generator": object()}, TypeError, "DirectLinearGenerator"),
+    )
+    for settings, error_type, message in invalid:
+        with pytest.raises(error_type, match=message):
+            wec.pto("main", *endpoints, **settings)
+        assert not wec.ptos
+
+    wec.pto("main", *endpoints, damping=500)
+    result = wec.run(NoWave(), dt=.05, end_time=.2,
+                     radiation_memory=.1, initial_coordinate={"heave": .1})
+    assert np.isfinite(result.ptos["main"].force).all()

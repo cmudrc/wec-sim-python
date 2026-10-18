@@ -88,7 +88,7 @@ def _vector(value, name):
 
 
 def _number(value, name, *, nonnegative=False):
-    if isinstance(value, bool):
+    if isinstance(value, (bool, np.bool_)):
         raise ValueError(f"{name} must be numeric")
     try:
         number = float(value)

@@ -76,6 +76,8 @@ class MostWindField:
     def __init__(self, wind: TurbSimWind, speed: float = 8.0):
         if not np.isfinite(speed) or speed <= 0:
             raise ValueError("wind advection speed must be positive and finite")
+        if not np.isfinite(wind.dt) or wind.dt <= 0:
+            raise ValueError("TurbSim time step must be positive and finite")
         y = np.asarray(wind.y, dtype=float)
         z = np.asarray(wind.z, dtype=float)
         if (y.ndim != 1 or z.ndim != 1 or not len(y) or not len(z)
@@ -193,6 +195,10 @@ def read_turbsim_bts(path: str | Path) -> TurbSimWind:
         raise ValueError(f"unsupported TurbSim format identifier {format_id}")
     if min(nz, ny, nt) <= 0 or ntwr < 0 or not 0 <= description_length <= 4096:
         raise ValueError("invalid TurbSim grid dimensions or description length")
+    # A one-cell axis has no neighbor spacing; the MATLAB reader permits zero.
+    if (not np.isfinite([dz, dy, dt, mean_speed, hub_height, z1]).all()
+            or dt <= 0 or (nz > 1 and dz <= 0) or (ny > 1 and dy <= 0)):
+        raise ValueError("invalid TurbSim spatial or time metadata")
     slopes = np.array([slope_u, slope_v, slope_w], dtype=float)
     offsets = np.array([offset_u, offset_v, offset_w], dtype=float)
     if not np.isfinite(slopes).all() or np.any(slopes == 0):

@@ -66,6 +66,25 @@ def test_published_rm3_regular_wave_body_and_pto_motion():
         ):
             _max_error(actual, expected, limit, f"RM3 PTO {label}")
 
+        # Pointwise power gates do not bound an accumulated output over 400 s.
+        # Check the complete run and separate ramp/steady intervals so errors
+        # in one part cannot cancel those in another.
+        source_absorbed_power = -source["pto_power"]
+        for start, stop in ((0, 400), (0, 100), (100, 250), (250, 400)):
+            window = (result.time >= start) & (result.time <= stop)
+            source_work = np.trapezoid(
+                source_absorbed_power[window], result.time[window],
+            )
+            python_work = np.trapezoid(
+                pto.absorbed_power[window], result.time[window],
+            )
+            assert source_work > 1e6
+            relative_gap = abs(python_work - source_work) / source_work
+            assert relative_gap < .01, (
+                f"RM3 PTO absorbed work {start}–{stop} s: "
+                f"{relative_gap:.4%} exceeds 1%"
+            )
+
 
 def test_published_rm3_heave_excitation_and_relative_pto():
     """Pair the reduced heave solver's independent wave and PTO force paths."""

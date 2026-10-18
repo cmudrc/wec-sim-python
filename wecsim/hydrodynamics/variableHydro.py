@@ -7,6 +7,7 @@ uses the combined rigid plus added mass in each state.
 """
 
 from dataclasses import dataclass
+from numbers import Real
 
 import numpy as np
 
@@ -46,6 +47,11 @@ def integrate_variable_heave(
     """Integrate a regular-wave heave model with complete state changes."""
     if len(states) < 2 or len(switch_times) != len(states) - 1:
         raise ValueError("variable heave needs one switch time between each state")
+    # Raw case files bypass WEC.variable_body; reject booleans before NumPy
+    # silently turns them into 0 and 1 second switch times.
+    if any(isinstance(value, (bool, np.bool_)) or not isinstance(value, Real)
+           for value in switch_times):
+        raise ValueError("variable heave switch times must be real numbers")
     switches = np.asarray(switch_times, dtype=float)
     steps = round(end_time / dt)
     if (not np.isfinite([dt, end_time, height, period, ramp_time, rho, g,

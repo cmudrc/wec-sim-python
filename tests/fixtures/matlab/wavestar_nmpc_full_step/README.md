@@ -50,6 +50,41 @@ requires four arguments: the pinned WEC-Sim checkout, pinned Applications
 checkout, this repository, and a fresh output directory. The Python script
 takes that output directory as its positional argument.
 
+## Reciprocal 225 s command and source-sensitivity checks
+
+On 2026-10-18, local R2025b ran the source plant with the 4,201 active torque
+requests from an autonomous Python `wecsim_ode8`/`WaveStarNmpcPTO` run. The
+only intervention was replacing `y(1)` after the pinned `NMPC.m` computes
+`y = Ubar`; MATLAB still advanced its own plant and evaluated the controller.
+The source sea and all body/PTO samples before controller activation exactly
+match an unchanged local source run. Source's logged active requests exactly
+equal Python's saved requests. Full-duration source/Python maximum gaps are
+`0.00013914` rad pitch, `0.00099627` rad/s speed, `27.36` µm PTO stroke, and
+`0.002330` N active axial PTO force. Signed PTO work differs by `0.0520%`.
+The [portable test](../../../test_wavestar_published_command_replay.py) uses
+the same limits as the source-command plant gate, with the force check on the
+active interval because source and Python have a small precontrol resistive
+law difference. `python_command_source.npz` holds the source outputs and
+Python requests; SHA-256 is
+`79bf0453dd2e40987cf9a74433b89f75d748859387c81529a08a8fad1d154709`.
+To regenerate the source run, export that fixture's active
+`python_command` as a 4,201-by-1 `codexCommand` MAT array and pass its path as
+the optional fifth argument to `wavestar_local_published_source`. The MATLAB
+runner modifies only its disposable application copy.
+
+A second local run changed one source NMPC request by `1e-4` N m on the 32nd
+active controller call (16.55 s), after `y = Ubar`. The source wave and all
+earlier motion are identical to the unchanged local run. This one-tick
+perturbation grows to `0.0131005` rad maximum pitch difference at 120.55 s,
+`0.0678542` rad/s maximum speed difference, and `1.19678` N m maximum later
+request difference. `source_command_pulse.npz` stores the two complete pitch
+and request histories; SHA-256 is
+`50d7004c165bfd582c5a61687a9c144fdece57349897a0573dfb3c3412afa79a`.
+The [source-sensitivity test](../../../test_wavestar_source_command_sensitivity.py)
+checks the first changed tick and the subsequent amplification. This is a
+MATLAB self-sensitivity diagnostic; it does not gate autonomous Python
+motion. The published WaveStar NMPC case remains open.
+
 ## Full-duration direct controller replay
 
 `direct_controller_inputs.npz` retains all 4,201 active NMPC samples from the

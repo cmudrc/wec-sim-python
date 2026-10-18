@@ -26,7 +26,7 @@ saves its MATLAB outputs as an artifact.
 | RM3 and OSWEC hydrodynamic preprocessing | Pinned R2025b `bodyClass.hydroForcePre` on both bodies of each geometry, using the same bundled HDF5 in MATLAB and Python | The four regular-CIC comparisons cover all hydrostatic restoring and infinite-frequency added-mass entries, 101 samples of each 6×6 radiation kernel, and all regular-wave excitation coefficients. The two additional OSWEC irregular comparisons cover three headings and 64 frequencies across all six excitation channels. Each Python body runs both from its HDF5 file and from an in-memory BEM structure, matching MATLAB's MCR input route. Restoring, added mass, and irregular excitation are bit-equal; the largest kernel and regular-excitation differences are `7.51e-9` and `4.66e-10` in their respective units, below fixed `1e-10` relative and `1e-5` absolute gates. A [compact source fixture](tests/fixtures/matlab/README.md) runs in ordinary CI and the MATLAB workflow regenerates fresh outputs. This checks force preprocessing, not coupled published-case motion. |
 | Current pinned RM3 HDF5 hydrodynamic preprocessing | Pinned R2025b `bodyClass.hydroForcePre` on both bodies of the core example's `rm3.h5` (`a909360c` SHA-256), with identical data read by Python from HDF5 or an in-memory BEM structure | Fresh paired regular-CIC gates cover 6×6 restoring and infinite-frequency added mass, 101 samples of each 6×6 radiation kernel, and complex excitation on all six channels. Restoring and added mass are bit-equal; local maximum kernel and excitation differences are `9.31e-10` and `4.66e-10`, below the same fixed `1e-10` relative and `1e-5` absolute limits. This separately checks the current core input, which differs from the bundled RM3 file; it does not gate coupled published-case motion. |
 | Published RM3 and OSWEC `Wave_Markers` elevations | Pinned MATLAB Applications inputs with 25 world XY markers, 400 s regular waves, and focused R2025b runs for [RM3](https://github.com/cmudrc/wec-sim-python/actions/runs/37934252549) and [OSWEC](https://github.com/cmudrc/wec-sim-python/actions/runs/37932186068) | Public `RegularWave.elevation_at` independently samples the source marker locations from wave height, period, direction, BEM water depth, and 100 s ramp. Against all 4,001 times and 25 markers per case, maximum elevation errors are `3.76e-11` m (RM3, 200 m depth) and `7.12e-14` m (OSWEC, 10.9 m depth), below a `1e-10` m gate. Source origin elevation and marker ordering are checked separately. Both complete numerical elevation pairs now run in ordinary Python CI from compact pinned fixtures, including the [RM3 source export](tests/fixtures/matlab/rm3_wave_markers/README.md). Marker glyph style, size, color, and visualization files remain unpaired. |
-| Published RM3 and OSWEC `Wave_Markers` body and PTO motion | The same pinned 400 s R2025b runs as the marker elevations above, including both bodies and the published linear PTO in each case | The public `WEC.floating_joint` and `WEC.fixed_hinge` builders independently advance the 2.5 m, 8 s regular-wave devices over all 4,001 samples. The paired gate checks all six position and velocity channels on both bodies and PTO stroke, speed, force, and absorbed power, with MATLAB's opposite power sign accounted for. RM3 maximum active errors are 36.8 mm body surge, 4.18 mm heave, `6.72e-4` rad pitch, 5.04 mm PTO stroke, 4.74 kN force, and 5.72 kW absorbed power; OSWEC maxima are 20.7 mm body surge, 7.91 mm heave, `0.00444` rad pitch, `0.00444` rad PTO stroke, 39.3 N m torque, and 19.8 W absorbed power. Inactive axes and the fixed OSWEC base agree within `1e-10` in their units. Both full-duration local pairs pass explicit per-channel limits. Compact source trajectories for [RM3 and OSWEC](tests/fixtures/matlab/README.md) now keep both full-body and PTO comparisons active in ordinary Python CI. The portable OSWEC run uses the bundled HDF5, while the existing external-source test uses the exact generated HDF5; both pass the same gates. These add durable checks to already counted cases. Marker glyph rendering remains unpaired. |
+| Published RM3 and OSWEC `Wave_Markers` body and PTO motion | The same pinned 400 s R2025b runs as the marker elevations above, including both bodies and the published linear PTO in each case | The public `WEC.floating_joint` and `WEC.fixed_hinge` builders independently advance the 2.5 m, 8 s regular-wave devices over all 4,001 samples. The paired gate checks all six position and velocity channels on both bodies and PTO stroke, speed, force, and absorbed power, with MATLAB's opposite power sign accounted for. RM3 maximum active errors are 36.8 mm body surge, 4.18 mm heave, `6.72e-4` rad pitch, 5.04 mm PTO stroke, 4.74 kN force, and 5.72 kW absorbed power; OSWEC maxima are 20.7 mm body surge, 7.91 mm heave, `0.00444` rad pitch, `0.00444` rad PTO stroke, 39.3 N m torque, and 19.8 W absorbed power. Inactive axes and the fixed OSWEC base agree within `1e-10` in their units. Both full-duration local pairs pass explicit per-channel limits. Compact source trajectories for [RM3 and OSWEC](tests/fixtures/matlab/README.md) now keep both full-body and PTO comparisons active in ordinary Python CI. The portable RM3 gate also integrates absorbed PTO power over the full 400 s and three ramp/steady windows: Python produces 93.517 MJ versus MATLAB's 92.782 MJ total, and the largest window work gap is 0.8034%, below a fixed 1% bound in each window. The portable OSWEC run uses the bundled HDF5, while the existing external-source test uses the exact generated HDF5; both pass the same gates. These add durable checks to already counted cases. Marker glyph rendering remains unpaired. |
 | RM3 HDF5 hydrodynamic input | Original `rm3.h5` | Both bodies load, including their names and water depth, under NumPy 2. |
 | Current RM3 and OSWEC HDF5 hydrodynamic inputs | Pinned current MATLAB core examples | Both bodies in each model load and complete regularCIC or directional irregular preprocessing with finite restoring, added-mass, excitation, and radiation arrays. This is input compatibility, not motion parity. |
 | RM3 regular-wave force preprocessing | Original MATLAB-generated `body_1_test` constants and files | Production `BodyClass` agrees for restoring stiffness, added mass, excitation, and radiation IRF through both HDF5 reading and in-memory `loadHydroData`; the RM3 runner now completes preprocessing. This is a force-preprocessing gate, not a new motion case. |
@@ -55,8 +55,8 @@ saves its MATLAB outputs as an artifact.
 | Sphere moving Morison with a power-law current, coupled diagnostic | A [fresh 40 s R2025b derived run](https://github.com/cmudrc/wec-sim-python/actions/runs/38022837805) keeps the pinned `Free_Decay/1m-ME` Sphere joint, 1 m/8 s regular wave, and axial heave coefficients while adding a 0.8 m/s, zero-heading, 30 m-deep one-seventh-power current. The run exports all 4,001 six-DOF body states and direct `regWaveMorison.m` current-minus-no-current force on those same states. | The wave elevation matches Python within `3.8e-15` m. The separate Python source-convention diagnostic reproduces the direct MATLAB current-force increment within `3.7e-12` N or N m across all 4,001 states (gate `1e-6`). MATLAB option 1 adds exactly zero heave force from this horizontal current and at most 24.7 N surge force and 49.4 N m pitch moment. The physical axial Python law on those same MATLAB states adds up to 1.172 kN heave force; its current increment differs from the source by up to 58.1 N surge and 49.4 N m pitch moment. Relative to their respective no-current runs, the 40 s source trajectories change by at most 0.321 mm surge and 0.000640 mm heave, while independent Python changes by 4.965 mm surge and 1.581 mm heave. Direct Python-versus-MATLAB current-run position differences reach 16.96 mm surge, 1.903 mm heave, and `1.203e-4` rad pitch. This **does not establish coupled current parity**: the source Cartesian option-1 coefficient transform and Python proper-rotation axial loading give different force channels at nonzero pitch. The physical Python default is retained. |
 | Sphere moving Morison heave free decay | The pinned `Free_Decay/1m-ME` application with its originally surge-only element changed to axial heave coefficients (`Cd=Ca=1`, area 100 m², volume 20 m³); [fresh R2025b run](https://github.com/cmudrc/wec-sim-python/actions/runs/37770321922) | The public `WEC.morison_element` couples body-local axial drag and acceleration-dependent added mass to a hydrodynamic heave body in still water. Over all 4,001 samples, independent Python motion differs by at most 0.325 mm heave and 0.952 mm/s speed. After the first second, physical Morison force differs by at most 43.2 N; the 40 s signed force-impulse difference is 198 N s. MATLAB logs its acceleration-feedback Morison force as zero at the first two samples and has a 41.2 kN pointwise difference from Python during startup; reconstructing MATLAB force from its *saved* acceleration only agrees within 14 N after 0.5 s. Python keeps implicit added mass rather than reproducing that source feedback transient. This derived case validates coupled single-body heave in still water. |
 | Sphere moving Morison heave in regular waves | The same pinned `Free_Decay/1m-ME` Sphere case, with heave coefficients above and a 1 m, 8 s regular wave ramped over 10 s; [passing R2025b paired run](https://github.com/cmudrc/wec-sim-python/actions/runs/37773024911) | The public single-body heave solver evaluates fluid velocity and acceleration at the moving body-local element, uses relative velocity for drag, and includes the element's added mass in the acceleration solve. Across 4,001 samples over 40 s, wave elevation differs by at most `3.8e-15` m, heave by 2.26 mm, and speed by 2.52 mm/s. After the first second, physical Morison force differs from the logged source force by at most 0.935 kN over a roughly 65 kN peak. The source floating joint also permits surge and pitch: its surge reaches 1.42 m and pitch 0.0293 rad, whereas the Python configuration only moves in heave. On the source's actual six-DOF states, direct `regWaveMorison.m` replay matches the logged force within 10.1 N after startup; projection onto heave alone changes that source force by up to 0.973 kN. The Python heave force matches the pinned source function on those projected states within `5.9e-10` N, against a `1e-6` N gate. This is **reduced heave comparison**, not full three-DOF trajectory parity. The initial source acceleration-feedback force spike is excluded from the post-startup force gate. Other moving layouts and coupled current trajectories remain unpaired. |
-| Sphere moving Morison in three-DOF regular waves | The derived 1 m/8 s `Free_Decay/1m-ME` case with its published surge/heave/pitch floating joint; [fresh passing R2025b run](https://github.com/cmudrc/wec-sim-python/actions/runs/37776059648) | The public `WEC` integrates a body-local axial element through all three active coordinates using a proper pitch rotation, relative fluid velocity, fluid acceleration, and an implicit positive-semidefinite added-mass matrix. Against the 4,001-sample, 40 s MATLAB trajectory, the independent Python run differs by at most 12.2 mm surge, 1.01 mm heave, and `9.8e-5` rad pitch; velocities differ by at most 1.32 mm/s surge and heave, and `4.6e-5` rad/s pitch. After the first second, force and moment maxima differ by 429 N surge, 149 N heave, and 176 N m pitch, with explicit paired gates on each channel. Evaluating the physical Python force law on the saved MATLAB states separates source rotation conventions from trajectory error: differences are at most 427 N surge, 91 N heave, and 180 N m pitch. The source-specific `regWaveMorison.m` diagnostic remains separate from the physical default. This validates the published three-coordinate Sphere case; general six-DOF moving elements and other coefficient layouts remain unsupported; a separate option-2 current-loaded coupled trajectory is paired above. |
-| Sphere `Controls/MPC` closed-loop heave and PTO | Pinned MATLAB Applications `Controls/MPC` at `d53d4d4`, pinned core at `0753b2e`, and [instrumented R2025b baseline](https://github.com/cmudrc/wec-sim-python/actions/runs/37743807105) | The public `run_sphere_mpc` solves the 400 s published case independently with 500 JONSWAP bins, a fourth-order radiation fit, 201-row AR excitation forecast, constrained 31-variable QP, delayed force-rate actuation, and physical heave radiation memory. Replayed phase frequencies, spectra, and widths agree within `1e-12`, wave elevation within `3e-12` m, and heave excitation within `1e-7` N. All prediction and QP matrices agree within `1e-10`; all 597 forecasts after a full history differ by at most `5e-7` N, and all 391 active QP first commands agree within 1 N/s using MATLAB's logged state and forecast. In an independent Python closed-loop run, maximum 40,001-sample differences are 1.011 mm physical heave, 1.501 mm/s speed, 17.2 N/s command rate, 16.8 N PTO force, and 2.89 kW source-signed instantaneous power. The MATLAB controller's internal plant is distinct from the physical body; its position is relative to equilibrium. The 2.5 m/8 s input infers JONSWAP `gamma=1`. The source's actual PTO force reaches 2.39 MN despite its 2 MN predicted constraint. A [portable pinned fixture](tests/fixtures/matlab/sphere_mpc/README.md) now gates the full 40,001-sample independent closed loop, the saved prediction/QP matrices, and all 597 developed-history excitation forecasts in ordinary Python CI; signed PTO work differs by `0.00834%` (gate `0.1%`). This gate covers this single-body, heave-only application and published settings; general multi-body MPC remains unsupported. |
+| Sphere moving Morison in three-DOF regular waves | The derived 1 m/8 s `Free_Decay/1m-ME` case with its published surge/heave/pitch floating joint; [fresh passing R2025b run](https://github.com/cmudrc/wec-sim-python/actions/runs/37776059648) | The public `WEC` integrates a body-local axial element through all three active coordinates using a proper pitch rotation, relative fluid velocity, fluid acceleration, and an implicit positive-semidefinite added-mass matrix. Against the 4,001-sample, 40 s MATLAB trajectory, the independent Python run differs by at most 12.2 mm surge, 1.01 mm heave, and `9.8e-5` rad pitch; velocities differ by at most 1.32 mm/s surge and heave, and `4.6e-5` rad/s pitch. After the first second, force and moment maxima differ by 429 N surge, 149 N heave, and 176 N m pitch, with explicit paired gates on each channel. The [pinned ordinary-CI gate](tests/fixtures/matlab/sphere_wave_morison/README.md) now repeats full-duration independent surge, heave, pitch, and force comparisons from bundled HDF5 and source output, with inactive motion channels checked too. Evaluating the physical Python force law on the saved MATLAB states separates source rotation conventions from trajectory error: differences are at most 427 N surge, 91 N heave, and 180 N m pitch. The source-specific `regWaveMorison.m` diagnostic remains separate from the physical default. This validates the published three-coordinate Sphere case; general six-DOF moving elements and other coefficient layouts remain unsupported; a separate option-2 current-loaded coupled trajectory is paired above. |
+| Sphere `Controls/MPC` closed-loop heave and PTO | Pinned MATLAB Applications `Controls/MPC` at `d53d4d4`, pinned core at `0753b2e`, and [instrumented R2025b baseline](https://github.com/cmudrc/wec-sim-python/actions/runs/37743807105) | The public `run_sphere_mpc` solves the 400 s published case independently with 500 JONSWAP bins, a fourth-order radiation fit, 201-row AR excitation forecast, constrained 31-variable QP, delayed force-rate actuation, and physical heave radiation memory. Replayed phase frequencies, spectra, and widths agree within `1e-12`, wave elevation within `3e-12` m, and heave excitation within `1e-7` N. All prediction and QP matrices agree within `1e-10`; all 597 forecasts after a full history differ by at most `5e-7` N, and all 391 active QP first commands agree within 1 N/s using MATLAB's logged state and forecast. A [portable direct-optimizer gate](tests/fixtures/matlab/sphere_mpc_independent_qp/README.md) also feeds the published MATLAB `mpcFcn` all 391 states and forecasts from Python's own closed loop: first force-rate commands differ by at most `0.836804` N/s (`0.215995` N/s RMS), below predeclared `2` and `0.5` N/s gates, with no infeasible MATLAB solves. This checks the optimizer on independent inputs; it does not replace the coupled-motion gate. In an independent Python closed-loop run, maximum 40,001-sample differences are 1.011 mm physical heave, 1.501 mm/s speed, 17.2 N/s command rate, 16.8 N PTO force, and 2.89 kW source-signed instantaneous power. The MATLAB controller's internal plant is distinct from the physical body; its position is relative to equilibrium. The 2.5 m/8 s input infers JONSWAP `gamma=1`. The source's actual PTO force reaches 2.39 MN despite its 2 MN predicted constraint. A [portable pinned fixture](tests/fixtures/matlab/sphere_mpc/README.md) now gates the full 40,001-sample independent closed loop, the saved prediction/QP matrices, and all 597 developed-history excitation forecasts in ordinary Python CI; signed PTO work differs by `0.00834%` (gate `0.1%`). This gate covers this single-body, heave-only application and published settings; general multi-body MPC remains unsupported. |
 | Sphere `Mean_Drift` regularCIC application | Pinned MATLAB Applications `Mean_Drift` input and its BEMIO-generated Sphere HDF5 | The public Python `WEC` builder selects the control-surface mean-drift coefficient and runs the published 100 s surge, heave, and pitch case with 10 s radiation memory. The source excitation equals the first-order regular force plus amplitude-squared mean drift, each with one ramp factor; the surge drift component is 12.247 N after ramp. Paired maximum position differences are 0.043 mm surge, 0.551 mm heave, and `3.2e-7` rad pitch; velocity differences are below 0.081 mm/s surge, 1.738 mm/s heave, and `1.7e-7` rad/s pitch. The wave elevation matches within `3e-15` m, and reconstructed radiation forces differ by at most 0.24 N surge, 2.95 N heave, and `0.0002` N m pitch. The MATLAB linear model moves 16.41 m in surge by 100 s, so agreement is numerical parity, not evidence that the small-motion hydrodynamics remain physically accurate over that travel. |
 | Derived Sphere momentum-conservation mean drift | The pinned `Mean_Drift` input with only `body(1).meanDrift` changed from 1 to 2; local R2025b Update 7 and pinned BEMIO | A [portable full-duration public `WEC.run` gate](tests/test_sphere_momentum_drift_parity.py) independently advances the 100 s surge/heave/pitch motion using the existing Sphere HDF5 and [fresh MATLAB trace](tests/fixtures/matlab/sphere_momentum_drift/README.md). It retains the published control-surface case's numerical limits; maximum position differences are 0.0421 mm surge, 0.551 mm heave, and `4.62e-8` rad pitch, and speed differences are 0.0805 mm/s, 1.738 mm/s, and `1.32e-7` rad/s. Wave and excitation differences stay below `2.85e-15` m and `9.30e-12` N or N m. The active HDF5 momentum-drift coefficients match the fresh BEMIO file exactly. This is a derived option check and does not change the Sphere badge. |
 | RM3 regular-wave heave, excitation, and PTO | Current MATLAB RM3 example and current RM3 HDF5 | A focused two-body linear heave solver with relative-motion PTO damping agrees locally over 400 s within 5.9 mm position and 6.1 mm/s velocity for both bodies. Heave excitation matches to less than `1e-5` N; PTO internal force differs by at most 8.2 kN over a 1.63 MN range. The pinned full-duration source channels are retained in a [portable fixture](tests/fixtures/matlab/README.md), so the reduced force, motion, and PTO comparison now runs in ordinary Python CI. This reduced model does not cover surge, pitch, or full Simscape joint mechanics. |
@@ -67,7 +67,7 @@ saves its MATLAB outputs as an artifact.
 | RM3 MoorDyn coupled mooring | Pinned MATLAB Applications `Mooring/MoorDyn`, its 3,600 s elevation input, BEMIO RM3 HDF5, and native MoorDyn v2; [fresh 40,001-sample source baseline](https://github.com/cmudrc/wec-sim-python/actions/runs/37886952244) | The public Python `WEC.floating_joint(..., moordyn=MoorDyn(...), moordyn_point=spar.at(0,0,21.5))` configuration advances native MoorDyn from its own predicted connection motion and feeds the resulting six-component load back to the constrained two-body solver once per 0.01 s step. The 400 s paired run uses the full imported-elevation record and the source body block’s second force ramp; every saved source wave-force component matches to numerical precision. A local ARM64 run against the pinned MATLAB output differs by at most 0.785 mm spar surge, 0.0277 mm spar heave, 0.0147 mrad pitch, 116 N PTO force, 61.2 N surge connection force, 41.4 N heave connection force, 573 N m pitch moment, and 42.7 N fairlead tension. Explicit CI gates compare both bodies’ active positions and speeds, PTO force, six-component connection pose/velocity/force, and all three fairlead tensions over all 40,001 samples. The force is evaluated at a predicted pose once per step because legacy MoorDyn cannot roll back an implicit force trial. This validates the reduced RM3 floating joint and published mooring attachment, not arbitrary mooring layouts or the ParaView output. |
 | RM3 End_Stops force law and refined-step trajectory | Pinned MATLAB Applications `End_Stops` input; R2025b runs at published 0.1 s and diagnostic 0.025/0.0125 s steps through the published 400 s duration | Effective stroke bounds are ±0.6 m, each spring is 100 MN/m, stop damping is zero, and the 0.0001 m transition is active. The source's logged stop force matches the Python smooth-stop law within `1e-5` N even at saved samples inside the transition. The 0.025-to-0.0125 s source stroke difference is at most 2.79 mm over 400 s; the published 0.1 s run differs from the refined source by up to 286 mm after contact. The opt-in Python adaptive solver with implicit added mass agrees with the 0.0125 s MATLAB trajectory over 400 s within 0.986 mm PTO stroke, 6.77 mm/s PTO speed, 98.2 kN PTO force, and 0.139% ordinary damper energy. Paired gates cover both active body positions and velocities, PTO motion and force, and integrated energy; a separate source convergence gate checks both refined MATLAB steps. |
 | Public RM3 MCR eight-condition PTO sweep | The pinned 400 s R2025b Option 1 array outputs, [archived without rounding](tests/fixtures/matlab/rm3_mcr_array/README.md) | An [ordinary-CI public `WEC.floating_joint` gate](tests/test_rm3_mcr_public_portable.py) independently advances all eight published height × period × damping settings. With the explicit source-delay mass-feedback option, maximum active body differences are 75.1 mm surge, 0.386 mm heave, and 0.000181 rad pitch; PTO stroke, speed, force, and absorbed power differ by at most 0.412 mm, 0.231 mm/s, 478 N, and 485 W. Integrated PTO work differs by at most 0.0597% and the eight MCR mean powers by at most 155 W. A separate check keeps the ordinary implicit-mass default dissipative across all eight conditions and its PTO work within 0.697% of source, while its larger motion gap is not claimed as source parity. These are stronger output gates for already counted inputs; the badge does not change. |
-| RM3 radiation force options: constant, convolution, FIR, and state-space | Pinned MATLAB Applications `Radiation_Force_Options`, BEMIO-generated RM3 HDF5, 12 s regular waves | All four published 500 s settings are checked against the Python floating-joint solver. The FIR path uses sampled kernel taps with a held radiation force during each RK4 step. Across all four cases, the largest differences are 30.7 mm surge, 2.11 mm heave, 0.00144 rad pitch, 3.25 mm PTO stroke, 1.55 mm/s PTO speed, 1.86 kN PTO force, and 1.57 kW PTO power. Direct FIR radiation-force differences remain under their paired gates. MATLAB FIR differs from MATLAB convolution by up to 345 mm surge, so the methods are not interchangeable for this case. The opt-in `radiation_method="state_space"` advances its 72 active fitted states with the independent RM3 body motion and passes the same full-duration gates; its force law on prescribed source motion is checked separately below. The fitted model has negative low-frequency damping, so this is numerical source parity, not physical passivity evidence. |
+| RM3 radiation force options: constant, convolution, FIR, and state-space | Pinned MATLAB Applications `Radiation_Force_Options`, BEMIO-generated RM3 HDF5, 12 s regular waves | All four published 500 s settings are checked against the Python floating-joint solver. The FIR path uses sampled kernel taps with a held radiation force during each RK4 step. Across all four cases, the largest differences are 30.7 mm surge, 2.11 mm heave, 0.00144 rad pitch, 3.25 mm PTO stroke, 1.55 mm/s PTO speed, 1.86 kN PTO force, and 1.57 kW PTO power. Full-run and three interval PTO-work gates add a 1% bound for each mode; locally the largest interval relative differences are 0.546% constant, 0.027% convolution, 0.012% FIR, and 0.432% state-space. Direct FIR radiation-force differences remain under their paired gates. MATLAB FIR differs from MATLAB convolution by up to 345 mm surge, so the methods are not interchangeable for this case. The opt-in `radiation_method="state_space"` advances its 72 active fitted states with the independent RM3 body motion and passes the same full-duration gates; its force law on prescribed source motion is checked separately below. The fitted model has negative low-frequency damping, so this is numerical source parity, not physical passivity evidence. |
 | RM3 state-space radiation force on prescribed motion | Pinned MATLAB Applications `Radiation_Force_Options` state-space setting and [focused R2025b gate](https://github.com/cmudrc/wec-sim-python/actions/runs/37935700135) | `wecsim.hydrodynamics.radiation.replay_rm3_fitted_radiation` advances the HDF5 A/B/C channel fits from zero state using the saved six-component velocity histories, scales C by water density, and sets D to zero as the pinned MATLAB block does. Over 5,001 samples on both bodies, every radiation-force channel differs by less than `0.026%` of its source peak; the gate allows `0.03%` with a `0.0009` N floor for nearly stationary channels. This is a prescribed-motion force replay, not an independently coupled trajectory or evidence that the fitted model is passive. The default convolution solver is unchanged. |
 
 | RM3 PTO extension float and spar free decays | Pinned MATLAB Applications `RM3_PTO_Extension` inputs and BEMIO-generated RM3 HDF5; [three-step R2025b audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38130573831) and [passing fourth-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38324343546) | The no-wave floating-joint solver initializes the float at +5 m or the spar at −5 m, reproducing each published case's +5 m PTO stroke. At the published 0.1 s step, maximum 30 s active-heave differences are 47.1 mm for float and 6.84 mm for spar, with speed differences of 86.0 and 1.87 mm/s. Changing only MATLAB `simu.dt` from 0.05 to 0.025 to 0.0125 s changes the source float heave by 15.81 then 8.53 mm and spar heave by 3.82 then 1.96 mm; the last changes are 54.0% and 51.2% of the previous ones. The corresponding float-speed changes are 77.96 then 39.14 mm/s, and spar-speed changes are 2.443 then 1.222 mm/s. At matched 0.025/0.0125 s steps, independent Python float-heave errors fall from 11.37 to 5.69 mm and spar-heave errors from 1.72 to 0.861 mm; speed errors fall from 21.40 to 10.69 mm/s and from 0.467 to 0.233 mm/s. The 0.0125 s gate allows 9/1.5 mm heave and 17/0.4 mm/s speed for float/spar and requires each error to fall below 75% of its 0.025 s value. PTO stroke and speed have the same errors as active heave and speed within numerical precision; PTO force and power are zero in Python and below `3.5e-8` in MATLAB output. Both CI cases pass full 30 s source self-change and independent Python motion/PTO gates. The passive body remains stationary within numerical precision. This is refined-step numerical evidence, not a passing gate for either published 0.1 s case, proof of asymptotic convergence, or a general no-wave joint solver. |
@@ -675,6 +675,14 @@ The long-term goal remains evidence-backed functional parity. The current
 investigation phase records the work that can be established with independent
 evidence while source numerical limitations keep some published badges below
 100%.
+The current ledger classifies all 63 inputs: 50 have independent motion gates,
+two stationary cases have full-duration force gates, ten are qualified or
+mixed-mode, and WaveStar NMPC remains open. The core RM3, OSWEC, and Sphere
+published-motion count is 39/46. A qualified result documents a measured
+limit; it does not add to the passing badge fraction. Case investigation is
+reasonably closed when every open input has a specific remaining experiment
+or external blocker. Only then does the next phase prioritize behavior-focused
+line-and-branch coverage toward 90%.
 Badge fractions continue to count only full published-input gates. First use
 local R2025b to resolve distinct, bounded questions in the seven remaining
 RM3 and OSWEC published inputs; Sphere is already 12/12. Prioritize an
@@ -819,7 +827,13 @@ The already-gated 200 s Sphere reactive direct-drive input now has a portable
 ordinary-CI gate on all 20,001 samples of public `WEC.run` body motion, PTO
 stroke and force, controller force, incident wave, and shaft and electrical
 outputs. It uses the exact source-generated HDF5 and a compact MATLAB trace;
-the original full source gate and Sphere badge count are unchanged.
+the original full source gate and Sphere badge count are unchanged. The portable
+gate also integrates mechanical shaft power, source-signed electrical power,
+and winding loss over the complete run, the 50 s ramp, and two developed-wave
+windows. On local ARM64, the largest independent Python/MATLAB work gap is
+0.0098%; ordinary CI applies a fixed 0.1% relative limit to every window.
+This strengthens energy accounting for the same
+published input without adding a case to the badge.
 The public floating-OWC builder now has ordinary-CI checks for the published
 two-body order, floater-local MoorDyn attachment, column geometry, PTO settings,
 and rejection of incompatible sea, radiation-memory, and coordinate layouts.
@@ -906,6 +920,12 @@ closed-loop NMPC. The held-heading OSWEC case now has an opt-in published-step
 numerical gate but remains qualified by source step sensitivity; the RM3
 state-space fit has opt-in numerical motion gates but remains nonpassive in
 active joint modes.
+For WaveStar, a local published-step precontrol replay closes the projected
+float, arm, rod, and motor force balance within `1.89e-10` N m over 9.95 s;
+the remaining 225 s failure occurs after NMPC feedback begins. Draft
+[PR #525](https://github.com/cmudrc/wec-sim-python/pull/525) still fails its
+original x86 motion and derived split-step Python/source gates, so the case
+remains open and the passing-case count is unchanged.
 Published-step RM3 MoorDyn visualization motion and nonlinear-hydro timing
 also remain qualified. The Python dynamics API still lacks arbitrary Simscape
 joints and general six-DOF mooring and moving Morison layouts.
@@ -1306,6 +1326,16 @@ full-duration **derived fine-step** parity for the named channels, not
 parity with the original published-step trajectory. The published ParaView
 output gate on saved source poses is separate. The physical Python default
 and strict expected failure for the published-step gate remain unchanged.
+
+The [published 80 s source and independent Python histories](https://github.com/cmudrc/wec-sim-python/actions/runs/38403345509)
+also give a narrower functional comparison: signed PTO work differs by
+`0.131%` over the full run and at most `0.463%` in the fixed `0–20`,
+`20–50`, and `50–80` s windows. Between the published source and the
+[finest full-duration MATLAB step](https://github.com/cmudrc/wec-sim-python/actions/runs/38744324247),
+PTO work changes by at most `0.027%` in those windows. The published-step
+Python work now has an independent `<1%` window gate in the source workflow.
+This is absorbed-energy evidence; it does not close the large published-step
+body and MoorDyn trajectory gaps above.
 
 A [pinned 10 s MaxStep isolation audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38116072640)
 uses the same 1,000 source phases, wave, output times, and initial states in
@@ -2332,6 +2362,140 @@ lock down this source-input component. The observer, forecast, and plant still
 run independently only in their separate checks, and published WaveStar
 closed-loop motion remains open.
 
+A [second full-duration local `quadprog` replay](tests/fixtures/matlab/wavestar_nmpc_independent_qp/README.md)
+now feeds that same pinned `NMPC.m` all 4,201 observer states and AR forecasts
+from Python's **own** 225 s closed-loop motion. MATLAB and Python torque
+requests differ by at most `0.000289571` N m and `8.83404e-6` N m RMS;
+the 15–20 s maximum is `1.02796e-5` N m, and the independent run reaches
+48 near-saturation commands. The portable full-duration gate recomputes
+Python commands on those independent inputs and checks `0.001` N m maximum,
+`0.00005` N m RMS, and `0.00005` N m through 20 s. This separates the
+optimizer from the growing closed-loop trajectory gap, but it does not feed
+MATLAB commands back into Python motion or establish published-case motion
+parity. WaveStar NMPC remains open.
+
+A [full-duration independent-input observer and predictor gate](tests/fixtures/matlab/wavestar_nmpc_independent_predictor/README.md)
+reconstructs the excitation estimate from that autonomous Python run's
+saved pitch and requested torque, then gives all 4,501 estimates to local
+R2025b `ar`/`forecast`. Before forecasting, the pinned MATLAB `observer_kf`
+Kalman update independently replays all 4,501 Python sampled measurements
+and preceding torque requests; its five states differ from Python by at most
+`1.24345e-14` (RMS `7.46255e-16`). At each of the 216 one-second refits
+from 10 through 225 s, Python's order-18, 180-sample predictor is paired
+with MATLAB's 40-step forecast. Across all 8,640 refit values, maximum
+and RMS differences are `5.77560e-8` and `2.06425e-9` N m. The pinned
+MATLAB `predictor.m` also runs at every 50 ms active sample from 15 to 225 s
+also pairs all 168,040 consumed forecasts: maximum `4.55458e-12` N m and
+RMS `3.85620e-13` N m. Both gates retain `1e-6` N m maximum and `1e-7`
+N m RMS limits. The first 10–11 s precontrol hold interval differs by up to
+`0.09197` N m off-refit; the predictor refits before the controller activates.
+The active observer states also match the independent QP fixture. This
+isolates the Kalman update and consumed AR forecasts on Python-generated
+motion inputs;
+it does not close the published autonomous closed-loop motion gap or change
+the WaveStar case label.
+
+A [portable published-command plant gate](tests/test_wavestar_published_command_replay.py)
+now advances the full 225 s WaveStar plant through the public `wecsim_ode8`
+route using only the pinned hydrodynamic file, wave phases, and **saved MATLAB
+requested motor torques** as runtime inputs. It does not read source body
+motion or force into the solve. Across all 4,501 samples, the current merged
+Python plant differs from the source by at most `0.000139` rad float pitch,
+`0.000995` rad/s pitch speed, `27.3` µm PTO stroke, and `0.00237` N axial
+force; signed PTO work differs by `0.0521%`. The predeclared
+portable gates are `0.0003` rad, `0.002` rad/s, `60` µm, `0.005` N, and
+`0.1%` work. This source-command diagnostic isolates the larger autonomous
+gap to the controller-input and plant-feedback loop; it does **not** establish
+independent closed-loop parity or change the open case label and badge count.
+
+The reciprocal full-duration plant check now uses **Python's own** 4,201
+active controller requests as the only prescribed source input. A disposable
+copy of the pinned R2025b application still evaluates its NMPC block, but
+replaces only its requested torque output before independently advancing the
+MATLAB plant. Source sea components and elevation are exactly the local
+baseline, and body/PTO samples before 15 s are exactly equal. The logged
+active source request equals Python's saved request at every sample. Across
+all 4,501 samples, source versus Python pitch, pitch speed, and PTO stroke
+differ by at most `0.00013914` rad, `0.00099627` rad/s, and `27.36` µm;
+active axial PTO force differs by at most `0.002330` N. Signed PTO work is
+`-169.9004` J in MATLAB and `-169.8121` J in Python, a `0.0520%` gap.
+The [portable reciprocal gate](tests/test_wavestar_published_command_replay.py)
+uses the existing `0.0003` rad, `0.002` rad/s, `60` µm, `0.005` N active
+force, and `0.1%` work limits. Together with the source-command plant gate,
+this isolates the autonomous gap to closed-loop feedback rather than a large
+plant discrepancy under either controller's saved requests. Neither run
+advances both controllers independently, so WaveStar NMPC stays open.
+
+A separate local R2025b 225 s source run changed exactly one active NMPC
+request, by `0.0001` N m at 16.55 s. The sea and all earlier motion match
+the unchanged local run exactly. That tiny perturbation grows to a maximum
+`0.0131005` rad pitch, `0.0678542` rad/s pitch speed, and `1.19678` N m
+subsequent request difference; the peak pitch difference occurs at 120.55 s.
+The [archived source comparison](tests/test_wavestar_source_command_sensitivity.py)
+measures this amplification directly in MATLAB. It explains why a single
+published closed-loop trajectory is a fragile pointwise target, but it does
+not demonstrate autonomous Python parity or justify relaxing its gate.
+
+An [autonomous full-duration functional check](tests/test_wavestar_nmpc_window_envelope.py)
+now runs the merged 50 ms source-style `wecsim_ode8` plant and public NMPC
+controller for the published 225 s input. The only source runtime input is
+the incident-wave phase matrix; Python independently advances the plant,
+observer, predictor, controller, and PTO actuator. Against the pinned R2025b
+source, a local Apple silicon run produced `-169.812` J signed PTO work
+versus `-169.702` J (`0.0647%` difference). In three consecutive controlled
+windows, the largest signed-work difference is `0.1684%`; the largest
+window RMS differences are `0.5448%` pitch, `0.5842%` pitch speed, and
+`1.0090%` axial PTO force. The unchanged test limits are `0.5%` signed work
+in each window, `1%` motion RMS, and `2%` force RMS. The complete-run signed
+work is printed as a diagnostic. These are **window-work and envelope gates**. The
+same run's pointwise pitch difference reaches `0.01536` rad, and the source
+closed loop varies across execution environments, so this does not establish
+trajectory parity or change the `open_motion` label or badge count.
+
+The former `<0.1%` complete-run signed-work gate is **retracted** after
+independent numerical-backend counterexamples. A
+[Linux x86 diagnostic](https://github.com/cmudrc/wec-sim-python/actions/runs/39130161541)
+produced `-169.809` J on an EPYC 9V45, but `-169.496` J when that same
+runner used NumPy's x86-v3 dispatch with a Haswell BLAS kernel. The latter
+misses the former total-work limit against `-169.702` J MATLAB; it also
+appeared in the independent [EPYC 7763 run](https://github.com/cmudrc/wec-sim-python/actions/runs/39129639938).
+Changing BLAS thread count alone did not change the result on one EPYC 9V74.
+A [hosted Apple silicon run](https://github.com/cmudrc/wec-sim-python/actions/runs/39130835055)
+returned `-169.957` J (`0.150%` from source), although its three work windows
+were within `0.409%` and all motion/force RMS windows met their unchanged
+limits. The total is too cancellation-sensitive to support a portable parity
+claim. The interval gates remain enforced on both Linux x86 and hosted Apple
+silicon, and WaveStar stays open.
+
+The next WaveStar change remains a [draft, unmerged PR](https://github.com/cmudrc/wec-sim-python/pull/525).
+It paired the first 9.95 s of the published 50 ms source within `6.77e-8`
+rad pitch using smooth solver-stage excitation and the light BC rod and motor.
+Two independent full-duration gates then failed on that same head: ordinary
+Linux CI measured `0.014996` rad peak pitch difference against its `0.012`
+rad bounded source-ode8 gate, and a fresh MATLAB fine-step run measured
+`1.5238%` physical-default split-step pitch-peak difference against the
+existing `0.5%` aggregate gate. The source itself changes by `0.007543` rad
+between identical-input hosted and local 225 s runs, and changing its plant
+step with the controller clock fixed changes pitch by `0.0903275` rad. These
+measurements explain why a single pointwise full-duration target is unstable;
+they do not establish parity for the physical default, whose local published
+PTO-work gap remains `5.95%`. The numerical gates remain unchanged and the
+case stays `open_motion`. A [local platform audit](https://github.com/cmudrc/wec-sim-python/pull/525#issuecomment-6245125957)
+then ran this draft's code against the same pinned HDF5 and wave phases on
+macOS ARM64 and native Linux ARM64 with NumPy 2.5.4 and SciPy 1.18.1. Their
+pitch traces agree within `4.05e-15` rad through 15 s, before NMPC activates;
+they first separate by more than `1e-6` rad at 27.95 s and `1e-3` rad at
+42.0 s, reaching `0.016892` rad at 46.9 s. The macOS and Linux pitch gaps
+to the pinned MATLAB source are `0.007632` and `0.016416` rad; the latter
+also misses the unchanged `0.012` rad gate. This supports strong closed-loop
+amplification of platform floating-point differences, but does not remove
+the source/Python discrepancy already visible at 20 s or establish physical
+parity. Local x86 emulation could not run its NumPy wheel, so native Linux
+ARM64 is a platform diagnostic rather than a reproduction of the x86 CI
+runner. The next bounded work should isolate the source/Python difference
+before changing delayed-added-mass coupling; repeating the same MATLAB
+source run unchanged would add no evidence.
+
 ![Full-duration direct WaveStar NMPC controller replay](docs/figures/wavestar-nmpc-direct-controller-gap.png)
 
 A separate [R2025b Simulink modal probe](tests/matlab/wavestar_ode8_modal_probe.m)
@@ -2384,6 +2548,20 @@ itself changes by up to `0.007543` rad pitch, `0.05022` rad/s speed, and
 225 s gate bounds the autonomous trajectory but does not establish close
 pointwise published-case parity or step-converged behavior. The case remains
 `open_motion`, and no badge count changes.
+
+A [local R2025b auxiliary-mass probe](tests/fixtures/matlab/wavestar_auxiliary_mass/README.md)
+keeps the 50 ms published `ode8` sea and linkage but reduces only the BC rod
+and motor's `0.0001` kg masses and inertia entries to `1e-9`. MATLAB's initial
+pitch acceleration moves from `0.3383701634` to `0.3384090166` rad/s²,
+almost exactly the reduced Python linkage's `0.3384090170`. Over 9.95 s,
+however, the maximum Python/source pitch gap changes from `1.42056e-5` to
+`1.44994e-5` rad and the pitch-speed gap remains about `1.18e-4` rad/s.
+The probe changes auxiliary gravity and inertia together. A linkage-based
+decomposition attributes about `3.85e-5` rad/s² of the initial acceleration
+gap to their gravity and `3.42e-7` rad/s² to their inertia. It identifies
+the omitted light bodies as the initial-derivative cause, but neither effect
+closes the remaining precontrol trajectory gap in this piecewise-linear
+forcing run. The physical default and case status are unchanged.
 
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
@@ -2731,9 +2909,15 @@ The source regular-wave case applies split added mass with delayed
 acceleration feedback. Reconstructing its translational added-mass force from
 the two preceding 0.1 s output accelerations agrees to numerical precision
 until 84.4 s; 78 later output samples differ by more than 0.001 N, with a
-maximum residual of 17.9 MN. Those intervals are consistent with internal
-variable solver steps near impacts, whose acceleration history is absent from
-the exported 0.1 s samples. The [0.05 s source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37691660845)
+maximum residual of 17.9 MN. A local full-duration R2025b time-log audit
+reproduces the archived published PTO trajectory exactly and records 81 solver
+times outside the 0.1 s output grid. Each of the 78 output samples with a
+saved-grid recurrence residual above 0.001 N lies within two output intervals
+of one of those times, for both bodies; all other residuals are below `5e-6` N.
+The [portable diagnostic](tests/test_rm3_end_stops_internal_steps.py) therefore
+confirms that the missing internal acceleration history explains the apparent
+saved-grid force mismatch. It does not close the independent published-motion
+gap. The [0.05 s source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37691660845)
 and [0.025 s source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37692499385)
 and [0.0125 s source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37693255891)
 have no such saved-step residual above 0.001 N through 120 s. PTO stroke
