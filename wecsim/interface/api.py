@@ -234,6 +234,12 @@ class WEC(_WECCaseMixin):
             raise ValueError("variable body needs states and one fewer switch times")
         if any(existing.name == name for existing in self.bodies):
             raise ValueError(f"body name already exists: {name}")
+        # Every future draft must be valid before the first one reserves the name.
+        checked = []
+        for state in ordered:
+            mass, inertia = _rigid_body_properties(state.mass, state.inertia)
+            checked.append(HydroState(state.hydro_file, mass, inertia))
+        ordered = tuple(checked)
         first = ordered[0]
         body = Body(name, first.hydro_file, first.mass, first.inertia,
                     variable_hydro=VariableHydro(ordered, tuple(switch_times)))
