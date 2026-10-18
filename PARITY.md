@@ -2408,6 +2408,34 @@ portable gates are `0.0003` rad, `0.002` rad/s, `60` µm, `0.005` N, and
 gap to the controller-input and plant-feedback loop; it does **not** establish
 independent closed-loop parity or change the open case label and badge count.
 
+The reciprocal full-duration plant check now uses **Python's own** 4,201
+active controller requests as the only prescribed source input. A disposable
+copy of the pinned R2025b application still evaluates its NMPC block, but
+replaces only its requested torque output before independently advancing the
+MATLAB plant. Source sea components and elevation are exactly the local
+baseline, and body/PTO samples before 15 s are exactly equal. The logged
+active source request equals Python's saved request at every sample. Across
+all 4,501 samples, source versus Python pitch, pitch speed, and PTO stroke
+differ by at most `0.00013914` rad, `0.00099627` rad/s, and `27.36` µm;
+active axial PTO force differs by at most `0.002330` N. Signed PTO work is
+`-169.9004` J in MATLAB and `-169.8121` J in Python, a `0.0520%` gap.
+The [portable reciprocal gate](tests/test_wavestar_published_command_replay.py)
+uses the existing `0.0003` rad, `0.002` rad/s, `60` µm, `0.005` N active
+force, and `0.1%` work limits. Together with the source-command plant gate,
+this isolates the autonomous gap to closed-loop feedback rather than a large
+plant discrepancy under either controller's saved requests. Neither run
+advances both controllers independently, so WaveStar NMPC stays open.
+
+A separate local R2025b 225 s source run changed exactly one active NMPC
+request, by `0.0001` N m at 16.55 s. The sea and all earlier motion match
+the unchanged local run exactly. That tiny perturbation grows to a maximum
+`0.0131005` rad pitch, `0.0678542` rad/s pitch speed, and `1.19678` N m
+subsequent request difference; the peak pitch difference occurs at 120.55 s.
+The [archived source comparison](tests/test_wavestar_source_command_sensitivity.py)
+measures this amplification directly in MATLAB. It explains why a single
+published closed-loop trajectory is a fragile pointwise target, but it does
+not demonstrate autonomous Python parity or justify relaxing its gate.
+
 An [autonomous full-duration functional check](tests/test_wavestar_nmpc_window_envelope.py)
 now runs the merged 50 ms source-style `wecsim_ode8` plant and public NMPC
 controller for the published 225 s input. The only source runtime input is
