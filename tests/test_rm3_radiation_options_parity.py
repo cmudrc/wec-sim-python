@@ -135,6 +135,22 @@ def test_published_rm3_radiation_options(mode):
     _max_error(response.pto_force * speed, pto[:, 21], 3000,
                f"{mode} PTO power")
 
+    # A samplewise power limit alone does not bound accumulated production.
+    # Check the ramp and two developed-wave intervals as well as the 500 s
+    # total, keeping each radiation implementation independently accountable.
+    python_power = response.pto_force * speed
+    source_power = pto[:, 21]
+    for start, stop in ((0, 500), (0, 100), (100, 300), (300, 500)):
+        window = (response.time >= start) & (response.time <= stop)
+        source_work = np.trapezoid(source_power[window], pto[window, 0])
+        python_work = np.trapezoid(python_power[window], response.time[window])
+        assert source_work < -1e6
+        relative_gap = abs(python_work - source_work) / abs(source_work)
+        assert relative_gap < .01, (
+            f"{mode} PTO work {start}–{stop} s: "
+            f"{relative_gap:.4%} exceeds 1%"
+        )
+
     if mode == "FIR":
         with h5py.File(hydro) as h5:
             for body in (1, 2):
