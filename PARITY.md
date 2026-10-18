@@ -1143,6 +1143,17 @@ mass feedback explains most of this particular motion difference. The
 correction depends on the saved MATLAB acceleration and force history; it is
 an attribution experiment, **not** an independent Python parity result or a
 candidate default force model.
+A local R2025b [added-mass-shift control](tests/matlab/rm3_moordyn_viz_adjmass_probe.m)
+keeps that seeded 10 s sea, `ode45`, `simu.dt=0.01`, native MoorDyn input,
+and `dtOut=0.01` fixed while changing both bodies' `adjMassFactor` from the
+published default `2` to `1`. The default control reproduces the archived
+source body positions within `2.1e-12` m or rad and velocities within
+`7.3e-13` m/s or rad/s; all 1,000 phases are identical. Against the same
+independent physical Python run, the maximum float-surge difference grows
+from `0.190732` m to `0.370875` m, and MATLAB's own float-surge history
+changes by up to `0.180143` m. Reducing the mass shift therefore does not
+close even the 10 s published-step gap. This is a source-parameter diagnostic,
+not a change to the pinned published input or the 80 s parity classification.
 The [second-seed R2025b run](https://github.com/cmudrc/wec-sim-python/actions/runs/38087382937)
 independently reproduces all 1,000 MATLAB random phases from `phaseSeed=2`,
 then pairs wave elevation, six-component excitation, source force balance,
