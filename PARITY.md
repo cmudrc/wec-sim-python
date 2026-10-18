@@ -2353,10 +2353,21 @@ step with the controller clock fixed changes pitch by `0.0903275` rad. These
 measurements explain why a single pointwise full-duration target is unstable;
 they do not establish parity for the physical default, whose local published
 PTO-work gap remains `5.95%`. The numerical gates remain unchanged and the
-case stays `open_motion`. The bounded next experiment is to locate the first
-Linux-versus-macOS divergence under the pinned Python input before revising
-the source-style delayed-added-mass coupling; there is no reason to repeat the
-same MATLAB source run unchanged.
+case stays `open_motion`. A [local platform audit](https://github.com/cmudrc/wec-sim-python/pull/525#issuecomment-6245125957)
+then ran this draft's code against the same pinned HDF5 and wave phases on
+macOS ARM64 and native Linux ARM64 with NumPy 2.5.4 and SciPy 1.18.1. Their
+pitch traces agree within `4.05e-15` rad through 15 s, before NMPC activates;
+they first separate by more than `1e-6` rad at 27.95 s and `1e-3` rad at
+42.0 s, reaching `0.016892` rad at 46.9 s. The macOS and Linux pitch gaps
+to the pinned MATLAB source are `0.007632` and `0.016416` rad; the latter
+also misses the unchanged `0.012` rad gate. This supports strong closed-loop
+amplification of platform floating-point differences, but does not remove
+the source/Python discrepancy already visible at 20 s or establish physical
+parity. Local x86 emulation could not run its NumPy wheel, so native Linux
+ARM64 is a platform diagnostic rather than a reproduction of the x86 CI
+runner. The next bounded work should isolate the source/Python difference
+before changing delayed-added-mass coupling; repeating the same MATLAB
+source run unchanged would add no evidence.
 
 ![Full-duration direct WaveStar NMPC controller replay](docs/figures/wavestar-nmpc-direct-controller-gap.png)
 
