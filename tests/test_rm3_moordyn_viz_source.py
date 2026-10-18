@@ -870,6 +870,24 @@ def test_public_floating_joint_tracks_published_moordyn_viz(tmp_path):
     np.savetxt(reference / "python_pto.csv",
                np.column_stack((pto[:, 0], pto_force)), delimiter=",")
     record(pto_force, pto[:, 15], 2_000, "PTO internal force")
+    # The published source's large surge gap does not imply a similar gap
+    # in generated PTO energy. Gate the complete published run and fixed
+    # ramp/developed-sea intervals from the independently advanced WEC.
+    python_power = result.ptos["relative_heave"].absorbed_power[_indices(pto[:, 0])]
+    source_power = -pto[:, 21]  # MATLAB reports absorbed mechanical power negative.
+    for start, stop in ((0, 80), (0, 20), (20, 50), (50, 80)):
+        window = (pto[:, 0] >= start) & (pto[:, 0] <= stop)
+        source_work = np.trapezoid(source_power[window], pto[window, 0])
+        python_work = np.trapezoid(python_power[window], pto[window, 0])
+        assert source_work > 1e6
+        relative_gap = abs(python_work - source_work) / source_work
+        print(f"published PTO work {start}–{stop} s: "
+              f"MATLAB {source_work:.8g} J, Python {python_work:.8g} J, "
+              f"gap {relative_gap:.4%}")
+        assert relative_gap < .01, (
+            f"published RM3 MoorDyn PTO work {start}–{stop} s: "
+            f"{relative_gap:.4%} exceeds 1%"
+        )
     source_mooring = _read("mooring.csv")
     outputs = dict(result.raw.extra_outputs)
     indices = _indices(source_mooring[:, 0])

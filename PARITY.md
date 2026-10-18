@@ -1315,6 +1315,16 @@ parity with the original published-step trajectory. The published ParaView
 output gate on saved source poses is separate. The physical Python default
 and strict expected failure for the published-step gate remain unchanged.
 
+The [published 80 s source and independent Python histories](https://github.com/cmudrc/wec-sim-python/actions/runs/38403345509)
+also give a narrower functional comparison: signed PTO work differs by
+`0.131%` over the full run and at most `0.463%` in the fixed `0–20`,
+`20–50`, and `50–80` s windows. Between the published source and the
+[finest full-duration MATLAB step](https://github.com/cmudrc/wec-sim-python/actions/runs/38744324247),
+PTO work changes by at most `0.027%` in those windows. The published-step
+Python work now has an independent `<1%` window gate in the source workflow.
+This is absorbed-energy evidence; it does not close the large published-step
+body and MoorDyn trajectory gaps above.
+
 A [pinned 10 s MaxStep isolation audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38116072640)
 uses the same 1,000 source phases, wave, output times, and initial states in
 three runs: published `simu.dt=MaxStep=0.01` s; `simu.dt=0.01` s with only
