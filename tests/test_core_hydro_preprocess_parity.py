@@ -1,5 +1,6 @@
 """Pair core geometry force preprocessing with pinned MATLAB bodyClass."""
 
+from copy import deepcopy
 import hashlib
 import os
 from pathlib import Path
@@ -33,7 +34,7 @@ def _source(geometry, number):
                 for field in FIELDS}
 
 
-def _configured_body(geometry, number):
+def _configured_body(geometry, number, source="hdf5"):
     if geometry == "rm3_current":
         file = Path(CORE) / "examples/RM3/hydroData/rm3.h5"
         assert hashlib.sha256(file.read_bytes()).hexdigest() == CURRENT_RM3_SHA256
@@ -43,6 +44,13 @@ def _configured_body(geometry, number):
     body.bodyNumber = number
     body.bodyTotal = 2
     body.readH5file()
+    if source == "memory":
+        # MATLAB's MCR route supplies one body's BEM structure directly.
+        loaded = BodyClass(None)
+        loaded.bodyNumber = number
+        loaded.bodyTotal = 2
+        loaded.loadHydroData(deepcopy(body.hydroData))
+        body = loaded
     body.hydroStiffness = np.zeros((6, 6))
     body.viscDrag = {"Drag": np.zeros((6, 6)),
                      "cd": np.zeros(6), "characteristicArea": np.zeros(6)}
@@ -53,11 +61,12 @@ def _configured_body(geometry, number):
 
 @pytest.mark.parametrize("geometry", ("rm3", "oswec", "rm3_current"))
 @pytest.mark.parametrize("number", (1, 2))
-def test_regular_cic_force_preprocessing_against_matlab(geometry, number):
+@pytest.mark.parametrize("source", ("hdf5", "memory"))
+def test_regular_cic_force_preprocessing_against_matlab(geometry, number, source):
     """Check hydrostatics, radiation memory and excitation on both bodies."""
     if geometry == "rm3_current" and not (FRESH and CORE):
         pytest.skip("current core RM3 HDF5 and fresh MATLAB source needed")
-    body = _configured_body(geometry, number)
+    body = _configured_body(geometry, number, source)
     time = np.arange(101) * 0.1
     body.hydroForcePre(
         2 * np.pi / 8, [0], len(time), time, [], 0.1, 1000, 9.81,
@@ -90,9 +99,10 @@ def test_regular_cic_force_preprocessing_against_matlab(geometry, number):
 
 
 @pytest.mark.parametrize("number", (1, 2))
-def test_oswec_irregular_directional_excitation_against_matlab(number):
+@pytest.mark.parametrize("source", ("hdf5", "memory"))
+def test_oswec_irregular_directional_excitation_against_matlab(number, source):
     """Check 64 frequency bins and three incident headings on each body."""
-    body = _configured_body("oswec", number)
+    body = _configured_body("oswec", number, source)
     bem_frequency = np.asarray(body.hydroData["simulation_parameters"]["w"]).ravel()
     omega = np.linspace(bem_frequency.min(), bem_frequency.max(), 64)
     time = np.arange(101) * 0.1
@@ -129,7 +139,8 @@ def _imported_heading_source(number):
 
 
 @pytest.mark.parametrize("number", (1, 2))
-def test_oswec_imported_elevation_heading_against_matlab(number, tmp_path):
+@pytest.mark.parametrize("source", ("hdf5", "memory"))
+def test_oswec_imported_elevation_heading_against_matlab(number, source, tmp_path):
     """An interior BEM heading changes all six imported-wave force channels."""
     time = np.arange(201) * .1
     eta = .4 * np.cos(2 * np.pi * time / 7) + .15 * np.sin(2 * np.pi * time / 3)
@@ -145,7 +156,7 @@ def test_oswec_imported_elevation_heading_against_matlab(number, tmp_path):
     np.testing.assert_allclose(source_wave[:, 0], time, rtol=0, atol=1e-12)
     np.testing.assert_allclose(source_wave[:, 1], expected_wave, rtol=0, atol=1e-12)
 
-    body = _configured_body("oswec", number)
+    body = _configured_body("oswec", number, source)
     body.hydroForce["userDefinedFe"] = np.zeros((len(time), 6))
     body.userDefinedExcitation(
         np.vstack((time, expected_wave)), .1, [15], 1000, 9.81,
@@ -157,7 +168,7 @@ def test_oswec_imported_elevation_heading_against_matlab(number, tmp_path):
             np.vstack((time, expected_wave)), .1, [95], 1000, 9.81,
         )
 
-    if number == 1:
+    if number == 1 and source == "hdf5":
         # The public wave setting must reach production body preprocessing,
         # not just the direct BodyClass call above.
         wec = WEC("OSWEC imported heading")

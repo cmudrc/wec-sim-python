@@ -91,8 +91,10 @@ OSWEC radiation kernel; all irregular excitation entries are bit-equal. The
 imported-heading force gap is at most `3.61e-9` N or N m over both bodies.
 Ordinary CI uses the fixture; the fresh MATLAB
 workflow sets `WEC_SIM_MATLAB_REFERENCE_DIR` to compare newly generated MAT
-files against the same Python calculation. This is force preprocessing, not
-a coupled-motion or published-case badge gate.
+files against the same Python calculation. Both routes through the Python
+body loader—HDF5 and an in-memory copy of each body's BEM structure—meet
+the RM3/OSWEC regular-CIC and OSWEC directional gates. This is force
+preprocessing, not a coupled-motion or published-case badge gate.
 
 ## Sphere passive controller
 
