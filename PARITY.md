@@ -2436,6 +2436,16 @@ measures this amplification directly in MATLAB. It explains why a single
 published closed-loop trajectory is a fragile pointwise target, but it does
 not demonstrate autonomous Python parity or justify relaxing its gate.
 
+A second [local R2025b source control](tests/fixtures/matlab/wavestar_nmpc_full_step/README.md)
+changes only that 16.55 s request by `0.00272438` N m, close to the first
+opt-in Python source-`ode8` request split against the local published source.
+The source trajectories agree exactly before that request. Their 225 s
+maximum pitch and speed differences are `0.009739` rad and `0.05407` rad/s;
+peak absolute pitch shifts by `0.7943%`, while signed PTO work shifts by
+`0.03518%`. This measures sensitivity of the **published 50 ms source** to
+one altered request. It does not evaluate the separate derived 1 ms plant
+gate, prove autonomous Python parity, or change the open case label.
+
 An [autonomous full-duration functional check](tests/test_wavestar_nmpc_window_envelope.py)
 now runs the merged 50 ms source-style `wecsim_ode8` plant and public NMPC
 controller for the published 225 s input. The only source runtime input is

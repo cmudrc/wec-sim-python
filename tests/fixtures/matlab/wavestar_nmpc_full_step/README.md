@@ -85,6 +85,24 @@ checks the first changed tick and the subsequent amplification. This is a
 MATLAB self-sensitivity diagnostic; it does not gate autonomous Python
 motion. The published WaveStar NMPC case remains open.
 
+A second local R2025b run changed only that same 16.55 s request by
+`+0.00272438` N m, near the first independently advanced Python/source
+request split. The original and changed source traces match exactly through
+the command tick. Over 225 s, their maximum pitch and pitch-speed differences
+are `0.00973867` rad and `0.0540725` rad/s. Peak absolute pitch changes by
+`0.79430%`, while signed PTO work changes by `0.03518%`. The compact
+[`source_command_pulse_2p7e.npz`](source_command_pulse_2p7e.npz) contains both
+complete source histories; SHA-256 is
+`c10290a6589c86fb8e4d49f71fd6739b9cd99f045062382708f4ac467f05c1de`.
+The test above checks its first changed request and full-duration response.
+The source inputs use the pinned WEC-Sim and Applications commits at the top
+of this page. To regenerate, call `wavestar_local_published_source` twice
+with fresh output directories: first with four arguments for the unchanged
+case, then with an empty fifth argument and `.00272438` as the sixth.
+This is a **modified published 50 ms source** control, not an independent
+Python gate or the derived 1 ms plant/50 ms controller comparator. It does
+not change the WaveStar case status or badge.
+
 ## Full-duration direct controller replay
 
 `direct_controller_inputs.npz` retains all 4,201 active NMPC samples from the
