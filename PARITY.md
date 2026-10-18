@@ -827,7 +827,12 @@ The already-gated 200 s Sphere reactive direct-drive input now has a portable
 ordinary-CI gate on all 20,001 samples of public `WEC.run` body motion, PTO
 stroke and force, controller force, incident wave, and shaft and electrical
 outputs. It uses the exact source-generated HDF5 and a compact MATLAB trace;
-the original full source gate and Sphere badge count are unchanged.
+the original full source gate and Sphere badge count are unchanged. The portable
+gate also integrates mechanical shaft power, source-signed electrical power,
+and winding loss over the complete run, the 50 s ramp, and two developed-wave
+windows. Each independent Python/MATLAB work gap is below 0.01%, against a
+fixed 0.1% relative limit. This strengthens energy accounting for the same
+published input without adding a case to the badge.
 The public floating-OWC builder now has ordinary-CI checks for the published
 two-body order, floater-local MoorDyn attachment, column geometry, PTO settings,
 and rejection of incompatible sea, radiation-memory, and coordinate layouts.
