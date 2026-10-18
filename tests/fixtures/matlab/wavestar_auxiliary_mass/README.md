@@ -9,6 +9,15 @@ It changes only the BC rod and motor masses and three inertia entries from
 `0.0001` to `1e-9` in source units. The plotting script is disabled and
 geometry filename case is fixed for the local filesystem.
 
+The same probe accepts `20` as a fifth argument for a bounded active-control
+experiment. `active_20s.npz` stores its 401 pitch, pitch-speed, and torque
+request samples along with the unchanged sea components and wave history.
+Generate it from the probe's `aux_mass_probe.mat` with `scipy.io.loadmat`,
+selecting `time`, `pitch`, `speed`, `command`, `components`, and `wave` and
+flattening the first four vectors. The ordinary 9.95 s fixture remains the
+default probe duration. The 20 s archive SHA-256 is
+`bd5ef7e1972a0b3c0e009194d2bb7dbb781e87a3dad19f28e0d32dfe2d4396ba`.
+
 Pinned revisions: WEC-Sim core `0753b2e47f2457c078751dcfe5d251d1767b80ab`,
 WEC-Sim_Applications `d53d4d4c9eda2581f04204f5d394a6ef84bb099e`.
 The HDF5 is `../wavestar_fixed_input_step/wavestar.h5`. Run the probe with
@@ -47,3 +56,15 @@ most `2.48887e-6` rad and pitch speed by at most `1.05876e-5` rad/s. The
 Python/source gap does not close with the old piecewise-linear solver-stage
 wave forcing. This diagnostic isolates the omitted bodies as the cause of
 the initial derivative gap; it does not establish full 225 s NMPC parity.
+
+In the 20 s variant, the modified MATLAB run and the unchanged published run
+have identical components and wave samples. Their pitch differs by at most
+`2.48887e-6` rad through 15 s, yet their controller requests differ by
+`0.03235` N m at 16.55 s and up to `0.17171` N m through 20 s. Their pitch
+separates by up to `0.00116142` rad by 20 s. This source-only perturbation
+shows that small physical changes can strongly alter the early NMPC request
+history. On the unchanged published source, the corrected independent Python
+`wecsim_ode8` path has a maximum 20 s pitch gap of `0.00064794` rad, versus
+`0.00118738` rad before the auxiliary-body and stage-force corrections. This
+bounded result is not a gate for the 225 s published input, and it does not
+justify changing that gate or the case badge.

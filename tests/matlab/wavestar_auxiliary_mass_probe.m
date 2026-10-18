@@ -1,4 +1,8 @@
-function wavestar_auxiliary_mass_probe(coreDir, applicationsDir, repoDir, outDir)
+function wavestar_auxiliary_mass_probe(coreDir, applicationsDir, repoDir, outDir, duration)
+if nargin < 5
+    duration = 9.95;
+end
+assert(ismember(duration, [9.95, 20]), 'Expected a bounded prefix');
 assert(~isfolder(outDir), 'Use a fresh output directory');
 mkdir(outDir);
 source = fullfile(applicationsDir, 'WECCCOMP');
@@ -25,7 +29,7 @@ for name = ["Float", "Arm", "Frame", "BC", "Motor"]
     input = strrep(input, char(oldName), char(newName));
 end
 input = strrep(input, 'simu.cicEndTime     = 2;', ...
-    sprintf('simu.endTime = 9.95;\n    simu.cicEndTime     = 2;'));
+    sprintf('simu.endTime = %.17g;\n    simu.cicEndTime     = 2;', duration));
 old = 'body(4).mass            = 0.0001;';
 new = 'body(4).mass            = 1e-9;';
 assert(contains(input, old));
@@ -51,7 +55,8 @@ addpath(genpath(fullfile(coreDir, 'source')));
 cd(caseDir);
 wecSim;
 assert(strcmp(simu.solver, 'ode8') && simu.dt == .05 && ...
-    simu.endTime == 9.95 && numel(output.bodies(1).time) == 200 && ...
+    simu.endTime == duration && ...
+    numel(output.bodies(1).time) == round(duration/.05) + 1 && ...
     body(4).mass == 1e-9 && body(5).mass == 1e-9, ...
     'The source probe did not run at the selected settings');
 record = output.bodies(1);
@@ -59,8 +64,20 @@ time = record.time;
 pitch = record.position(:, 5);
 speed = record.velocity(:, 5);
 acceleration = record.acceleration;
+commandTime = cmd_ptoM.time;
+command = cmd_ptoM.signals.values;
+components = [waves.omega(:), waves.amplitude(:), ...
+    waves.dOmega(:), waves.phase(:)];
+wave = [output.wave.time(:), output.wave.elevation(:)];
+assert(isequal(size(commandTime), size(time)) && ...
+    isequal(size(command), size(time)) && ...
+    isequal(size(components), [500, 4]) && ...
+    isequal(size(wave), [numel(time), 2]) && ...
+    all(isfinite([time, pitch, speed, commandTime, command]), 'all'), ...
+    'The controller or wave record is incomplete');
 save(fullfile(outDir, 'aux_mass_probe.mat'), 'time', 'pitch', ...
-    'speed', 'acceleration', '-v7');
+    'speed', 'acceleration', 'commandTime', 'command', ...
+    'components', 'wave', '-v7');
 fprintf('AUX_MASS_PROBE_PASSED samples=%d alpha0=%.12g\n', ...
     numel(time), acceleration(1, 5));
 end

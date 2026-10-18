@@ -18,6 +18,7 @@ SOURCE = ROOT / "wavestar_fixed_input_step/source.npz"
 FULL_SOURCE = ROOT / "wavestar_nmpc_full_step/baseline.npz"
 STAGE_SOURCE = ROOT / "wavestar_stage_forcing/source.npz"
 AUXILIARY = ROOT / "wavestar_auxiliary_mass/source.npz"
+ACTIVE_AUXILIARY = ROOT / "wavestar_auxiliary_mass/active_20s.npz"
 ORIGINAL_AUXILIARY = ROOT / "wavestar_added_mass_delay/source.npz"
 
 
@@ -92,6 +93,32 @@ def test_light_auxiliary_bodies_have_bounded_precontrol_effect():
         assert np.max(np.abs(
             response.angular_speed - auxiliary["speed"]
         )) < 1.5e-4
+
+
+def test_light_auxiliary_bodies_amplify_the_active_source_feedback():
+    """Changing only tiny rod/motor masses can split the source NMPC path."""
+    with np.load(ACTIVE_AUXILIARY, allow_pickle=False) as near_zero, \
+            np.load(AUXILIARY, allow_pickle=False) as short, \
+            np.load(FULL_SOURCE, allow_pickle=False) as published:
+        time = near_zero["time"]
+        assert time.shape == (401,)
+        np.testing.assert_allclose(time, published["body"][:401, 0],
+                                   rtol=0, atol=1e-12)
+        np.testing.assert_allclose(near_zero["components"],
+                                   published["components"], rtol=0, atol=1e-12)
+        np.testing.assert_allclose(near_zero["wave"],
+                                   published["wave"][:401], rtol=0, atol=1e-12)
+        np.testing.assert_allclose(near_zero["pitch"][:200], short["pitch"],
+                                   rtol=0, atol=1e-10)
+        np.testing.assert_allclose(near_zero["speed"][:200], short["speed"],
+                                   rtol=0, atol=1e-10)
+
+        pitch_delta = near_zero["pitch"] - published["body"][:401, 5]
+        command_delta = near_zero["command"] - published["command"][:401]
+        assert np.max(np.abs(pitch_delta[:301])) < 3e-6
+        assert abs(command_delta[331]) > .03  # First active split at 16.55 s.
+        assert np.max(np.abs(command_delta)) > .1
+        assert np.max(np.abs(pitch_delta)) > .001
 
 
 def test_auxiliary_gravity_dominates_the_initial_acceleration_shift():
