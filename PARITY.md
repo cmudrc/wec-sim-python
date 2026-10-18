@@ -2499,9 +2499,12 @@ MATLAB source run unchanged would add no evidence.
 
 The current draft head `4e702382` evaluates the pinned `irregExcF` component
 sum directly at `ode8` stage times. Five off-grid local R2025b force samples
-match within `4.98e-14` N or N m. Its unchanged bounded autonomous tests now
-pass on hosted Linux x86 and macOS, including the former x86 `0.012` rad
-pitch limit. A [fresh full-duration R2025b split-step run](https://github.com/cmudrc/wec-sim-python/actions/runs/39153812298)
+match within `4.98e-14` N or N m. The separate hosted Linux x86 and macOS
+window-work and envelope jobs pass, but the broad Linux x86 source-`ode8`
+motion test still misses its unchanged `0.012` rad pitch limit at
+`0.0122207` rad in [run 39153812314](https://github.com/cmudrc/wec-sim-python/actions/runs/39153812314).
+A local Linux x86 run under Rosetta passed that test; it is not a reproduction
+of the hosted runner. A [fresh full-duration R2025b split-step run](https://github.com/cmudrc/wec-sim-python/actions/runs/39153812298)
 still fails the physical-default aggregate pitch-peak limit: `0.5705%`
 versus `0.5%` on hosted Linux. The other six aggregate motion, force, command,
 and PTO-work measures pass their unchanged `0.5%` limits. Its strict
