@@ -2874,9 +2874,15 @@ The source regular-wave case applies split added mass with delayed
 acceleration feedback. Reconstructing its translational added-mass force from
 the two preceding 0.1 s output accelerations agrees to numerical precision
 until 84.4 s; 78 later output samples differ by more than 0.001 N, with a
-maximum residual of 17.9 MN. Those intervals are consistent with internal
-variable solver steps near impacts, whose acceleration history is absent from
-the exported 0.1 s samples. The [0.05 s source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37691660845)
+maximum residual of 17.9 MN. A local full-duration R2025b time-log audit
+reproduces the archived published PTO trajectory exactly and records 81 solver
+times outside the 0.1 s output grid. Each of the 78 output samples with a
+saved-grid recurrence residual above 0.001 N lies within two output intervals
+of one of those times, for both bodies; all other residuals are below `5e-6` N.
+The [portable diagnostic](tests/test_rm3_end_stops_internal_steps.py) therefore
+confirms that the missing internal acceleration history explains the apparent
+saved-grid force mismatch. It does not close the independent published-motion
+gap. The [0.05 s source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37691660845)
 and [0.025 s source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37692499385)
 and [0.0125 s source run](https://github.com/cmudrc/wec-sim-python/actions/runs/37693255891)
 have no such saved-step residual above 0.001 N through 120 s. PTO stroke
