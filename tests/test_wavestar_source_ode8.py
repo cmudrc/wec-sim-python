@@ -6,7 +6,9 @@ import numpy as np
 import pytest
 
 from wecsim import WaveStarNmpcPTO
-from wecsim.dynamics.wavestar import WaveStarLinkage, run_wavestar_published
+from wecsim.dynamics.wavestar import (
+    WaveStarLinkage, _source_stage_excitation, run_wavestar_published,
+)
 from wecsim.environment.irregularWave import jonswap_equal_energy_components
 
 
@@ -14,6 +16,7 @@ ROOT = Path(__file__).parent / "fixtures/matlab"
 HYDRO = ROOT / "wavestar_fixed_input_step/wavestar.h5"
 SOURCE = ROOT / "wavestar_fixed_input_step/source.npz"
 FULL_SOURCE = ROOT / "wavestar_nmpc_full_step/baseline.npz"
+STAGE_SOURCE = ROOT / "wavestar_stage_forcing/source.npz"
 AUXILIARY = ROOT / "wavestar_auxiliary_mass/source.npz"
 ORIGINAL_AUXILIARY = ROOT / "wavestar_added_mass_delay/source.npz"
 
@@ -24,6 +27,23 @@ def _published_sea(components):
         directions=np.array([0.]), spreading=np.array([1.]),
         gamma=3.3, phase=components[:, 3, None],
     )
+
+
+def test_exact_ode8_stage_excitation_against_matlab_irreg_exc_f():
+    """Use source function values at times between saved wave samples."""
+    with np.load(STAGE_SOURCE, allow_pickle=False) as source, \
+            np.load(FULL_SOURCE, allow_pickle=False) as published:
+        time = source["time"]
+        force = source["unramped_force"]
+        sea = _published_sea(published["components"])
+    assert time.shape == (5,) and force.shape == (5, 6)
+    assert np.isfinite(time).all() and np.isfinite(force).all()
+    evaluator = _source_stage_excitation(HYDRO, sea, rho=1000., g=9.80665)
+    np.testing.assert_allclose(evaluator(time, 0), force,
+                               rtol=0, atol=1e-10)
+    ramp = np.where(time < 25, (1 - np.cos(np.pi * time / 25)) / 2, 1.)
+    np.testing.assert_allclose(evaluator(time, 25), force * ramp[:, None],
+                               rtol=0, atol=1e-10)
 
 
 def test_public_source_ode8_closes_the_precontrol_motion_gap():
@@ -37,8 +57,8 @@ def test_public_source_ode8_closes_the_precontrol_motion_gap():
     np.testing.assert_allclose(response.time, body[:, 0], rtol=0, atol=1e-10)
     # Source motion is never fed to the Python solve. Only pinned HDF5
     # hydrodynamics and the published wave phases set its inputs.
-    assert np.max(np.abs(response.angle - body[:, 5])) < 2e-5
-    assert np.max(np.abs(response.angular_speed - body[:, 11])) < 1.5e-4
+    assert np.max(np.abs(response.angle - body[:, 5])) < 1e-7
+    assert np.max(np.abs(response.angular_speed - body[:, 11])) < 1e-6
 
 
 def test_light_auxiliary_bodies_have_bounded_precontrol_effect():
@@ -154,6 +174,6 @@ def test_source_ode8_with_independent_nmpc_through_20s():
     np.testing.assert_allclose(response.time, body[:, 0], rtol=0, atol=1e-10)
     # NMPC activates at 15 s. This bounded diagnostic does not gate the
     # chaotic full 225 s closed-loop motion.
-    assert np.max(np.abs(response.angle - body[:, 5])) < .002
-    assert np.max(np.abs(response.angular_speed - body[:, 11])) < .012
-    assert np.max(np.abs(response.pto_force - pto[:, 33])) < 1.
+    assert np.max(np.abs(response.angle - body[:, 5])) < .0008
+    assert np.max(np.abs(response.angular_speed - body[:, 11])) < .007
+    assert np.max(np.abs(response.pto_force - pto[:, 33])) < .5

@@ -2601,6 +2601,19 @@ the omitted light bodies as the initial-derivative cause, but neither effect
 closes the remaining precontrol trajectory gap in this piecewise-linear
 forcing run. The physical default and case status are unchanged.
 
+The Python WaveStar runner now projects those two light bodies' inertia and
+gravity onto the arm coordinate and evaluates the pinned irregular-wave
+component sum at each `ode8` stage. The body-local kinematics pair with the
+saved MATLAB poses, velocities, and accelerations, and five off-grid stage
+forces pair with `irregExcF` within `1e-10` N or N m. With only the pinned HDF5
+and sea phases as runtime inputs, the 9.95 s published-step pitch and speed
+gaps are `6.77e-8` rad and `4.41e-7` rad/s; the earlier reduced model had
+`1.42e-5` rad and `1.19e-4` rad/s gaps. Through 20 s of autonomous NMPC, the
+pitch, speed, and PTO-force gaps are `6.48e-4` rad, `0.00560` rad/s, and
+`0.223` N. These changes improve the independent dynamics and short-window
+control comparison. The 225 s pointwise gate still fails, so WaveStar stays
+`open_motion` and the case badge is unchanged.
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001
