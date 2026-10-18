@@ -1,9 +1,10 @@
-function wavestar_local_published_source(coreDir, applicationsDir, repoDir, outDir, commandMat)
+function wavestar_local_published_source(coreDir, applicationsDir, repoDir, outDir, commandMat, pulseNm)
 % Run the pinned 225 s WaveStar input with its real MATLAB toolboxes.
 % Work in a disposable application copy. Geometry filename case and the
 % post-run plotting script are the only edits for an ordinary source run.
 % Supplying commandMat replaces active NMPC torque requests with that saved
 % request series while the source independently advances the plant.
+% Supplying pulseNm changes only the 32nd active request (16.55 s).
 assert(~isfolder(outDir), 'Use a fresh WaveStar output directory');
 mkdir(outDir);
 source = fullfile(applicationsDir, 'WECCCOMP');
@@ -56,6 +57,24 @@ if nargin >= 5 && ~isempty(commandMat)
         '    end\n' ...
         '    codexCall = codexCall + 1;\n' ...
         '    y(1) = codexCommand(codexCall);\n'], commandPath);
+    write_text(controllerFile, strrep(controller, target, replacement));
+end
+if nargin >= 6 && ~isempty(pulseNm)
+    assert((nargin < 5 || isempty(commandMat)) && ...
+        isscalar(pulseNm) && isfinite(pulseNm), ...
+        'A command pulse needs one finite value and no prescribed series');
+    controllerFile = fullfile(caseDir, 'NMPC.m');
+    controller = fileread(controllerFile);
+    target = '    y = Ubar;';
+    assert(count(controller, target) == 1, 'Pinned NMPC output changed');
+    replacement = sprintf([ ...
+        '    y = Ubar;\n' ...
+        '    persistent codexPulseCall;\n' ...
+        '    if isempty(codexPulseCall), codexPulseCall = 0; end\n' ...
+        '    codexPulseCall = codexPulseCall + 1;\n' ...
+        '    if codexPulseCall == 32\n' ...
+        '        y(1) = y(1) + %.17g;\n' ...
+        '    end\n'], pulseNm);
     write_text(controllerFile, strrep(controller, target, replacement));
 end
 
