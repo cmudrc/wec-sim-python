@@ -2355,10 +2355,11 @@ Simulink `ode8` modal amplification factors within `1e-10`. The pinned
 Python's half-step excitation samples reproduces that smooth forcing without
 resampling the entire sea at every stage. The published BC rod and motor are
 also represented through their B-to-C linkage kinematics, generalized mass,
-gravity, and centrifugal load. Their geometry was checked against local
-R2025b body poses, speeds, and accelerations; no saved MATLAB state is fed to
-the Python solve. Without reading source poses, forces, or accelerations, the
-published first 9.95 s before NMPC activation now pairs within `6.77e-8` rad
+gravity, and centrifugal load. A [pinned local R2025b kinematics gate](tests/fixtures/matlab/wavestar_added_mass_delay/README.md)
+checks both light bodies' poses, speeds, and accelerations over 200 samples;
+no saved MATLAB state is fed to the Python solve. Without reading source
+poses, forces, or accelerations, the published first 9.95 s before NMPC
+activation now pairs within `6.77e-8` rad
 float pitch and `4.42e-7` rad/s pitch speed. These direct gates use only the
 pinned HDF5 and wave phases; the default physical mass-matrix solver remains
 separate and includes the light auxiliary bodies too. At 25 and 12.5 ms, the
