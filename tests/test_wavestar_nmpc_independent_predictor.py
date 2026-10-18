@@ -30,11 +30,43 @@ def test_full_duration_matlab_forecast_on_independent_python_motion():
     observer = WaveStarNmpcObserver()
     stroke = WaveStarLinkage().pto_stroke(pitch)
     states = []
+    measurements = []
+    prior_commands = []
     previous = 0.
     for position, request in zip(stroke, command):
+        prior_commands.append(previous)
         states.append(observer.step(float(position), float(previous)))
+        measurements.append([
+            observer._position_from_stroke(float(position)),
+            observer._previous_velocity,
+        ])
         previous = request
     states = np.asarray(states)
+    measurements = np.asarray(measurements)
+
+    # Source observer_kf receives the sampled position/velocity and preceding
+    # torque, then advances its own persistent five-state Kalman estimate.
+    observer_input = loadmat(FIXTURE / "python_observer_input.mat")
+    np.testing.assert_allclose(observer_input["time"].ravel(), time,
+                               rtol=0, atol=1e-10)
+    np.testing.assert_allclose(observer_input["measure"], measurements,
+                               rtol=0, atol=1e-12)
+    np.testing.assert_allclose(observer_input["prior"].ravel(), prior_commands,
+                               rtol=0, atol=1e-12)
+    np.testing.assert_allclose(observer_input["Ad"],
+                               observer._transition[:4, :4], rtol=0, atol=1e-12)
+    np.testing.assert_allclose(observer_input["Bd"],
+                               observer._input[:4, None], rtol=0, atol=1e-12)
+    np.testing.assert_allclose(observer_input["Qkf"],
+                               observer._process_covariance, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(observer_input["Rkf"],
+                               observer._measurement_covariance,
+                               rtol=0, atol=1e-12)
+    matlab_observer = loadmat(FIXTURE / "matlab_observer.mat")["rows"]
+    assert matlab_observer.shape == states.shape
+    assert np.max(np.abs(states[:, -1])) > 10
+    assert np.max(np.abs(states - matlab_observer)) < 1e-10
+
     with np.load(QP_INPUT, allow_pickle=False) as qp:
         np.testing.assert_allclose(time[300:], qp["time"],
                                    rtol=0, atol=1e-10)

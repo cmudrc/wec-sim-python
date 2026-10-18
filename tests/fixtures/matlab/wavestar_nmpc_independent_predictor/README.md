@@ -1,4 +1,4 @@
-# WaveStar AR forecast on independently advanced motion
+# WaveStar observer and AR forecast on independently advanced motion
 
 `python_motion.npz` saves the 4,501 pitch and requested-torque samples from
 the autonomous Python 225 s `run_wavestar_published(...,
@@ -9,6 +9,21 @@ wave phases; MATLAB body motion, controller states, and torque requests were
 not runtime inputs. The portable test rebuilds the observer's excitation
 estimate from these Python pitch and command samples and requires its active
 states and requests to agree with that independent QP fixture.
+
+`python_observer_input.mat` records the position and filtered velocity
+derived from that Python stroke history, the preceding Python torque
+requests, and the controller matrices. On all 4,501 samples, local MATLAB
+R2025b ran the pinned `observer_kf.m` Kalman update without saved MATLAB
+motion or observer states as inputs. Its five estimated states in
+`matlab_observer.mat` differ from Python by at most `1.24345e-14` (RMS
+`7.46255e-16`). The pinned `observer_kf.m` has SHA-256
+`add582a07bf2e4bb30e80302c1516789d0d358e921326057af4bcdaad6dc3ed6`.
+The Python input and MATLAB output MAT files have SHA-256
+`06a9c8d3d712c66038e38fb89a8a2055e28f789a9d29ee3eb5beeb4a1f73208a`
+and `151885062486dc754233cecaaaf9d2e856be34fdcd007952814a27b4840a5fc3`.
+This directly gates the Kalman update on independent Python measurements;
+the previously published source-stroke replay covers the linkage and sampled
+velocity filters.
 
 `python_moment.csv` records those 4,501 reconstructed excitation estimates
 at the 0.05 s controller clock. On 2026-10-18, MATLAB R2025b Update 7 on
@@ -55,3 +70,7 @@ pinned WEC-Sim_Applications checkout. The script reads the committed input
 CSV and overwrites the two MATLAB output fixtures; rerun the portable test
 afterward. The MAT-file header may change its byte hash when regenerated;
 the test gates numeric values.
+
+Run `wavestar_nmpc_independent_observer_replay(applicationsRoot)` with the
+same source checkout to regenerate `matlab_observer.mat` from the committed
+Python observer input MAT file.
