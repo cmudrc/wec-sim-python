@@ -57,6 +57,19 @@ def test_advection_rejects_zero_time_step_from_direct_wind_data():
         MostWindField(wind)
 
 
+def test_single_cell_bts_grid_allows_unused_zero_spacings(tmp_path):
+    path = tmp_path / "single-cell.bts"
+    header = struct.pack(
+        "<h4i12fi", 7, 1, 1, 0, 2, 0, 0, .5, 8, 20, 10,
+        2, 10, 4, -2, 5, 1, 0,
+    )
+    path.write_bytes(header + np.zeros(2 * 3, dtype="<i2").tobytes())
+    wind = read_turbsim_bts(path)
+    np.testing.assert_array_equal(wind.y, [0])
+    np.testing.assert_array_equal(wind.z, [10])
+    assert wind.dt == .5
+
+
 @pytest.mark.skipif(
     not (os.environ.get("WEC_SIM_MOST_BTS") and os.environ.get("WEC_SIM_MOST_WIND_BASELINE")),
     reason="pinned MOST BTS and MATLAB reader output not provided",
