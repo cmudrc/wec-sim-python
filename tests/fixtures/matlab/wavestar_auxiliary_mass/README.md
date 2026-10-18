@@ -35,7 +35,15 @@ np.savez_compressed(
 
 Changing the auxiliaries shifts MATLAB's initial acceleration by
 `3.88532e-5` rad/s², almost exactly the original initial Python/source
-gap. Across the full prefix it changes MATLAB pitch by at most `2.48887e-6`
-rad and pitch speed by at most `1.05876e-5` rad/s. The Python/source pitch
-gap does not close. This rules out omitted BC/motor inertia as the leading
-9.95 s trajectory discrepancy; it does not establish full 225 s NMPC parity.
+gap. The probe changes gravity and inertia together: at the initial linkage
+pose, the projected auxiliary mass is `3.3634463e-6` kg m² and the gravity
+load is `1.28195481e-4` N m. Dividing by the base generalized mass
+`3.32874780505` kg m² attributes about `3.42e-7` rad/s² of the acceleration
+change to inertia and `3.85e-5` rad/s² to gravity. Combining both predicts
+`0.33837016345` rad/s², within `5.5e-11` of the published source.
+
+Across the full prefix, changing both auxiliaries shifts MATLAB pitch by at
+most `2.48887e-6` rad and pitch speed by at most `1.05876e-5` rad/s. The
+Python/source gap does not close with the old piecewise-linear solver-stage
+wave forcing. This diagnostic isolates the omitted bodies as the cause of
+the initial derivative gap; it does not establish full 225 s NMPC parity.

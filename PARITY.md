@@ -2385,9 +2385,12 @@ pitch acceleration moves from `0.3383701634` to `0.3384090166` rad/s²,
 almost exactly the reduced Python linkage's `0.3384090170`. Over 9.95 s,
 however, the maximum Python/source pitch gap changes from `1.42056e-5` to
 `1.44994e-5` rad and the pitch-speed gap remains about `1.18e-4` rad/s.
-Omitting these light auxiliary bodies explains the initial derivative offset,
-not the remaining precontrol trajectory gap. The physical default and case
-status are unchanged.
+The probe changes auxiliary gravity and inertia together. A linkage-based
+decomposition attributes about `3.85e-5` rad/s² of the initial acceleration
+gap to their gravity and `3.42e-7` rad/s² to their inertia. It identifies
+the omitted light bodies as the initial-derivative cause, but neither effect
+closes the remaining precontrol trajectory gap in this piecewise-linear
+forcing run. The physical default and case status are unchanged.
 
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
