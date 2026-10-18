@@ -2211,6 +2211,23 @@ aggregate comparison, not a parity gate or evidence that the full difference
 comes from one solver component. The published closed-loop case remains open;
 its derived fine-step aggregate gate above is separate.
 
+A fresh local R2025b [added-mass feedback probe](tests/fixtures/matlab/wavestar_added_mass_delay/README.md)
+reproduces the first 9.95 s of published WaveStar pitch and speed to
+floating-point precision. WEC-Sim moves `7.7017874` kg of the float's
+infinite-frequency added mass into its rigid-body mass, raising the mass
+passed to Simscape from `3.075` to `10.7767874` kg. Its compensating
+added-mass force passes through a 100 ns transport delay. The recorded applied
+force is zero initially, uses the initial acceleration at 50 ms, and then
+agrees within `1e-5` N with a linear extrapolation from the two preceding
+logged accelerations. Changing only the source's `adjMassFactor` from 2 to 1
+raises the initial pitch acceleration from `0.338370` to `0.519208` rad/s²
+and changes the precontrol pitch trace by up to `0.00272635` rad. The
+[portable gate](tests/test_wavestar_added_mass_delay.py) locks down these
+observations. The source maintainers describe the transport delay as a way to
+avoid an algebraic loop in [WEC-Sim issue 909](https://github.com/WEC-Sim/WEC-Sim/issues/909);
+this probe does not establish that it is a defect or that reproducing it
+would close the published 225 s parity gap.
+
 ![Published WaveStar NMPC float pitch and controller-command differences](docs/figures/wavestar-nmpc-published-gap.png)
 
 A subsequent [full 225 s `ode8` internal-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38591012516)
