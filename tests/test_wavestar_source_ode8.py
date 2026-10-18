@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from wecsim import WaveStarNmpcPTO
-from wecsim.dynamics.wavestar import run_wavestar_published
+from wecsim.dynamics.wavestar import WaveStarLinkage, run_wavestar_published
 from wecsim.environment.irregularWave import jonswap_equal_energy_components
 
 
@@ -42,7 +42,7 @@ def test_public_source_ode8_closes_the_precontrol_motion_gap():
 
 
 def test_light_auxiliary_bodies_have_bounded_precontrol_effect():
-    """A source run removes BC/motor inertia while keeping the 50 ms sea."""
+    """A source run reduces BC/motor mass and inertia with the same 50 ms sea."""
     with np.load(SOURCE, allow_pickle=False) as published, \
             np.load(AUXILIARY, allow_pickle=False) as auxiliary, \
             np.load(ORIGINAL_AUXILIARY, allow_pickle=False) as original:
@@ -72,6 +72,38 @@ def test_light_auxiliary_bodies_have_bounded_precontrol_effect():
         assert np.max(np.abs(
             response.angular_speed - auxiliary["speed"]
         )) < 1.5e-4
+
+
+def test_auxiliary_gravity_dominates_the_initial_acceleration_shift():
+    """Project the published light bodies onto the initial arm coordinate."""
+    with np.load(ORIGINAL_AUXILIARY, allow_pickle=False) as published, \
+            np.load(AUXILIARY, allow_pickle=False) as near_zero:
+        assert published["pitch"][0] == 0
+        source_acceleration = published["acceleration"][0, 4]
+        near_zero_acceleration = near_zero["acceleration"][0, 4]
+
+    linkage = WaveStarLinkage()
+    base = np.asarray(linkage.pto_base)
+    tip = np.asarray(linkage.pto_arm)
+    rod = tip - base
+    tip_tangent = linkage.point_velocity(tip, 0., 1.)
+    rod_angle_rate = (rod[1] * tip_tangent[0] - rod[0] * tip_tangent[1]) \
+        / (rod @ rod)
+    rod_tangent = tip_tangent - rod_angle_rate * np.array([tip[1], -tip[0]])
+    motor_tangent = -rod_angle_rate * np.array([base[1], -base[0]])
+    projected_mass = 1e-4 * (
+        rod_tangent @ rod_tangent + motor_tangent @ motor_tangent
+        + 2 * rod_angle_rate**2
+    )
+    gravity_load = 1e-4 * 9.80665 * (rod_tangent[1] + motor_tangent[1])
+
+    # The gravity load is over 100 times the initial inertia force. Both
+    # together imply the same approximately 3.33 kg m² base mass as the
+    # independent float/arm hydrodynamic model.
+    assert gravity_load > 100 * projected_mass * near_zero_acceleration
+    base_mass = (gravity_load + source_acceleration * projected_mass) \
+        / (near_zero_acceleration - source_acceleration)
+    assert 3.32 < base_mass < 3.34
 
 
 def test_source_ode8_precontrol_motion_on_two_refined_steps():
