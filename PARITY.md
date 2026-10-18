@@ -2352,6 +2352,19 @@ optimizer from the growing closed-loop trajectory gap, but it does not feed
 MATLAB commands back into Python motion or establish published-case motion
 parity. WaveStar NMPC remains open.
 
+A [portable published-command plant gate](tests/test_wavestar_published_command_replay.py)
+now advances the full 225 s WaveStar plant through the public `wecsim_ode8`
+route using only the pinned hydrodynamic file, wave phases, and **saved MATLAB
+requested motor torques** as runtime inputs. It does not read source body
+motion or force into the solve. Across all 4,501 samples, the current merged
+Python plant differs from the source by at most `0.000139` rad float pitch,
+`0.000995` rad/s pitch speed, `27.3` µm PTO stroke, and `0.00237` N axial
+force; signed PTO work differs by `0.0521%`. The predeclared
+portable gates are `0.0003` rad, `0.002` rad/s, `60` µm, `0.005` N, and
+`0.1%` work. This source-command diagnostic isolates the larger autonomous
+gap to the controller-input and plant-feedback loop; it does **not** establish
+independent closed-loop parity or change the open case label and badge count.
+
 The next WaveStar change remains a [draft, unmerged PR](https://github.com/cmudrc/wec-sim-python/pull/525).
 It paired the first 9.95 s of the published 50 ms source within `6.77e-8`
 rad pitch using smooth solver-stage excitation and the light BC rod and motor.
