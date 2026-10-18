@@ -67,7 +67,6 @@ def test_single_cell_cross_section_interpolates_only_along_advection_axis():
                                rtol=0, atol=1e-14)
 
 
-
 @pytest.mark.skipif(not os.environ.get("WEC_SIM_MOST_ADVECTION_DIR"),
                     reason="pinned MATLAB MOST advection output not provided")
 def test_most_wind_planes_against_run_turbsim():
