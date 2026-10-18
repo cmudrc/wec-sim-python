@@ -465,6 +465,35 @@ def test_python_builder_configures_paired_floating_joint_and_pto():
     )
 
 
+def test_floating_joint_public_initial_speeds_reach_bodies_and_pto():
+    wec = WEC("RM3 initial velocity")
+    float_body = wec.body("float", HYDRO, inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", HYDRO, inertia=(0, 94_407_091.24, 0))
+    wec.floating_joint(float_body, spar, damping=1_200_000,
+                       stiffness=100_000, equilibrium_position=.1)
+    initial_coordinate = {"float_heave": .3, "spar_heave": -.1}
+    initial_speed = {"surge": .2, "float_heave": -.3, "spar_heave": .4}
+    case = wec.to_case(NoWave(), dt=.05, end_time=.1,
+                       initial_coordinate=initial_coordinate,
+                       initial_speed=initial_speed)
+    assert case["constraint"]["initial_coordinate"] == initial_coordinate
+    assert case["constraint"]["initial_speed"] == initial_speed
+
+    result = wec.run(NoWave(), dt=.05, end_time=.1,
+                     initial_coordinate=initial_coordinate,
+                     initial_speed=initial_speed)
+    np.testing.assert_allclose(result.bodies["float"].velocity[0, [0, 2]],
+                               [.2, -.3], rtol=0, atol=1e-12)
+    np.testing.assert_allclose(result.bodies["spar"].velocity[0, [0, 2]],
+                               [.2, .4], rtol=0, atol=1e-12)
+    pto = result.ptos["relative_heave"]
+    np.testing.assert_allclose(pto.stroke[0], .4, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(pto.velocity[0], -.7, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(pto.force[0], 810_000, rtol=0, atol=1e-7)
+    np.testing.assert_allclose(pto.absorbed_power[0], 588_000,
+                               rtol=0, atol=1e-7)
+
+
 def test_python_builder_rejects_foreign_body_attachment():
     first = WEC("first")
     second = WEC("second")
