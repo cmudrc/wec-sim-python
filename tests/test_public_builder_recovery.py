@@ -152,6 +152,17 @@ def test_rotational_pto_rejects_translation_before_reserving_its_name():
     }]
 
 
+@pytest.mark.parametrize("damping", [True, np.bool_(True), -1, np.nan])
+def test_rotational_pto_rejects_invalid_damping_before_reserving_name(damping):
+    wec, body, _ = _heave_wec()
+    pitch = wec.coordinate("pitch", body.move("pitch"))
+    with pytest.raises(ValueError, match="finite nonnegative damping"):
+        wec.rotational_pto("hinge", pitch, damping=damping)
+    assert wec.rotational_ptos == []
+    wec.rotational_pto("hinge", pitch, damping=500)
+    assert wec.rotational_ptos[0].damping == 500
+
+
 def test_coordinate_rejects_invalid_motion_before_reserving_its_name():
     wec, body, heave = _heave_wec()
     invalid = (
@@ -181,7 +192,11 @@ def test_coordinate_rejects_invalid_motion_before_reserving_its_name():
     ({"linear_generator": DirectLinearGenerator(1, -1, 1, 1, 1, -1),
       "damping": 10}, "linear generator supplies its own PTO force"),
     ({"velocity_control_gain": -1}, "velocity_control_gain must be finite"),
+    ({"velocity_control_gain": np.bool_(True)},
+     "velocity_control_gain must be finite"),
     ({"position_control_gain": float("nan")},
+     "position_control_gain must be finite"),
+    ({"position_control_gain": np.bool_(True)},
      "position_control_gain must be finite"),
 ])
 def test_pto_rejects_conflicting_or_invalid_force_laws_atomically(settings, error):

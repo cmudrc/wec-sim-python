@@ -548,14 +548,16 @@ class WEC(_WECCaseMixin):
                 raise ValueError("PTO axis needs a finite nonzero axis")
         try:
             gain = (float(velocity_control_gain)
-                    if not isinstance(velocity_control_gain, bool) else np.nan)
+                    if not isinstance(velocity_control_gain, (bool, np.bool_))
+                    else np.nan)
         except (TypeError, ValueError) as exc:
             raise ValueError("velocity_control_gain must be finite and nonnegative") from exc
         if not np.isfinite(gain) or gain < 0:
             raise ValueError("velocity_control_gain must be finite and nonnegative")
         try:
             position_gain = (float(position_control_gain)
-                             if not isinstance(position_control_gain, bool) else np.nan)
+                             if not isinstance(position_control_gain, (bool, np.bool_))
+                             else np.nan)
         except (TypeError, ValueError) as exc:
             raise ValueError("position_control_gain must be finite") from exc
         if not np.isfinite(position_gain):
@@ -614,6 +616,9 @@ class WEC(_WECCaseMixin):
         if any(existing.name == name for existing in
                (*self.ptos, *self.rotational_ptos)):
             raise ValueError(f"PTO name already exists: {name}")
+        if (not isinstance(damping, Real) or isinstance(damping, (bool, np.bool_))
+                or not np.isfinite(damping) or damping < 0):
+            raise ValueError("rotational PTO needs finite nonnegative damping")
         equilibrium = _pto_equilibrium(stiffness, equilibrium_angle,
                                        pretension, "rotational")
         pto = RotationalPTO(name, coordinate, damping, stiffness, equilibrium)
