@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 from scipy.integrate import solve_ivp
 
+from wecsim import RegularWave, WEC
 from wecsim.components.directLinearGenerator import (
     DirectLinearGenerator, run_rm3_direct_linear_generator,
 )
@@ -93,3 +94,48 @@ def test_unforced_rm3_generator_stays_at_equilibrium():
                    response.absorbed_power, response.electrical_power,
                    response.phase_current, response.phase_voltage):
         np.testing.assert_allclose(values, 0, rtol=0, atol=1e-10)
+
+
+def test_ramped_rm3_generator_agrees_with_public_wec():
+    """Keep the standalone source-comparison solver paired with WEC.run."""
+    settings = dict(
+        stator_resistance=4.58, friction=-100, pole_pitch=.072,
+        magnet_flux=8, inductance=.285, load_resistance=-117.6471,
+    )
+    source_solver = run_rm3_direct_linear_generator(
+        RM3, generator=DirectLinearGenerator(**settings),
+        height=2.5, period=8, ramp_time=100,
+        dt=.0005, output_dt=.01, end_time=1,
+    )
+
+    wec = WEC("RM3 ramped direct generator")
+    floating = wec.body("float", RM3)
+    spar = wec.body("spar", RM3)
+    wec.coordinate("float_heave", floating.move("heave"))
+    wec.coordinate("spar_heave", spar.move("heave"))
+    wec.pto(
+        "PTO1", spar.at(0, 0, 0), floating.at(0, 0, 0),
+        axis=(0, 0, 1),
+        linear_generator=DirectLinearGenerator(**settings),
+    )
+    public = wec.run(RegularWave(2.5, 8), dt=.0005,
+                     end_time=1, ramp_time=100)
+    sample = slice(None, None, 20)  # 0.0005 s integration, 0.01 s output.
+    np.testing.assert_allclose(source_solver.time, public.time[sample],
+                               rtol=0, atol=1e-12)
+    np.testing.assert_allclose(source_solver.wave_elevation,
+                               public.wave_elevation[sample], rtol=0, atol=1e-12)
+    for index, name in enumerate(("float", "spar")):
+        np.testing.assert_allclose(
+            source_solver.body_heave[:, index],
+            public.bodies[name].position[sample, 2], rtol=0, atol=1e-12,
+        )
+        np.testing.assert_allclose(
+            source_solver.body_heave_velocity[:, index],
+            public.bodies[name].velocity[sample, 2], rtol=0, atol=1e-12,
+        )
+    pto = public.ptos["PTO1"]
+    np.testing.assert_allclose(source_solver.pto_force, pto.force[sample],
+                               rtol=0, atol=1e-10)
+    np.testing.assert_allclose(source_solver.absorbed_power,
+                               pto.absorbed_power[sample], rtol=0, atol=1e-10)
