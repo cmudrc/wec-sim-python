@@ -229,11 +229,21 @@ class WEC(_WECCaseMixin):
         if not isinstance(name, str) or not name:
             raise ValueError("body name must be a nonempty string")
         ordered = tuple(states)
+        switches = tuple(switch_times)
         if (len(ordered) < 2 or not all(isinstance(s, HydroState) for s in ordered)
-                or len(switch_times) != len(ordered) - 1):
+                or len(switches) != len(ordered) - 1):
             raise ValueError("variable body needs states and one fewer switch times")
         if any(existing.name == name for existing in self.bodies):
             raise ValueError(f"body name already exists: {name}")
+        if any(isinstance(value, (bool, np.bool_)) or not isinstance(value, Real)
+               for value in switches):
+            raise ValueError("variable body switch times must be finite, positive, "
+                             "and increasing")
+        switches = tuple(float(value) for value in switches)
+        if (not np.isfinite(switches).all() or any(value <= 0 for value in switches)
+                or any(np.diff(switches) <= 0)):
+            raise ValueError("variable body switch times must be finite, positive, "
+                             "and increasing")
         # Every future draft must be valid before the first one reserves the name.
         checked = []
         for state in ordered:
@@ -242,7 +252,7 @@ class WEC(_WECCaseMixin):
         ordered = tuple(checked)
         first = ordered[0]
         body = Body(name, first.hydro_file, first.mass, first.inertia,
-                    variable_hydro=VariableHydro(ordered, tuple(switch_times)))
+                    variable_hydro=VariableHydro(ordered, switches))
         self.bodies.append(body)
         return body
 
