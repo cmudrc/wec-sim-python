@@ -2386,6 +2386,22 @@ portable gates are `0.0003` rad, `0.002` rad/s, `60` µm, `0.005` N, and
 gap to the controller-input and plant-feedback loop; it does **not** establish
 independent closed-loop parity or change the open case label and badge count.
 
+An [autonomous full-duration functional gate](tests/test_wavestar_nmpc_functional_energy.py)
+now runs the merged 50 ms source-style `wecsim_ode8` plant and public NMPC
+controller for the published 225 s input. The only source runtime input is
+the incident-wave phase matrix; Python independently advances the plant,
+observer, predictor, controller, and PTO actuator. Against the pinned R2025b
+source, a local Apple silicon run produced `-169.812` J signed PTO work
+versus `-169.702` J (`0.0647%` difference). In three consecutive controlled
+windows, the largest signed-work difference is `0.1684%`; the largest
+window RMS differences are `0.5448%` pitch, `0.5842%` pitch speed, and
+`1.0090%` axial PTO force. The test requires under `0.1%` full-run work,
+`0.5%` work in each window, and `1%` motion and `2%` force RMS differences
+in each window. These are **functional energy and envelope gates**. The
+same run's pointwise pitch difference reaches `0.01536` rad, and the source
+closed loop varies across execution environments, so this does not establish
+trajectory parity or change the `open_motion` label or badge count.
+
 The next WaveStar change remains a [draft, unmerged PR](https://github.com/cmudrc/wec-sim-python/pull/525).
 It paired the first 9.95 s of the published 50 ms source within `6.77e-8`
 rad pitch using smooth solver-stage excitation and the light BC rod and motor.
