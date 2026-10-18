@@ -2340,6 +2340,18 @@ lock down this source-input component. The observer, forecast, and plant still
 run independently only in their separate checks, and published WaveStar
 closed-loop motion remains open.
 
+A [second full-duration local `quadprog` replay](tests/fixtures/matlab/wavestar_nmpc_independent_qp/README.md)
+now feeds that same pinned `NMPC.m` all 4,201 observer states and AR forecasts
+from Python's **own** 225 s closed-loop motion. MATLAB and Python torque
+requests differ by at most `0.000289571` N m and `8.83404e-6` N m RMS;
+the 15–20 s maximum is `1.02796e-5` N m, and the independent run reaches
+48 near-saturation commands. The portable full-duration gate recomputes
+Python commands on those independent inputs and checks `0.001` N m maximum,
+`0.00005` N m RMS, and `0.00005` N m through 20 s. This separates the
+optimizer from the growing closed-loop trajectory gap, but it does not feed
+MATLAB commands back into Python motion or establish published-case motion
+parity. WaveStar NMPC remains open.
+
 A [portable published-command plant gate](tests/test_wavestar_published_command_replay.py)
 now advances the full 225 s WaveStar plant through the public `wecsim_ode8`
 route using only the pinned hydrodynamic file, wave phases, and **saved MATLAB
