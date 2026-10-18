@@ -39,6 +39,34 @@ def test_public_source_ode8_closes_the_precontrol_motion_gap():
     assert np.max(np.abs(response.angular_speed - body[:, 11])) < 1.5e-4
 
 
+def test_source_ode8_precontrol_motion_on_two_refined_steps():
+    with np.load(SOURCE, allow_pickle=False) as published:
+        sea = _published_sea(published["50ms_components"])
+        source_bodies = {
+            label: published[
+                f"{label}_WECCCOMP_Nonlinear_Model_Predictive_body1"
+            ] for label in ("25ms", "12p5ms")
+        }
+    errors = {}
+    for label, dt, stride, pitch_limit, speed_limit in (
+        ("25ms", .025, 2, 1e-5, 3e-5),
+        ("12p5ms", .0125, 4, 5e-6, 1.5e-5),
+    ):
+        response = run_wavestar_published(
+            HYDRO, sea, dt=dt, end_time=9.95, ramp_time=25,
+            g=9.80665, solver="wecsim_ode8", output_stride=stride,
+        )
+        body = source_bodies[label]
+        np.testing.assert_allclose(response.time, body[:, 0],
+                                   rtol=0, atol=1e-10)
+        pitch_gap = np.max(np.abs(response.angle - body[:, 5]))
+        speed_gap = np.max(np.abs(response.angular_speed - body[:, 11]))
+        assert pitch_gap < pitch_limit
+        assert speed_gap < speed_limit
+        errors[label] = pitch_gap, speed_gap
+    assert np.all(np.array(errors["12p5ms"]) < np.array(errors["25ms"]))
+
+
 def test_wavestar_rejects_unknown_solver():
     with np.load(SOURCE, allow_pickle=False) as published:
         sea = _published_sea(published["50ms_components"])
