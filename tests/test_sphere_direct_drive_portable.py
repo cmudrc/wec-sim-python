@@ -70,6 +70,23 @@ def test_published_reactive_direct_drive_through_public_wec():
         _close("wave elevation", result.wave_elevation,
                source["wave_elevation"], 1e-12)
 
+        # Reactive control exchanges energy with the electrical drive. Gate
+        # accumulated mechanical and electrical work, and winding heat, so
+        # small instantaneous errors cannot hide a drift over the 200 s case.
+        for field in ("mechanical_power", "electrical_power", "resistance_loss"):
+            for start, stop in ((0, 200), (0, 50), (50, 125), (125, 200)):
+                window = (time >= start) & (time <= stop)
+                source_work = np.trapezoid(source[field][window], time[window])
+                python_work = np.trapezoid(
+                    getattr(drive, field)[window], result.time[window],
+                )
+                assert abs(source_work) > 1e6
+                relative_gap = abs(python_work - source_work) / abs(source_work)
+                assert relative_gap < .001, (
+                    f"{field} work {start}–{stop} s: "
+                    f"{relative_gap:.4%} exceeds 0.1%"
+                )
+
         # The archived generator channels must obey their electrical units.
         np.testing.assert_allclose(
             source["current"] * 7.186, source["generator_torque"],
