@@ -1867,6 +1867,15 @@ Simulink's delayed added-mass feedback. Integrated forcing and implicit added
 mass remain the defaults. The equivalent low-level case wave type is
 `spectrumImportFullDir`.
 
+For the published 400 s OSWEC PM case, `fixed_hinge` can reproduce its
+numerical `ode4` trajectory and PTO work with
+`added_mass_scheme="simulink_delay"` and
+`wec.run(..., solver="wecsim_ode4")`. The solver samples excitation at
+half steps and extrapolates the source convolution between major steps.
+The ordinary implicit solver remains the physical default. MATLAB's PTO work
+changes when its fixed solver step is refined, so the opt-in comparison is
+numerical source parity at the published step.
+
 For the published nonlinear OSWEC flap, give the body its STL and select
 instantaneous hydro. The same `fixed_hinge` builder then advances its own
 flap motion and returns the named pitch history:

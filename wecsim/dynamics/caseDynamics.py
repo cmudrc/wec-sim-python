@@ -111,11 +111,11 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         raise ValueError("radiation_method currently applies to floating_joint")
     if "solver" in sim and kind != "linear_subspace" and not (
             sim["solver"] == "wecsim_ode4" and (
-                (kind == "fixed_hinge" and wave["type"] == "regular")
+                (kind == "fixed_hinge" and wave["type"] in ("regular", "pm"))
                 or (kind == "floating_joint" and wave["type"] == "none"))):
         raise ValueError(
-            "simulation.solver needs linear_subspace, a nonlinear regular "
-            "fixed_hinge, or a no-wave floating_joint"
+            "simulation.solver needs linear_subspace, a supported fixed_hinge, "
+            "or a no-wave floating_joint"
         )
     if "added_mass_scheme" in sim and kind not in ("floating_joint", "fixed_hinge"):
         raise ValueError("added_mass_scheme currently applies to floating_joint or fixed_hinge")
@@ -360,6 +360,14 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             raise ValueError("fixed-hinge pitch uses mass, pitch inertia, and optional mesh hydro")
         nonlinear = bodies[0].get("nonlinear_hydro")
         geometry = bodies[0].get("geometry_file")
+        source_pm_ode4 = (sim.get("solver") == "wecsim_ode4"
+                          and wave["type"] == "pm")
+        if source_pm_ode4 and (
+                nonlinear is not None
+                or sim.get("added_mass_scheme") != "simulink_delay"):
+            raise ValueError(
+                "PM fixed-hinge source ode4 needs linear hydro and simulink_delay"
+            )
         if nonlinear not in (None, "instantaneous") or (geometry is None) != (nonlinear is None):
             raise ValueError("nonlinear fixed hinge needs instantaneous hydro and a mesh")
         if nonlinear is not None and (not isinstance(geometry, str) or not geometry):
@@ -552,13 +560,16 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 wave_settings, hydro[0], base,
             )
             incident = synthesize_irregular_response(
-                hydro[0], components, dt=dt, end_time=end_time,
+                hydro[0], components,
+                dt=dt / 2 if source_pm_ode4 else dt, end_time=end_time,
                 ramp_time=ramp_time, rho=rho, g=g,
                 excitation_interpolation=wave.get("excitation_interpolation", "linear"),
             )
         if wave["type"] != "none":
-            excitation_force = incident.excitation_force
-            elevation = incident.elevation
+            excitation_force = (incident.excitation_force[::2]
+                                if source_pm_ode4 else incident.excitation_force)
+            elevation = (incident.elevation[::2]
+                         if source_pm_ode4 else incident.elevation)
         solved = solve_hinged_pitch_from_excitation(
             hydro[0], excitation_force,
             hinge_z=hinge[2], body_mass=mass, pitch_inertia=inertia,
@@ -569,6 +580,9 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 positive=True,
             ),
             added_mass_scheme=sim.get("added_mass_scheme", "implicit"),
+            source_ode4=source_pm_ode4,
+            halfstep_excitation_force=(incident.excitation_force
+                                       if source_pm_ode4 else None),
             rho=rho, g=g,
             initial_angle=initial_angle,
             initial_angular_velocity=initial_pitch_speed,
