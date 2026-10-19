@@ -511,6 +511,22 @@ Python now differs from the finest source by only `2.59` mm peak surge but
 still by `16.05` mm heave and `1.879%` PTO work. The source has not settled,
 so this does not promote OWC or change any badge.
 
+A separate [full-duration corrected-model audit](tests/fixtures/matlab/owc_orifice_corrected_piston/README.md)
+tests the physical force path directly. On a disposable copy of the pinned
+Simulink application, one added sum sends the existing piston reaction into
+the flexible `GBM` state-space force input, where the published model sends
+only excitation. The two 130 s corrected MATLAB MaxStep arms pass predeclared
+source stability screens: 0.418 mm surge, 0.114 mm heave, 0.371 mrad pitch,
+0.020 mm flexible displacement, and 0.071% PTO-work self-change. Independently
+advanced public Python physical motion differs from the finer corrected arm
+by 2.246 mm, 0.116 mm, 0.359 mrad, 0.022 mm, and 0.072% work, respectively;
+all declared gates pass. At the same source step, the original and corrected
+MATLAB models differ by up to 1.948 m heave and 0.281 m flexible displacement.
+The corrected source stays below Mach 0.156, while the unmodified source
+reaches Mach 1.113. This establishes full-duration physical-path agreement
+against an explicitly **derived** model correction; the unmodified published
+application remains qualified, and badge counts stay unchanged.
+
 A separate [local 30 s OWC clock audit](tests/fixtures/matlab/owc_orifice_dt_30s/README.md)
 sets MATLAB `simu.dt` and `ode23t` MaxStep together to `0.005`, `0.0025`,
 and `0.00125` s. The first arm is the archived published-clock prefix; all
