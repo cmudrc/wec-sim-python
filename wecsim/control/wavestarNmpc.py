@@ -223,6 +223,48 @@ class WaveStarNmpcPredictor:
         return forecast
 
 
+def _polish_box_qp(hessian, linear, lower, upper, initial):
+    """Resolve free coordinates after a bounded optimizer finds the active set.
+
+    L-BFGS-B can stop with a small objective change while the command still
+    has a measurable error. The QP is quadratic, so its free-coordinate
+    optimum is a linear solve. Return whether that solve satisfies the box
+    KKT conditions; otherwise the caller retains or retries the optimizer.
+    """
+    candidate = np.clip(initial.copy(), lower, upper)
+    at_lower = np.isclose(candidate, lower, rtol=0, atol=1e-7)
+    at_upper = np.isclose(candidate, upper, rtol=0, atol=1e-7)
+    candidate[at_lower] = lower[at_lower]
+    candidate[at_upper] = upper[at_upper]
+    fixed = at_lower | at_upper
+    free = ~fixed
+    if np.any(free):
+        block = hessian[np.ix_(free, free)]
+        try:
+            np.linalg.cholesky(block)
+            candidate[free] = np.linalg.solve(
+                block,
+                -linear[free] - hessian[np.ix_(free, fixed)] @ candidate[fixed],
+            )
+        except np.linalg.LinAlgError:
+            return initial, False
+    if np.any(candidate < lower - 1e-9) or np.any(candidate > upper + 1e-9):
+        return initial, False
+    gradient = hessian @ candidate + linear
+    scale = (1 + np.linalg.norm(linear, ord=np.inf)
+             + np.linalg.norm(hessian, ord=np.inf)
+             * np.linalg.norm(candidate, ord=np.inf))
+    tolerance = 1e-9 * scale
+    if (np.any(np.abs(gradient[free]) > tolerance)
+            or np.any(gradient[at_lower] < -tolerance)
+            or np.any(gradient[at_upper] > tolerance)):
+        return initial, False
+    cost = lambda value: .5 * value @ hessian @ value + linear @ value
+    if cost(candidate) > cost(initial) + tolerance:
+        return initial, False
+    return candidate, True
+
+
 class WaveStarNmpcController:
     """Replay the published Sea State 6 resistive startup and RTI NMPC.
 
@@ -307,8 +349,9 @@ class WaveStarNmpcController:
                    + output_sensitivity.T @ self._weight @ output_sensitivity)
         hessian = (hessian + hessian.T) / 2
         linear = output_sensitivity.T @ self._weight @ output
-        bounds = list(zip(-self.torque_limit - nominal,
-                          self.torque_limit - nominal))
+        lower = -self.torque_limit - nominal
+        upper = self.torque_limit - nominal
+        bounds = list(zip(lower, upper))
         objective = lambda delta: .5 * delta @ hessian @ delta + linear @ delta
         gradient = lambda delta: hessian @ delta + linear
         solution = minimize(
@@ -319,10 +362,12 @@ class WaveStarNmpcController:
             options={"ftol": 1e-13, "gtol": 1e-11, "maxiter": 1000,
                      "maxls": 50},
         )
-        if not solution.success:
-            # SciPy's line search can report ABNORMAL on this bounded
-            # quadratic even when the iterate is close to the solution.
-            # Retry the same QP with an independent constrained solver.
+        delta, stationary = _polish_box_qp(
+            hessian, linear, lower, upper, solution.x,
+        )
+        if not solution.success and not stationary:
+            # A line-search failure is harmless if polishing reaches a KKT
+            # point. Otherwise retry with an independent constrained solver.
             retry = minimize(
                 objective,
                 solution.x if np.isfinite(solution.x).all()
@@ -335,8 +380,12 @@ class WaveStarNmpcController:
                     "WaveStar NMPC QP failed: "
                     f"L-BFGS-B: {solution.message}; SLSQP: {retry.message}"
                 )
-            solution = retry
-        self._nominal = nominal + solution.x
+            delta, stationary = _polish_box_qp(
+                hessian, linear, lower, upper, retry.x,
+            )
+            if not stationary:
+                delta = retry.x
+        self._nominal = nominal + delta
         return float(np.clip(self._nominal[0],
                              -self.torque_limit, self.torque_limit))
 

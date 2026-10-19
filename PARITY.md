@@ -2749,6 +2749,20 @@ parity remains open, and the badge count is unchanged. The separate
 solver-stage excitation correction merged in
 [PR #567](https://github.com/cmudrc/wec-sim-python/pull/567).
 
+The WaveStar NMPC quadratic program now solves its free coordinates to a
+checked box-constrained stationary point after the bounded optimizer finds
+the active set. If that active set fails the KKT check, the existing solver
+result or SLSQP recovery is retained. On the two archived 4,201-input
+MATLAB `quadprog` replays, maximum command gaps fall from `0.0007652` to
+`0.0006665` N m on saved source inputs and from `0.0002896` to `0.0001683`
+N m on independently generated Python inputs. A local independent 225 s
+source-style `ode8` run against the same R2025b baseline changes its maximum
+pitch gap from `0.011410` to `0.011233` rad, PTO-force gap from `4.725` to
+`3.701` N, and relative PTO-work gap from `0.137%` to `0.060%`; maximum
+pitch-speed gap rises from `0.05622` to `0.05809` rad/s. All four remain
+inside the existing numerical limits. This improves the controller solve
+without establishing portable physical parity or changing the WaveStar badge.
+
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
 attachment. It then advances the pinned native MoorDyn library for all 50,001
