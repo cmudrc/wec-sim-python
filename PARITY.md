@@ -481,6 +481,14 @@ Halving only Python's integration step changes shared-sample surge by at most
 `0.0455` mm and PTO work by `0.0400%`; its gap to the half-step MATLAB source
 remains `118.59` mm surge RMS and `4.774%` work. The remaining gap is not
 explained by Python step size at the tested resolution.
+A third [local full-duration MaxStep arm](tests/fixtures/matlab/owc_orifice_full_maxstep/README.md)
+holds the 5 ms wave/radiation grid fixed while reducing only source MaxStep
+to `0.00125` s. Its 130 s surge differs from the 2.5 ms arm by `133.15` mm
+peak and `82.24` mm RMS, with identical PM components and incident wave.
+The independent Python opt-in source-force trajectory differs from this arm
+by `77.19` mm peak and `49.55` mm RMS surge and `4.332%` PTO work. The
+larger MATLAB self-change means source convergence and published physical
+parity remain unestablished; the OWC label and badges remain unchanged.
 
 A separate [local 30 s OWC clock audit](tests/fixtures/matlab/owc_orifice_dt_30s/README.md)
 sets MATLAB `simu.dt` and `ode23t` MaxStep together to `0.005`, `0.0025`,
