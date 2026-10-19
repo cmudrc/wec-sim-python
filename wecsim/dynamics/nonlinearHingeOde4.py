@@ -1,4 +1,4 @@
-"""Opt-in published-step integration for the nonlinear OSWEC hinge.
+"""Opt-in published-step integration for one OSWEC pitch hinge.
 
 WEC-Sim breaks its added-mass feedback loop with a very short Transport Delay.
 This path approximates its stage-wise delayed signal from the two preceding
@@ -18,19 +18,21 @@ def integrate_nonlinear_hinge_ode4(device: GeneralizedDynamics, *,
                                    delay: float = 1e-7,
                                    initial_angle: float = 0.0,
                                    initial_angular_velocity: float = 0.0) -> DynamicsResponse:
-    """Advance one pressure-loaded hinge with source-style delayed inertia."""
+    """Advance one regular-wave hinge with source-style delayed inertia.
+
+    The excitation may depend only on time or on the current flap pose.
+    """
     if (len(device.bodies) != 1 or device.coordinate_count != 1
             or device.bodies[0].radiation_kernel is not None
-            or device.bodies[0].state_excitation is None
             or device.bodies[0].state_inertia is not None
             or device.nonlinear_force is not None
             or device.controlled_ptos or device.linear_generators
             or device.added_mass_delay is not None):
-        raise ValueError("source nonlinear ode4 needs one continuous pressure-loaded hinge")
+        raise ValueError("source hinge ode4 needs one continuous regular-wave hinge")
     if (not np.isfinite([dt, end_time, delay, initial_angle,
                          initial_angular_velocity]).all() or dt <= 0
             or end_time < 0 or delay <= 0 or delay >= dt):
-        raise ValueError("source nonlinear ode4 needs finite time and a shorter delay")
+        raise ValueError("source hinge ode4 needs finite time and a shorter delay")
     steps = round(end_time / dt)
     if not np.isclose(steps * dt, end_time, rtol=0, atol=1e-10):
         raise ValueError("end_time must be an integer multiple of dt")
@@ -108,7 +110,7 @@ def integrate_nonlinear_hinge_ode4(device: GeneralizedDynamics, *,
         k4 = derivative(at_time + dt, state + dt * k3, 1)
         advanced = state + dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6
         if not np.isfinite(advanced).all():
-            raise ValueError("source nonlinear ode4 produced nonfinite motion")
+            raise ValueError("source hinge ode4 produced nonfinite motion")
         coordinate[step + 1], speed[step + 1] = advanced[:1], advanced[1:]
 
     position = np.zeros((steps + 1, 1, 6))

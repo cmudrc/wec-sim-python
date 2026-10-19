@@ -388,12 +388,10 @@ class _WECCaseMixin:
         if isinstance(wave, RegularWave):
             source_ode4 = simulation.get("solver") == "wecsim_ode4"
             delayed = hinge.added_mass_scheme == "simulink_delay"
-            if (wave.direction != 0 or source_ode4 != delayed
-                    or (source_ode4
-                        and hinge.flap.nonlinear_hydro != "instantaneous")):
+            if wave.direction != 0 or source_ode4 != delayed:
                 raise ValueError(
                     "regular fixed_hinge needs either implicit mass or "
-                    "nonlinear source ode4 with simulink_delay"
+                    "source ode4 with simulink_delay"
                 )
         if hinge.base is not None and hinge.base.fixed:
             if (hinge.base.center_gravity is None

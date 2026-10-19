@@ -691,8 +691,8 @@ class WEC(_WECCaseMixin):
 
         ``wecsim_ode4`` is an opt-in source solver for PM sampled yaw,
         a PM fixed hinge with ``simulink_delay`` added mass, a regular-wave
-        nonlinear hinge, one-body no-wave heave decay, or no-wave RM3 free
-        decay with ``simulink_delay`` added mass.
+        fixed hinge with linear or mesh-pressure excitation, one-body no-wave
+        heave decay, or no-wave RM3 free decay with ``simulink_delay`` added mass.
         The default remains the implicit physical solve.
         """
         case = self.to_case(

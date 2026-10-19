@@ -113,7 +113,7 @@ def _hinge_case():
     (("simulation", "added_mass_scheme"), "simulink_delay",
      "regular fixed-hinge dynamics need implicit added mass"),
     (("simulation", "solver"), "wecsim_ode4",
-     "regular source ode4 needs nonlinear mesh pressures"),
+     "regular source ode4 needs a supported hinge and simulink_delay"),
     (("wave", "seed"), 1, "regular waves use height"),
     (("wave", "direction"), 30,
      "fixed-hinge regular dynamics currently support 0-degree waves"),

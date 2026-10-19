@@ -398,9 +398,9 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             source_ode4 = sim.get("solver") == "wecsim_ode4"
             scheme = sim.get("added_mass_scheme", "implicit")
             if source_ode4:
-                if nonlinear != "instantaneous" or scheme != "simulink_delay":
+                if nonlinear not in (None, "instantaneous") or scheme != "simulink_delay":
                     raise ValueError(
-                        "regular source ode4 needs nonlinear mesh pressures and simulink_delay"
+                        "regular source ode4 needs a supported hinge and simulink_delay"
                     )
             elif scheme != "implicit":
                 raise ValueError("regular fixed-hinge dynamics need implicit added mass")
