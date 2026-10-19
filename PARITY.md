@@ -503,6 +503,13 @@ differs by `99.41` mm peak/`36.91` mm RMS surge and `4.0925%` work. Output-grid
 versus internal source work differs by only `0.0156%`, so quadrature is not
 the work-gap mechanism. Source convergence and published physical parity
 remain unestablished; OWC stays qualified and the badges are unchanged.
+Two further [local full-duration source arms](tests/fixtures/matlab/owc_orifice_full_maxstep/README.md)
+reduce only MaxStep to `0.0003125` and `0.00015625` s. The finest pair still
+changes MATLAB surge by `36.16` mm and internally integrated PTO work by
+`1.156%`, failing predeclared 20 mm and 0.5% stability screens. Independent
+Python now differs from the finest source by only `2.59` mm peak surge but
+still by `16.05` mm heave and `1.879%` PTO work. The source has not settled,
+so this does not promote OWC or change any badge.
 
 A separate [local 30 s OWC clock audit](tests/fixtures/matlab/owc_orifice_dt_30s/README.md)
 sets MATLAB `simu.dt` and `ode23t` MaxStep together to `0.005`, `0.0025`,

@@ -15,6 +15,8 @@ FIXTURES = Path(__file__).parent / "fixtures/matlab"
 SOURCE = FIXTURES / "owc_orifice_full_maxstep/source.npz"
 QUARTER = FIXTURES / "owc_orifice_full_maxstep/quarter_source.npz"
 EIGHTH = FIXTURES / "owc_orifice_full_maxstep/eighth_source.npz"
+SIXTEENTH = FIXTURES / "owc_orifice_full_maxstep/sixteenth_source.npz"
+THIRTYSECOND = FIXTURES / "owc_orifice_full_maxstep/thirtysecond_source.npz"
 PUBLISHED = FIXTURES / "owc_orifice_130s/source.npz"
 HYDRO = FIXTURES / "owc_orifice.h5"
 
@@ -23,10 +25,16 @@ def test_full_owc_source_step_audit(tmp_path):
     with np.load(SOURCE, allow_pickle=False) as saved, \
             np.load(QUARTER, allow_pickle=False) as quarter_saved, \
             np.load(EIGHTH, allow_pickle=False) as eighth_saved, \
+            np.load(SIXTEENTH, allow_pickle=False) as sixteenth_saved, \
+            np.load(THIRTYSECOND, allow_pickle=False) as thirtysecond_saved, \
             np.load(PUBLISHED, allow_pickle=False) as published:
         trace = {key: saved[key] for key in saved.files}
         quarter = {key: quarter_saved[key] for key in quarter_saved.files}
         eighth = {key: eighth_saved[key] for key in eighth_saved.files}
+        sixteenth = {key: sixteenth_saved[key]
+                     for key in sixteenth_saved.files}
+        thirtysecond = {key: thirtysecond_saved[key]
+                       for key in thirtysecond_saved.files}
         phases = published["phases"].copy()
         parameters = published["orifice_parameters"].copy()
     time = trace["time"]
@@ -60,6 +68,18 @@ def test_full_owc_source_step_audit(tmp_path):
     assert float(eighth["simu_dt"]) == .005
     assert float(eighth["max_step"]) == .000625
     assert int(eighth["orifice_samples"]) > int(quarter["orifice_samples"])
+    for arm, previous, max_step in (
+            (sixteenth, eighth, .0003125),
+            (thirtysecond, sixteenth, .00015625)):
+        np.testing.assert_array_equal(arm["time"], time)
+        np.testing.assert_array_equal(arm["wave"], trace["nominal_wave"])
+        np.testing.assert_array_equal(arm["components"],
+                                      trace["nominal_components"])
+        assert arm["motion"].shape == (26_001, 4)
+        assert np.isfinite(arm["motion"]).all()
+        assert float(arm["simu_dt"]) == .005
+        assert float(arm["max_step"]) == max_step
+        assert int(arm["orifice_samples"]) > int(previous["orifice_samples"])
     with np.load(FIXTURES / "owc_orifice_dt_30s/maxstep_only.npz",
                  allow_pickle=False) as prefix:
         np.testing.assert_array_equal(quarter["motion"][:6001],
@@ -160,6 +180,29 @@ def test_full_owc_source_step_audit(tmp_path):
           eighth_source_work_change, eighth_work_gap)
     assert .002 < eighth_source_work_change < .003
     assert eighth_work_gap < .05
+
+    # These two finer source arms were evaluated against declared stability
+    # screens before reading the 0.00015625 s result. Surge and work still
+    # fail, so a close Python surge trace does not establish case parity.
+    fine_source_change = np.max(np.abs(
+        thirtysecond["motion"] - sixteenth["motion"]), axis=0)
+    fine_python_gap = np.max(np.abs(
+        python_motion - thirtysecond["motion"]), axis=0)
+    fine_source_work_change = abs(
+        float(thirtysecond["work_internal"])
+        - float(sixteenth["work_internal"])
+    ) / float(sixteenth["work_internal"])
+    fine_python_work_gap = abs(
+        python_work - float(thirtysecond["work_internal"])
+    ) / float(thirtysecond["work_internal"])
+    print("OWC finest MATLAB self-change and Python/source peak gaps:",
+          fine_source_change, fine_python_gap)
+    print("OWC finest source work self-change and Python/source gap:",
+          fine_source_work_change, fine_python_work_gap)
+    assert fine_source_change[0] > .020
+    assert fine_source_work_change > .005
+    assert fine_python_gap[0] < .020
+    assert fine_python_gap[2] < .001
 
     # Refine only the Python solver. Its shared-sample trajectory and work
     # should be stable even though the MATLAB/Python case gap remains open.

@@ -3,9 +3,12 @@
 % coreRoot = '/path/to/wec-sim-matlab-reference';
 % caseDir = '/tmp/owc-audit/OWC/OrificeModel';
 % outputDir = '/tmp/owc-audit';
-% owc_orifice_eighth_maxstep
+% auditMaxStep = 0.000625; % or 0.0003125 or 0.00015625
+% owc_orifice_refined_maxstep
 assert(exist('coreRoot', 'var') == 1 && exist('caseDir', 'var') == 1 && ...
-    exist('outputDir', 'var') == 1);
+    exist('outputDir', 'var') == 1 && exist('auditMaxStep', 'var') == 1);
+assert(any(abs(auditMaxStep - [0.000625, 0.0003125, 0.00015625]) < 1e-12), ...
+    'Use one of the documented refined MaxStep values');
 assert(isfolder(fullfile(coreRoot, 'source')) && ...
     isfile(fullfile(caseDir, 'OWC_GBM.slx')) && ...
     isfile(fullfile(caseDir, 'hydroData', 'test17a_clean.h5')));
@@ -21,10 +24,10 @@ assert(simu.endTime == 130 && simu.dt == .005 && ...
     waves.phaseSeed == 128, 'Pinned OWC source settings changed');
 [~, model, ~] = fileparts(simu.simMechanicsFile);
 assert(abs(str2double(get_param(model, 'MaxStep')) - .005) < 1e-12);
-set_param(model, 'MaxStep', '0.000625');
-assert(abs(str2double(get_param(model, 'MaxStep')) - .000625) < 1e-12);
+set_param(model, 'MaxStep', sprintf('%.8f', auditMaxStep));
+assert(abs(str2double(get_param(model, 'MaxStep')) - auditMaxStep) < 1e-12);
 sim(simu.simMechanicsFile, [], simset('SrcWorkspace', 'parent'));
-assert(abs(str2double(get_param(model, 'MaxStep')) - .000625) < 1e-12);
+assert(abs(str2double(get_param(model, 'MaxStep')) - auditMaxStep) < 1e-12);
 run('stopWecSim');
 
 moving = output.bodies(1);

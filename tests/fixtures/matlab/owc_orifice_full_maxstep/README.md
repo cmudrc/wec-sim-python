@@ -101,7 +101,7 @@ A fourth local R2025b Update 7 run kept the same 130 s input, cleaned HDF5,
 PM phases, `simu.dt=0.005` s, and output grid, changing only initialized
 `ode23t` MaxStep from `0.00125` to `0.000625` s. The prepared input, model,
 and HDF5 retain the three hashes above. The checked-in
-[source script](../../../matlab/owc_orifice_eighth_maxstep.m) runs from
+[source script](../../../matlab/owc_orifice_refined_maxstep.m) runs from
 MATLAB's base workspace on a disposable copy of the pinned Applications
 `OWC/OrificeModel` directory. Preparation uses the bundled
 `tests/fixtures/matlab/owc_orifice.h5` as
@@ -109,8 +109,9 @@ MATLAB's base workspace on a disposable copy of the pinned Applications
 only the unused `tf`/`LPF50` declarations so the run does not require Control
 System Toolbox. These are the same changes made for the previous local arms.
 Set `coreRoot`, `caseDir`, and `outputDir` as in that script's header before
-running it. A second run with the checked-in script reproduced the body,
-flexible-mode, internal-orifice, wave, and component CSV arrays exactly.
+running it with `auditMaxStep=0.000625`. A second 0.000625 s run with the
+earlier fixed-value script reproduced the body, flexible-mode,
+internal-orifice, wave, and component CSV arrays exactly.
 
 The run completed in 225 s of simulation wall time and logged 443,650
 strictly increasing internal orifice samples. Its 500 PM components and all
@@ -133,3 +134,40 @@ remains qualified. [The portable audit](../../../test_owc_orifice_full_maxstep.p
 checks this arm without weakening any earlier gate. The compact
 `eighth_source.npz` SHA-256 is
 `379223d0ead6636f7625b973934350257b96274562001370a64a19bc6e37c623`.
+
+## Two further local MaxStep arms
+
+Two more full 130 s R2025b runs on Mali set only the initialized `ode23t`
+MaxStep to `0.0003125` and `0.00015625` s. Both use the same pinned model and
+cleaned HDF5 as above, the published 0.005 s output grid and PM seed 128, and
+the same disposable-input edits. The latter input file differs from the
+earlier prepared copy only in a comment; its SHA-256 is
+`664b28b9d336b9d33d3245291f9a26471e7d64f1dd7f7498eac7f1f3cbf461f6`.
+The compact [sixteenth](sixteenth_source.npz) and
+[thirty-second](thirtysecond_source.npz) fixtures have SHA-256 values
+`11c595e8e7591affa54e476b9ee7f08603cf5088cce54a8576fe551af217c839`
+and `b286e6cd2aaf998c16c488a5cfe51b8b3ab9f41ee1461f1595a3fbc4db1a68a5`.
+Each retains the full 26,001-sample body/flexible motion and internally
+integrated PTO work. Both waves and all 500 components equal the earlier arms
+exactly. The internal orifice logs contain 517,921 and 838,661 samples.
+
+Before reading the finest run, the stability screens were set at 20 mm surge,
+10 mm heave, 1 mrad pitch, 2 mm flexible displacement, and 0.5% source PTO-work
+change. Independent Python was required to meet those motion limits and 1%
+PTO-work difference against the finest source. The full-duration results are:
+
+| Quantity | MATLAB 0.625-to-0.3125 ms change | MATLAB 0.3125-to-0.15625 ms change | Python gap to 0.15625 ms source |
+| --- | ---: | ---: | ---: |
+| Surge peak | 60.72 mm | 36.16 mm | 2.59 mm |
+| Heave peak | 10.16 mm | 10.04 mm | 16.05 mm |
+| Unwrapped pitch peak | 0.743 mrad | 0.371 mrad | 0.359 mrad |
+| Flexible displacement peak | 1.482 mm | 1.363 mm | 2.179 mm |
+| Internally integrated PTO work | 331,564.18 J at 0.3125 ms | 335,396.80 J at 0.15625 ms; 1.156% change | 341,698.74 J; 1.879% gap |
+
+The finest MATLAB arm fails its predeclared surge, heave, and work stability
+screens. Python misses the heave, flexible-displacement, and work screens.
+Its much smaller surge difference is encouraging but cannot establish a
+converged reference. The original published-step case remains qualified;
+the strict badge counts are unchanged. The [portable audit](../../../test_owc_orifice_full_maxstep.py)
+checks fixture identity, the source stability failures, and the partial
+Python surge/pitch agreement without treating them as case parity.
