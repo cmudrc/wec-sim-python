@@ -805,11 +805,18 @@ difference is `0.137%`. On hosted Apple silicon they are `0.010126` rad,
 rad, `0.08` rad/s, `5` N, and `0.2%` limits. The local and archived Linux
 MATLAB runs use byte-identical HDF5 and identical incident waves, yet differ
 by up to `0.007543` rad pitch after NMPC feedback begins. Linux x86 Python
-misses the local-source pitch and PTO-force limits at `0.015258` rad and
-`5.213` N on the measured runner. The physical default's split-step pitch
-gate also fails. This is qualified macOS ARM published-input numerical
-evidence, not portable physical parity; the WaveStar and total strict badges
-remain 2/3 and 52/63.
+misses the *Mali* source pitch and PTO-force limits at `0.015258` rad and
+`5.213` N on the measured runner. A [platform-matched Linux x86 audit](https://github.com/cmudrc/wec-sim-python/actions/runs/39310591875/job/118258830555)
+instead compares the same independent 225 s Python run with the archived
+Linux R2025b source. The first runner passed the unchanged limits above with
+`0.007327` rad pitch, `0.054485` rad/s speed, `2.980` N force, and `0.0613%`
+signed-work differences. A [second Linux x86 runner with unchanged code](https://github.com/cmudrc/wec-sim-python/actions/runs/39310924498/job/118260096483)
+failed those pitch and force limits at `0.013109` rad and `6.034` N, despite
+using the same pinned phases, Python package versions, and Ubuntu image.
+The autonomous source-ode8 Python trajectory is therefore runner-sensitive even
+within Linux x86; the proposed strict pointwise gate has not been established.
+The physical default's split-step pitch gate also fails. WaveStar remains
+qualified, and the WaveStar and total strict badges remain 2/3 and 52/63.
 An independent second local R2025b process reproduced the same 225 s Mali
 body, PTO, wave, and component CSVs byte for byte, and every controller torque
 request exactly. The first run disabled only post-run plotting, while the
@@ -1041,6 +1048,19 @@ physical default still miss their unchanged limits, so the case is
 earlier failing [PR #525](https://github.com/cmudrc/wec-sim-python/pull/525)
 is closed. Historical audit paragraphs below retain the labels they had at
 the time; the table and CSV above give current case status.
+A local macOS Rosetta x86 run on the same saved 225 s R2025b source passes
+the unchanged source-`ode8` pitch, speed, PTO-force, and work limits: peak
+gaps are `0.00863` rad, `0.05191` rad/s, `4.103` N, and `0.0860%` work.
+Native ARM also passes, with `0.01141` rad peak pitch gap; the earlier Linux
+x86 pitch gap was `0.014996` rad against a `0.012` rad limit. Both local
+Python environments use NumPy 2.5.4 and SciPy 1.18.1. Replaying the same
+4,201 saved controller inputs across those two Mac architectures changes
+commands by at most `2.94e-5` N m, while their autonomous pitch histories
+separate by up to `0.01180` rad after control begins. This rules out the x86
+instruction set alone as an explanation and supports platform-sensitive
+closed-loop amplification; it does not identify one numerical library as the
+cause or establish portable published-case parity.
+
 Published-step RM3 MoorDyn visualization motion and nonlinear-hydro timing
 also remain qualified. The Python dynamics API still lacks arbitrary Simscape
 joints and general six-DOF mooring and moving Morison layouts.
@@ -1125,7 +1145,19 @@ maximum yaw changes are 0.01179, 0.02048, and 0.01256 rad as the step halves.
 The last work change is 0.0552%, but yaw has not yet converged pointwise. At
 MATLAB's first coarse/fine heading mismatch (56.44 s), the two yaw states differ by
 only `7.92e-6` rad; their relative headings of 5.375181° and 5.374727°
-straddle the 5.375° bank boundary. A [pinned R2025b quarter-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38279422204)
+straddle the 5.375° bank boundary.
+
+A local full 600 s continuation of the public physical-default run compares
+`dt=0.01`, `0.005`, and `0.0025` s against the unchanged
+[published MATLAB source artifact](https://github.com/cmudrc/wec-sim-python/actions/runs/38411605074).
+The independently generated wave agrees within `2.01e-13` m. Peak yaw gaps
+at common output times are `0.11025`, `0.03284`, and `0.11543` rad; PTO-work
+gaps are `9.053%`, `7.645%`, and `12.549%`. Python selects 518, 590, and
+543 heading switches versus MATLAB's 624. The nonmonotonic full-duration
+response extends the 250 s event-sensitivity finding and supplies no
+physical published-case gate; the qualified label and badges stay unchanged.
+
+A [pinned R2025b quarter-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38279422204)
 reuses checksum-verified 250 s coarse and half-step trajectories and advances
 the same seed-1 sea at `dt=0.0025` s through 120 s. The incident sea agrees
 at all common times. Relative to MATLAB's `0.005` s run, the quarter-step
