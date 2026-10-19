@@ -4,13 +4,14 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+import pytest
 from scipy.interpolate import CubicSpline
 
 from wecsim import PMWave, WEC
 from wecsim.environment.irregularWave import pm_equal_energy_components
 
 
-FIXTURE = Path(__file__).parent / "fixtures/matlab/sphere_irregular_mean_drift"
+FIXTURES = Path(__file__).parent / "fixtures/matlab"
 HYDRO = Path(__file__).parent / "fixtures/matlab/sphere_mean_drift/sphere.h5"
 
 
@@ -23,8 +24,13 @@ def _device(mean_drift):
     return wec
 
 
-def test_irregular_control_surface_drift_against_pinned_matlab():
-    with np.load(FIXTURE / "source.npz") as source:
+@pytest.mark.parametrize(
+    ("option", "fixture"),
+    (("control_surface", "sphere_irregular_mean_drift"),
+     ("momentum_conservation", "sphere_irregular_momentum_drift")),
+)
+def test_irregular_spectral_mean_drift_against_pinned_matlab(option, fixture):
+    with np.load(FIXTURES / fixture / "source.npz") as source:
         body = source["body"]
         wave = source["wave"]
         recorded_components = source["components"]
@@ -51,19 +57,23 @@ def test_irregular_control_surface_drift_against_pinned_matlab():
         np.testing.assert_allclose(actual, expected, rtol=0, atol=1e-12)
 
     # This is the pinned irregExcF mean-drift term, evaluated independently
-    # from the force builder on the HDF5's control-surface coefficients.
+    # from the force builder on the selected HDF5 drift coefficients.
     with h5py.File(HYDRO) as h5:
         frequency = np.asarray(h5["simulation_parameters/w"]).ravel()
         drift = np.asarray(h5[
-            "body1/hydro_coeffs/mean_drift/control_surface/val"
+            f"body1/hydro_coeffs/mean_drift/{option}/val"
         ])[:, 0, :]
     coefficient = CubicSpline(frequency, drift, axis=1)(components.omega)
     expected_drift = (coefficient @ (
         components.spectral_amplitude * components.d_omega
     )) * 1000 * 9.81
-    assert np.max(np.abs(expected_drift)) > 1
+    # Momentum conservation has a smaller (but still material) surge term;
+    # retain the existing control-surface floor for its original fixture.
+    assert np.max(np.abs(expected_drift)) > (
+        1 if option == "control_surface" else .5
+    )
 
-    result = _device("control_surface").run(
+    result = _device(option).run(
         PMWave(0.5, 8, seed=1, phase_generator="matlab"),
         dt=.01, end_time=30, ramp_time=10, radiation_memory=10,
     )
@@ -95,5 +105,10 @@ def test_irregular_control_surface_drift_against_pinned_matlab():
     )
     assert abs(result.bodies["sphere"].position[-1, 0]
                - without_drift.bodies["sphere"].position[-1, 0]) > .05
-    assert abs(result.bodies["sphere"].position[-1, 4]
-               - without_drift.bodies["sphere"].position[-1, 4]) > .02
+    if option == "control_surface":
+        assert abs(result.bodies["sphere"].position[-1, 4]
+                   - without_drift.bodies["sphere"].position[-1, 4]) > .02
+    else:
+        # This HDF5 momentum coefficient acts in surge only; a pitch-effect
+        # floor from the control-surface fixture would be inappropriate.
+        np.testing.assert_allclose(expected_drift[1:], 0, rtol=0, atol=1e-12)
