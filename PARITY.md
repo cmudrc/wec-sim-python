@@ -818,6 +818,24 @@ The autonomous source-ode8 Python trajectory is therefore runner-sensitive even
 within Linux x86; the proposed strict pointwise gate has not been established.
 The physical default's split-step pitch gate also fails. WaveStar remains
 qualified, and the WaveStar and total strict badges remain 2/3 and 52/63.
+An additional local R2025b comparison ran the same 225 s Python input on
+Mali as native ARM64 and Rosetta x86-64, both with NumPy 2.5.4, SciPy 1.18.1,
+randomgen 2.3.0, and Accelerate-backed NumPy/SciPy. Against the local MATLAB
+source, both autonomous runs pass the unchanged numerical gates: ARM64 has
+`0.011410` rad pitch and `4.725` N force gaps, while x86-64 has `0.008631`
+rad and `4.103` N. The two Python pitch traces themselves differ by up to
+`0.011797` rad after independent controller feedback begins. Prescribing the
+same saved MATLAB torque requests to both Python plants instead reduces their
+full-run pitch, speed, and PTO-force differences to `2.36e-16` rad,
+`1.94e-15` rad/s, and `1.42e-14` N. A separate controller-only replay gave
+both architectures the same source-pitch-derived PTO stroke and preceding
+MATLAB request at each sample; their active requested torques then differed
+by at most `8.98e-7` N m. Letting each controller feed back its own preceding
+request on that *same fixed stroke* produced up to `0.615` N m request
+separation. These local controls isolate amplification in recursive controller
+feedback from the near-identical prescribed-command plant. They do not
+identify one faulty numerical library, reproduce either hosted Linux runner,
+or close portable physical parity; the gates and badges remain unchanged.
 An independent second local R2025b process reproduced the same 225 s Mali
 body, PTO, wave, and component CSVs byte for byte, and every controller torque
 request exactly. The first run disabled only post-run plotting, while the
