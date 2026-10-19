@@ -10,6 +10,39 @@ from wecsim import RegularWave
 
 SOURCE = (Path(__file__).parent / "fixtures/matlab/rm3_wave_markers/source.npz")
 SOURCE_SHA256 = "c767a06d2b641857dfe999cf32861a34509ba3a90fa5ced67e7f92848db90613"
+CORE_MOTION = Path(__file__).parent / "fixtures/matlab/rm3_regular_wave.npz"
+SOURCE_MOTION_SHA256 = (
+    "025a421685042435489680c80c4baf639733be03d598ea7fad5148bc7b699bcd"
+)
+SOURCE_EQUIVALENT_HYDRO = (Path(__file__).parent
+                           / "fixtures/matlab/rm3_mooring_matrix/rm3.h5")
+SOURCE_EQUIVALENT_HYDRO_SHA256 = (
+    "af41df46b066e89c70cf931b9aeaf33be07f0a0aaf7f111dacfd5679ef9807a6"
+)
+
+
+def test_published_rm3_wave_markers_body_pto_identity():
+    """Pin the separate application's body/PTO outputs to the core fixture.
+
+    The Wave Markers source CSVs have the same raw hashes as the core RM3
+    CSVs. Hash the selected float64 columns so that fixture edits cannot
+    silently break the shared 400 s body/PTO gate.
+    """
+    assert sha256(SOURCE_EQUIVALENT_HYDRO.read_bytes()).hexdigest() == (
+        SOURCE_EQUIVALENT_HYDRO_SHA256
+    )
+    with np.load(CORE_MOTION, allow_pickle=False) as core:
+        assert core["body_position"].shape == (2, 4001, 6)
+        assert core["body_velocity"].shape == (2, 4001, 6)
+        digest = sha256()
+        for values in (
+            core["body_position"][0], core["body_velocity"][0],
+            core["body_position"][1], core["body_velocity"][1],
+            core["pto_stroke"], core["pto_speed"],
+            core["pto_force"], core["pto_power"],
+        ):
+            digest.update(np.ascontiguousarray(values, dtype="<f8").tobytes())
+    assert digest.hexdigest() == SOURCE_MOTION_SHA256
 
 
 def test_published_rm3_marker_elevations():

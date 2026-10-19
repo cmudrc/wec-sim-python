@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from wecsim import RegularWave, WEC
 from wecsim.dynamics.linearHeave import solve_two_body_regular_heave
@@ -11,6 +12,7 @@ from wecsim.dynamics.linearHeave import solve_two_body_regular_heave
 ROOT = Path(__file__).resolve().parents[1]
 REFERENCE = ROOT / "tests/fixtures/matlab/rm3_regular_wave.npz"
 HYDRO = ROOT / "examples/data/rm3.h5"
+WAVE_MARKERS_HYDRO = ROOT / "tests/fixtures/matlab/rm3_mooring_matrix/rm3.h5"
 
 
 def _max_error(actual, expected, limit, label):
@@ -20,11 +22,15 @@ def _max_error(actual, expected, limit, label):
     assert error < limit, f"{label}: {error:.6g} exceeds {limit:.6g}"
 
 
-def test_published_rm3_regular_wave_body_and_pto_motion():
-    """Compare every saved sample, including inactive axes and PTO power."""
+@pytest.mark.parametrize(
+    "hydro", [HYDRO, WAVE_MARKERS_HYDRO],
+    ids=["bundled-core", "published-wave-markers"],
+)
+def test_published_rm3_regular_wave_body_and_pto_motion(hydro):
+    """Pair both the bundled and published-input hydrodynamics."""
     wec = WEC("RM3 published regular wave")
-    float_body = wec.body("float", HYDRO, inertia=(0, 21_306_090.66, 0))
-    spar = wec.body("spar", HYDRO, inertia=(0, 94_407_091.24, 0))
+    float_body = wec.body("float", hydro, inertia=(0, 21_306_090.66, 0))
+    spar = wec.body("spar", hydro, inertia=(0, 94_407_091.24, 0))
     wec.floating_joint(float_body, spar, damping=1_200_000,
                        radiation_method="constant")
     result = wec.run(RegularWave(2.5, 8), dt=0.1, end_time=400,
