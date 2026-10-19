@@ -482,6 +482,18 @@ Halving only Python's integration step changes shared-sample surge by at most
 remains `118.59` mm surge RMS and `4.774%` work. The remaining gap is not
 explained by Python step size at the tested resolution.
 
+A separate [local 30 s OWC clock audit](tests/fixtures/matlab/owc_orifice_dt_30s/README.md)
+sets MATLAB `simu.dt` and `ode23t` MaxStep together to `0.005`, `0.0025`,
+and `0.00125` s. The first arm is the archived published-clock prefix; all
+three have identical 500 PM components and shared wave samples. Source surge
+changes by `10.151` mm on the first halving, then `42.523` mm on the second,
+so this sequence does not establish source convergence. Internal-orifice PTO
+work stays within `0.142%` per halving, while the independent Python 30 s
+work remains `2.244%` above the finest source and its final surge differs by
+`52.719` mm. A [portable source gate](tests/test_owc_orifice_dt_30s.py)
+retains the exact wave/phase identity and nonmonotonic motion result. It does
+not change the physical default, the qualified case label, or badge counts.
+
 The targeted [RM3 sea-state matrix export](https://github.com/cmudrc/wec-sim-python/actions/runs/37682612044)
 confirms that MATLAB's applied added-mass matrix and adjusted rigid mass sum
 to the original rigid mass plus HDF5 infinite-frequency added mass in the
