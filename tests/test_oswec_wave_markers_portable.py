@@ -92,3 +92,10 @@ def test_published_oswec_wave_markers_motion_and_pto():
             ("absorbed power", pto.absorbed_power, -source["pto_power"], 30),
         ):
             _max_error(actual, expected, limit, f"OSWEC PTO {label}")
+
+        # The passive damper's work uses velocity squared; the separate
+        # source-step audit checks cumulative energy over the full case.
+        np.testing.assert_allclose(
+            pto.absorbed_power, 12_000 * pto.velocity**2,
+            rtol=0, atol=1e-8,
+        )
