@@ -14,6 +14,7 @@ from wecsim import OrificePTO, PMWave, WEC
 FIXTURES = Path(__file__).parent / "fixtures/matlab"
 SOURCE = FIXTURES / "owc_orifice_full_maxstep/source.npz"
 QUARTER = FIXTURES / "owc_orifice_full_maxstep/quarter_source.npz"
+EIGHTH = FIXTURES / "owc_orifice_full_maxstep/eighth_source.npz"
 PUBLISHED = FIXTURES / "owc_orifice_130s/source.npz"
 HYDRO = FIXTURES / "owc_orifice.h5"
 
@@ -21,9 +22,11 @@ HYDRO = FIXTURES / "owc_orifice.h5"
 def test_full_owc_source_step_audit(tmp_path):
     with np.load(SOURCE, allow_pickle=False) as saved, \
             np.load(QUARTER, allow_pickle=False) as quarter_saved, \
+            np.load(EIGHTH, allow_pickle=False) as eighth_saved, \
             np.load(PUBLISHED, allow_pickle=False) as published:
         trace = {key: saved[key] for key in saved.files}
         quarter = {key: quarter_saved[key] for key in quarter_saved.files}
+        eighth = {key: eighth_saved[key] for key in eighth_saved.files}
         phases = published["phases"].copy()
         parameters = published["orifice_parameters"].copy()
     time = trace["time"]
@@ -48,6 +51,15 @@ def test_full_owc_source_step_audit(tmp_path):
     assert quarter["motion"].shape == quarter["velocity"].shape == (26_001, 4)
     assert np.isfinite(quarter["motion"]).all()
     assert int(quarter["orifice_samples"]) > 400_000
+    np.testing.assert_array_equal(eighth["time"], time)
+    np.testing.assert_array_equal(eighth["components"],
+                                  quarter["components"])
+    np.testing.assert_array_equal(eighth["wave"], quarter["wave"])
+    assert eighth["motion"].shape == (26_001, 4)
+    assert np.isfinite(eighth["motion"]).all()
+    assert float(eighth["simu_dt"]) == .005
+    assert float(eighth["max_step"]) == .000625
+    assert int(eighth["orifice_samples"]) > int(quarter["orifice_samples"])
     with np.load(FIXTURES / "owc_orifice_dt_30s/maxstep_only.npz",
                  allow_pickle=False) as prefix:
         np.testing.assert_array_equal(quarter["motion"][:6001],
@@ -111,6 +123,19 @@ def test_full_owc_source_step_audit(tmp_path):
     assert np.max(quarter_gap[:, 0]) < .08
     assert quarter_rms[0] < .06
 
+    # The next source step moves surge another 66 mm. Its smaller RMS gap
+    # to Python is still a diagnostic, not a converged published-case gate.
+    eighth_motion = eighth["motion"]
+    eighth_source_change = np.max(np.abs(eighth_motion - quarter_motion), axis=0)
+    eighth_gap = np.abs(python_motion - eighth_motion)
+    eighth_rms = np.sqrt(np.mean(eighth_gap**2, axis=0))
+    print("OWC MATLAB eighth MaxStep self-change:", eighth_source_change)
+    print("OWC Python/eighth source peak and RMS gaps:",
+          np.max(eighth_gap, axis=0), eighth_rms)
+    assert .06 < eighth_source_change[0] < .08
+    assert np.max(eighth_gap[:, 0]) < .11
+    assert eighth_rms[0] < .04
+
     python_work = np.trapezoid(result.ptos["orifice"].absorbed_power, time)
     nominal_work = np.trapezoid(trace["nominal_power"], time)
     half_work = np.trapezoid(trace["half_power"], time)
@@ -128,6 +153,13 @@ def test_full_owc_source_step_audit(tmp_path):
           quarter_source_work_change, quarter_work_gap)
     assert quarter_source_work_change < .005
     assert quarter_work_gap < .05
+    eighth_work = float(eighth["work_internal"])
+    eighth_source_work_change = abs(eighth_work - quarter_work) / quarter_work
+    eighth_work_gap = abs(python_work - eighth_work) / eighth_work
+    print("OWC eighth source work self-change and Python gap:",
+          eighth_source_work_change, eighth_work_gap)
+    assert .002 < eighth_source_work_change < .003
+    assert eighth_work_gap < .05
 
     # Refine only the Python solver. Its shared-sample trajectory and work
     # should be stable even though the MATLAB/Python case gap remains open.

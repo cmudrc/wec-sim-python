@@ -491,6 +491,14 @@ The independent Python opt-in source-force trajectory differs from this arm
 by `77.19` mm peak and `49.55` mm RMS surge and `4.332%` PTO work. The
 larger MATLAB self-change means source convergence and published physical
 parity remain unestablished; the OWC label and badges remain unchanged.
+A fourth local arm keeps those inputs and clocks fixed while reducing only
+source MaxStep to `0.000625` s. The [portable eighth-step audit](tests/fixtures/matlab/owc_orifice_full_maxstep/README.md)
+records identical waves, a further `65.93` mm peak MATLAB surge self-change,
+and `0.2305%` source PTO-work change over 130 s. Independent Python still
+differs by `99.41` mm peak/`36.91` mm RMS surge and `4.0925%` work. Output-grid
+versus internal source work differs by only `0.0156%`, so quadrature is not
+the work-gap mechanism. Source convergence and published physical parity
+remain unestablished; OWC stays qualified and the badges are unchanged.
 
 A separate [local 30 s OWC clock audit](tests/fixtures/matlab/owc_orifice_dt_30s/README.md)
 sets MATLAB `simu.dt` and `ode23t` MaxStep together to `0.005`, `0.0025`,
