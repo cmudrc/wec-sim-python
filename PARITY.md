@@ -462,6 +462,22 @@ force or establish physical validity above the source's Mach threshold. Surge
 and unwrapped pitch still differ by up to `0.174` m and `0.0107` rad, so exact
 full-trajectory numerical parity remains unestablished.
 
+A [local full-duration MaxStep audit](tests/fixtures/matlab/owc_orifice_full_maxstep/README.md)
+holds the published 130 s OWC sea, HDF5, `simu.dt=0.005` s, `ode23t`, and
+output grid fixed while halving only the initialized solver maximum step to
+`0.0025` s. Two independent R2025b processes produce identical 500-bin PM
+components and all 26,001 wave samples, and each reproduces its earlier
+10 s local arm exactly. MATLAB's peak self-change is `34.84` mm surge,
+`8.63` mm heave, `5.03` mrad integrated pitch, and `1.44` mm flexible
+displacement. Against an independent public `WEC.run` source-convention
+trajectory, the half-step source reduces the pitch RMS gap from `1.711` to
+`0.897` mrad, but surge RMS only from `131.32` to `118.61` mm; its peak surge
+gap remains `155.67` mm. MATLAB's PTO work changes by `0.214%`, while the
+Python/half-step gap remains `4.732%`. This separates a material source-step
+pitch effect from the unresolved surge and work gaps. It is a derived-source
+diagnostic, not a published physical-motion gate; the case and badges stay
+qualified and unchanged.
+
 The targeted [RM3 sea-state matrix export](https://github.com/cmudrc/wec-sim-python/actions/runs/37682612044)
 confirms that MATLAB's applied added-mass matrix and adjusted rigid mass sum
 to the original rigid mass plus HDF5 infinite-frequency added mass in the
