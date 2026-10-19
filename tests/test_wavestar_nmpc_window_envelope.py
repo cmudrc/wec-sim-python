@@ -6,6 +6,7 @@ the source across numerical backends.
 """
 
 from pathlib import Path
+import platform
 
 import numpy as np
 
@@ -53,6 +54,23 @@ def test_autonomous_nmpc_window_work_and_envelope():
           f"Python {python_work:.12f} J")
     assert source_work < -100
     assert python_work < -100
+
+    # Compare against the source trajectory generated on the same Linux x86
+    # platform. The separate Apple silicon gate uses its own local R2025b
+    # source run; closed-loop source histories differ across those platforms.
+    if platform.system() == "Linux" and platform.machine() == "x86_64":
+        pitch_gap = float(np.max(np.abs(response.angle - source_body[:, 5])))
+        speed_gap = float(np.max(np.abs(
+            response.angular_speed - source_body[:, 11],
+        )))
+        force_gap = float(np.max(np.abs(response.pto_force - source_pto[:, 33])))
+        work_gap = abs(python_work - source_work) / abs(source_work)
+        print("Linux x86 published-source pointwise gaps:",
+              pitch_gap, speed_gap, force_gap, work_gap)
+        assert pitch_gap < .012
+        assert speed_gap < .08
+        assert force_gap < 5.
+        assert work_gap < .002
 
     for start, stop in ((15, 75), (75, 150), (150, 225)):
         window = (response.time >= start) & (response.time <= stop)
