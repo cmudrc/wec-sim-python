@@ -2510,7 +2510,8 @@ Python plant differs from the source by at most `0.000139` rad float pitch,
 force; signed PTO work differs by `0.0521%`. The predeclared
 portable gates are `0.0003` rad, `0.002` rad/s, `60` µm, `0.005` N, and
 `0.1%` work. This source-command diagnostic isolates the larger autonomous
-gap to the controller-input and plant-feedback loop; it does **not** establish
+gap for the opt-in source-`ode8` plant to the controller-input and
+plant-feedback loop; it does **not** establish
 independent closed-loop parity or change the open case label and badge count.
 
 The reciprocal full-duration plant check now uses **Python's own** 4,201
@@ -2528,8 +2529,23 @@ The [portable reciprocal gate](tests/test_wavestar_published_command_replay.py)
 uses the existing `0.0003` rad, `0.002` rad/s, `60` µm, `0.005` N active
 force, and `0.1%` work limits. Together with the source-command plant gate,
 this isolates the autonomous gap to closed-loop feedback rather than a large
-plant discrepancy under either controller's saved requests. Neither run
+source-`ode8` plant discrepancy under either controller's saved requests.
+Neither run
 advances both controllers independently, so WaveStar NMPC stays open.
+
+The [physical-plant command replay](tests/test_wavestar_published_command_replay.py)
+holds those same published 50 ms MATLAB torque requests while Python advances
+its implicit-added-mass plant at 25 and 12.5 ms. Against the unchanged 225 s
+MATLAB body and PTO trace, the two Python runs have maximum pitch gaps of
+`0.036523` and `0.036520` rad, pitch-speed gaps of `0.412454` and `0.412437`
+rad/s, and relative signed PTO-work gaps of `6.8363%` and `6.8367%`.
+Their PTO-force differences stay below `0.354` N. The paired Python step
+refinement is gated at `1e-4` rad pitch, `1e-3` rad/s speed, and `0.1%` of
+source work, while both runs retain a much larger source gap. Prescribing
+the controller request therefore closes the opt-in source-`ode8` plant
+comparison above, but not the physical-default plant comparison. This is a
+negative published-case diagnostic; it does not promote WaveStar or imply
+that MATLAB's step-sensitive trajectory is a converged physical target.
 
 A separate local R2025b 225 s source run changed exactly one active NMPC
 request, by `0.0001` N m at 16.55 s. The sea and all earlier motion match
