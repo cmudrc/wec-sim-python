@@ -376,11 +376,12 @@ class GeneralizedDynamics:
                        or body.state_inertia is not None
                        for body in self.bodies)
                 or (self.added_mass_delay is not None
-                    and (len(self.bodies) != 2 or self.coordinate_count != 4))
+                    and not ((len(self.bodies) == 2 and self.coordinate_count == 4)
+                             or (len(self.bodies) == self.coordinate_count == 1)))
                 or (self.added_mass_delay is None
                     and (len(self.bodies) != 1 or self.coordinate_count != 1))):
             raise ValueError(
-                "source CIC ode4 needs a supported one-body heave or two-body RM3 joint"
+                "source CIC ode4 needs a supported one-coordinate body or two-body RM3 joint"
             )
         if radiation_state_space is not None and (
                 not isinstance(radiation_state_space, RadiationStateSpace)

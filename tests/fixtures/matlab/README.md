@@ -762,9 +762,10 @@ comparison rather than a 600 s published-input parity gate.
 
 `oswec_irregular_wave.npz` keeps all 4,001 samples of the published 400 s
 OSWEC PM sea, both body motions, the flap's six excitation forces, and the
-hinge PTO. The source is the successful [pinned R2025b run](https://github.com/cmudrc/wec-sim-python/actions/runs/37932186068)
-(`matlab-WAVE_MARKERS_OSWEC-baseline` artifact, run commit
-`9872f98ccd65aa57e49f0d7dbd5db8919d87773c`). It checked out WEC-Sim
+hinge PTO. The source is the successful [pinned R2025b run](https://github.com/cmudrc/wec-sim-python/actions/runs/37935053185)
+(`matlab-OSWEC-baseline` artifact, run commit
+`0f1aef8b91c2c46e4ddd486510a92274a7ee6692`). All six CSV hashes below
+match that artifact exactly. It checked out WEC-Sim
 core `0753b2e47f2457c078751dcfe5d251d1767b80ab`. The published input
 has three incident directions and no phase seed, so the archive retains its
 500-by-3 phase realization. `examples/data/oswec.h5` is an unchanged copy of

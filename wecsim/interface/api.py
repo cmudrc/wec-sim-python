@@ -690,8 +690,9 @@ class WEC(_WECCaseMixin):
         """Simulate the WEC and return named NumPy motion and PTO histories.
 
         ``wecsim_ode4`` is an opt-in source solver for PM sampled yaw,
-        a regular-wave nonlinear hinge, one-body no-wave heave decay, or
-        no-wave RM3 free decay with ``simulink_delay`` added mass.
+        a PM fixed hinge with ``simulink_delay`` added mass, a regular-wave
+        nonlinear hinge, one-body no-wave heave decay, or no-wave RM3 free
+        decay with ``simulink_delay`` added mass.
         The default remains the implicit physical solve.
         """
         case = self.to_case(

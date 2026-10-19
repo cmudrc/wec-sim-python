@@ -67,6 +67,8 @@ def solve_hinged_pitch_from_excitation(
     dt: float = 0.1,
     memory_time: float = 30.0,
     added_mass_scheme: str = "implicit",
+    source_ode4: bool = False,
+    halfstep_excitation_force: np.ndarray | None = None,
     rho: float = 1000.0,
     g: float = 9.81,
     initial_angle: float = 0.0,
@@ -83,9 +85,9 @@ def solve_hinged_pitch_from_excitation(
     hinge and no body-to-body hydrodynamic interaction, Morison forces, or
     other DOFs.
 
-    The fixed-step trapezoidal update uses a finite memory window. It matches
-    the published OSWEC example's 0.1 s step and 30 s radiation memory when
-    supplied with that run's excitation forces.
+    The default fixed-step trapezoidal update uses a finite memory window.
+    The opt-in source ode4 path samples excitation at half steps and uses
+    source-style convolution extrapolation and delayed added-mass feedback.
     """
     force = np.asarray(excitation_force, dtype=float)
     if force.ndim != 2 or force.shape[1] != 6 or len(force) < 2:
@@ -103,6 +105,21 @@ def solve_hinged_pitch_from_excitation(
         raise ValueError("mass, inertia, dt, memory time, rho, and g must be positive")
     if added_mass_scheme not in ("implicit", "simulink_delay"):
         raise ValueError("added_mass_scheme must be implicit or simulink_delay")
+    if source_ode4:
+        halfstep_excitation_force = np.asarray(
+            halfstep_excitation_force, dtype=float,
+        )
+        if (added_mass_scheme != "simulink_delay"
+                or halfstep_excitation_force.shape != (2 * len(force) - 1, 6)
+                or not np.isfinite(halfstep_excitation_force).all()):
+            raise ValueError(
+                "source ode4 needs finite half-step excitation and simulink_delay"
+            )
+        if not np.allclose(halfstep_excitation_force[::2], force,
+                           rtol=0, atol=1e-9):
+            raise ValueError("half-step excitation must contain the major-step force")
+    elif halfstep_excitation_force is not None:
+        raise ValueError("half-step excitation needs source ode4")
     memory_steps = round(memory_time / dt)
     if not np.isclose(memory_steps * dt, memory_time, rtol=0, atol=1e-10):
         raise ValueError("memory_time must be an integer multiple of dt")
@@ -145,10 +162,13 @@ def solve_hinged_pitch_from_excitation(
     motion = hinged_pitch_motion(lever)
 
     def excitation(at_time):
-        index = round(at_time / dt)
-        if index < 0 or index >= count or not np.isclose(index * dt, at_time, atol=1e-9):
+        sample_dt = dt / 2 if source_ode4 else dt
+        index = round(at_time / sample_dt)
+        samples = (halfstep_excitation_force if source_ode4 else force)
+        if (index < 0 or index >= len(samples)
+                or not np.isclose(index * sample_dt, at_time, atol=1e-9)):
             raise ValueError("sampled excitation is defined only on the simulation time grid")
-        return force[index]
+        return samples[index]
 
     rigid_mass = np.diag([
         body_mass, body_mass, body_mass, 0.0, pitch_inertia, 0.0,
@@ -173,6 +193,7 @@ def solve_hinged_pitch_from_excitation(
         dt=dt, end_time=(count - 1) * dt,
         initial_coordinate=np.array([initial_angle]),
         initial_speed=np.array([initial_angular_velocity]),
+        solver="wecsim_ode4" if source_ode4 else "implicit",
     )
     angle = solved.coordinate[:, 0]
     speed = solved.speed[:, 0]
