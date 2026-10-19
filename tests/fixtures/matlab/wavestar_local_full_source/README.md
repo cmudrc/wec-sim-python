@@ -5,8 +5,11 @@
 MATLAB R2025b). Pinned WEC-Sim is
 `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications is
 `d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The temporary checkout
-corrected only the application's `.stl` filename case to match Git's `.STL`
-files. The source log reports WEC-Sim 7.1.0, 225 s end time, 0.05 s step, and
+corrected the application's `.stl` filename case to match Git's `.STL` files.
+The first batch run also disabled post-run plotting in
+`userDefinedFunctions.m`; a second run retained the original plotting script
+and reproduced the same simulation output. The source log reports WEC-Sim
+7.1.0, 225 s end time, 0.05 s step, and
 25 s wave ramp. `tests/matlab/reference_model_baseline.m` exports the source
 body, PTO, wave, component, and controller signals.
 
@@ -22,6 +25,16 @@ SHA-256 of the source `body.csv`, `pto.csv`, `components.csv`, `wave.csv`, and
 - `8e5b4b8e14501595f3e4da2dc424e32ab2629b9fe037177ca49e1ffb40376e37`
 - `586ac5174bf559a8292cd3284a7ea4fda6787a6c1d67e54f0161ee6595bd4e2a`
 - `cf62ed39db7ddb9f0c0e9730bb60a9989a796a2c04d013bf4c800f4117a4c4b0`
+
+On a second independent Mali R2025b process, a fresh temporary checkout used
+the same pinned application input, `WaveStar.slx`, NMPC scripts, and HDF5.
+Running `reference_model_baseline('WECCCOMP_NMPC_SOURCE')` reproduced the
+`body1`, `pto1`, components, and wave CSV files **byte for byte** (the first
+four hashes above). The controller's saved torque request agreed at every
+sample; its MAT container hash differed. Repacking the selected signals into
+an NPZ produced exactly the same fixture hash above. Thus the local 225 s
+source trajectory is repeatable on Mali even though the archived Linux source
+trajectory differs after feedback activation.
 
 The regenerated local `wavestar.h5` is byte-identical to the pinned Python
 fixture (`22702b94f052dfe6bb93d257006654d4e51246020a53f25b432d591bf8139d1a`).

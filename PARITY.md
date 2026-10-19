@@ -722,6 +722,10 @@ misses the local-source pitch and PTO-force limits at `0.015258` rad and
 gate also fails. This is qualified macOS ARM published-input numerical
 evidence, not portable physical parity; the WaveStar and total strict badges
 remain 2/3 and 52/63.
+An independent second local R2025b process reproduced the same 225 s Mali
+body, PTO, wave, and component CSVs byte for byte, and every controller torque
+request exactly. The first run disabled only post-run plotting, while the
+second retained it; the numerical source trajectory was unchanged.
 
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,
