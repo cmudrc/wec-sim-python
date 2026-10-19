@@ -2569,6 +2569,18 @@ limits. The total is too cancellation-sensitive to support a portable parity
 claim. The interval gates remain enforced on both Linux x86 and hosted Apple
 silicon, and WaveStar stays open.
 
+A disposable local 225 s control kept the public physical mass-matrix solve,
+the pinned HDF5 and wave phases, and the Python NMPC, but integrated that
+physical solve with the existing 13-stage `ode8` tableau and direct
+solver-stage excitation. It did not use the source's delayed added-mass
+feedback. Against the same local R2025b published-input trace, its maximum
+pitch, pitch-speed, and axial-force gaps are `0.040134` rad, `0.444563`
+rad/s, and `13.6262` N; signed PTO work differs by `5.9891%`. Pitch already
+differs by `0.003416` rad through 10 s, before NMPC activates. All four
+unchanged full-duration source-`ode8` limits fail. Increasing the physical
+integrator order alone therefore does not close the precontrol mass-routing
+or autonomous feedback gaps; no production solver or case status changed.
+
 The [WaveStar auxiliary-body draft PR #525](https://github.com/cmudrc/wec-sim-python/pull/525)
 closed without merge on 2026-10-19 after its full-duration gates failed.
 The source-stage excitation evaluation was merged separately in `d7861d1c`;
