@@ -3260,6 +3260,16 @@ published-to-MaxStep PTO-stroke difference still reaches `285.45` mm. The
 preserves the source hashes and limits. A material macOS-versus-Linux source
 difference does not explain the published-step gap; the case remains qualified.
 
+A local 400 s solver-tolerance control kept the public Python RM3 input,
+0.1 s output step, and physical added mass fixed, while setting its adaptive
+RK45 tolerance to `rtol=1e-3`, `atol=1e-6`, and `max_step=0.1` s. Against the
+pinned published MATLAB PTO history, the maximum stroke gap was `288.65` mm
+and ordinary damper work was `10.185%` lower. Against the pinned
+MaxStep-only MATLAB history, the stroke gap was `7.28` mm and work was
+`0.590%` lower. Thus loosening Python's adaptive solver settings alone does
+not reproduce the published contact trajectory. This is a diagnostic using
+SciPy RK45, not an exact MATLAB ode45 implementation or a passing case gate.
+
 The Python hard-stop model instead applies added mass implicitly and resolves
 contact forces between output samples. Its 0.025 and 0.0125 s output settings
 change PTO stroke by less than 1 µm over 400 s. This physical dynamics
