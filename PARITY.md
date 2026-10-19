@@ -491,8 +491,13 @@ so this sequence does not establish source convergence. Internal-orifice PTO
 work stays within `0.142%` per halving, while the independent Python 30 s
 work remains `2.244%` above the finest source and its final surge differs by
 `52.719` mm. A [portable source gate](tests/test_owc_orifice_dt_30s.py)
-retains the exact wave/phase identity and nonmonotonic motion result. It does
-not change the physical default, the qualified case label, or badge counts.
+retains the exact wave/phase identity and nonmonotonic motion result. A
+separate 76,945-sample internal-step trace integrates the source's heave and
+flexible hydrodynamic accelerations to within `0.00401` and `0.01273` m/s of
+their saved speeds; the 5 ms output grid raises those errors to `0.1513` and
+`1.237` m/s. The apparent output-grid force imbalance is a sampling artifact,
+not evidence for adding a new Python force term. This audit does not change
+the physical default, qualified case label, or badge counts.
 
 The targeted [RM3 sea-state matrix export](https://github.com/cmudrc/wec-sim-python/actions/runs/37682612044)
 confirms that MATLAB's applied added-mass matrix and adjusted rigid mass sum

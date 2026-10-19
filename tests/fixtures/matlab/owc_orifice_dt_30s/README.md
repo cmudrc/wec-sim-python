@@ -22,6 +22,8 @@ Their full body CSV hashes are
 and `5a34481d371869802c6d575329107e07b2014c88a9fb627a514d61d40d485ba9`.
 The compact `source.npz` SHA-256 is
 `6b7418b5fe8e508c0115f527c9ccfb2d3932950122f38f4f6ec8ede800a1db51`.
+The separate `internal_trace.npz` SHA-256 is
+`c949f53ea2b75be5d278794f3454e857e89fcfe582c8114688337ae6f4c74453`.
 
 The fixture retains all three source trajectories on their common 5 ms grid,
 the exact 500 PM components and incident wave, and PTO work integrated on
@@ -45,11 +47,18 @@ not established step convergence. Internal PTO work changes by at most
 differ by 52.719 mm and 2.244%, respectively. The Python trajectory uses
 only the pinned HDF5 and phases, not MATLAB motion or force histories.
 
-The finer source output still contains rapid heave/flexible acceleration
-variation; differentiating its 2.5 and 1.25 ms saved heave velocity does not
-reproduce the acceleration output at those sampled times. That observation
-does not identify a model defect: the force and acceleration signals can vary
-between saved samples. The audit therefore leaves the full 130 s published
-case qualified, with no badge increment or change to Python's physical
-default. Its next useful comparison is an internal-step flexible-state/force
-trace, rather than another unchanged output-grid source run.
+A separate local 5 ms source copy set only the existing flexible-state and
+joint `To Workspace` blocks' `SampleTime` to `-1`, recording 76,945 strictly
+increasing internal times over 30 s. Interpolated surge position, heave
+speed, and flexible speed reproduce the archived 5 ms output within
+`3.2e-14` in their units. Integrating the internally logged heave and
+flexible hydrodynamic accelerations over those times misses their saved
+speeds by at most `0.00401` and `0.01273` m/s. Coarsening those same signals
+to the 5 ms output grid raises the maximum integration mismatch to `0.1513`
+and `1.237` m/s. The internally logged flex acceleration is hydrodynamic
+force divided by the pinned 91.61377 kg effective mass; the source's separate
+reported acceleration also includes piston force. This directly identifies
+output-grid aliasing in the apparent heave/flexible force imbalance. It does
+not explain the 30 s Python/source motion and work gaps or establish source
+step convergence. The full 130 s published case remains qualified, with no
+badge increment or change to Python's physical default.

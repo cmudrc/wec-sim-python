@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import numpy as np
+from scipy.integrate import cumulative_trapezoid
 
 
 FIXTURES = Path(__file__).parent / "fixtures/matlab"
@@ -58,3 +59,51 @@ def test_owc_source_surge_does_not_converge_monotonically_over_30s():
     # The internal orifice log has strictly increasing solver timestamps;
     # output-grid quadrature remains close enough to audit its work.
     assert np.all(np.abs(work_output - work_internal) / work_internal < .003)
+
+
+def test_internal_flexible_and_heave_acceleration_integrate_to_speed():
+    with np.load(FIXTURES / "owc_orifice_dt_30s/internal_trace.npz",
+                 allow_pickle=False) as trace, \
+            np.load(FIXTURES / "owc_orifice_dt_30s/source.npz",
+                    allow_pickle=False) as source:
+        time = trace["time"]
+        assert time.ndim == 1 and len(time) > 70_000
+        assert time[0] == 0 and time[-1] == 30
+        assert np.all(np.diff(time) > 0)
+        output_time = source["time"]
+        for logged, expected in (
+            ("surge_position", source["motion"][0, :, 0]),
+            ("heave_velocity", source["velocity"][0, :, 1]),
+            ("flex_velocity", source["velocity"][0, :, 3]),
+        ):
+            np.testing.assert_allclose(
+                np.interp(output_time, time, trace[logged]), expected,
+                rtol=0, atol=1e-10,
+            )
+
+        for speed, acceleration in (
+            ("heave_velocity", "heave_acceleration"),
+            ("flex_velocity", "flex_hydro_acceleration"),
+        ):
+            velocity = trace[speed]
+            force_acceleration = trace[acceleration]
+            integrated = velocity[0] + cumulative_trapezoid(
+                force_acceleration, time, initial=0,
+            )
+            internal_error = float(np.max(np.abs(integrated - velocity)))
+            assert internal_error < .02
+
+            # Output-grid quadrature aliases this rapidly varying signal;
+            # it cannot be used to infer a missing model force term.
+            coarse_velocity = np.interp(output_time, time, velocity)
+            coarse_acceleration = np.interp(
+                output_time, time, force_acceleration,
+            )
+            coarse_integrated = (coarse_velocity[0]
+                                 + cumulative_trapezoid(
+                                     coarse_acceleration, output_time,
+                                     initial=0,
+                                 ))
+            coarse_error = float(np.max(np.abs(coarse_integrated
+                                               - coarse_velocity)))
+            assert coarse_error > 15 * internal_error
