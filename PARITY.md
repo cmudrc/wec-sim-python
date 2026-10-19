@@ -677,12 +677,13 @@ investigation phase records the work that can be established with independent
 evidence while source numerical limitations keep some published badges below
 100%.
 The current ledger classifies all 63 inputs: 50 have independent motion gates,
-two stationary cases have full-duration force gates, ten are qualified or
-mixed-mode, and WaveStar NMPC remains open. The core RM3, OSWEC, and Sphere
+two stationary cases have full-duration force gates, and eleven are qualified
+or mixed-mode. WaveStar NMPC has a macOS ARM numerical gate but remains open
+for portable physical parity. The core RM3, OSWEC, and Sphere
 published-motion count is 39/46. A qualified result documents a measured
 limit; it does not add to the passing badge fraction. Case investigation is
-reasonably closed when every open input has a specific remaining experiment
-or external blocker. Only then does the next phase prioritize behavior-focused
+reasonably closed when every remaining gap has a specific experiment or
+external blocker. Only then does the next phase prioritize behavior-focused
 line-and-branch coverage toward 90%.
 Badge fractions continue to count only full published-input gates. First use
 local R2025b to resolve distinct, bounded questions in the seven remaining
@@ -704,6 +705,27 @@ new run one distinct physical or solver question, with limits fixed before
 results are inspected; avoid repeating timed-out or already diagnosed jobs
 unchanged. Preserve source checksums and trajectories, and add
 ordinary Python regression gates for passing independent comparisons.
+
+The [full-duration local WaveStar NMPC gate](tests/test_wavestar_local_full_source.py)
+independently advances all 225 s from the pinned HDF5 and published wave
+phases through the opt-in `wecsim_ode8` solver and Python NMPC. No MATLAB body
+state, PTO force, or torque request drives the Python run. Against the local
+R2025b source on Mali, maximum pitch, speed, and PTO-force differences are
+`0.011410` rad, `0.05622` rad/s, and `4.725` N, and relative PTO-work
+difference is `0.137%`. On hosted Apple silicon they are `0.010126` rad,
+`0.06999` rad/s, `4.116` N, and `0.0772%`. Both pass the unchanged `0.012`
+rad, `0.08` rad/s, `5` N, and `0.2%` limits. The local and archived Linux
+MATLAB runs use byte-identical HDF5 and identical incident waves, yet differ
+by up to `0.007543` rad pitch after NMPC feedback begins. Linux x86 Python
+misses the local-source pitch and PTO-force limits at `0.015258` rad and
+`5.213` N on the measured runner. The physical default's split-step pitch
+gate also fails. This is qualified macOS ARM published-input numerical
+evidence, not portable physical parity; the WaveStar and total strict badges
+remain 2/3 and 52/63.
+An independent second local R2025b process reproduced the same 225 s Mali
+body, PTO, wave, and component CSVs byte for byte, and every controller torque
+request exactly. The first run disabled only post-run plotting, while the
+second retained it; the numerical source trajectory was unchanged.
 
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,
@@ -908,9 +930,9 @@ API:
 | --- | ---: | --- |
 | `independent_motion` | 50 | A full-duration Python motion run using the published case inputs has an explicit MATLAB gate. Source wave phases or external stochastic input may be replayed; source body trajectories and forces are not advanced as inputs. The detailed rows above record output and physical-model limits. |
 | `stationary_force` | 2 | Published bodies are fixed; wave and force histories have paired gates. |
-| `qualified_motion` | 9 | A full-duration comparison needs a refined MATLAB step or a source-specific force route, or the published-step motion remains unpaired despite related motion or VTP gates. |
+| `qualified_motion` | 10 | A full-duration comparison needs a refined MATLAB step, source-specific force or solver route, or same-platform source baseline; some published-step physical motion remains unpaired despite related gates. |
 | `mixed_modes` | 1 | Some published settings have independent motion gates and another material setting remains open. |
-| `open_motion` | 1 | No full-duration independent Python gate for the published moving case. Component replays or shorter derived runs may exist. |
+| `open_motion` | 0 | No inventoried input lacks a full-duration independent Python comparison; qualified inputs still have unresolved physical or published-step limits. |
 
 These counts are **not a WEC-Sim feature-parity percentage**. One input can
 exercise several radiation or wave modes, and even a gated trajectory can
@@ -2503,7 +2525,8 @@ step with the controller clock fixed changes pitch by `0.0903275` rad. These
 measurements explain why a single pointwise full-duration target is unstable;
 they do not establish parity for the physical default, whose local published
 PTO-work gap remains `5.95%`. The numerical gates remain unchanged and the
-case stays `open_motion`. A [local platform audit](https://github.com/cmudrc/wec-sim-python/pull/525#issuecomment-6245125957)
+case stayed `open_motion` at that stage; the later macOS ARM gate supports the
+qualified classification above. A [local platform audit](https://github.com/cmudrc/wec-sim-python/pull/525#issuecomment-6245125957)
 then ran this draft's code against the same pinned HDF5 and wave phases on
 macOS ARM64 and native Linux ARM64 with NumPy 2.5.4 and SciPy 1.18.1. Their
 pitch traces agree within `4.05e-15` rad through 15 s, before NMPC activates;
@@ -2608,8 +2631,9 @@ inertias. The altered and unchanged MATLAB runs differ in pitch by at most
 `2.49e-6` rad through 15 s, yet their torque requests differ by `0.03235`
 N m at 16.55 s and up to `0.17171` N m through 20 s. The pitch difference
 reaches `0.001161` rad by 20 s. Including the light bodies and evaluating
-excitation at each solver stage in the unmerged draft reduces the independent
-20 s Python/unchanged-MATLAB maximum gaps from `0.001187` to `0.000648` rad
+excitation at each solver stage in the
+[closed PR #525](https://github.com/cmudrc/wec-sim-python/pull/525) reduces
+the independent 20 s Python/unchanged-MATLAB maximum gaps from `0.001187` to `0.000648` rad
 pitch, `0.009704` to `0.005599` rad/s speed, and `0.8224` to `0.2226` N PTO
 force. Across the full 225 s against that *same local MATLAB run*, the draft
 still misses the unchanged source-style pointwise pitch limit: `0.012781`
@@ -2617,8 +2641,10 @@ rad versus `0.012` rad; speed, force, and PTO-work limits pass. Its
 [fresh physical split-step comparison](https://github.com/cmudrc/wec-sim-python/actions/runs/39171849470)
 also misses the unchanged aggregate peak-pitch limit (`1.232%` versus
 `0.5%`). The source-only perturbation demonstrates strong early feedback
-sensitivity; the draft remains unmerged, the published case remains open,
-and the badge count is unchanged.
+sensitivity; the auxiliary-mass correction was not merged, portable physical
+parity remains open, and the badge count is unchanged. The separate
+solver-stage excitation correction merged in
+[PR #567](https://github.com/cmudrc/wec-sim-python/pull/567).
 
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local

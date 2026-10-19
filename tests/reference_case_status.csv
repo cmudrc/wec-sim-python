@@ -59,6 +59,6 @@ Variable_Hydro/Passive_Yaw,mixed_modes,Published regular-wave motion and opt-in 
 Variable_Hydro/Variable_Mass,independent_motion,
 WECCCOMP/WECCCOMP,independent_motion,
 WECCCOMP/WECCCOMP_Fault_Implementation,independent_motion,
-WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive,open_motion,Published 225 s autonomous NMPC motion remains unpaired. Draft PR 525 passes separate Linux x86 and macOS window-work jobs but its broad Linux x86 source-ode8 pitch test misses the unchanged 0.012 rad bound at 0.0122207 rad. Fresh hosted physical-default split-step pitch peak also misses the unchanged 0.5% aggregate gate at 0.5705%; strict pointwise motion remains unpaired. Prescribed-command plant and matched-input controller diagnostics pass. Halving the physical Python plant step changes 225 s pitch by up to 0.00708 rad under closed-loop feedback. No full-duration physical parity gate has passed.
+WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive,qualified_motion,Independent full 225 s opt-in source-ode8 plant and NMPC pass unchanged pitch/speed/PTO-force/work gates against the local R2025b published-input source on Mali and hosted Apple silicon. Linux x86 Python misses the local-source pitch and force limits; local and archived Linux MATLAB runs use identical HDF5 and waves but differ by up to 0.007543 rad pitch under feedback. The physical default misses its aggregate split-step pitch gate. Portable physical parity remains open and the strict badge count is unchanged.
 Wave_Markers/OSWEC,independent_motion,
 Wave_Markers/RM3,independent_motion,
