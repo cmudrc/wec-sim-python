@@ -2569,8 +2569,23 @@ limits. The total is too cancellation-sensitive to support a portable parity
 claim. The interval gates remain enforced on both Linux x86 and hosted Apple
 silicon, and WaveStar stays open.
 
-The next WaveStar change remains a [draft, unmerged PR](https://github.com/cmudrc/wec-sim-python/pull/525).
-Its earlier head `1462b9d5` paired the first 9.95 s of the published 50 ms
+A disposable local 225 s control kept the public physical mass-matrix solve,
+the pinned HDF5 and wave phases, and the Python NMPC, but integrated that
+physical solve with the existing 13-stage `ode8` tableau and direct
+solver-stage excitation. It did not use the source's delayed added-mass
+feedback. Against the same local R2025b published-input trace, its maximum
+pitch, pitch-speed, and axial-force gaps are `0.040134` rad, `0.444563`
+rad/s, and `13.6262` N; signed PTO work differs by `5.9891%`. Pitch already
+differs by `0.003416` rad through 10 s, before NMPC activates. All four
+unchanged full-duration source-`ode8` limits fail. Increasing the physical
+integrator order alone therefore does not close the precontrol mass-routing
+or autonomous feedback gaps; no production solver or case status changed.
+
+The [WaveStar auxiliary-body draft PR #525](https://github.com/cmudrc/wec-sim-python/pull/525)
+closed without merge on 2026-10-19 after its full-duration gates failed.
+The source-stage excitation evaluation was merged separately in `d7861d1c`;
+the draft's BC rod and motor load was not adopted. Its earlier head
+`1462b9d5` paired the first 9.95 s of the published 50 ms
 source within `6.77e-8` rad pitch using smooth solver-stage excitation and
 the light BC rod and motor.
 Two independent full-duration gates then failed on that same head: ordinary
@@ -2600,7 +2615,7 @@ reproduction of the x86 CI runner. This motivated isolating the source/Python
 difference before changing delayed-added-mass coupling; repeating the same
 MATLAB source run unchanged would add no evidence.
 
-The current draft head `4e702382` evaluates the pinned `irregExcF` component
+The archived draft head `4e702382` evaluates the pinned `irregExcF` component
 sum directly at `ode8` stage times. Five off-grid local R2025b force samples
 match within `4.98e-14` N or N m. The separate hosted Linux x86 and macOS
 window-work and envelope jobs pass, but the broad Linux x86 source-`ode8`
