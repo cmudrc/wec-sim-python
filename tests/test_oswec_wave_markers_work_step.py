@@ -11,27 +11,31 @@ ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = ROOT / "tests/fixtures/matlab/oswec_wave_markers.npz"
 HALF_STEP = (ROOT / "tests/fixtures/matlab/oswec_wave_markers_step"
              / "half_source.npz")
+QUARTER_STEP = (ROOT / "tests/fixtures/matlab/oswec_wave_markers_step"
+                / "quarter_source.npz")
 HYDRO = ROOT / "examples/data/oswec.h5"
 
 
 def test_full_duration_oswec_marker_work_step_separation():
     with np.load(PUBLISHED, allow_pickle=False) as published, \
-            np.load(HALF_STEP, allow_pickle=False) as half:
+            np.load(HALF_STEP, allow_pickle=False) as half, \
+            np.load(QUARTER_STEP, allow_pickle=False) as quarter:
         time = published["time"]
-        np.testing.assert_array_equal(half["time"], time)
-        np.testing.assert_allclose(half["wave"], published["origin"],
-                                   rtol=0, atol=1e-12)
-        assert float(half["simu_dt"]) == .05
-        assert float(half["dt_out"]) == .1
-        assert half["pto_speed"].shape == time.shape == (4001,)
-        np.testing.assert_allclose(
-            half["pto_force"], -12_000 * half["pto_speed"],
-            rtol=0, atol=1e-5,
-        )
-        np.testing.assert_allclose(
-            -half["pto_power"], 12_000 * half["pto_speed"]**2,
-            rtol=0, atol=1e-5,
-        )
+        for source, step in ((half, .05), (quarter, .025)):
+            np.testing.assert_array_equal(source["time"], time)
+            np.testing.assert_allclose(source["wave"], published["origin"],
+                                       rtol=0, atol=1e-12)
+            assert float(source["simu_dt"]) == step
+            assert float(source["dt_out"]) == .1
+            assert source["pto_speed"].shape == time.shape == (4001,)
+            np.testing.assert_allclose(
+                source["pto_force"], -12_000 * source["pto_speed"],
+                rtol=0, atol=1e-5,
+            )
+            np.testing.assert_allclose(
+                -source["pto_power"], 12_000 * source["pto_speed"]**2,
+                rtol=0, atol=1e-5,
+            )
 
         wec = WEC("OSWEC Wave Markers work audit")
         flap = wec.body("flap", HYDRO, mass=127_000,
@@ -57,15 +61,22 @@ def test_full_duration_oswec_marker_work_step_separation():
             half_work = -np.trapezoid(
                 half["pto_power"][interval], time[interval],
             )
+            quarter_work = -np.trapezoid(
+                quarter["pto_power"][interval], time[interval],
+            )
             python_work = np.trapezoid(
                 result.ptos["hinge"].absorbed_power[interval],
                 time[interval],
             )
-            assert min(published_work, half_work, python_work) > 0, label
+            assert min(published_work, half_work, quarter_work,
+                       python_work) > 0, label
             source_change = abs(half_work - published_work) / published_work
-            python_gap = abs(python_work - half_work) / half_work
+            half_gap = abs(python_work - half_work) / half_work
+            quarter_gap = abs(python_work - quarter_work) / quarter_work
             # The original 1% published-work gate fails. Hold that limit for
-            # the independent Python/half-step comparison; the immutable
-            # MATLAB pair exposes why it cannot certify published-step work.
+            # each independent Python/refined-source comparison. The second
+            # MATLAB refinement must also continue toward the Python result.
             assert source_change > .01, (label, source_change)
-            assert python_gap < .01, (label, python_gap)
+            assert half_gap < .01, (label, half_gap)
+            assert quarter_gap < half_gap, (label, quarter_gap, half_gap)
+            assert quarter_gap < .01, (label, quarter_gap)
