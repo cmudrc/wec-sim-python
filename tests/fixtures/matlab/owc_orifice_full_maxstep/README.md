@@ -52,8 +52,17 @@ saved PM phases with public `WEC.run(..., orifice_force_path="published_owc")`.
 Its wave elevation differs by at most `2.73e-14` m. Its PTO work is
 `341,698.74` J versus `325,562.37` J nominal and `326,258.59` J half-step:
 the MATLAB step change is `0.214%`, while the Python/half-step difference
-remains `4.732%`. The test preserves a material residual rather than
-promoting this derived source arm to physical parity. MATLAB's full-duration
+remains `4.732%`. These measured residuals do not promote this derived
+source arm to physical parity. MATLAB's full-duration
 step change explains much of the pitch gap but only 18.4% of the squared
 surge RMS gap; the physical coupled force-path issue remains separate. The
 published OWC case stays qualified and badges are unchanged.
+
+Refining only the independent Python integration from `0.005` to `0.0025` s
+changes shared-sample surge, heave, pitch, and flexible displacement by at
+most `0.0455` mm, `0.830` mm, `0.00963` mrad, and `0.116` mm. Python PTO work
+changes by `0.0400%`. Against the same half-step MATLAB trace, the refined
+Python surge RMS gap remains `118.59` mm, and its PTO-work gap is `4.774%`.
+The ordinary Python test gates the Python step change without requiring the
+remaining MATLAB/Python gap to stay large; a future model improvement can
+reduce that gap without breaking this audit.

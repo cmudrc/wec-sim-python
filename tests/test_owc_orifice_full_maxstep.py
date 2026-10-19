@@ -48,8 +48,9 @@ def test_full_owc_source_step_audit(tmp_path):
         heave_drag_cd=1.2, heave_drag_area=8,
         pitch_drag_cd=1.2, pitch_drag_area=8,
     )
+    wave = PMWave(height=1, period=4, phase_file=phase_file)
     result = wec.run(
-        PMWave(height=1, period=4, phase_file=phase_file),
+        wave,
         dt=.005, end_time=130, ramp_time=10, radiation_memory=15,
     )
     np.testing.assert_allclose(result.time, time, rtol=0, atol=1e-10)
@@ -89,3 +90,21 @@ def test_full_owc_source_step_audit(tmp_path):
           source_work_change, half_work_gap)
     assert source_work_change < .01
     assert half_work_gap < .06
+
+    # Refine only the Python solver. Its shared-sample trajectory and work
+    # should be stable even though the MATLAB/Python case gap remains open.
+    fine = wec.run(
+        wave, dt=.0025, end_time=130, ramp_time=10, radiation_memory=15,
+    )
+    np.testing.assert_allclose(fine.time[::2], time, rtol=0, atol=1e-10)
+    fine_motion = np.column_stack((
+        fine.bodies["OWC"].position[::2, 0],
+        fine.bodies["OWC"].position[::2, 2],
+        fine.coordinates["pitch_unwrapped"].position[::2],
+        fine.flexible_modes["OWC"].position[::2, 0],
+    ))
+    python_step_change = np.max(np.abs(python_motion - fine_motion), axis=0)
+    print("OWC Python half-step self-change:", python_step_change)
+    assert np.all(python_step_change < [.0001, .002, .00002, .0003])
+    fine_work = np.trapezoid(fine.ptos["orifice"].absorbed_power, fine.time)
+    assert abs(fine_work - python_work) / python_work < .001
