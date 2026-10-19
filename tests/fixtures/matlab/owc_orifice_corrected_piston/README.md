@@ -22,6 +22,11 @@ input-file SHA-256 is
 `664b28b9d336b9d33d3245291f9a26471e7d64f1dd7f7498eac7f1f3cbf461f6`;
 its only functional changes from the published input disable Explorer and
 post-run plotting and remove unused Control System Toolbox declarations.
+As a separate reproducibility check, the committed patch script was applied
+to a fresh copy restored from the original model hash above. With the same
+0.0003125 s MaxStep and a 15 s end time, its 3,001 body, flexible-mode, and
+wave rows and 500 wave components match the earlier corrected 15 s run
+element for element (maximum absolute difference zero in each CSV).
 
 Two local R2025b Update 7 runs on Mali kept the published 130 s duration,
 `simu.dt=dtOut=0.005` s, PM seed 128, 10 s ramp, 15 s radiation memory, and
