@@ -787,3 +787,5 @@ The archive SHA-256 is
 The [local full-duration step/work audit](oswec_core_step_work/README.md)
 uses this trace as its 0.1 s source arm and adds independent 0.05 and
 0.025 s MATLAB runs with identical shared-sample waves.
+The [solver-only audit](oswec_core_fixedstep_only/README.md) separately keeps
+all WEC-Sim force and output clocks at 0.1 s while refining Simulink `ode4`.
