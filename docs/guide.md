@@ -819,12 +819,17 @@ drift_force = dict(result.raw.extra_outputs)["body1_mean_drift_force"]
 excitation_force = dict(result.raw.extra_outputs)["body1_excitation_force"]
 ```
 
-`mean_drift="momentum_conservation"` selects that HDF5 coefficient when
-present. An absent selected dataset raises an error. The regular-wave drift
-force is the selected coefficient times wave amplitude squared and the wave
-force ramp. The published unmoored linear Sphere run travels more than 16 m
-in surge over 100 s; the paired result reproduces that source model but does
-not establish physical accuracy at such a large displacement.
+`mean_drift` also accepts `"momentum_conservation"` and
+`"pressure_integration"`. Each option reads its corresponding coefficient
+from the body HDF5; an absent selected dataset raises an error. The
+regular-wave drift force is the selected coefficient times wave amplitude
+squared and the wave-force ramp. For PM and JONSWAP seas, the runner sums the
+selected coefficient over the wave spectrum and applies the same ramp. The
+published 100 s Sphere input uses `"control_surface"`; 30 s derived PM runs
+pair the control-surface and pressure-integration settings with MATLAB.
+The published unmoored linear Sphere run travels more than 16 m in surge over
+100 s, so its paired result does not establish physical accuracy at that
+large displacement.
 
 The runner rejects unsupported layouts and settings. For PM or JONSWAP, supply
 `wave.height`, `wave.period`, optional `directions` and `spreading`, and either
