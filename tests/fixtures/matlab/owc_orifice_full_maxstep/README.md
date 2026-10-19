@@ -94,3 +94,42 @@ RMS surge, and `4.332%` PTO work. These improve on its comparison with the
 has grown. The 130 s source has not established step convergence. This arm
 remains a diagnostic; the published case and strict badge counts are
 unchanged.
+
+## Full-duration eighth MaxStep arm
+
+A fourth local R2025b Update 7 run kept the same 130 s input, cleaned HDF5,
+PM phases, `simu.dt=0.005` s, and output grid, changing only initialized
+`ode23t` MaxStep from `0.00125` to `0.000625` s. The prepared input, model,
+and HDF5 retain the three hashes above. The checked-in
+[source script](../../../matlab/owc_orifice_eighth_maxstep.m) runs from
+MATLAB's base workspace on a disposable copy of the pinned Applications
+`OWC/OrificeModel` directory. Preparation uses the bundled
+`tests/fixtures/matlab/owc_orifice.h5` as
+`hydroData/test17a_clean.h5`, disables Explorer and plotting, and removes
+only the unused `tf`/`LPF50` declarations so the run does not require Control
+System Toolbox. These are the same changes made for the previous local arms.
+Set `coreRoot`, `caseDir`, and `outputDir` as in that script's header before
+running it. A second run with the checked-in script reproduced the body,
+flexible-mode, internal-orifice, wave, and component CSV arrays exactly.
+
+The run completed in 225 s of simulation wall time and logged 443,650
+strictly increasing internal orifice samples. Its 500 PM components and all
+26,001 wave samples are **identical** to the quarter MaxStep source. The
+quarter-to-eighth source change is 65.93 mm peak and 52.27 mm RMS surge,
+8.41 mm peak heave, 1.49 mrad peak integrated pitch, and 1.65 mm peak
+flexible displacement. Source internally integrated PTO work rises from
+327,509.56 to 328,264.53 J, a 0.2305% change. Integrating the same
+orifice law only at the eighth arm's output samples gives 328,213.36 J,
+0.0156% below its internal work, so output quadrature cannot explain the
+Python/source work gap.
+
+The same independent public Python trajectory gives 341,698.74 J, still
+4.0925% above the eighth source. Its peak/RMS surge gaps are 99.41/36.91 mm;
+maximum heave, pitch, and flexible-displacement gaps are 31.86 mm,
+1.47 mrad, and 4.37 mm. The new source surge self-change remains large and
+the Python endpoint surge moves farther from source than in the quarter arm.
+No source convergence or published-case parity is claimed; `OWC/OrificeModel`
+remains qualified. [The portable audit](../../../test_owc_orifice_full_maxstep.py)
+checks this arm without weakening any earlier gate. The compact
+`eighth_source.npz` SHA-256 is
+`379223d0ead6636f7625b973934350257b96274562001370a64a19bc6e37c623`.
