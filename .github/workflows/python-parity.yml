@@ -85,7 +85,7 @@ jobs:
       - name: Gate autonomous WaveStar window work and envelope
         run: python -m pytest -q -s tests/test_wavestar_nmpc_window_envelope.py
       - name: Pair full WaveStar motion with local R2025b source
-        run: python -m pytest -q tests/test_wavestar_local_full_source.py
+        run: python -m pytest -q -s tests/test_wavestar_local_full_source.py
 
   wavestar-autonomous-m1:
     runs-on: macos-15
@@ -102,7 +102,7 @@ jobs:
       - name: Gate autonomous WaveStar window work and envelope
         run: python -m pytest -q -s tests/test_wavestar_nmpc_window_envelope.py
       - name: Pair full WaveStar motion with local R2025b source
-        run: python -m pytest -q tests/test_wavestar_local_full_source.py
+        run: python -m pytest -q -s tests/test_wavestar_local_full_source.py
 
   variable-yaw-prefix:
     runs-on: ubuntu-latest
