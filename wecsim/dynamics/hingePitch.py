@@ -232,10 +232,15 @@ def solve_hinged_pitch_regular(
     ramp_time: float = 100.0,
     rho: float = 1000.0,
     g: float = 9.81,
+    source_ode4: bool = False,
     initial_angle: float = 0.0,
     initial_angular_velocity: float = 0.0,
 ) -> HingePitchResponse:
-    """Integrate the hinged flap under a regular wave and frequency damping."""
+    """Integrate the hinged flap under a regular wave and frequency damping.
+
+    ``source_ode4`` follows WEC-Sim's delayed added-mass step numerics;
+    the implicit physical solve remains the default.
+    """
     values = [wave_height, wave_period, hinge_z, body_mass, pitch_inertia,
               pto_damping, pto_stiffness, pto_equilibrium, dt, end_time,
               ramp_time, rho, g, initial_angle, initial_angular_velocity]
@@ -305,11 +310,20 @@ def solve_hinged_pitch_regular(
         pto_damping=np.array([[pto_damping]]),
         pto_equilibrium=np.array([pto_equilibrium]),
     )
-    solved = device.integrate(
-        dt=dt, end_time=end_time,
-        initial_coordinate=np.array([initial_angle]),
-        initial_speed=np.array([initial_angular_velocity]),
-    )
+    if source_ode4:
+        from wecsim.dynamics.nonlinearHingeOde4 import integrate_nonlinear_hinge_ode4
+
+        solved = integrate_nonlinear_hinge_ode4(
+            device, dt=dt, end_time=end_time,
+            initial_angle=initial_angle,
+            initial_angular_velocity=initial_angular_velocity,
+        )
+    else:
+        solved = device.integrate(
+            dt=dt, end_time=end_time,
+            initial_coordinate=np.array([initial_angle]),
+            initial_speed=np.array([initial_angular_velocity]),
+        )
     angle = solved.coordinate[:, 0]
     speed = solved.speed[:, 0]
     force_history = np.array([excitation(at_time) for at_time in time])
