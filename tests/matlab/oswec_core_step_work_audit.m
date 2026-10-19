@@ -1,7 +1,8 @@
 function oswec_core_step_work_audit(coreRoot, outputDir, step)
 % Reproduce the published OSWEC sea with only the fixed ode4 step changed.
-% Call once each with step=0.05 and step=0.025 in separate MATLAB processes.
-assert(ismember(step, [0.05, 0.025]), 'Unsupported OSWEC audit step');
+% Call each step in a separate MATLAB process and fresh scratch directory.
+assert(ismember(step, [0.05, 0.025, 0.0125]), ...
+    'Unsupported OSWEC audit step');
 caseDir = fullfile(coreRoot, 'examples', 'OSWEC');
 assert(isfolder(caseDir) && isfolder(fullfile(coreRoot, 'source')));
 assert(~isfolder(outputDir), 'Use a new output directory for each source run');
@@ -18,7 +19,7 @@ assert(contains(contents, 'simu.dt = 0.1;') && ...
     ~contains(contents, 'waves.phaseSeed'), ...
     'The pinned OSWEC input has changed');
 contents = strrep(contents, 'simu.dt = 0.1;', ...
-    sprintf('simu.dt = %.3f;', step));
+    sprintf('simu.dt = %.12g;', step));
 contents = strrep(contents, "simu.explorer = 'on';", ...
     "simu.explorer = 'off';");
 contents = strrep(contents, 'waves.spread = [0.1,0.2,0.7];', ...

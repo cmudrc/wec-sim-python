@@ -18,16 +18,30 @@ and `13202805ad8b259067b90f3b9fffd1d0918d69f38abb08e07da25b81a123bf08`.
 The [source script](../../../matlab/oswec_core_step_work_audit.m) copies the
 case to a scratch directory, fixes `waves.phaseSeed=1` to reproduce the
 published fixture, disables the post-run plots and Explorer, and changes
-only `simu.dt` to 0.05 or 0.025 s. Each arm ran in its own MATLAB process.
-Both refined outputs were independently reproduced byte for byte using the
-source script after the original local runs.
+only `simu.dt` to 0.05, 0.025, or 0.0125 s. Each arm ran in its own MATLAB
+process. The 0.025 s control exactly reproduced the archived PTO, wave, and
+flap arrays. Two separate 0.0125 s runs produced byte-identical CSV files;
+the checked-in source script reproduces that arm separately.
 
 | Full-run absorbed work | MATLAB | Change from prior MATLAB step |
 | --- | ---: | ---: |
 | Published 0.1 s | 18,885.16 J | — |
 | 0.05 s | 18,758.89 J | −0.6686% |
 | 0.025 s | 18,730.10 J | −0.1535% |
+| 0.0125 s | 18,723.17 J | −0.0370% |
 | Independent Python at 0.025 s | 18,718.19 J | −0.0636% from 0.025 s MATLAB |
+| Independent Python at 0.0125 s | 18,720.22 J | −0.0130% from 0.0125 s MATLAB |
+
+The last three MATLAB steps have a successive work-difference ratio of
+4.153 (observed order about 2.05). Independent public Python at 0.025,
+0.0125, and 0.00625 s has a ratio of 4.0003. Second-order extrapolation gives
+18,720.856 J for MATLAB and 18,720.903 J for Python, a 0.000252% gap.
+Across the full run and three ramp/steady intervals, the new portable
+[convergence regression](../../../test_oswec_core_eighth_convergence.py)
+checks the incident sea and passive PTO law, full-motion errors at 0.0125 s,
+the unchanged 0.1% refined-step work limit, ratios between 3.5 and 4.5,
+and a 0.01% extrapolated-work limit. These are empirical finite-step results,
+not an exact convergence proof or a passed published 0.1 s work gate.
 
 All 500 phase-bearing wave components come from the published fixture.
 MATLAB wave elevation is exactly identical at all shared 0.1 s samples
@@ -49,6 +63,9 @@ interval work gaps are 0.064%, 0.064%, 0.062%, and 0.066%, all below the
 retroactively pass the failed published-step 1% work limit or prove MATLAB
 step convergence.
 
+`eighth_source.npz` (SHA-256
+`33b6455b79162c1f161f63cab23a290556a9ed8fc0d77ddab5c89140090671b2`)
+holds the 0.0125 s PTO, incident wave, and active flap histories.
 `source.npz` (SHA-256
 `4558bc3b9485a4a19cdabf109239af96c8111a351eea0e14535e0ff85013490f`)
 holds the 0.05 and 0.025 s source PTO, wave, and active flap histories.
