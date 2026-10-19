@@ -42,6 +42,14 @@ def test_irregular_spectral_mean_drift_against_pinned_matlab(option, fixture):
     assert all(np.isfinite(values).all() for values in
                (body, wave, recorded_components, mass))
     np.testing.assert_allclose(mass[1:], 837.75804096, rtol=0, atol=1e-6)
+    if option == "momentum_conservation":
+        # The two independent MATLAB exports differ only in drift option;
+        # pin their complete sea and rigid-body inputs before motion pairing.
+        with np.load(FIXTURES / "sphere_irregular_mean_drift/source.npz") as control:
+            np.testing.assert_array_equal(wave, control["wave"])
+            np.testing.assert_array_equal(recorded_components,
+                                          control["components"])
+            np.testing.assert_array_equal(mass, control["mass"])
 
     components = pm_equal_energy_components(
         HYDRO, significant_height=0.5, peak_period=8,

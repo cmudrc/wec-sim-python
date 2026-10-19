@@ -18,6 +18,8 @@ for components, and `6d9b981cd5779dd436c9df42d0ca81d9109f5ff3b08b4003791fceedc42
 for mass. The generated input SHA is
 `b7f6cbf5d9c37edc32b07c5545e069c1fe58f68f2ecc174ba88f9205cb21b3aa`.
 An independent second local R2025b run reproduced all four CSV hashes exactly.
+The wave, all 500 components, and mass arrays are also bit-identical to the
+control-surface source fixture; only the selected drift coefficient differs.
 The source-matched HDF5 is the existing
 [`sphere_mean_drift/sphere.h5`](../sphere_mean_drift/sphere.h5), SHA-256
 `418f7fa2059ebe1d00f8520c55962dbafc6f256a8d26f4117afcc3d495abe3fb`.
