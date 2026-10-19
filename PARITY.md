@@ -481,6 +481,37 @@ Halving only Python's integration step changes shared-sample surge by at most
 `0.0455` mm and PTO work by `0.0400%`; its gap to the half-step MATLAB source
 remains `118.59` mm surge RMS and `4.774%` work. The remaining gap is not
 explained by Python step size at the tested resolution.
+A third [local full-duration MaxStep arm](tests/fixtures/matlab/owc_orifice_full_maxstep/README.md)
+holds the 5 ms wave/radiation grid fixed while reducing only source MaxStep
+to `0.00125` s. Its 130 s surge differs from the 2.5 ms arm by `133.15` mm
+peak and `82.24` mm RMS, with identical PM components and incident wave.
+The independent Python opt-in source-force trajectory differs from this arm
+by `77.19` mm peak and `49.55` mm RMS surge and `4.332%` PTO work. The
+larger MATLAB self-change means source convergence and published physical
+parity remain unestablished; the OWC label and badges remain unchanged.
+
+A separate [local 30 s OWC clock audit](tests/fixtures/matlab/owc_orifice_dt_30s/README.md)
+sets MATLAB `simu.dt` and `ode23t` MaxStep together to `0.005`, `0.0025`,
+and `0.00125` s. The first arm is the archived published-clock prefix; all
+three have identical 500 PM components and shared wave samples. Source surge
+changes by `10.151` mm on the first halving, then `42.523` mm on the second,
+so this sequence does not establish source convergence. Internal-orifice PTO
+work stays within `0.142%` per halving, while the independent Python 30 s
+work remains `2.244%` above the finest source and its final surge differs by
+`52.719` mm. A [portable source gate](tests/test_owc_orifice_dt_30s.py)
+retains the exact wave/phase identity and nonmonotonic motion result. A
+fourth local arm holds `simu.dt=0.005` s and reduces only solver MaxStep from
+`0.0025` to `0.00125` s. It shifts surge by `33.996` mm, leaving `4.829` mm
+against the uniform `0.00125` s arm and removing `98.666%` of the squared
+surge-history gap between the two uniform refined arms. It removes only
+`60.3%` of the corresponding heave gap, so this solver-step attribution is
+specific to surge at 30 s and does not establish source convergence. A
+separate 76,945-sample internal-step trace integrates the source's heave and
+flexible hydrodynamic accelerations to within `0.00401` and `0.01273` m/s of
+their saved speeds; the 5 ms output grid raises those errors to `0.1513` and
+`1.237` m/s. The apparent output-grid force imbalance is a sampling artifact,
+not evidence for adding a new Python force term. This audit does not change
+the physical default, qualified case label, or badge counts.
 
 The targeted [RM3 sea-state matrix export](https://github.com/cmudrc/wec-sim-python/actions/runs/37682612044)
 confirms that MATLAB's applied added-mass matrix and adjusted rigid mass sum

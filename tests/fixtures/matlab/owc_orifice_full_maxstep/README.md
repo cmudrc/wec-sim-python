@@ -66,3 +66,31 @@ Python surge RMS gap remains `118.59` mm, and its PTO-work gap is `4.774%`.
 The ordinary Python test gates the Python step change without requiring the
 remaining MATLAB/Python gap to stay large; a future model improvement can
 reduce that gap without breaking this audit.
+
+## Full-duration quarter MaxStep arm
+
+A third local R2025b Update 7 process held `simu.dt=0.005` s, the published
+130 s stop time, PM seed 128, HDF5, model, and all configuration fixed while
+setting only initialized `ode23t` MaxStep to `0.00125` s. It completed in
+226 s of wall time. The input-file SHA-256 is
+`90fb4b3c94ba524f1fefccb8044c1de4028f1183af65318337927e6da4dcc499`;
+the exported body and internal-orifice CSV hashes are
+`9f4460a1b5ad579633ac987c8ad695924ef8fef067f95fd7cb811986718bd441`
+and `8b0fb50d961038c8941e20769d4ef13b79faf69402fbc84fa1134b726ab2a22b`.
+The compact `quarter_source.npz` SHA-256 is
+`3a9c5d2cf8a104bd37c7a90553c2e405417af742afd34aad0d27d793e06df37a`.
+Its first 30 s of body and flexible motion are byte-identical to the earlier
+[MaxStep-only arm](../owc_orifice_dt_30s/README.md). All 500 PM components
+and 26,001 incident-wave values equal the two previous local source arms
+exactly. The orifice work integrates 427,235 strictly increasing internal
+samples rather than the coarser output-grid record.
+
+Relative to the 2.5 ms MaxStep source, another halving changes 130 s surge by
+`133.15` mm peak and `82.24` mm RMS, and PTO work by `0.383%`. Against this
+new source, the independently advanced public Python trajectory using the
+opt-in `published_owc` force route differs by `77.19` mm peak and `49.55` mm
+RMS surge, and `4.332%` PTO work. These improve on its comparison with the
+2.5 ms arm but leave a material gap, while MATLAB's own surge self-change
+has grown. The 130 s source has not established step convergence. This arm
+remains a diagnostic; the published case and strict badge counts are
+unchanged.

@@ -42,7 +42,7 @@ Nonlinear_Hydro/ode4/RegularCIC,independent_motion,
 Nonlinear_Hydro/ode45/Regular,qualified_motion,Derived full-duration fine-clock motion pairs independently with Python; nonlinear-force sampling explains the MaxStep-only residual but published-step motion remains unpaired.
 Nonlinear_Hydro/ode45/RegularCIC,qualified_motion,Derived full-duration fine-clock motion pairs independently with Python; nonlinear-force and CIC sampling explain the MaxStep-only residual but published-step motion remains unpaired.
 OWC/FloatingOWC,independent_motion,
-OWC/OrificeModel,qualified_motion,Physical coupled path diverges; opt-in source-convention route has a full-duration gate. A full-duration MATLAB solver half-step narrows pitch but leaves 156 mm peak surge and 4.7% PTO-work gaps against independent Python.
+OWC/OrificeModel,qualified_motion,Physical coupled path diverges; opt-in source-convention route has a full-duration gate. A 130 s MATLAB MaxStep reduction from 2.5 to 1.25 ms moves source surge by 133 mm; independent Python still differs by 77 mm peak surge and 4.33% PTO work. Source convergence is unestablished.
 PTO-Sim/OSWEC/OSWEC_Hydraulic_Crank_PTO,independent_motion,Published full-duration gates pass on Linux; one-coordinate scalar mass solve also passes all unchanged ARM64 macOS fixed-crank motion and PTO limits locally.
 PTO-Sim/OSWEC/OSWEC_Hydraulic_PTO,independent_motion,
 PTO-Sim/RM3/RM3_DD_PTO,independent_motion,
