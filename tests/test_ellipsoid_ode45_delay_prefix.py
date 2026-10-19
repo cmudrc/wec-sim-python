@@ -13,6 +13,8 @@ FIXTURE = (ROOT / "tests/fixtures/matlab"
            / "ellipsoid_ode45_delay_2s/signals.npz")
 CLOCK = (ROOT / "tests/fixtures/matlab/ellipsoid_ode45_nonlinear_clock"
          / "source_maxstep_common_grid.npz")
+FULL_DURATION = (ROOT / "tests/fixtures/matlab/ellipsoid_ode45_delay_2s"
+                 / "published_150s_force_feedback.npz")
 HYDRO = ROOT / "tests/test_objects/test_bodyclass/testData/hydroData/ellipsoid.h5"
 MESH = ROOT / "tests/test_objects/test_bodyclass/testData/body_10_test/elipsoid.stl"
 
@@ -48,15 +50,18 @@ def test_published_ellipsoid_added_mass_uses_delayed_acceleration():
 
 
 def test_python_force_law_closes_published_ellipsoid_rhs_on_source_states():
-    """Rebuild the source force balance from pinned mesh and BEM inputs."""
+    """Rebuild 150 s of source force balance from pinned mesh and BEM inputs."""
     with np.load(CLOCK, allow_pickle=False) as source:
-        time = source["regular_published_time"][:41]
-        heave = source["regular_published_heave"][:41] + 2
-        speed = source["regular_published_speed"][:41]
+        time = source["regular_published_time"]
+        heave = source["regular_published_heave"] + 2
+        speed = source["regular_published_speed"]
+    with np.load(FULL_DURATION, allow_pickle=False) as source:
+        np.testing.assert_array_equal(time, source["time"])
+        added_mass_force = source["added_mass_force"]
+        expected = source["acceleration"]
     with np.load(FIXTURE, allow_pickle=False) as source:
-        np.testing.assert_allclose(time, source["time"], rtol=0, atol=1e-13)
-        delayed = source["delay_output_heave"]
-        expected = source["body_acceleration_heave"]
+        np.testing.assert_allclose(time[:41], source["time"], rtol=0, atol=1e-13)
+        np.testing.assert_array_equal(expected[:41], source["body_acceleration_heave"])
         source_mass = float(source["source_adjusted_mass"])
         source_coefficient = float(source["source_applied_added_mass_coefficient"])
 
@@ -85,6 +90,10 @@ def test_python_force_law_closes_published_ellipsoid_rhs_on_source_states():
     feedback = adjusted_mass - (mesh.mass + added_mass[2, 2])
     np.testing.assert_allclose(adjusted_mass, source_mass, rtol=0, atol=1e-8)
     np.testing.assert_allclose(feedback, -source_coefficient, rtol=0, atol=1e-8)
+    delayed = np.zeros_like(expected)
+    delayed[2:] = (2 * expected[1:-1] - expected[:-2]
+                   - 1e-7 / .05 * (expected[1:-1] - expected[:-2]))
+    assert np.max(np.abs(added_mass_force - source_coefficient * delayed)) < 1e-7
 
     real = np.asarray(hydro["fExt"]["re"])[2]
     imaginary = np.asarray(hydro["fExt"]["im"])[2]
@@ -102,5 +111,5 @@ def test_python_force_law_closes_published_ellipsoid_rhs_on_source_states():
         )
         force = (linear + buoyancy + froude_krylov + drag
                  - damping * speed[index])
-        reconstructed[index] = (force + feedback * delayed[index]) / adjusted_mass
+        reconstructed[index] = (force - added_mass_force[index]) / adjusted_mass
     assert np.max(np.abs(reconstructed - expected)) < 1e-11
