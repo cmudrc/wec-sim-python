@@ -805,11 +805,18 @@ difference is `0.137%`. On hosted Apple silicon they are `0.010126` rad,
 rad, `0.08` rad/s, `5` N, and `0.2%` limits. The local and archived Linux
 MATLAB runs use byte-identical HDF5 and identical incident waves, yet differ
 by up to `0.007543` rad pitch after NMPC feedback begins. Linux x86 Python
-misses the local-source pitch and PTO-force limits at `0.015258` rad and
-`5.213` N on the measured runner. The physical default's split-step pitch
-gate also fails. This is qualified macOS ARM published-input numerical
-evidence, not portable physical parity; the WaveStar and total strict badges
-remain 2/3 and 52/63.
+misses the *Mali* source pitch and PTO-force limits at `0.015258` rad and
+`5.213` N on the measured runner. A [platform-matched Linux x86 audit](https://github.com/cmudrc/wec-sim-python/actions/runs/39310591875/job/118258830555)
+instead compares the same independent 225 s Python run with the archived
+Linux R2025b source. The first runner passed the unchanged limits above with
+`0.007327` rad pitch, `0.054485` rad/s speed, `2.980` N force, and `0.0613%`
+signed-work differences. A [second Linux x86 runner with unchanged code](https://github.com/cmudrc/wec-sim-python/actions/runs/39310924498/job/118260096483)
+failed those pitch and force limits at `0.013109` rad and `6.034` N, despite
+using the same pinned phases, Python package versions, and Ubuntu image.
+The autonomous source-ode8 Python trajectory is therefore runner-sensitive even
+within Linux x86; the proposed strict pointwise gate has not been established.
+The physical default's split-step pitch gate also fails. WaveStar remains
+qualified, and the WaveStar and total strict badges remain 2/3 and 52/63.
 An independent second local R2025b process reproduced the same 225 s Mali
 body, PTO, wave, and component CSVs byte for byte, and every controller torque
 request exactly. The first run disabled only post-run plotting, while the
