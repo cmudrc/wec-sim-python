@@ -48,20 +48,22 @@ rounding. Their SHA-256 hashes are
 and `86f2e811ab53c1453ee2baaebec71a3312acd50586cf4fb66f10996785c1755b`,
 and `db4cc9cdbcbe15f7aa9542373e4b00108a33e3c6f8522f46a577a1ad107eba18`.
 The portable [Python gate](../../../test_oswec_wave_markers_work_step.py)
-rebuilds the full case from the bundled HDF5 and compares each interval.
+rebuilds the full case from the [exact source-generated HDF5](../oswec_wave_markers/README.md)
+and compares each interval. The earlier audit used the bundled 10-heading
+example HDF5; the corrected comparison uses the published 36-heading input.
 
 | Interval | Published MATLAB (J) | 0.05 s MATLAB (J) | 0.025 s MATLAB (J) | 0.0125 s MATLAB (J) | Python (J) | Observed order | Python/second-order extrapolation |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0–100 s | 18,247.04 | 17,982.95 | 17,919.19 | 17,903.47 | 17,898.17 | 2.019 | −0.000315% |
-| 100–250 s | 75,040.68 | 73,815.96 | 73,522.47 | 73,450.27 | 73,426.00 | 2.023 | −0.000276% |
-| 250–400 s | 75,099.61 | 73,868.71 | 73,573.53 | 73,500.88 | 73,476.46 | 2.023 | −0.000285% |
-| 0–400 s | 168,387.33 | 165,667.63 | 165,015.19 | 164,854.62 | 164,800.62 | 2.023 | −0.000284% |
+| 0–100 s | 18,247.04 | 17,982.95 | 17,919.19 | 17,903.47 | 17,898.25 | 2.019 | +0.000176% |
+| 100–250 s | 75,040.68 | 73,815.96 | 73,522.47 | 73,450.27 | 73,426.37 | 2.023 | +0.000237% |
+| 250–400 s | 75,099.61 | 73,868.71 | 73,573.53 | 73,500.88 | 73,476.84 | 2.023 | +0.000231% |
+| 0–400 s | 168,387.33 | 165,667.63 | 165,015.19 | 164,854.62 | 164,801.47 | 2.023 | +0.000228% |
 
-The originally attempted 1% published-work limit fails by 2.130% overall.
+The originally attempted 1% published-work limit still fails by 2.130% overall.
 The same 1% limit passes against all three derived refined sources in every
 window. The final source halving changes full-duration work by −0.0973%; its
 observed second-order extrapolation is 164,801.09 J versus independent
-Python's 164,800.62 J. The new regression bounds on the observed step ratio
+Python's 164,801.47 J. The regression bounds on the observed step ratio
 and extrapolated agreement codify these measured results; they were not
 predeclared published-case parity limits. The finite-step trend does not prove
 mathematical convergence or pass the published 0.1 s energy limit. The gap
