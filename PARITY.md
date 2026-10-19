@@ -805,11 +805,15 @@ difference is `0.137%`. On hosted Apple silicon they are `0.010126` rad,
 rad, `0.08` rad/s, `5` N, and `0.2%` limits. The local and archived Linux
 MATLAB runs use byte-identical HDF5 and identical incident waves, yet differ
 by up to `0.007543` rad pitch after NMPC feedback begins. Linux x86 Python
-misses the local-source pitch and PTO-force limits at `0.015258` rad and
-`5.213` N on the measured runner. The physical default's split-step pitch
-gate also fails. This is qualified macOS ARM published-input numerical
-evidence, not portable physical parity; the WaveStar and total strict badges
-remain 2/3 and 52/63.
+misses the *Mali* source pitch and PTO-force limits at `0.015258` rad and
+`5.213` N on the measured runner. A [platform-matched Linux x86 gate](https://github.com/cmudrc/wec-sim-python/actions/runs/39310591875/job/118258830555)
+instead compares the same independent 225 s Python run with the archived
+Linux R2025b source. Its maximum pitch, speed, and force gaps are `0.007327`
+rad, `0.054485` rad/s, and `2.980` N; total signed PTO work differs by
+`0.0613%`. All pass the unchanged limits above. The physical default's
+split-step pitch gate still fails. These are platform-matched numerical
+comparisons, not portable physical parity; the WaveStar and total strict
+badges remain 2/3 and 52/63.
 An independent second local R2025b process reproduced the same 225 s Mali
 body, PTO, wave, and component CSVs byte for byte, and every controller torque
 request exactly. The first run disabled only post-run plotting, while the
