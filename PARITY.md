@@ -2569,8 +2569,11 @@ limits. The total is too cancellation-sensitive to support a portable parity
 claim. The interval gates remain enforced on both Linux x86 and hosted Apple
 silicon, and WaveStar stays open.
 
-The next WaveStar change remains a [draft, unmerged PR](https://github.com/cmudrc/wec-sim-python/pull/525).
-Its earlier head `1462b9d5` paired the first 9.95 s of the published 50 ms
+The [WaveStar auxiliary-body draft PR #525](https://github.com/cmudrc/wec-sim-python/pull/525)
+closed without merge on 2026-10-19 after its full-duration gates failed.
+The source-stage excitation evaluation was merged separately in `d7861d1c`;
+the draft's BC rod and motor load was not adopted. Its earlier head
+`1462b9d5` paired the first 9.95 s of the published 50 ms
 source within `6.77e-8` rad pitch using smooth solver-stage excitation and
 the light BC rod and motor.
 Two independent full-duration gates then failed on that same head: ordinary
@@ -2600,7 +2603,7 @@ reproduction of the x86 CI runner. This motivated isolating the source/Python
 difference before changing delayed-added-mass coupling; repeating the same
 MATLAB source run unchanged would add no evidence.
 
-The current draft head `4e702382` evaluates the pinned `irregExcF` component
+The archived draft head `4e702382` evaluates the pinned `irregExcF` component
 sum directly at `ode8` stage times. Five off-grid local R2025b force samples
 match within `4.98e-14` N or N m. The separate hosted Linux x86 and macOS
 window-work and envelope jobs pass, but the broad Linux x86 source-`ode8`
