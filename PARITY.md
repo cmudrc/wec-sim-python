@@ -2556,12 +2556,22 @@ now feeds that same pinned `NMPC.m` all 4,201 observer states and AR forecasts
 from Python's **own** 225 s closed-loop motion. MATLAB and Python torque
 requests differ by at most `0.000289571` N m and `8.83404e-6` N m RMS;
 the 15–20 s maximum is `1.02796e-5` N m, and the independent run reaches
-48 near-saturation commands. The portable full-duration gate recomputes
-Python commands on those independent inputs and checks `0.001` N m maximum,
-`0.00005` N m RMS, and `0.00005` N m through 20 s. This separates the
-optimizer from the growing closed-loop trajectory gap, but it does not feed
-MATLAB commands back into Python motion or establish published-case motion
-parity. WaveStar NMPC remains open.
+48 near-saturation commands. Those are the archived L-BFGS-B outputs. A
+bounded least-squares solve of the same positive-definite QP reduces the
+full-input maximum and RMS differences to `0.000168290` and `5.02630e-6`
+N m; the 15–20 s maximum is `5.20245e-6` N m. The portable gate now
+checks `0.00025` N m maximum, `1e-5` N m RMS, and `1e-5` N m through 20 s.
+Against the local R2025b full 225 s source, its independently advanced
+source-`ode8` motion reduces maximum pitch and PTO-force gaps from
+`0.011410` rad and `4.725` N to `0.008283` rad and `2.648` N; the signed
+work gap falls from `0.1366%` to `0.05834%`. Against the archived Linux
+source, the same local Python solve still misses the unchanged `0.012` rad
+pointwise pitch limit at `0.013908` rad. This improves the controller and
+one autonomous numerical comparison. The independent physical-default
+225 s path still differs from the local MATLAB source by `0.041381` rad
+pitch, `0.443139` rad/s speed, `13.626` N PTO force, and `5.9455%` signed
+PTO work; those gaps are effectively unchanged by the QP solver. WaveStar
+NMPC remains qualified and its badge is unchanged.
 
 A [full-duration independent-input observer and predictor gate](tests/fixtures/matlab/wavestar_nmpc_independent_predictor/README.md)
 reconstructs the excitation estimate from that autonomous Python run's

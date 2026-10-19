@@ -1,7 +1,7 @@
 """Actuator used by the published WaveStar nonlinear predictive controller."""
 
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import lsq_linear
 from scipy.signal import cont2discrete
 
 
@@ -307,35 +307,19 @@ class WaveStarNmpcController:
                    + output_sensitivity.T @ self._weight @ output_sensitivity)
         hessian = (hessian + hessian.T) / 2
         linear = output_sensitivity.T @ self._weight @ output
-        bounds = list(zip(-self.torque_limit - nominal,
-                          self.torque_limit - nominal))
-        objective = lambda delta: .5 * delta @ hessian @ delta + linear @ delta
-        gradient = lambda delta: hessian @ delta + linear
-        solution = minimize(
-            objective,
-            np.zeros(self.horizon),
-            jac=gradient,
-            bounds=bounds, method="L-BFGS-B",
-            options={"ftol": 1e-13, "gtol": 1e-11, "maxiter": 1000,
-                     "maxls": 50},
+        # H is positive definite because the input penalty is positive.
+        # Factor the quadratic into a bounded least-squares problem so the
+        # active-set solve reaches its constrained optimum directly.
+        factor = np.linalg.cholesky(hessian).T
+        target = -np.linalg.solve(factor.T, linear)
+        lower = -self.torque_limit - nominal
+        upper = self.torque_limit - nominal
+        solution = lsq_linear(
+            factor, target, bounds=(lower, upper), method="bvls",
+            tol=1e-12, max_iter=100,
         )
         if not solution.success:
-            # SciPy's line search can report ABNORMAL on this bounded
-            # quadratic even when the iterate is close to the solution.
-            # Retry the same QP with an independent constrained solver.
-            retry = minimize(
-                objective,
-                solution.x if np.isfinite(solution.x).all()
-                else np.zeros(self.horizon),
-                jac=gradient, bounds=bounds, method="SLSQP",
-                options={"ftol": 1e-12, "maxiter": 1000},
-            )
-            if not retry.success:
-                raise RuntimeError(
-                    "WaveStar NMPC QP failed: "
-                    f"L-BFGS-B: {solution.message}; SLSQP: {retry.message}"
-                )
-            solution = retry
+            raise RuntimeError(f"WaveStar NMPC QP failed: {solution.message}")
         self._nominal = nominal + solution.x
         return float(np.clip(self._nominal[0],
                              -self.torque_limit, self.torque_limit))

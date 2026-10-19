@@ -20,11 +20,25 @@ the direct MATLAB CSV had SHA-256
 Maximum MATLAB/Python requested-torque difference is `0.000289571` N m,
 RMS difference is `8.83404e-6` N m, and the 15–20 s maximum is
 `1.02796e-5` N m. The independent run reaches 48 commands above 11.9 N m
-in magnitude. The portable test recomputes Python commands from all saved
-independent inputs and gates their difference from the MATLAB `quadprog`
-replay at `0.001` N m maximum, `0.00005` N m RMS, and `0.00005` N m in the
-15–20 s activation window. These are controller-input component gates;
-published autonomous closed-loop motion remains open.
+in magnitude. These values are the archived L-BFGS-B controller outputs,
+not the current solver's result. A local bounded least-squares replay on all
+4,201 identical inputs reduces the maximum and RMS gaps to `0.000168290`
+and `5.02630e-6` N m; its 15–20 s maximum is `5.20245e-6` N m. The
+portable test now gates the recomputed commands at `0.00025` N m maximum,
+`1e-5` N m RMS, and `1e-5` N m in the activation window.
+
+On the independent full 225 s public source-`ode8` run, this QP change
+reduces the local R2025b maximum pitch, speed, and axial PTO-force gaps
+from `0.011410` rad, `0.056215` rad/s, and `4.725` N to `0.008283` rad,
+`0.044096` rad/s, and `2.648` N. Relative signed PTO-work gap changes
+from `0.1366%` to `0.05834%`. Both local runs pass their existing numerical
+limits. Against the archived Linux source, the current local Python run still
+misses the unchanged `0.012` rad pointwise pitch gate at `0.013908` rad.
+These results do not establish portable physical-default parity or change
+the published-case badge. A new local physical-default 225 s run with the
+bounded least-squares controller still differs from the same R2025b source
+by `0.041381` rad pitch, `0.443139` rad/s speed, `13.626` N PTO force, and
+`5.9455%` signed PTO work, matching the previously documented physical gap.
 
 To regenerate, run the public 225 s source-style solver with the published
 HDF5 and wave phases, recording each `WaveStarNmpcObserver.step` and
