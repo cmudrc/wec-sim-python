@@ -477,6 +477,10 @@ Python/half-step gap remains `4.732%`. This separates a material source-step
 pitch effect from the unresolved surge and work gaps. It is a derived-source
 diagnostic, not a published physical-motion gate; the case and badges stay
 qualified and unchanged.
+Halving only Python's integration step changes shared-sample surge by at most
+`0.0455` mm and PTO work by `0.0400%`; its gap to the half-step MATLAB source
+remains `118.59` mm surge RMS and `4.774%` work. The remaining gap is not
+explained by Python step size at the tested resolution.
 
 The targeted [RM3 sea-state matrix export](https://github.com/cmudrc/wec-sim-python/actions/runs/37682612044)
 confirms that MATLAB's applied added-mass matrix and adjusted rigid mass sum
