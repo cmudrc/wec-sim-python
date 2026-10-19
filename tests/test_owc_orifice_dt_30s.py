@@ -107,3 +107,42 @@ def test_internal_flexible_and_heave_acceleration_integrate_to_speed():
             coarse_error = float(np.max(np.abs(coarse_integrated
                                                - coarse_velocity)))
             assert coarse_error > 15 * internal_error
+
+
+def test_maxstep_only_isolates_most_of_30s_source_surge_shift():
+    with np.load(FIXTURES / "owc_orifice_dt_30s/source.npz",
+                 allow_pickle=False) as clocks, \
+            np.load(FIXTURES / "owc_orifice_dt_30s/maxstep_only.npz",
+                    allow_pickle=False) as maxstep, \
+            np.load(FIXTURES / "owc_orifice_full_maxstep/source.npz",
+                    allow_pickle=False) as full:
+        np.testing.assert_array_equal(maxstep["time"], clocks["time"])
+        np.testing.assert_array_equal(maxstep["wave"], clocks["wave"][0])
+        np.testing.assert_array_equal(maxstep["components"],
+                                      clocks["components"][0])
+        assert float(maxstep["simu_dt"]) == .005
+        assert float(maxstep["max_step"]) == .00125
+        assert maxstep["motion"].shape == (6001, 4)
+        assert maxstep["velocity"].shape == (6001, 4)
+
+        # This comparison holds the source wave/radiation grid at 5 ms and
+        # changes only the initialized ode23t maximum step.
+        previous_maxstep = full["half_motion"][:6001, 0]
+        surge_maxstep_shift = float(np.max(np.abs(
+            maxstep["motion"][:, 0] - previous_maxstep)))
+        assert .03 < surge_maxstep_shift < .04
+
+        fine = clocks["motion"][2]
+        uniform_half = clocks["motion"][1]
+        residual = fine - maxstep["motion"]
+        source_gap = fine - uniform_half
+        assert np.max(np.abs(residual[:, 0])) < .006
+        assert (1 - np.sum(residual[:, 0]**2)
+                / np.sum(source_gap[:, 0]**2)) > .98
+        # Heave responds differently, so do not generalize surge attribution
+        # to all four coordinates.
+        assert (1 - np.sum(residual[:, 1]**2)
+                / np.sum(source_gap[:, 1]**2)) < .8
+        assert abs(float(maxstep["work_internal"])
+                   - clocks["work_internal"][2]) \
+            / clocks["work_internal"][2] < .001

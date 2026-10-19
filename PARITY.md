@@ -492,6 +492,12 @@ work stays within `0.142%` per halving, while the independent Python 30 s
 work remains `2.244%` above the finest source and its final surge differs by
 `52.719` mm. A [portable source gate](tests/test_owc_orifice_dt_30s.py)
 retains the exact wave/phase identity and nonmonotonic motion result. A
+fourth local arm holds `simu.dt=0.005` s and reduces only solver MaxStep from
+`0.0025` to `0.00125` s. It shifts surge by `33.996` mm, leaving `4.829` mm
+against the uniform `0.00125` s arm and removing `98.666%` of the squared
+surge-history gap between the two uniform refined arms. It removes only
+`60.3%` of the corresponding heave gap, so this solver-step attribution is
+specific to surge at 30 s and does not establish source convergence. A
 separate 76,945-sample internal-step trace integrates the source's heave and
 flexible hydrodynamic accelerations to within `0.00401` and `0.01273` m/s of
 their saved speeds; the 5 ms output grid raises those errors to `0.1513` and

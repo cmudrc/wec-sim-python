@@ -24,6 +24,12 @@ The compact `source.npz` SHA-256 is
 `6b7418b5fe8e508c0115f527c9ccfb2d3932950122f38f4f6ec8ede800a1db51`.
 The separate `internal_trace.npz` SHA-256 is
 `c949f53ea2b75be5d278794f3454e857e89fcfe582c8114688337ae6f4c74453`.
+One additional 30 s arm keeps `simu.dt=0.005` s and changes only initialized
+`ode23t` MaxStep to `0.00125` s. Its input-file, body CSV, and compact
+`maxstep_only.npz` SHA-256 values are
+`8417681e1036c2d4f67e87fa4dc35c47a819022079b98012020bf015ebb8eb18`,
+`b6f4171c4b2ceb39f42977618689ef150408bef23b8eee603d81f113cc28912a`,
+and `b2f6aac77e08bb9e0fa2f5721cf356ef9e964396cbad14ce9d0e55ba5f360370`.
 
 The fixture retains all three source trajectories on their common 5 ms grid,
 the exact 500 PM components and incident wave, and PTO work integrated on
@@ -46,6 +52,16 @@ not established step convergence. Internal PTO work changes by at most
 3.092634 m and PTO work 57.419 kJ. Against the finest local source these
 differ by 52.719 mm and 2.244%, respectively. The Python trajectory uses
 only the pinned HDF5 and phases, not MATLAB motion or force histories.
+
+With the wave/radiation data grid fixed at 5 ms, reducing only MaxStep from
+2.5 to 1.25 ms moves source surge by up to `33.996` mm over 30 s. At the
+same 1.25 ms MaxStep, changing `simu.dt` from 5 to 1.25 ms leaves only
+`4.829` mm surge difference. The MaxStep-only arm removes `98.666%` of the
+squared surge-history gap between the uniform 2.5 and 1.25 ms arms, but only
+`60.3%` of the analogous heave gap. Its internal PTO work is `56.142` kJ,
+within `0.029%` of the uniform 1.25 ms arm. The solver maximum step is the
+leading cause of this 30 s source surge shift; the other channels do not
+share that attribution.
 
 A separate local 5 ms source copy set only the existing flexible-state and
 joint `To Workspace` blocks' `SampleTime` to `-1`, recording 76,945 strictly
