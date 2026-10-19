@@ -3,8 +3,8 @@ function sphere_irregular_mean_drift_reference(caseSource, coreSource, hydroFile
 if nargin < 5
     driftOption = 1;
 end
-assert(ismember(driftOption, [1, 3]), ...
-    'Expected control-surface or pressure-integration mean drift');
+assert(ismember(driftOption, [1, 2, 3]), ...
+    'Expected a supported HDF5 mean-drift coefficient');
 addpath(genpath(coreSource));
 if ~isfolder(outDir)
     mkdir(outDir);
@@ -41,10 +41,11 @@ for index = 1:size(edits, 1)
         'Pinned Sphere Mean_Drift input changed');
     input = strrep(input, edits{index, 1}, edits{index, 2});
 end
-if driftOption == 3
+if driftOption ~= 1
     oldDrift = 'body(1).meanDrift = 1;';
     assert(contains(input, oldDrift), 'Pinned Sphere drift option changed');
-    input = strrep(input, oldDrift, 'body(1).meanDrift = 3;');
+    input = strrep(input, oldDrift, ...
+        sprintf('body(1).meanDrift = %d;', driftOption));
 end
 geometry = fullfile(fileparts(caseSource), '_Common_Input_Files', ...
     'Sphere', 'geometry', 'sphere.stl');
