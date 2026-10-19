@@ -30,6 +30,8 @@ The published 100 s Sphere mean-drift motion and force gate is documented in
 [sphere_mean_drift/README.md](sphere_mean_drift/README.md).
 The derived irregular-wave drift path is documented in
 [sphere_irregular_mean_drift/README.md](sphere_irregular_mean_drift/README.md).
+The pressure-integration coefficient variant is documented in
+[sphere_pressure_drift/README.md](sphere_pressure_drift/README.md).
 The four published 500 s RM3 radiation-option motion and PTO gates are
 documented in [rm3_radiation_options/README.md](rm3_radiation_options/README.md).
 The published 400 s RM3 imported-elevation MooringMatrix gate is documented in

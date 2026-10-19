@@ -1,5 +1,10 @@
-function sphere_irregular_mean_drift_reference(caseSource, coreSource, hydroFile, outDir)
+function sphere_irregular_mean_drift_reference(caseSource, coreSource, hydroFile, outDir, driftOption)
 % Derive a short PM-wave input from the pinned Sphere Mean_Drift application.
+if nargin < 5
+    driftOption = 1;
+end
+assert(ismember(driftOption, [1, 3]), ...
+    'Expected control-surface or pressure-integration mean drift');
 addpath(genpath(coreSource));
 if ~isfolder(outDir)
     mkdir(outDir);
@@ -36,6 +41,11 @@ for index = 1:size(edits, 1)
         'Pinned Sphere Mean_Drift input changed');
     input = strrep(input, edits{index, 1}, edits{index, 2});
 end
+if driftOption == 3
+    oldDrift = 'body(1).meanDrift = 1;';
+    assert(contains(input, oldDrift), 'Pinned Sphere drift option changed');
+    input = strrep(input, oldDrift, 'body(1).meanDrift = 3;');
+end
 geometry = fullfile(fileparts(caseSource), '_Common_Input_Files', ...
     'Sphere', 'geometry', 'sphere.stl');
 oldGeometry = '''../_Common_Input_Files/Sphere/geometry/sphere.stl''';
@@ -54,7 +64,7 @@ assert(simu.dt == 0.01 && simu.endTime == 30 && ...
     strcmp(waves.type, 'irregular') && ...
     strcmp(waves.spectrumType, 'PM') && waves.phaseSeed == 1 && ...
     waves.height == 0.5 && waves.period == 8 && ...
-    body(1).meanDrift == 1, 'Derived Sphere settings changed');
+    body(1).meanDrift == driftOption, 'Derived Sphere settings changed');
 record = output.bodies(1);
 assert(numel(record.time) == 3001, 'Incomplete Sphere source run');
 assert(all(isfinite(record.forceExcitation), 'all'), ...

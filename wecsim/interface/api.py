@@ -133,7 +133,11 @@ class WEC(_WECCaseMixin):
              quadratic_drag: Sequence[Sequence[float]] | None = None,
              quadratic_drag_coefficient: Sequence[float] | None = None,
              quadratic_drag_area: Sequence[float] | None = None) -> Body:
-        """Add a body with optional hydrostatic, damping, and drag settings."""
+        """Add a body with optional hydrostatic, damping, and drag settings.
+
+        ``mean_drift`` selects none, control_surface,
+        momentum_conservation, or pressure_integration HDF5 coefficients.
+        """
         if not isinstance(name, str) or not name:
             raise ValueError("body name must be a nonempty string")
         if any(existing.name == name for existing in self.bodies):

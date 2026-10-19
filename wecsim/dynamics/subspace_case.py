@@ -128,10 +128,10 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         body.bodyTotal = len(bodies)
         drift_option = bodies[index - 1].get("mean_drift", "none")
         drift_flags = {"none": 0, "control_surface": 1,
-                       "momentum_conservation": 2}
+                       "momentum_conservation": 2, "pressure_integration": 3}
         if not isinstance(drift_option, str) or drift_option not in drift_flags:
             raise ValueError(
-                "body.mean_drift must be none, control_surface, or momentum_conservation"
+                "body.mean_drift must be none, control_surface, momentum_conservation, or pressure_integration"
             )
         body.meanDriftForce = drift_flags[drift_option]
         body.readH5file()
