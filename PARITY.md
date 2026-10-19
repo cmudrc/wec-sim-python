@@ -126,6 +126,15 @@ The two configured OSWEC hinge-pretension paths above now replay their full
 in ordinary Python CI. Both pass the original body, PTO, power, and
 spring-effect limits; no threshold or published-case badge changed.
 
+For published `Wave_Markers/RM3`, the two body CSVs and PTO CSV from its own
+R2025b run are byte-identical to the core RM3 source trace used by the portable
+400 s motion gate. The application's generated HDF5 has the same 84 dataset
+values and all attributes as the existing MooringMatrix fixture, so the public
+gate now runs with that source-equivalent input as well as the bundled RM3
+HDF5. The [case fixture](tests/fixtures/matlab/rm3_wave_markers/README.md)
+records the source hashes and the CI identity check. This strengthens an
+already counted case; the RM3 badge remains 17/21.
+
 Two pinned MATLAB source behaviors have upstream follow-ups: [passive-yaw
 heading-hold step sensitivity](https://github.com/WEC-Sim/WEC-Sim/issues/1662)
 and [full-directional excitation omitting the heading-bin width used by wave

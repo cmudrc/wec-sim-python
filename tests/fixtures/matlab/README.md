@@ -288,7 +288,9 @@ per-channel gates. The live paired tests continue to use pinned MATLAB inputs.
 The [compact RM3 marker fixture](rm3_wave_markers/README.md) keeps all 25
 published 400 s elevation histories, origin elevation, locations, and wave
 parameters in ordinary Python CI. Its body and PTO motion is paired by the
-existing `rm3_regular_wave.npz` gate.
+existing `rm3_regular_wave.npz` gate. The two published body CSVs and PTO CSV
+are byte-identical to that core RM3 source, and the gate also runs with an
+HDF5 fixture whose datasets and attributes match the Wave Markers source file.
 
 ## OSWEC Wave Markers
 
