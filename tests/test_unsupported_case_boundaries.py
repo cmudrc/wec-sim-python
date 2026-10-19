@@ -63,7 +63,7 @@ def _mapped_heave():
 @pytest.mark.parametrize("setting,reason", [
     ("no_wave_height", "no-wave cases have no wave height"),
     ("regular_memory", "regular-wave linear dynamics use constant radiation"),
-    ("irregular_mean_drift", "irregular linear-subspace mean-drift"),
+    ("no_wave_mean_drift", "mean drift needs regular or spectral incident waves"),
     ("current_without_morison", "current needs a moving Morison element"),
 ])
 def test_mapped_motion_rejects_unsupported_force_combinations(setting, reason):
@@ -72,8 +72,8 @@ def test_mapped_motion_rejects_unsupported_force_combinations(setting, reason):
         case["wave"] = {"type": "none", "height": 1}
     elif setting == "regular_memory":
         case["simulation"]["radiation_memory"] = 1
-    elif setting == "irregular_mean_drift":
-        case["wave"]["type"] = "pm"
+    elif setting == "no_wave_mean_drift":
+        case["wave"] = {"type": "none"}
         case["bodies"][0]["mean_drift"] = "control_surface"
     else:
         case["wave"]["current"] = {"speed": 1}

@@ -51,9 +51,9 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         raise ValueError("body-to-body hydrodynamics need one shared HDF5 file")
     if wave["type"] == "none" and set(wave) != {"type"}:
         raise ValueError("no-wave cases have no wave height or period")
-    if (wave["type"] in ("pm", "jonswap", "spectrumImport", "elevationImport")
+    if (wave["type"] in ("none", "elevationImport")
             and any(body.get("mean_drift", "none") != "none" for body in bodies)):
-        raise ValueError("irregular linear-subspace mean-drift forcing is not supported")
+        raise ValueError("mean drift needs regular or spectral incident waves")
     components = None
     auxiliary_files = []
     if wave["type"] in ("regular", "regularCIC"):
@@ -133,8 +133,6 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
             raise ValueError(
                 "body.mean_drift must be none, control_surface, or momentum_conservation"
             )
-        if drift_option != "none" and wave["type"] not in ("regular", "regularCIC"):
-            raise ValueError("mean drift requires regular incident waves")
         body.meanDriftForce = drift_flags[drift_option]
         body.readH5file()
         if drift_option != "none":
@@ -601,6 +599,7 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
                     excitation_interpolation=wave.get(
                         "excitation_interpolation", "linear",
                     ),
+                    mean_drift=body_spec.get("mean_drift", "none"),
                 )
                 if pm_elevation is None:
                     pm_elevation = incident.elevation
@@ -814,6 +813,14 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         generalized_pto += np.outer(
             generator_forces[connection.name], connection.stroke_jacobian,
         )
+    # irregExcF weights mean drift by spectral energy (S * dw * spread);
+    # regular waves instead use the squared amplitude H²/4.
+    irregular_drift = wave["type"] in ("pm", "jonswap", "spectrumImport")
+    drift_ramp = np.ones(len(response.time))
+    if ramp_time > 0:
+        early = response.time < ramp_time
+        drift_ramp[early] = (1 - np.cos(np.pi * response.time[early]
+                                      / ramp_time)) / 2
     drift_outputs = tuple(
         output
         for index, (spec, body, dynamic) in enumerate(
@@ -822,12 +829,20 @@ def _run_linear_subspace(case, sim, wave, constraint, bodies, hydro,
         if spec.get("mean_drift", "none") != "none"
         for output in (
             (f"body{index}_mean_drift_force",
-             (height / 2)**2 * ramp[:, None]
-             * np.asarray(body.hydroForce["fExt"]["md"])[None, :]),
+             (np.einsum(
+                 "fd,dfc->c",
+                 components.spectral_amplitude[:, None]
+                 * components.d_omega[:, None]
+                 * components.spreading[None, :],
+                 np.asarray(body.hydroForce["fExt"]["md"]),
+             ) if irregular_drift else
+              (height / 2)**2 * np.asarray(body.hydroForce["fExt"]["md"]))
+             * drift_ramp[:, None]),
             (f"body{index}_excitation_force",
              np.stack([dynamic.excitation(t) for t in response.time])),
         )
-    ) if wave["type"] in ("regular", "regularCIC") else ()
+    ) if wave["type"] in ("regular", "regularCIC", "pm", "jonswap",
+                          "spectrumImport") else ()
     imported_outputs = tuple(
         (f"body{index}_excitation_force",
          (np.asarray(body.hydroForce["userDefinedFe"])
