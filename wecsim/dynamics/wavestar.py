@@ -9,6 +9,7 @@ from scipy.sparse import block_diag, csr_matrix
 
 from wecsim.environment.irregularWave import IrregularComponents, synthesize_irregular_response
 from wecsim.dynamics.rkdp87 import A as ODE8_A, B as ODE8_B, C as ODE8_C
+from wecsim.hydrodynamics.bodyClass import BodyClass
 
 
 @dataclass(frozen=True)
@@ -70,6 +71,45 @@ class WaveStarResponse:
     excitation_force: np.ndarray
     radiation_force: np.ndarray
     pto_force: np.ndarray
+
+
+def _source_stage_excitation(hydro_file, components, *, rho, g):
+    """Prepare the pinned ``irregExcF`` component sum for solver-stage times."""
+    body = BodyClass(str(hydro_file))
+    body.bodyNumber = 1
+    body.readH5file()
+    omega = np.asarray(components.omega, dtype=float).ravel()
+    direction = np.asarray(components.directions, dtype=float).ravel()
+    spread = np.asarray(components.spreading, dtype=float).ravel()
+    phase = np.asarray(components.phase, dtype=float)
+    body.irrExcitation(omega, len(omega), direction, rho, g)
+    f_ext = body.hydroForce["fExt"]
+    real = np.transpose(f_ext["re"], (1, 0, 2))
+    imaginary = np.transpose(f_ext["im"], (1, 0, 2))
+    mean_drift = np.transpose(f_ext["md"], (1, 0, 2))
+    energy = (np.asarray(components.spectral_amplitude)[:, None]
+              * np.asarray(components.d_omega)[:, None]
+              * spread[None, :])
+    height = np.sqrt(energy)
+    drift_force = np.einsum("fd,fdc->c", energy, mean_drift)
+
+    def evaluate(times, ramp_time):
+        times = np.asarray(times, dtype=float)
+        angle = (times[:, None, None] * omega[None, :, None]
+                 + phase[None, :, :])
+        cosine = np.cos(angle) * height[None, :, :]
+        sine = np.sin(angle) * height[None, :, :]
+        force = (drift_force
+                 + np.einsum("tfd,fdc->tc", cosine, real)
+                 - np.einsum("tfd,fdc->tc", sine, imaginary))
+        if ramp_time > 0:
+            early = times < ramp_time
+            force[early] *= (
+                (1 - np.cos(np.pi * times[early] / ramp_time)) / 2
+            )[:, None]
+        return force
+
+    return evaluate
 
 
 def run_wavestar_published(
@@ -194,6 +234,11 @@ def run_wavestar_published(
     arm_rigid = np.diag([arm_mass] * 3 + [0., arm_inertia, 0.])
     source_ode8 = solver == "wecsim_ode8"
     if source_ode8:
+        # Simulink evaluates irregExcF at each ode8 stage. Sample the
+        # harmonics there instead of interpolating output-grid forces.
+        stage_forcing = _source_stage_excitation(
+            hydro_file, components, rho=rho, g=g,
+        )
         # WEC-Sim moves twice the translational A_inf trace into Simscape's
         # rigid mass. The remainder is fed back through a short delay.
         adjustment = 2 * np.trace(added_mass[:3, :3])
@@ -279,6 +324,8 @@ def run_wavestar_published(
             break
         time = index * dt
         if source_ode8:
+            stage_time = time + ODE8_C * dt
+            stage_excitation = stage_forcing(stage_time, ramp_time)
             stage = np.zeros((13, state.size))
             for number, fraction in enumerate(ODE8_C):
                 trial = state + dt * (ODE8_A[number, :number] @ stage[:number])
@@ -296,16 +343,10 @@ def run_wavestar_published(
                 else:
                     delayed = ((1 + fraction) * body_acceleration_history[index]
                                - fraction * body_acceleration_history[index - 1])
-                sampled_index = 2 * index + 2 * fraction
-                lower = int(np.floor(sampled_index))
-                upper = min(lower + 1, len(incident.excitation_force) - 1)
-                weight = sampled_index - lower
-                excitation = ((1 - weight) * incident.excitation_force[lower]
-                              + weight * incident.excitation_force[upper])
                 stage_force = (pto_force if force_at_stroke is None else
                                force_at_stroke(linkage.pto_stroke(trial[0])))
                 stage[number] = derivative(
-                    trial, excitation, time + fraction * dt,
+                    trial, stage_excitation[number], time + fraction * dt,
                     stage_force, delayed,
                 )
                 if number == 0:

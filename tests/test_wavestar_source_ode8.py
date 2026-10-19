@@ -6,7 +6,9 @@ import numpy as np
 import pytest
 
 from wecsim import WaveStarNmpcPTO
-from wecsim.dynamics.wavestar import WaveStarLinkage, run_wavestar_published
+from wecsim.dynamics.wavestar import (
+    WaveStarLinkage, _source_stage_excitation, run_wavestar_published,
+)
 from wecsim.environment.irregularWave import jonswap_equal_energy_components
 
 
@@ -14,6 +16,7 @@ ROOT = Path(__file__).parent / "fixtures/matlab"
 HYDRO = ROOT / "wavestar_fixed_input_step/wavestar.h5"
 SOURCE = ROOT / "wavestar_fixed_input_step/source.npz"
 FULL_SOURCE = ROOT / "wavestar_nmpc_full_step/baseline.npz"
+STAGE_SOURCE = ROOT / "wavestar_stage_forcing/source.npz"
 AUXILIARY = ROOT / "wavestar_auxiliary_mass/source.npz"
 ORIGINAL_AUXILIARY = ROOT / "wavestar_added_mass_delay/source.npz"
 
@@ -24,6 +27,23 @@ def _published_sea(components):
         directions=np.array([0.]), spreading=np.array([1.]),
         gamma=3.3, phase=components[:, 3, None],
     )
+
+
+def test_exact_ode8_stage_excitation_against_matlab_irreg_exc_f():
+    """Use source function values at times between saved wave samples."""
+    with np.load(STAGE_SOURCE, allow_pickle=False) as source, \
+            np.load(FULL_SOURCE, allow_pickle=False) as published:
+        time = source["time"]
+        force = source["unramped_force"]
+        sea = _published_sea(published["components"])
+    assert time.shape == (5,) and force.shape == (5, 6)
+    assert np.isfinite(time).all() and np.isfinite(force).all()
+    evaluator = _source_stage_excitation(HYDRO, sea, rho=1000., g=9.80665)
+    np.testing.assert_allclose(evaluator(time, 0), force,
+                               rtol=0, atol=1e-10)
+    ramp = np.where(time < 25, (1 - np.cos(np.pi * time / 25)) / 2, 1.)
+    np.testing.assert_allclose(evaluator(time, 25), force * ramp[:, None],
+                               rtol=0, atol=1e-10)
 
 
 def test_public_source_ode8_closes_the_precontrol_motion_gap():
@@ -131,7 +151,11 @@ def test_source_ode8_precontrol_motion_on_two_refined_steps():
         assert pitch_gap < pitch_limit
         assert speed_gap < speed_limit
         errors[label] = pitch_gap, speed_gap
-    assert np.all(np.array(errors["12p5ms"]) < np.array(errors["25ms"]))
+    # Exact stage forcing removes the interpolation error that formerly made
+    # both gaps shrink monotonically. The residual pitch gap is nearly flat
+    # across steps, while angular speed still improves on refinement.
+    assert abs(errors["12p5ms"][0] - errors["25ms"][0]) < 1e-7
+    assert errors["12p5ms"][1] < errors["25ms"][1]
 
 
 def test_wavestar_rejects_unknown_solver():
