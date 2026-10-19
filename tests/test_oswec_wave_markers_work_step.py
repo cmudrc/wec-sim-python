@@ -15,7 +15,8 @@ QUARTER_STEP = (ROOT / "tests/fixtures/matlab/oswec_wave_markers_step"
                 / "quarter_source.npz")
 EIGHTH_STEP = (ROOT / "tests/fixtures/matlab/oswec_wave_markers_step"
               / "eighth_source.npz")
-HYDRO = ROOT / "examples/data/oswec.h5"
+# Use the BEMIO output from this application, not the different example HDF5.
+HYDRO = ROOT / "tests/fixtures/matlab/oswec_wave_markers/oswec.h5"
 
 
 def test_full_duration_oswec_marker_work_step_separation():

@@ -9,7 +9,8 @@ from wecsim import RegularWave, WEC, WorldPoint
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "tests/fixtures/matlab/oswec_wave_markers.npz"
-HYDRO = ROOT / "examples/data/oswec.h5"
+# The published application generated this HDF5 from its own oswec.out file.
+HYDRO = ROOT / "tests/fixtures/matlab/oswec_wave_markers/oswec.h5"
 
 
 def _max_error(actual, expected, limit, label):

@@ -9,7 +9,9 @@ from wecsim import RegularWave, WEC, WorldPoint
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "tests/fixtures/matlab/oswec_wave_markers.npz"
-HYDRO = ROOT / "examples/data/oswec.h5"
+# The published application generates this 36-heading BEMIO file. The bundled
+# example HDF5 has only 10 headings and slightly different coefficients.
+HYDRO = ROOT / "tests/fixtures/matlab/oswec_wave_markers/oswec.h5"
 
 
 def _max_error(actual, expected, limit, label):
