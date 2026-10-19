@@ -145,18 +145,21 @@ def test_mapped_pto_equilibrium_changes_generalized_force():
                                rtol=0, atol=1e-12)
 
 
-def test_mean_drift_requires_the_selected_h5_coefficient():
+@pytest.mark.parametrize("option", [
+    "control_surface", "momentum_conservation", "pressure_integration",
+])
+def test_mean_drift_requires_the_selected_h5_coefficient(option):
     hydro = ROOT / "examples/data/rm3.h5"
     case = {
         "simulation": {"dt": 0.1, "end_time": 0,
                        "radiation_memory": 0.1},
         "wave": {"type": "regularCIC", "height": 0.1, "period": 8},
         "bodies": [{"hydro_file": str(hydro),
-                    "mean_drift": "control_surface",
+                    "mean_drift": option,
                     "coordinate_map": [[0], [0], [1], [0], [0], [0]]}],
         "constraint": {"kind": "linear_subspace"},
     }
-    with pytest.raises(ValueError, match="lacks finite control_surface"):
+    with pytest.raises(ValueError, match=f"lacks finite {option}"):
         run_case(case)
 
 

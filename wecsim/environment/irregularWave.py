@@ -395,9 +395,9 @@ def synthesize_irregular_response(
     if excitation_interpolation not in ("linear", "spline"):
         raise ValueError("excitation_interpolation must be linear or spline")
     drift_flags = {"none": 0, "control_surface": 1,
-                   "momentum_conservation": 2}
+                   "momentum_conservation": 2, "pressure_integration": 3}
     if not isinstance(mean_drift, str) or mean_drift not in drift_flags:
-        raise ValueError("mean_drift must be none, control_surface, or momentum_conservation")
+        raise ValueError("mean_drift must be none, control_surface, momentum_conservation, or pressure_integration")
     steps = round(end_time / dt)
     if not np.isclose(steps * dt, end_time, rtol=0, atol=1e-10):
         raise ValueError("end_time must be an integer multiple of dt")

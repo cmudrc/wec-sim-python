@@ -126,7 +126,7 @@ class BodyClass:
                                  'rgME':               [0,0,0]}                # Vector from center of gravity to point of application for Morrison Element (format [X, Y, Z], default = [0 0 0]).
         self.nhBody            = 0                                             # Flag for non-hydro body.
         self.flexHydroBody     = 0                                             # Flag for flexible body. 
-        self.meanDriftForce    = 0                                             # Flag for mean drift force. 0: No 1: from control surface 2: from momentum conservation.
+        self.meanDriftForce    = 0                                             # 0: none, 1: control surface, 2: momentum, 3: pressure integration.
         
     def bodyGeometryFileProperties(self):                                      # body geometry stl file properties
         self.bodyGeometry = {                                                  # Structure defining body's mesh
@@ -277,6 +277,8 @@ class BodyClass:
             self.hydroData['hydro_coeffs']['mean_drift'] = np.array(f.get(name + '/hydro_coeffs/mean_drift/control_surface/val'))
         elif self.meanDriftForce == 2:
             self.hydroData['hydro_coeffs']['mean_drift'] = np.array(f.get(name + '/hydro_coeffs/mean_drift/momentum_conservation/val'))
+        elif self.meanDriftForce == 3:
+            self.hydroData['hydro_coeffs']['mean_drift'] = np.array(f.get(name + '/hydro_coeffs/mean_drift/pressure_integration/val'))
         else:
             warnings.warn("Wrong flag for mean drift force.",DeprecationWarning)
         f.close()
