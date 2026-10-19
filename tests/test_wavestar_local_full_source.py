@@ -8,6 +8,7 @@ from pathlib import Path
 import platform
 
 import numpy as np
+import pytest
 
 from wecsim import WaveStarNmpcPTO
 from wecsim.dynamics.wavestar import run_wavestar_published
@@ -20,6 +21,10 @@ LOCAL = FIXTURES / "wavestar_local_full_source/source.npz"
 ARCHIVED = FIXTURES / "wavestar_nmpc_full_step/baseline.npz"
 
 
+@pytest.mark.skipif(
+    platform.system() != "Darwin" or platform.machine() != "arm64",
+    reason="the full-run source baseline was generated on macOS ARM64",
+)
 def test_full_225s_independent_ode8_against_local_r2025b():
     with np.load(LOCAL, allow_pickle=False) as source, \
             np.load(ARCHIVED, allow_pickle=False) as archived:

@@ -29,6 +29,6 @@ The local and archived Linux MATLAB runs also have exactly identical 500 wave
 components and 4,501 wave samples. Closed-loop pitch differs by up to
 `0.00754261` rad and speed by `0.0502185` rad/s after NMPC activation;
 requested torques first differ by more than `0.01` N m at 43 s. This fixture
-supports a same-machine numerical comparison, not a platform-independent
-physical parity claim. The published WaveStar case and strict badge remain
-open pending a portable full-duration physical gate.
+supports a macOS ARM numerical comparison, not a platform-independent
+physical parity claim. The case is qualified, while its strict badge remains
+2/3 pending a portable full-duration physical gate.
