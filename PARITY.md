@@ -2627,8 +2627,9 @@ inertias. The altered and unchanged MATLAB runs differ in pitch by at most
 `2.49e-6` rad through 15 s, yet their torque requests differ by `0.03235`
 N m at 16.55 s and up to `0.17171` N m through 20 s. The pitch difference
 reaches `0.001161` rad by 20 s. Including the light bodies and evaluating
-excitation at each solver stage in the unmerged draft reduces the independent
-20 s Python/unchanged-MATLAB maximum gaps from `0.001187` to `0.000648` rad
+excitation at each solver stage in the
+[closed PR #525](https://github.com/cmudrc/wec-sim-python/pull/525) reduces
+the independent 20 s Python/unchanged-MATLAB maximum gaps from `0.001187` to `0.000648` rad
 pitch, `0.009704` to `0.005599` rad/s speed, and `0.8224` to `0.2226` N PTO
 force. Across the full 225 s against that *same local MATLAB run*, the draft
 still misses the unchanged source-style pointwise pitch limit: `0.012781`
@@ -2636,8 +2637,10 @@ rad versus `0.012` rad; speed, force, and PTO-work limits pass. Its
 [fresh physical split-step comparison](https://github.com/cmudrc/wec-sim-python/actions/runs/39171849470)
 also misses the unchanged aggregate peak-pitch limit (`1.232%` versus
 `0.5%`). The source-only perturbation demonstrates strong early feedback
-sensitivity; the draft remains unmerged, the published case remains open,
-and the badge count is unchanged.
+sensitivity; the auxiliary-mass correction was not merged, portable physical
+parity remains open, and the badge count is unchanged. The separate
+solver-stage excitation correction merged in
+[PR #567](https://github.com/cmudrc/wec-sim-python/pull/567).
 
 For the floating OWC, the nine-line MoorDyn replay reconstructs the published
 coupling pose and velocity from the floater's center state and its body-local
