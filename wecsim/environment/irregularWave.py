@@ -385,6 +385,7 @@ def synthesize_irregular_response(
     rho: float = 1000.0,
     g: float = 9.81,
     excitation_interpolation: str = "linear",
+    mean_drift: str = "none",
 ) -> IrregularResponse:
     """Return wave elevation and all body-DOF excitation at uniform times."""
     if not np.isfinite([dt, end_time, ramp_time, rho, g]).all():
@@ -393,6 +394,10 @@ def synthesize_irregular_response(
         raise ValueError("dt, rho, and g must be positive; times must be nonnegative")
     if excitation_interpolation not in ("linear", "spline"):
         raise ValueError("excitation_interpolation must be linear or spline")
+    drift_flags = {"none": 0, "control_surface": 1,
+                   "momentum_conservation": 2}
+    if not isinstance(mean_drift, str) or mean_drift not in drift_flags:
+        raise ValueError("mean_drift must be none, control_surface, or momentum_conservation")
     steps = round(end_time / dt)
     if not np.isclose(steps * dt, end_time, rtol=0, atol=1e-10):
         raise ValueError("end_time must be an integer multiple of dt")
@@ -414,6 +419,7 @@ def synthesize_irregular_response(
 
     body = BodyClass(str(h5_file))
     body.bodyNumber = body_number
+    body.meanDriftForce = drift_flags[mean_drift]
     body.readH5file()
     body_dof = int(np.asarray(body.dof).item())
     if excitation_interpolation == "linear":
