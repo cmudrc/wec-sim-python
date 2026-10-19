@@ -17,7 +17,7 @@ PUBLISHED = FIXTURES / "owc_orifice_130s/source.npz"
 HYDRO = FIXTURES / "owc_orifice.h5"
 
 
-def test_full_owc_step_change_does_not_close_source_route_gap(tmp_path):
+def test_full_owc_source_step_audit(tmp_path):
     with np.load(SOURCE, allow_pickle=False) as saved, \
             np.load(PUBLISHED, allow_pickle=False) as published:
         trace = {key: saved[key] for key in saved.files}
@@ -71,12 +71,13 @@ def test_full_owc_step_change_does_not_close_source_route_gap(tmp_path):
     print("OWC Python/source RMS gaps, nominal and half:",
           nominal_gap, half_gap)
 
-    # The source's 10 s step sensitivity persists over 130 s. Refining its
-    # solver materially narrows pitch, but not the remaining surge gap.
+    # The immutable source traces show step sensitivity over all 130 s.
+    # Bound Python's current residual without requiring it to remain large:
+    # a future improvement should pass this test, too.
     assert self_change[0] > .03
     assert self_change[2] > .004
-    assert half_gap[2] < .6 * nominal_gap[2]
-    assert half_gap[0] > .1
+    assert half_gap[2] < .002
+    assert half_gap[0] < .14
 
     python_work = np.trapezoid(result.ptos["orifice"].absorbed_power, time)
     nominal_work = np.trapezoid(trace["nominal_power"], time)
@@ -87,4 +88,4 @@ def test_full_owc_step_change_does_not_close_source_route_gap(tmp_path):
     print("OWC source work self-change and Python/half gap:",
           source_work_change, half_work_gap)
     assert source_work_change < .01
-    assert half_work_gap > .04
+    assert half_work_gap < .06
