@@ -784,3 +784,6 @@ rounding. Their SHA-256 hashes are:
 
 The archive SHA-256 is
 `070365a8fd15dddab8b4fe89a6000eb8572f291ee6f2068d3520e13612424b01`.
+The [local full-duration step/work audit](oswec_core_step_work/README.md)
+uses this trace as its 0.1 s source arm and adds independent 0.05 and
+0.025 s MATLAB runs with identical shared-sample waves.
