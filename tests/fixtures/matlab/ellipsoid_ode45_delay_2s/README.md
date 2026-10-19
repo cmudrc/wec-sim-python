@@ -24,5 +24,11 @@ source's logged applied added-mass force within `5.5e-12` N. Its adjusted
 rigid mass is `742787.3346711756` kg, and the recorded heave force balance
 closes within `6.9e-12` N.
 
+The portable test also reconstructs all 41 accelerations from the bundled
+Python mesh and BEM coefficients, published position and velocity, and the
+logged delayed acceleration. Its maximum source-state residual is below
+`7e-15` m/s². This isolates the remaining trajectory difference to advancing
+the coupled state and delay, rather than the sampled force formula.
+
 These are source numerical identities, not an independent Python motion gate.
 The published 150 s case remains qualified.
