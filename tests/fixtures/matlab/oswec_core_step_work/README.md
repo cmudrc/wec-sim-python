@@ -4,9 +4,10 @@ The published `examples/OSWEC` input uses a 0.1 s fixed `ode4` step for
 400 s. A new 1% accumulated PTO-work comparison against that published trace
 failed: independent public Python produced 18,677.37 J versus MATLAB's
 18,885.16 J, a 1.1003% gap. The existing full-duration motion, PTO force,
-and instantaneous-power gates still pass. This audit checks whether changing
-only MATLAB's solver step accounts for the work difference; it does not change
-the strict case count.
+and instantaneous-power gates still pass. This audit changes `simu.dt`,
+which also changes WEC-Sim's force and output clocks. A separate
+[solver-only audit](../oswec_core_fixedstep_only/README.md) holds those clocks
+at 0.1 s. Neither audit changes the strict case count.
 
 The local source is WEC-Sim core `0753b2e47f2457c078751dcfe5d251d1767b80ab`
 under R2025b Update 7 on Mali. Its pinned OSWEC HDF5 and the bundled Python

@@ -1,5 +1,5 @@
 case,motion_evidence,remaining_gap
-examples/OSWEC,independent_motion,Published 0.1 s motion and PTO force/power gates pass; a new 1% cumulative PTO-work check fails by 1.1003%. With identical waves at 0.025 s the independent Python/source work gap falls to 0.0636%; this refined-step evidence does not erase the published-step work limit.
+examples/OSWEC,independent_motion,Published 0.1 s motion and PTO force/power gates pass; a new 1% cumulative PTO-work check fails by 1.1003%. With WEC-Sim clocks fixed at 0.1 s and only the source ode4 step reduced to 0.025 s MATLAB work shifts by 1.1852% and the independent Python/source gap falls to 0.0859%; the published-step work limit remains open.
 examples/RM3,independent_motion,
 Body-to-Body_Interactions/B2B_Case1,independent_motion,
 Body-to-Body_Interactions/B2B_Case2,independent_motion,
