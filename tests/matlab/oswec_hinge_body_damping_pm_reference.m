@@ -1,0 +1,39 @@
+function oswec_hinge_body_damping_pm_reference(caseDir, sourceDir, outputDir, damped)
+% Run a derived Nonhydro_Body PM case with or without flap body damping.
+addpath(genpath(sourceDir));
+priorDir = pwd;
+cd(caseDir);
+wecSim;
+assert(simu.dt == 0.025 && simu.endTime == 150 && ...
+    simu.cicEndTime == 40 && simu.rampTime == 100);
+assert(strcmp(waves.type, 'irregular') && ...
+    strcmp(waves.spectrumType, 'PM') && ...
+    waves.height == 2.5 && waves.period == 8 && ...
+    waves.direction == 0 && waves.spread == 1 && ...
+    waves.phaseSeed == 1 && pto(1).damping == 0 && ...
+    pto(1).stiffness == 0 && body(1).mass == 127000 && ...
+    body(1).inertia(2) == 1.85e6);
+expected = zeros(6, 6);
+if damped
+    expected = diag([100000 0 0 0 2000000 0]);
+end
+assert(isequal(body(1).linearDamping, expected));
+assert(numel(output.bodies(1).time) == 6001 && ...
+    numel(output.bodies(2).time) == 6001 && ...
+    numel(output.ptos(1).time) == 6001);
+if ~isfolder(outputDir), mkdir(outputDir); end
+for k = 1:2
+    record = output.bodies(k);
+    writematrix([record.time(:), record.position, record.velocity], ...
+        fullfile(outputDir, sprintf('body%d.csv', k)));
+end
+record = output.ptos(1);
+writematrix([record.time(:), record.position, record.velocity, ...
+    record.forceTotal], fullfile(outputDir, 'pto.csv'));
+writematrix([output.wave.time(:), output.wave.elevation(:)], ...
+    fullfile(outputDir, 'wave.csv'));
+writematrix(waves.phase, fullfile(outputDir, 'phase.csv'));
+writematrix(body(1).linearDamping, fullfile(outputDir, 'damping.csv'));
+close_system('OSWEC', 0);
+cd(priorDir);
+end

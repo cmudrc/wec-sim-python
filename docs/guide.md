@@ -48,7 +48,8 @@ pto_force = result.ptos["main"].force
 For mapped-coordinate bodies, `wec.body(...)` also accepts finite 6×6
 `hydrostatic_stiffness`, `linear_damping`, and `quadratic_drag` matrices.
 The moving flap in `wec.fixed_hinge(...)` also accepts `linear_damping`
-with linear hydrodynamics. A fixed base cannot take that setting.
+with linear hydrodynamics; paired regular and PM-wave checks cover its
+frequency and radiation-memory paths. A fixed base cannot take that setting.
 They match MATLAB's `body.hydroStiffness`, `body.linearDamping`, and
 `body.quadDrag.drag`, respectively. A nonzero hydrostatic matrix replaces
 the HDF5 restoring matrix in N/m and N m/rad; omitting it or passing an
