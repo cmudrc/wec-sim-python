@@ -89,6 +89,7 @@ class GeneralizedDynamics:
         pto_bias: np.ndarray | None = None,
         radiation_discretization: str = "trapezoid",
         added_mass_delay: float | None = None,
+        source_regular_delay: bool = False,
         nonlinear_force: Callable[[np.ndarray, np.ndarray], np.ndarray] | None = None,
         controlled_ptos: tuple = (),
         linear_generators: tuple = (),
@@ -119,10 +120,15 @@ class GeneralizedDynamics:
         if added_mass_delay is not None and (
             not np.isfinite(added_mass_delay) or added_mass_delay <= 0
             or radiation_discretization != "trapezoid"
-            or any(body.radiation_kernel is None for body in bodies)
+            or (any(body.radiation_kernel is None for body in bodies)
+                and not (source_regular_delay and all(
+                    body.radiation_kernel is None for body in bodies)))
         ):
             raise ValueError("added-mass delay needs positive delay and convolution radiation")
+        if source_regular_delay and added_mass_delay is None:
+            raise ValueError("source regular delay needs added-mass delay")
         self.added_mass_delay = added_mass_delay
+        self.source_regular_delay = source_regular_delay
         if nonlinear_force is not None and not callable(nonlinear_force):
             raise TypeError("nonlinear_force must be callable")
         self.nonlinear_force = nonlinear_force
@@ -324,6 +330,7 @@ class GeneralizedDynamics:
         step_force: Callable[[float, float, np.ndarray, np.ndarray], np.ndarray] | None = None,
         radiation_state_space: RadiationStateSpace | None = None,
         solver: str = "implicit",
+        _source_major_times: np.ndarray | None = None,
     ) -> DynamicsResponse:
         """Integrate the body dynamics with optional sampled external loading.
 
@@ -356,8 +363,19 @@ class GeneralizedDynamics:
             raise ValueError("initial state must be finite")
         time = np.arange(steps + 1) * dt
         memory = any(body.radiation_kernel is not None for body in self.bodies)
-        if solver not in ("implicit", "wecsim_ode4"):
-            raise ValueError("solver must be implicit or wecsim_ode4")
+        if solver not in ("implicit", "wecsim_ode4", "wecsim_ode45"):
+            raise ValueError("solver must be implicit, wecsim_ode4, or wecsim_ode45")
+        source_regular = solver == "wecsim_ode45"
+        if self.source_regular_delay != source_regular:
+            raise ValueError("source regular delay and wecsim_ode45 must be selected together")
+        if _source_major_times is not None and not source_regular:
+            raise ValueError("major-step replay needs wecsim_ode45")
+        if source_regular and (
+                memory or self.added_mass_delay is None or not adaptive_regular
+                or radiation_state_space is not None or applied_force_history is not None
+                or step_force is not None or self.controlled_ptos
+                or self.linear_generators):
+            raise ValueError("wecsim_ode45 needs regular radiation, delayed mass, and adaptive force")
         source_cic = (solver == "wecsim_ode4"
                       and (self.added_mass_delay is not None
                            or (len(self.bodies) == self.coordinate_count == 1
@@ -400,14 +418,19 @@ class GeneralizedDynamics:
                 raise ValueError("step_force needs callable and trapezoidal radiation memory")
             if applied_force_history is not None:
                 raise ValueError("step_force and applied_force_history are mutually exclusive")
-        if adaptive_regular and (memory or self.controlled_ptos
+        if adaptive_regular and not source_regular and (memory or self.controlled_ptos
                                  or self.linear_generators
                                  or self.added_mass_delay is not None):
             raise ValueError("adaptive regular integration needs implicit mass, constant radiation, and no sampled control")
         controlled_force = None
         generator_state = None
         generator_force = None
-        if solver == "wecsim_ode4":
+        if source_regular:
+            from wecsim.dynamics.sourceRegularOde45 import integrate_source_regular_ode45
+            integrate_source_regular_ode45(
+                self, time, q, v, a, dt, _source_major_times,
+            )
+        elif solver == "wecsim_ode4":
             if source_cic:
                 from wecsim.dynamics.sourceCicOde4 import integrate_source_cic_ode4
                 integrate_source_cic_ode4(self, time, q, v, a, dt)
