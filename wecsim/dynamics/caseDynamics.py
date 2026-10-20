@@ -110,12 +110,15 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
     if "radiation_method" in sim and kind != "floating_joint":
         raise ValueError("radiation_method currently applies to floating_joint")
     if "solver" in sim and kind != "linear_subspace" and not (
-            sim["solver"] == "wecsim_ode4" and (
+            (sim["solver"] == "wecsim_ode4" and (
                 (kind == "fixed_hinge" and wave["type"] in ("regular", "pm"))
-                or (kind == "floating_joint" and wave["type"] == "none"))):
+                or (kind == "floating_joint" and wave["type"] == "none")))
+            or (sim["solver"] == "wecsim_ode45"
+                and kind == "floating_joint" and wave["type"] == "regular")):
         raise ValueError(
             "simulation.solver needs linear_subspace, a supported fixed_hinge, "
-            "or a no-wave floating_joint"
+            "a no-wave floating_joint with source ode4, or a regular-wave "
+            "floating_joint with source ode45"
         )
     if "added_mass_scheme" in sim and kind not in ("floating_joint", "fixed_hinge"):
         raise ValueError("added_mass_scheme currently applies to floating_joint or fixed_hinge")

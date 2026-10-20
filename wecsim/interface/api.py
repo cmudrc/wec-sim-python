@@ -693,6 +693,8 @@ class WEC(_WECCaseMixin):
         a PM fixed hinge with ``simulink_delay`` added mass, a regular-wave
         fixed hinge with linear or mesh-pressure excitation, one-body no-wave
         heave decay, or no-wave RM3 free decay with ``simulink_delay`` added mass.
+        ``wecsim_ode45`` is an opt-in source-style solver for a regular-wave
+        RM3 floating joint with hard stops and delayed added mass.
         The default remains the implicit physical solve.
         """
         case = self.to_case(

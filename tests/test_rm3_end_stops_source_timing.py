@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from wecsim import LinearHardStops
+from wecsim import LinearHardStops, RegularWave, WEC
 from wecsim.dynamics.rm3Regular import solve_rm3_regular
 
 
@@ -93,6 +93,50 @@ def test_independently_selected_source_state_steps_through_120_seconds():
                                    result.time)
         matlab_work = np.trapezoid(1_200_000 * source["pto"][:length, 1]**2,
                                    source["time"][:length])
+        assert abs(python_work - matlab_work) / matlab_work < 1e-5
+
+
+def test_public_wec_run_pairs_published_end_stops_through_120_seconds():
+    """The configured public WEC uses its own adaptive steps and wave input."""
+    wec = WEC("RM3 End Stops")
+    float_body = wec.body("float", HYDRO, inertia=(0, 21_306_090.66, 0))
+    spar_body = wec.body("spar", HYDRO, inertia=(0, 94_407_091.24, 0))
+    wec.floating_joint(
+        float_body, spar_body, damping=1_200_000,
+        hard_stops=LinearHardStops(-.6, .6, 1e8, 1e8),
+        added_mass_scheme="simulink_delay",
+    )
+    result = wec.run(RegularWave(2.5, 8), dt=.1, end_time=120,
+                     ramp_time=100, solver="wecsim_ode45")
+
+    with np.load(FIXTURES / "rm3_end_stops_published_full.npz") as source:
+        length = len(result.time)
+        np.testing.assert_allclose(result.time, source["time"][:length],
+                                   rtol=0, atol=1e-10)
+        for kind, limits in (
+                ("position", (5e-5, 1e-4, 1e-6)),
+                ("velocity", (1e-4, 5e-4, 1e-6))):
+            actual = np.stack([
+                getattr(result.bodies[name], kind)[:, AXES]
+                for name in ("float", "spar")
+            ], axis=1)
+            expected = source[f"body_{kind}"][:length]
+            for body in range(2):
+                for axis, limit in enumerate(limits):
+                    _maximum(actual[:, body, axis], expected[:, body, axis],
+                             limit, f"public {kind} body {body + 1} axis {AXES[axis]}")
+        pto = result.ptos["relative_heave"]
+        for label, actual, axis, limit in (
+                ("stroke", pto.stroke, 0, 1e-4),
+                ("speed", pto.velocity, 1, 5e-4),
+                ("force", pto.force, 2, 5_000)):
+            _maximum(actual, source["pto"][:length, axis], limit,
+                     f"public {label}")
+        python_work = np.trapezoid(1_200_000 * pto.velocity**2, result.time)
+        matlab_work = np.trapezoid(
+            1_200_000 * source["pto"][:length, 1]**2,
+            source["time"][:length],
+        )
         assert abs(python_work - matlab_work) / matlab_work < 1e-5
 
 
