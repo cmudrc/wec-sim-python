@@ -1269,6 +1269,24 @@ histories differ at 2,143 common samples through 160 s, versus 320 through
 140 s. The 160 s result locates a new source-stability boundary; it does not
 establish published 600 s physical-motion parity, so the case remains
 qualified and its badge count is unchanged.
+A separate local R2025b [matched-bank control](tests/fixtures/matlab/oswec_yaw_160_same_bank_control.json)
+used byte-identical hydrodynamic files for the 0.005 and 0.0025 s runs and
+changed only `simu.dt`. Its fresh 160 s half-step yaw agrees with the archived
+half-step trace within `1.06e-15` rad, with zero heading-choice mismatches.
+The fresh quarter-step trajectory and wave have the same SHA-256 hashes as the
+committed 160 s fixture; its first 140 s reproduces the earlier hosted
+quarter-step run within `1.06e-15` rad yaw. Reapplying the unchanged gates
+passes both MATLAB self-change and independent Python/source differences at
+120 and 140 s, while at 160 s Python/source still passes and MATLAB
+self-change fails all four limits. Regenerated HDF5 differences between the
+earlier runs do not explain that source-step failure.
+A copied-input 10 s normal-mode control reproduced the first 4,001
+quarter-step yaw, speed, heading, PTO-torque, and power samples exactly;
+its wave elevation differed by at most `1.01e-16` m. It took `1212.4` s.
+Changing only `simu.mode` to `accelerator` failed during model compilation:
+`OSWEC/Rotational PTO/Constant3` exceeded Simulink's `2^31−1` byte parameter
+limit. Accelerator mode therefore cannot shorten this selected-heading audit
+without changing how the bank is represented; it produced no trajectory.
 MATLAB's own `0.01`-to-`0.005` s source change becomes large by 250 s, and a
 250 s quarter-step source run remains beyond the current GitHub job budget.
 Neither 250 s source convergence nor native 600 s motion parity is established.

@@ -744,6 +744,22 @@ the unchanged Python/source limits, while MATLAB's own step stability failed.
 The always-on diagnostic recomputes the source side of that boundary from
 the saved trajectories. This is not a published-case parity gate.
 
+`oswec_yaw_160_same_bank_half.npz` is an independent local R2025b Update 7
+half-step rerun through 160 s. Its case used the same 324 byte-identical
+`hydroData` files as a fresh quarter-step rerun; their input files differ only
+in `simu.dt`. The half-step rerun reproduces the archived half-step yaw within
+`1.06e-15` rad and all selected headings exactly. The quarter-step rerun
+reproduces the committed quarter trajectory and wave CSV SHA-256 hashes above
+exactly, and its first 140 s agrees with the prior hosted quarter-step run
+within `1.06e-15` rad yaw. The [control record](oswec_yaw_160_same_bank_control.json)
+preserves source pins, runner and output hashes, and reproduction metrics;
+the gate specification and 120/140/160 s comparisons are recorded above.
+The fixture SHA-256 is
+`991428fccc54c5cf3ab8aae0a96d8dd1249438350adf55d8794420c7e419b870`.
+The same-bank MATLAB self-change still fails all four unchanged limits at
+160 s; the independent Python/source comparison passes, and the published
+600 s irregular case remains qualified.
+
 The independent 140 s physical-default `WEC.run` comparison now runs in
 ordinary Python CI against the source-stable part of this archive. It reuses
 the 40 s BEMIO HDF5 from the [published OSWEC two-sea fixture](oswec_multi_wave/README.md).

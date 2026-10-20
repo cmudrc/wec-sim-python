@@ -1,5 +1,6 @@
 """Keep the local 160 s MATLAB selected-heading step limit inspectable."""
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -17,6 +18,14 @@ def test_matlab_quarter_step_loses_stability_between_140_and_160_seconds():
         quarter_wave = saved["quarter_wave"]
     reported = json.loads((FIXTURES / "oswec_yaw_160_metrics.json").read_text())
     gates = json.loads((FIXTURES / "oswec_yaw_160_gate_spec.json").read_text())
+    control = json.loads((FIXTURES / "oswec_yaw_160_same_bank_control.json").read_text())
+    half_path = FIXTURES / "oswec_yaw_160_same_bank_half.npz"
+    assert hashlib.sha256(half_path.read_bytes()).hexdigest() == (
+        control["half_fixture_sha256"]
+    )
+    with np.load(half_path) as saved:
+        same_bank_half = saved["half"]
+        same_bank_wave = saved["half_wave"]
     limits = tuple(gates["source_self_change_limits"][key] for key in
                    ("yaw_rad", "yaw_speed_rad_s", "pto_torque_Nm",
                     "relative_pto_work"))
@@ -25,10 +34,21 @@ def test_matlab_quarter_step_loses_stability_between_140_and_160_seconds():
     assert quarter.shape == (64_001, 7)
     assert fine_wave.shape == (50_001, 2)
     assert quarter_wave.shape == (64_001, 2)
+    assert same_bank_half.shape == (32_001, 7)
+    assert same_bank_wave.shape == (32_001, 2)
     assert all(np.isfinite(array).all() for array in
                (fine, quarter, fine_wave, quarter_wave))
     np.testing.assert_allclose(quarter[::2, 0], fine[:32_001, 0], rtol=0, atol=1e-10)
     np.testing.assert_allclose(quarter_wave[::2], fine_wave[:32_001],
+                               rtol=0, atol=1e-12)
+    # This half-step rerun used byte-identical hydrodynamic files to the
+    # quarter-step rerun. It also reproduces the archived half-step trace.
+    np.testing.assert_allclose(same_bank_half[:, :3], fine[:32_001, :3],
+                               rtol=0, atol=1e-12)
+    np.testing.assert_array_equal(same_bank_half[:, 3:5], fine[:32_001, 3:5])
+    np.testing.assert_allclose(same_bank_half[:, 5:], fine[:32_001, 5:],
+                               rtol=0, atol=1e-8)
+    np.testing.assert_allclose(same_bank_wave, fine_wave[:32_001],
                                rtol=0, atol=1e-12)
     np.testing.assert_allclose(quarter[:, 5], -120_000 * quarter[:, 2],
                                rtol=0, atol=1e-8)
@@ -50,6 +70,21 @@ def test_matlab_quarter_step_loses_stability_between_140_and_160_seconds():
         )
         np.testing.assert_allclose(measured, reported[str(duration)]["source_step"],
                                    rtol=0, atol=1e-12)
+        local_half = same_bank_half[:len(f)]
+        local_work = -np.trapezoid(local_half[:, 6], local_half[:, 0])
+        local_measured = (
+            np.max(np.abs(local_half[:, 1] - q[::2, 1])),
+            np.max(np.abs(local_half[:, 2] - q[::2, 2])),
+            np.max(np.abs(local_half[:, 5] - q[::2, 5])),
+            abs(q_work - local_work) / q_work,
+        )
+        # Re-exported source torque differs by at most 7e-12 N m here.
+        for actual, expected, tolerance in zip(
+                local_measured, reported[str(duration)]["source_step"],
+                (1e-12, 1e-12, 1e-10, 1e-12), strict=True):
+            assert abs(actual - expected) < tolerance
+        assert all(value < limit for value, limit in
+                   zip(local_measured, limits)) is stable
         assert all(value < limit for value, limit in zip(measured, limits)) is stable
         assert np.count_nonzero(f[:, 3] != q[::2, 3]) == (
             reported[str(duration)]["source_heading_mismatch_samples"]
