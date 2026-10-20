@@ -1280,6 +1280,13 @@ passes both MATLAB self-change and independent Python/source differences at
 120 and 140 s, while at 160 s Python/source still passes and MATLAB
 self-change fails all four limits. Regenerated HDF5 differences between the
 earlier runs do not explain that source-step failure.
+A copied-input 10 s normal-mode control reproduced the first 4,001
+quarter-step yaw, speed, heading, PTO-torque, and power samples exactly;
+its wave elevation differed by at most `1.01e-16` m. It took `1212.4` s.
+Changing only `simu.mode` to `accelerator` failed during model compilation:
+`OSWEC/Rotational PTO/Constant3` exceeded Simulink's `2^31−1` byte parameter
+limit. Accelerator mode therefore cannot shorten this selected-heading audit
+without changing how the bank is represented; it produced no trajectory.
 MATLAB's own `0.01`-to-`0.005` s source change becomes large by 250 s, and a
 250 s quarter-step source run remains beyond the current GitHub job budget.
 Neither 250 s source convergence nor native 600 s motion parity is established.
