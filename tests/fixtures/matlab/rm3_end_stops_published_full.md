@@ -36,3 +36,19 @@ reported zero zero-crossing events, zero solver exceptions, and one solver
 reset at startup. Its first extra accepted steps occur at 84.380081548 and
 84.444324664 s. The profiler export is a disposable diagnostic and is not
 used as a test input.
+
+A second disposable R2025b [Solver Profiler](https://www.mathworks.com/help/releases/R2025b/simulink/slref/solverprofiler.profilemodel.html)
+run changed only the copied input's
+end time to 122 s. Its 1,245 accepted times match the first 1,245 archived
+published times exactly. The profiler reports zero zero crossings, one startup
+reset, and two tolerance exceptions attributed to state 8, at 116 and 120 s.
+Python's independent source-style `ode45` also rejects its 0.1 s trial steps
+at both times (estimated error norms 1.0273 and 1.0392). After 120 s, its
+first accepted substep ends at 120.079387171 s versus MATLAB's
+120.079322937 s. The timing difference grows: MATLAB accepts a step at
+120.683555564 s while Python advances from 120.6 to 120.7 s. MATLAB's PTO
+stroke at 120.6 s is 0.319 m, inside the ±0.6 m stops. This rules out a
+missing zero-crossing event or a missed stop contact at the first material
+schedule split; the remaining source-style discrepancy lies in adaptive step
+selection after the tolerance exception. The profiler results are local
+diagnostic evidence, not a new motion gate or case promotion.
