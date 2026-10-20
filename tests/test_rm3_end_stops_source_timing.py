@@ -159,9 +159,12 @@ def test_public_wec_run_published_400s_damper_work():
         source_work = np.trapezoid(
             1_200_000 * source["pto"][:, 1]**2, source["time"],
         )
-        python_work = np.trapezoid(
-            result.ptos["relative_heave"].absorbed_power, result.time,
+        pto = result.ptos["relative_heave"]
+        np.testing.assert_allclose(
+            pto.absorbed_power, 1_200_000 * pto.velocity**2,
+            rtol=0, atol=1e-8,
         )
+        python_work = np.trapezoid(pto.absorbed_power, result.time)
         assert source_work > 0
         # Reuse the existing 0.7% full-run End Stops damper-work limit.
         gap = abs(python_work - source_work) / source_work
