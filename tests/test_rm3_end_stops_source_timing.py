@@ -59,6 +59,43 @@ def test_independently_selected_published_prefix_through_first_contact():
             _maximum(actual, source["pto"][:length, axis], limit, label)
 
 
+def test_independently_selected_source_state_steps_through_120_seconds():
+    """Advance through source off-grid steps without supplying their times."""
+    result = _solve(120)
+    with np.load(FIXTURES / "rm3_end_stops_published_full.npz") as source:
+        length = len(result.time)
+        np.testing.assert_allclose(result.time, source["time"][:length],
+                                   rtol=0, atol=1e-10)
+        for kind, actual, limits in (
+                ("position", result.body_position[:, :, AXES],
+                 (5e-5, 1e-4, 1e-6)),
+                ("velocity", result.body_velocity[:, :, AXES],
+                 (1e-4, 5e-4, 1e-6))):
+            expected = source[f"body_{kind}"][:length]
+            for body in range(2):
+                for axis, limit in enumerate(limits):
+                    _maximum(actual[:, body, axis], expected[:, body, axis],
+                             limit, f"{kind} body {body + 1} axis {AXES[axis]}")
+        for label, actual, axis, limit in (
+                ("stroke", result.pto_stroke, 0, 1e-4),
+                ("speed", result.pto_velocity, 1, 5e-4),
+                ("force", result.pto_force, 2, 5_000)):
+            _maximum(actual, source["pto"][:length, axis], limit, label)
+        # The first off-grid steps follow 84.3 s. This narrower 90 s gate
+        # catches a regression to fixed .1 s steps before the 120 s limit.
+        for label, actual, axis, limit in (
+                ("stroke", result.pto_stroke, 0, 1e-6),
+                ("speed", result.pto_velocity, 1, 1e-5),
+                ("force", result.pto_force, 2, 10)):
+            _maximum(actual[:901], source["pto"][:901, axis], limit,
+                     f"90 s {label}")
+        python_work = np.trapezoid(1_200_000 * result.pto_velocity**2,
+                                   result.time)
+        matlab_work = np.trapezoid(1_200_000 * source["pto"][:length, 1]**2,
+                                   source["time"][:length])
+        assert abs(python_work - matlab_work) / matlab_work < 1e-5
+
+
 def test_published_full_duration_with_source_major_step_schedule():
     """Gate the force law while explicitly retaining the timing condition."""
     with np.load(FIXTURES / "rm3_end_stops_internal_steps.npz") as steps:

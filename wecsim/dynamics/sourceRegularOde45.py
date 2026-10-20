@@ -7,6 +7,83 @@ schedule does not establish independent published-case parity.
 
 import numpy as np
 from scipy.integrate import RK45
+from scipy.integrate._ivp.rk import rk_step
+
+
+def _rm3_source_state(y):
+    """Express the reduced RM3 coordinates in Simscape's eight logged states."""
+    q0, q1, q2, angle, v0, v1, v2, spin = y
+    sine, cosine = np.sin(angle), np.cos(angle)
+    return np.array([
+        q0 + q2 * sine, q2 * cosine, -angle,
+        v0 + v2 * sine + q2 * cosine * spin,
+        v2 * cosine - q2 * sine * spin, -spin,
+        q1 - q2, v1 - v2,
+    ])
+
+
+class _SourceRK45(RK45):
+    """Use source-state error control for independently chosen RM3 steps."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # With RelTol=1e-3, Simulink's auto AbsTol starts at 1e-6 and
+        # increases with the largest magnitude each source state has reached.
+        self.max_source_state = np.maximum(abs(_rm3_source_state(self.y)), 1e-3)
+
+    def step(self):
+        # MATLAB ode45 stretches a step within 10% of its target. Here the
+        # target is the next published output time, which is a major step.
+        if 1.1 * self.h_abs >= self.max_step:
+            self.h_abs = self.max_step
+        result = super().step()
+        self.max_source_state = np.maximum(
+            self.max_source_state, abs(_rm3_source_state(self.y)))
+        return result
+
+    def _step_impl(self):
+        # SciPy supplies the Dormand-Prince stages; MATLAB ode45 uses a 0.8
+        # safety factor and caps accepted growth at five, rather than SciPy's
+        # 0.9 and ten. Keep these choices local to the source-style solver.
+        t, y = self.t, self.y
+        min_step = 10 * abs(np.nextafter(t, self.direction * np.inf) - t)
+        h_abs = min(self.max_step, max(min_step, self.h_abs))
+        rejected = False
+        while True:
+            if h_abs < min_step:
+                return False, self.TOO_SMALL_STEP
+            t_new = t + h_abs * self.direction
+            if self.direction * (t_new - self.t_bound) > 0:
+                t_new = self.t_bound
+            h = t_new - t
+            h_abs = abs(h)
+            y_new, f_new = rk_step(
+                self.fun, t, y, self.f, h, self.A, self.B, self.C, self.K,
+            )
+            error = self._estimate_error_norm(self.K, h, None)
+            if error < 1:
+                factor = (5.0 if error == 0 else
+                          min(5.0, 0.8 * error ** self.error_exponent))
+                if rejected:
+                    factor = min(1.0, factor)
+                h_abs *= factor
+                break
+            h_abs *= max(0.1, 0.8 * error ** self.error_exponent)
+            rejected = True
+        self.h_previous = h
+        self.y_old = y
+        self.t, self.y = t_new, y_new
+        self.h_abs, self.f = h_abs, f_new
+        return True, None
+
+    def _estimate_error_norm(self, K, h, scale):
+        y5 = self.y + h * (K[:-1].T @ self.B)
+        y4 = y5 - self._estimate_error(K, h)
+        x5, x4 = _rm3_source_state(y5), _rm3_source_state(y4)
+        tolerance = self.rtol * np.maximum.reduce((
+            abs(x5), abs(x4), self.max_source_state,
+        ))
+        return float(np.max(abs(x5 - x4) / tolerance))
 
 
 class _PrescribedRK45(RK45):
@@ -20,6 +97,8 @@ def integrate_source_regular_ode45(device, time, coordinate, speed,
                                    acceleration, dt, major_times=None):
     """Advance regular-wave motion and extrapolate delayed mass at major steps."""
     n = device.coordinate_count
+    if n != 4 or len(device.bodies) != 2:
+        raise ValueError("source regular ode45 needs the two-body RM3 joint")
     zero_delay = tuple(np.zeros(6) for _ in device.bodies)
     device.delayed_body_acceleration = zero_delay
     acceleration[0] = device.acceleration(time[0], coordinate[0], speed[0])
@@ -78,7 +157,7 @@ def integrate_source_regular_ode45(device, time, coordinate, speed,
             return sample + 1
         return sample
 
-    solver = _PrescribedRK45 if major_times is not None else RK45
+    solver = _PrescribedRK45 if major_times is not None else _SourceRK45
     stepper = solver(
         derivative, float(time[0]), np.r_[coordinate[0], speed[0]],
         float(time[-1]), first_step=min(dt, float(targets[0] - time[0])),

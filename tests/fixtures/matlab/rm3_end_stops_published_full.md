@@ -23,10 +23,12 @@ hydrodynamic datasets agree to saved precision. The files differ in
 state-space radiation fits, which this regular-wave run does not use.
 
 `test_rm3_end_stops_source_timing.py` compares independently advanced Python
-motion against this fixture. Its full-duration arm supplies only MATLAB's
-accepted step times, not body states or forces. That timing condition keeps
-the published case qualified until Python independently selects the steps and
-passes the same full-duration gates.
+motion against this fixture. The source-state ode45 controller independently
+pairs both bodies' active positions and speeds, PTO motion and force, and work
+through 120 s; it does not ingest source solver times. Its full-duration arm
+supplies only MATLAB's accepted step times, not body states or forces. That
+timing condition keeps the published case qualified until Python independently
+selects the steps and passes the same full-duration gates.
 
 A separate 90 s local source run reproduced the first 901 published PTO
 samples and the first 903 accepted step times. MATLAB's Solver Profiler
