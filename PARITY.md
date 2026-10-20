@@ -1167,6 +1167,17 @@ events over the full duration. These measurements do not establish a
 step-converged 600 s physical reference or change the case badge. The
 separate matched MATLAB 0.005-to-0.0025 s audit addresses the 160 s prefix.
 
+A further independent physical `WEC.run` refinement to `0.000625` s through
+250 s uses the same pinned sea and heading bank. Relative to the `0.00125` s
+Python path, it passes the unchanged yaw, yaw-speed, torque, and work limits
+through 120 s but fails yaw and work by 140 s; the first yaw-limit breach is
+at 139.7725 s. At 250 s the yaw gap is `0.01966` rad and the relative PTO-work
+gap is `0.965%`, compared with `0.01256` rad and `0.0552%` for the preceding
+`0.0025`-to-`0.00125` s refinement. Thus this third step does not support a
+monotonic convergence claim for the physical selected-heading path. Its
+window metrics, input hashes, and evaluator hashes are in the linked audit;
+the full published 600 s case remains qualified.
+
 ![OSWEC variable-yaw published, source-step, and Python-step yaw differences](docs/figures/oswec-variable-yaw-step-gap.png)
 
 The already gated 300 s OSWEC `Desalination` network and coupled-motion
