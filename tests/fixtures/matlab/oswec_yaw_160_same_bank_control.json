@@ -1,0 +1,37 @@
+{
+  "applications_sha": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e",
+  "archived_half_identity_160s": {
+    "heading_mismatch_samples": 0,
+    "pto_torque_Nm": 1.2005330063402653e-10,
+    "pto_work_relative": 1.395192359958016e-16,
+    "wave_max_abs_gap": 5.601075159233915e-14,
+    "yaw_rad": 1.0547118733938987e-15,
+    "yaw_speed_rad_s": 1.0061396160665481e-16
+  },
+  "archived_quarter_fixture_sha256": "dbf479b062288c19eafcd0d2f598e0838580f89774d52fce174131ca94ef3bcc",
+  "half_fixture_sha256": "991428fccc54c5cf3ab8aae0a96d8dd1249438350adf55d8794420c7e419b870",
+  "half_runner_sha256": "8b9e1e399f256d1f595682d179b499ab2a04d86e4b7fcea3d7c180932352014e",
+  "hydro_file_count": 324,
+  "hydro_tree_sha256": "b1af8bbbb52b944ef3ae3b4546ecd9adfed6e47194410bd40d5fe1051ec1e8d4",
+  "hydro_trees_byte_identical": true,
+  "input_difference": "Only simu.dt: 0.005 s versus 0.0025 s; both end at 160 s",
+  "matlab_quarter_elapsed_s": 14262.421808,
+  "matlab_quarter_exit_code": 0,
+  "prior_140s_quarter_identity": {
+    "components": 0.0,
+    "heading_index_mismatch_samples": 0,
+    "pto_torque_Nm": 2.3010215954855084e-10,
+    "pto_work_relative": 2.788930003095992e-15,
+    "time_s": 0.0,
+    "wave_m": 4.6004866582904924e-14,
+    "yaw_rad": 1.0547118733938987e-15,
+    "yaw_speed_rad_s": 1.0061396160665481e-16
+  },
+  "quarter_runner_sha256": "17a10cdd91eee3eef593a59414c862914a492480ef26720994d08c718a9ff28c",
+  "rerun_quarter_trajectory_csv_sha256": "375f9fb517f386257c5d538960630497111f4251dcca03c918c1e19f0dd05d2c",
+  "rerun_quarter_wave_csv_sha256": "77188908365176bc5992a79df125291cc32d23ef4d1d36d23ef8682e268ebcc6",
+  "selected_heading_count": 241,
+  "source": "Local R2025b Update 7 matched-bank OSWEC 160 s source control",
+  "strict_published_case_count_change": 0,
+  "wec_sim_sha": "0753b2e47f2457c078751dcfe5d251d1767b80ab"
+}
