@@ -2752,16 +2752,20 @@ unchanged.
 
 The production WaveStar path on `master` (`61c32693`) was checked locally
 against the same [225 s split-step R2025b artifact](https://github.com/cmudrc/wec-sim-python/actions/runs/39153812298),
-without the unmerged BC rod/motor change above. Its HDF5 has all 46 datasets
-equal to the pinned WaveStar fixture, and the source timing/actuator test
-passes. The existing seven `<0.5%` aggregate gates all pass: pitch RMS,
-pitch peak, pitch-speed RMS, axial-force RMS and peak, requested-torque RMS,
-and PTO work differ by `0.0381%`, `0.0701%`, `0.0802%`, `0.0432%`,
-`0.0126%`, `0.0330%`, and `0.0760%`, respectively. The unchanged strict
-pointwise gate still fails: pitch differs by `0.007218` rad against
-`0.0005` rad, pitch speed by `0.04498` rad/s against `0.005` rad/s,
-PTO stroke by `1.443` mm against `0.1` mm, axial force by `2.393` N
-against `1` N, and requested torque by `0.4968` N m against `0.1` N m.
+without the unmerged BC rod/motor change above. The comparison uses the
+artifact's [exact HDF5 and compact source trace](tests/fixtures/matlab/wavestar_nmpc_split_step_225s/README.md);
+eight radiation or IRF datasets differ slightly from the previously bundled
+HDF5. The source timing/actuator test passes. An
+[ordinary-CI portable test](tests/test_wavestar_split_step_portable.py)
+keeps the existing seven `<0.5%` aggregate gates active. All pass: pitch
+RMS, pitch peak, pitch-speed RMS,
+axial-force RMS and peak, requested-torque RMS, and PTO work differ by
+`0.1112%`, `0.00222%`, `0.00973%`, `0.2390%`, `0.00915%`, `0.2392%`, and
+`0.2238%`, respectively. The unchanged strict pointwise gate still fails:
+pitch differs by `0.007289` rad against `0.0005` rad, pitch speed by
+`0.05590` rad/s against `0.005` rad/s, PTO stroke by `1.451` mm against
+`0.1` mm, axial force by `3.151` N against `1` N, and requested torque by
+`0.6401` N m against `0.1` N m.
 These local results correct the draft-specific aggregate failure above for
 the current production code; they do not establish a portable or pointwise
 full-duration published-case gate. WaveStar stays qualified and badges do
