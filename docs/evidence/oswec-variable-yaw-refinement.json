@@ -1,6 +1,7 @@
 {
   "first_yaw_limit_breach_s": {
     "matlab_0p005_vs_published_0p01": 142.93,
+    "python_0p000625_vs_0p00125": 139.7725,
     "python_0p00125_vs_0p0025": 167.73,
     "python_0p0025_vs_published_0p01": 166.98
   },
@@ -20,7 +21,7 @@
     "significant_wave_height_m": 2.5,
     "wave_direction_deg": 10
   },
-  "interpretation": "Both MATLAB source and physical Python paths are step-sensitive after heading-event separation. A separate matched MATLAB 0.005-to-0.0025 s audit examines the 160 s prefix. These results do not establish full 600 s physical parity or increase badge counts.",
+  "interpretation": "Both MATLAB source and physical Python paths are step-sensitive after heading-event separation. A third Python refinement from 0.00125 to 0.000625 s fails the same yaw and work limits by 140 s and has a larger 250 s yaw change than the preceding refinement, so physical step convergence is unproven. A separate matched MATLAB 0.005-to-0.0025 s audit examines the 160 s prefix. These results do not establish full 600 s physical parity or increase badge counts.",
   "matlab_local_half_replay": {
     "heading_mismatch_samples": 0,
     "max_pto_torque_Nm": 1.2005330063402653e-10,
@@ -63,6 +64,90 @@
     "pto_work_relative": 0.001,
     "yaw_rad": 0.0006,
     "yaw_speed_rad_s": 0.00015
+  },
+  "python_0p000625_vs_0p00125": {
+    "120": {
+      "coarse_work_J": 1152.9816251275417,
+      "fine_work_J": 1152.503161350514,
+      "gate_pass": true,
+      "heading_mismatch_samples": 549,
+      "pto_torque_Nm": 3.379088083837246,
+      "pto_work_relative": 0.0004151518130910693,
+      "yaw_rad": 0.00018914658027673753,
+      "yaw_speed_rad_s": 2.81590673653102e-05
+    },
+    "140": {
+      "coarse_work_J": 1467.504883949558,
+      "fine_work_J": 1465.353858607261,
+      "gate_pass": false,
+      "heading_mismatch_samples": 1497,
+      "pto_torque_Nm": 12.626656486160158,
+      "pto_work_relative": 0.0014679221197407713,
+      "yaw_rad": 0.0006210590209511924,
+      "yaw_speed_rad_s": 0.00010522213738466818
+    },
+    "160": {
+      "coarse_work_J": 1622.0080590687708,
+      "fine_work_J": 1624.965746361694,
+      "gate_pass": false,
+      "heading_mismatch_samples": 6875,
+      "pto_torque_Nm": 65.12605621399831,
+      "pto_work_relative": 0.001820153624496754,
+      "yaw_rad": 0.002953410750665464,
+      "yaw_speed_rad_s": 0.0005427171351166525
+    },
+    "250": {
+      "coarse_work_J": 1913.0788661318934,
+      "fine_work_J": 1931.7245416759756,
+      "gate_pass": false,
+      "heading_mismatch_samples": 53334,
+      "pto_torque_Nm": 402.48998512317814,
+      "pto_work_relative": 0.009652346978987555,
+      "yaw_rad": 0.019659801420446266,
+      "yaw_speed_rad_s": 0.0033540832093598176
+    }
+  },
+  "python_0p000625_vs_published": {
+    "120": {
+      "heading_mismatch_samples": 86,
+      "motion_work_limits_pass": true,
+      "pto_torque_Nm": 3.9015471294851523,
+      "pto_work_relative": 0.00033885197543386306,
+      "python_work_J": 1152.503161350514,
+      "source_work_J": 1152.8938216994623,
+      "yaw_rad": 0.00019700751603793365,
+      "yaw_speed_rad_s": 3.2512892745596364e-05
+    },
+    "140": {
+      "heading_mismatch_samples": 225,
+      "motion_work_limits_pass": false,
+      "pto_torque_Nm": 14.980815388654378,
+      "pto_work_relative": 0.0013719295995725722,
+      "python_work_J": 1465.353858607261,
+      "source_work_J": 1467.3669828044058,
+      "yaw_rad": 0.0007164278005663272,
+      "yaw_speed_rad_s": 0.00012484012823884639
+    },
+    "160": {
+      "heading_mismatch_samples": 938,
+      "motion_work_limits_pass": false,
+      "pto_torque_Nm": 69.5069605340257,
+      "pto_work_relative": 0.0021963996294416905,
+      "python_work_J": 1624.965746361694,
+      "source_work_J": 1621.4044941316083,
+      "yaw_rad": 0.0032135961672776214,
+      "yaw_speed_rad_s": 0.0005792246711169074
+    },
+    "250": {
+      "heading_mismatch_samples": 7061,
+      "motion_work_limits_pass": false,
+      "pto_torque_Nm": 423.6648447154714,
+      "pto_work_relative": 0.012863660766330831,
+      "python_work_J": 1931.7245416759756,
+      "source_work_J": 1907.191082573183,
+      "yaw_rad": 0.020824665104405143,
+      "yaw_speed_rad_s": 0.0035305403726289537
+    }
   },
   "python_0p00125_vs_0p0025": {
     "120": {
@@ -174,6 +259,10 @@
     "version": "3.12.7"
   },
   "python_runs": {
+    "dt_0p000625_duration_s": 250,
+    "dt_0p000625_evaluator_sha256": "b438b1f9a0b9bda686315e8361c8a6b78ff652dbfc29288bd973485c59d8842b",
+    "dt_0p000625_output_sha256": "5a526e6810e48983be8c502b64cebc14b679956c1bf0a5876475e5a9ced7cdc3",
+    "dt_0p000625_script_sha256": "efa721a233b4cc7a4fce89471422c1175f6a02637f3295ead8aa1597d6d4c9a8",
     "dt_0p00125_output_sha256": "f3d6ed2e8980ec5bd8ec900747d31444d4308656701edf01223060d1cf6b7416",
     "dt_0p00125_script_sha256": "81d34286649c290c086b5cb541eccc6a8b66c0a2eb30172e21327df8429d5154",
     "dt_0p0025_output_sha256": "bca46ccdb9341b456a114e0218108c9fbb53142a100610ea2e207434edf5184a",
