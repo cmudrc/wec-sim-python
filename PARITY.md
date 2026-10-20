@@ -2878,8 +2878,13 @@ by Python's own 30 s source-style run. Across all 301 active samples, MATLAB
 `quadprog` and independent Python QP commands differ by at most
 `1.03e-5` N m (`6.06e-7` N m RMS). This supports the controller optimization
 implementation on independent motion inputs; it does not close the coupled
-trajectory gap. An
-independent full 225 s Python run remains finite and reduces the maximum
+trajectory gap. A [local full-plan gate](tests/fixtures/matlab/wavestar_nmpc_independent_qp/README.md)
+also pairs all 40 planned torques at each of the first 40 independently
+generated controller inputs (15–16.95 s). The largest of 1,600 MATLAB/Python
+differences is `1.09308e-5` N m, below the existing early-window `5e-5` N m
+controller limit. The complete plan agrees on identical inputs, so this does
+not resolve the autonomous plant/feedback split. An independent full 225 s
+Python run remains finite and reduces the maximum
 published-source gaps to `0.01536` rad pitch, `0.07490` rad/s pitch speed,
 and `6.358` N axial PTO force; signed PTO work differs by `0.0647%`.
 These full-duration differences are measured diagnostics, not a passing
