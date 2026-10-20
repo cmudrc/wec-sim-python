@@ -1141,6 +1141,34 @@ establish Python parity.
 | Other/dynamic: `MOST` | A focused pinned MATLAB reader gate compares Python's decoding of the checked-in 20,750-step TurbSim `.bts` file at selected grid points and with spatial checks at every time. A second source gate executes the published `RunTurbsim.m` on a 1,000-frame excerpt and compares all 249 output times, three velocity components, ten X planes, and 12×12 YZ grid points with Python's lazy advection view; the maximum difference is exactly zero. A third gate compares the six-component force and all three horizontal/vertical fairlead tensions from the pinned direct `nonLinearStaticMooring.m` at ten translated and rotated poses. Observed maximum differences are below `1e-5` N force, `1.5e-4` N m moment, and `5e-6` N tension; the paired gates are `1e-3` N, `1e-2` N m, and `1e-3` N respectively. A [fourth pinned MATLAB gate](https://github.com/cmudrc/wec-sim-python/actions/runs/37957379862) extracts the active BEM rotor function from `MOST_Lib.slx`, generates its IEA 15 MW blade inputs, and compares Python's three-blade root forces and moments at five hub/wind states, including moving and rotated hubs and spatially varying wind. The maximum observed component difference is `1.5e-8` N or N m, below the absolute `1e-4` gate. The published input sets `nonlinearStaticData.flag=1`, leaves `lookupTableFlag=0`, and sets `aeroLoadsType=1` for BEM; its active mooring block is `MooringNLStatic`. The generated mooring and aerodynamic lookup tables are not used by this case. These gates establish wind input, frozen-turbulence time shift, direct static catenary force, and isolated BEM blade loads. The 10 s rotor gate below advances turbine state from prescribed platform motion. A six-coordinate runner couples it to the platform over two pinned 10 s JONSWAP seas (4 m/seed 1 and 6 m/seed 2); the 30 and 60 s developed-sea gates below extend the 6 m condition beyond its wave ramp; a separate 12 m/s constant-wind gate exercises nonzero initial pitch. The published 1,000 s coupled case now has a local independent trajectory comparison and a [passing full-duration source gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38071234135). Other wind/controller regimes remain unpaired. The WaveStar base and fault applications and both WaveBot applications are paired separately above. |
 | Other/dynamic: published-step `Nonlinear_Hydro/ode45` and `OWC/OrificeModel` | Both nonlinear-hydro ode45 cases pass full-duration derived fine-step gates, but the original 0.05 s source trajectories retain force-timing and step-sensitivity gaps. The OrificeModel physical coupled path diverges late, while an explicit source-convention force route passes 130 s body/PTO gates; this does not validate the source air model beyond its Mach threshold. |
 
+#### OSWEC irregular variable-yaw step stability
+
+A [local full-duration audit](docs/evidence/oswec-variable-yaw-refinement.json)
+independently advances the public physical `WEC.run` path at `0.0025` and
+`0.00125` s through the published 600 s irregular sea, using the pinned
+500-component PM realization and 241 selected headings. The published MATLAB
+0.01 s baseline exactly reproduces the archived source body and PTO prefix
+through 250 s. A separate local MATLAB 0.005 s replay reproduces its archived
+160 s half-step yaw within `1.1e-15` rad with identical heading selections;
+the source comparison is not explained by run-to-run input drift.
+
+Against the published MATLAB trajectory, physical Python at `0.0025` s
+passes the unchanged 120 s prefix limits through 160 s: maximum yaw,
+yaw-speed, and PTO-torque differences are `0.000503` rad, `9.93e-5` rad/s,
+and `11.9` N m, with `0.0432%` relative PTO-work difference. The same limits
+fail at 250 s and over the full 600 s, where yaw differs by `0.1154` rad and
+PTO work by `12.55%`. Python's own `0.0025`-to-`0.00125` s step comparison
+passes through 160 s (`0.000243` rad yaw, `0.00599%` work) but fails by 250 s
+(`0.01256` rad yaw) and 600 s (`0.07350` rad yaw, `6.15%` work). MATLAB's
+0.01-to-0.005 s yaw self-change first breaches the `0.0006` rad limit at
+142.93 s; Python versus published MATLAB first breaches it at 166.98 s,
+and Python's own refinement at 167.73 s. Both paths are sensitive to heading
+events over the full duration. These measurements do not establish a
+step-converged 600 s physical reference or change the case badge. The
+separate matched MATLAB 0.005-to-0.0025 s audit addresses the 160 s prefix.
+
+![OSWEC variable-yaw published, source-step, and Python-step yaw differences](docs/figures/oswec-variable-yaw-step-gap.png)
+
 The already gated 300 s OSWEC `Desalination` network and coupled-motion
 comparison now runs from a [portable source fixture](tests/fixtures/matlab/oswec_desalination/README.md)
 and the existing OSWEC BEMIO fixture in ordinary Python CI. The same

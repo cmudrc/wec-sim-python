@@ -1,0 +1,196 @@
+{
+  "first_yaw_limit_breach_s": {
+    "matlab_0p005_vs_published_0p01": 142.93,
+    "python_0p00125_vs_0p0025": 167.73,
+    "python_0p0025_vs_published_0p01": 166.98
+  },
+  "inputs": {
+    "components": 500,
+    "heading_bank_deg_start_stop_step": [
+      -30,
+      30,
+      0.25
+    ],
+    "peak_period_s": 8,
+    "phase_generator": "matlab",
+    "phase_seed": 1,
+    "python_hydro_sha256": "a423b49b9e09e3303902e576a1f57a696f01c51e877d3271a7d71b59e00493e5",
+    "radiation_memory_s": 40,
+    "ramp_time_s": 100,
+    "significant_wave_height_m": 2.5,
+    "wave_direction_deg": 10
+  },
+  "interpretation": "Both MATLAB source and physical Python paths are step-sensitive after heading-event separation. A separate matched MATLAB 0.005-to-0.0025 s audit examines the 160 s prefix. These results do not establish full 600 s physical parity or increase badge counts.",
+  "matlab_local_half_replay": {
+    "heading_mismatch_samples": 0,
+    "max_pto_torque_Nm": 1.2005330063402653e-10,
+    "max_yaw_rad": 1.0547118733938987e-15,
+    "max_yaw_speed_rad_s": 1.0061396160665481e-16,
+    "wave_max_abs_gap_m": 5.601075159233915e-14
+  },
+  "matlab_published_vs_half_step": {
+    "120": {
+      "heading_mismatch_samples": 87,
+      "pto_torque_Nm": 5.305998087328021,
+      "pto_work_relative_abs_over_published": 0.000151353086660518,
+      "yaw_rad": 0.00018184377993199496,
+      "yaw_speed_rad_s": 4.421665072792003e-05
+    },
+    "140": {
+      "heading_mismatch_samples": 175,
+      "pto_torque_Nm": 9.786727869152003,
+      "pto_work_relative_abs_over_published": 0.0006773907383514274,
+      "yaw_rad": 0.0004593454942990183,
+      "yaw_speed_rad_s": 8.155606557626012e-05
+    },
+    "160": {
+      "heading_mismatch_samples": 1106,
+      "pto_torque_Nm": 95.60088177981993,
+      "pto_work_relative_abs_over_published": 0.005112606866115572,
+      "yaw_rad": 0.005278582322137959,
+      "yaw_speed_rad_s": 0.0007966740148317997
+    },
+    "250": {
+      "heading_mismatch_samples": 8074,
+      "pto_torque_Nm": 316.57413332182364,
+      "pto_work_relative_abs_over_published": 0.02801991505685368,
+      "yaw_rad": 0.015615990273008001,
+      "yaw_speed_rad_s": 0.0026381177776819
+    }
+  },
+  "predeclared_limits": {
+    "pto_torque_Nm": 20.0,
+    "pto_work_relative": 0.001,
+    "yaw_rad": 0.0006,
+    "yaw_speed_rad_s": 0.00015
+  },
+  "python_0p00125_vs_0p0025": {
+    "120": {
+      "coarse_work_J": 1152.872348903958,
+      "fine_work_J": 1152.9816251275417,
+      "gate_pass": true,
+      "heading_mismatch_samples": 30,
+      "pto_torque_Nm": 0.7941711775429212,
+      "pto_work_relative": 9.477707294045721e-05,
+      "yaw_rad": 2.1341708942891613e-05,
+      "yaw_speed_rad_s": 6.618093146188581e-06
+    },
+    "140": {
+      "coarse_work_J": 1467.1989421102437,
+      "fine_work_J": 1467.504883949558,
+      "gate_pass": true,
+      "heading_mismatch_samples": 69,
+      "pto_torque_Nm": 0.9582080342428299,
+      "pto_work_relative": 0.00020847756124048208,
+      "yaw_rad": 4.8575299193998056e-05,
+      "yaw_speed_rad_s": 7.985066952023636e-06
+    },
+    "160": {
+      "coarse_work_J": 1622.1051872547475,
+      "fine_work_J": 1622.0080590687708,
+      "gate_pass": true,
+      "heading_mismatch_samples": 213,
+      "pto_torque_Nm": 5.731104972190224,
+      "pto_work_relative": 5.988144475221336e-05,
+      "yaw_rad": 0.00024298013457740852,
+      "yaw_speed_rad_s": 4.775920810158596e-05
+    },
+    "250": {
+      "coarse_work_J": 1914.1354952389047,
+      "fine_work_J": 1913.0788661318934,
+      "gate_pass": false,
+      "heading_mismatch_samples": 23001,
+      "pto_torque_Nm": 243.30523256027115,
+      "pto_work_relative": 0.0005523186344887763,
+      "yaw_rad": 0.012561744804333058,
+      "yaw_speed_rad_s": 0.002027543604668926
+    },
+    "600": {
+      "coarse_work_J": 2280.1773237134043,
+      "fine_work_J": 2429.556051476256,
+      "gate_pass": false,
+      "heading_mismatch_samples": 132597,
+      "pto_torque_Nm": 1056.1741251073452,
+      "pto_work_relative": 0.06148396027829266,
+      "yaw_rad": 0.07349752964855552,
+      "yaw_speed_rad_s": 0.00880145104256121
+    }
+  },
+  "python_0p0025_vs_published": {
+    "120": {
+      "heading_mismatch_samples": 15,
+      "motion_work_limits_pass": true,
+      "pto_torque_Nm": 1.1100215162839504,
+      "pto_work_relative": 1.8625128437734913e-05,
+      "python_work_J": 1152.872348903958,
+      "source_work_J": 1152.8938216994623,
+      "yaw_rad": 2.575828310640016e-05,
+      "yaw_speed_rad_s": 9.250179302450201e-06
+    },
+    "140": {
+      "heading_mismatch_samples": 49,
+      "motion_work_limits_pass": true,
+      "pto_torque_Nm": 3.37962657289404,
+      "pto_work_relative": 0.00011451851931472298,
+      "python_work_J": 1467.1989421102437,
+      "source_work_J": 1467.3669828044058,
+      "yaw_rad": 0.00014725299195439412,
+      "yaw_speed_rad_s": 2.8163554774222107e-05
+    },
+    "160": {
+      "heading_mismatch_samples": 125,
+      "motion_work_limits_pass": true,
+      "pto_torque_Nm": 11.918596069783916,
+      "pto_work_relative": 0.0004321519557120103,
+      "python_work_J": 1622.1051872547475,
+      "source_work_J": 1621.4044941316083,
+      "yaw_rad": 0.0005031655511895661,
+      "yaw_speed_rad_s": 9.932163391466672e-05
+    },
+    "250": {
+      "heading_mismatch_samples": 6297,
+      "motion_work_limits_pass": false,
+      "pto_torque_Nm": 264.46231635526163,
+      "pto_work_relative": 0.0036411729947648207,
+      "python_work_J": 1914.1354952389047,
+      "source_work_J": 1907.191082573183,
+      "yaw_rad": 0.013789927905163035,
+      "yaw_speed_rad_s": 0.0022038526362938753
+    },
+    "600": {
+      "heading_mismatch_samples": 36276,
+      "motion_work_limits_pass": false,
+      "pto_torque_Nm": 1621.563009950353,
+      "pto_work_relative": 0.125492947446789,
+      "python_work_J": 2280.1773237134043,
+      "source_work_J": 2607.385860475565,
+      "yaw_rad": 0.11542764701165772,
+      "yaw_speed_rad_s": 0.013513025082919704
+    }
+  },
+  "python_environment": {
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "version": "3.12.7"
+  },
+  "python_runs": {
+    "dt_0p00125_output_sha256": "f3d6ed2e8980ec5bd8ec900747d31444d4308656701edf01223060d1cf6b7416",
+    "dt_0p00125_script_sha256": "81d34286649c290c086b5cb541eccc6a8b66c0a2eb30172e21327df8429d5154",
+    "dt_0p0025_output_sha256": "bca46ccdb9341b456a114e0218108c9fbb53142a100610ea2e207434edf5184a",
+    "dt_0p0025_script_sha256": "886efd0799e56effcc7308d4fc32ee253c0777982c6b8834ac7cbf4b6bb46ab7"
+  },
+  "scope": "OSWEC Variable_Hydro/Passive_Yaw published irregular PM sea, 600 s",
+  "source": {
+    "applications_commit": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e",
+    "archived_step_run": "https://github.com/cmudrc/wec-sim-python/actions/runs/38127365821",
+    "full_duration_files_sha256": {
+      "body": "ca3baf3795b01476410eb92d7c4146d27dbe6d102493f7d001e229c520180777",
+      "components": "053265841734b875d53129e3dd5de92961a43f890a6004f3c68401ae5dcdb384",
+      "heading": "c1ddbc808c05bfe058d3a1eea6d01003034ed1c30a889024eae8aa7bbb0e9c49",
+      "pto": "7e0103e1816f340ffc6aee50efba867a6b297ebf6def8835e9e8652d27812bf4",
+      "wave": "81efb4ca3dd742c3c16793f94c967338cf908e8f860f27bc6783c948e7c237f3"
+    },
+    "published_matlab_run": "https://github.com/cmudrc/wec-sim-python/actions/runs/38035515976",
+    "wec_sim_commit": "0753b2e47f2457c078751dcfe5d251d1767b80ab"
+  }
+}
