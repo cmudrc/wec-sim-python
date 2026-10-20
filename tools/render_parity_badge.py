@@ -28,7 +28,20 @@ GATED = {"independent_motion", "stationary_force"}
 
 def rows(path):
     with path.open(newline="") as stream:
-        return list(csv.DictReader(stream))
+        reader = csv.DictReader(stream)
+        if (reader.fieldnames is None
+                or len(reader.fieldnames) != len(set(reader.fieldnames))):
+            raise ValueError(f"{path.name}: missing or duplicate CSV header")
+        entries = []
+        for row in reader:
+            # DictReader otherwise puts overflow fields under a None key and
+            # silently drops them when badges consume only named columns.
+            if None in row or any(value is None for value in row.values()):
+                raise ValueError(
+                    f"{path.name}:{reader.line_num}: invalid column count"
+                )
+            entries.append(row)
+        return entries
 
 
 def render():
