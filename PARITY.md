@@ -3200,7 +3200,14 @@ now also pins both bodies' motion, not only the PTO and internal step times.
 With only the published HDF5, wave, stop settings, and its own accepted steps,
 the reduced Python source-style delayed-mass integrator matches PTO stroke
 within `5.51e-9` m through 84.3 s, including the first stop contact. MATLAB's
-first extra major step occurs after that prefix. Prescribing only MATLAB's
+first extra major step occurs after that prefix. Transforming the reduced
+state into Simscape's logged eight-state coordinates and applying its
+state-scaled tolerance and ode45 step growth reproduces MATLAB's first two
+off-grid times within `7e-9` s. The same independent Python path now pairs
+both bodies and PTO through 120 s: maximum body heave and PTO-stroke gaps are
+`0.0473` and `0.0512` mm, PTO-force gap is `2.50` kN, and damper-work gap is
+`0.0000514%`. The explicit test includes a tighter 90 s gate across the first
+off-grid steps. Prescribing only MATLAB's
 4,082 accepted step times over 400 s reduces the maximum body heave gap to
 `4.51` mm, pitch gap to `4.08e-5` rad, PTO stroke gap to `4.13` mm, and PTO
 force gap to `269.44` kN; ordinary damper work differs by `0.00190%`.
@@ -3208,15 +3215,16 @@ force gap to `269.44` kN; ordinary damper work differs by `0.00190%`.
 active positions and speeds, PTO motion and force, and work. The full gate is
 conditioned on source solver times; it isolates the remaining step-selection
 gap and does not promote `End_Stops` or the RM3 badge. Without prescribed
-times, the same 400 s source-style solver reaches `0.631` m PTO-stroke error
-and `8.24%` more damper work than the published MATLAB trajectory.
+times, the improved 400 s source-style solver still reaches `0.277` m
+PTO-stroke error and `0.431%` less damper work than the published MATLAB
+trajectory. The published full-duration motion gate remains red.
 
 In a separate local 90 s published-step source run, MATLAB's Solver Profiler
 recorded zero zero-crossing events and zero solver exceptions; its only solver
 reset was at startup. The first two extra accepted steps were at `84.3801`
-and `84.4443` s, after the independent prefix gate. This points to adaptive
-step selection, rather than a detected stop event, as the remaining source
-schedule difference.
+and `84.4443` s. This points to adaptive step selection, rather than a
+detected stop event, as a source schedule mechanism. Later off-grid timing
+still separates after the 120 s paired prefix.
 
 Over the full 400 s, the two refined MATLAB runs differ by at most 2.79 mm
 PTO stroke, 18.8 mm/s PTO speed, and 242.4 kN PTO force. Their ordinary
