@@ -107,6 +107,48 @@
       "yaw_speed_rad_s": 0.0033540832093598176
     }
   },
+  "python_0p000625_vs_published": {
+    "120": {
+      "heading_mismatch_samples": 86,
+      "motion_work_limits_pass": true,
+      "pto_torque_Nm": 3.9015471294851523,
+      "pto_work_relative": 0.00033885197543386306,
+      "python_work_J": 1152.503161350514,
+      "source_work_J": 1152.8938216994623,
+      "yaw_rad": 0.00019700751603793365,
+      "yaw_speed_rad_s": 3.2512892745596364e-05
+    },
+    "140": {
+      "heading_mismatch_samples": 225,
+      "motion_work_limits_pass": false,
+      "pto_torque_Nm": 14.980815388654378,
+      "pto_work_relative": 0.0013719295995725722,
+      "python_work_J": 1465.353858607261,
+      "source_work_J": 1467.3669828044058,
+      "yaw_rad": 0.0007164278005663272,
+      "yaw_speed_rad_s": 0.00012484012823884639
+    },
+    "160": {
+      "heading_mismatch_samples": 938,
+      "motion_work_limits_pass": false,
+      "pto_torque_Nm": 69.5069605340257,
+      "pto_work_relative": 0.0021963996294416905,
+      "python_work_J": 1624.965746361694,
+      "source_work_J": 1621.4044941316083,
+      "yaw_rad": 0.0032135961672776214,
+      "yaw_speed_rad_s": 0.0005792246711169074
+    },
+    "250": {
+      "heading_mismatch_samples": 7061,
+      "motion_work_limits_pass": false,
+      "pto_torque_Nm": 423.6648447154714,
+      "pto_work_relative": 0.012863660766330831,
+      "python_work_J": 1931.7245416759756,
+      "source_work_J": 1907.191082573183,
+      "yaw_rad": 0.020824665104405143,
+      "yaw_speed_rad_s": 0.0035305403726289537
+    }
+  },
   "python_0p00125_vs_0p0025": {
     "120": {
       "coarse_work_J": 1152.872348903958,

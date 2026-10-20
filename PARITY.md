@@ -1175,8 +1175,10 @@ at 139.7725 s. At 250 s the yaw gap is `0.01966` rad and the relative PTO-work
 gap is `0.965%`, compared with `0.01256` rad and `0.0552%` for the preceding
 `0.0025`-to-`0.00125` s refinement. Thus this third step does not support a
 monotonic convergence claim for the physical selected-heading path. Its
-window metrics, input hashes, and evaluator hashes are in the linked audit;
-the full published 600 s case remains qualified.
+direct comparison with published 0.01 s MATLAB also fails the unchanged
+limits by 140 s; at 250 s yaw differs by `0.02082` rad and PTO work by
+`1.286%`. The window metrics, input hashes, and evaluator hashes are in the
+linked audit; the full published 600 s case remains qualified.
 
 ![OSWEC variable-yaw published, source-step, and Python-step yaw differences](docs/figures/oswec-variable-yaw-step-gap.png)
 
