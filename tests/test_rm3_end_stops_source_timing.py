@@ -96,8 +96,8 @@ def test_independently_selected_source_state_steps_through_120_seconds():
         assert abs(python_work - matlab_work) / matlab_work < 1e-5
 
 
-def test_public_wec_run_pairs_published_end_stops_through_120_seconds():
-    """The configured public WEC uses its own adaptive steps and wave input."""
+def _public_end_stops_wec():
+    """Build the published RM3 configuration without source motion inputs."""
     wec = WEC("RM3 End Stops")
     float_body = wec.body("float", HYDRO, inertia=(0, 21_306_090.66, 0))
     spar_body = wec.body("spar", HYDRO, inertia=(0, 94_407_091.24, 0))
@@ -106,8 +106,15 @@ def test_public_wec_run_pairs_published_end_stops_through_120_seconds():
         hard_stops=LinearHardStops(-.6, .6, 1e8, 1e8),
         added_mass_scheme="simulink_delay",
     )
-    result = wec.run(RegularWave(2.5, 8), dt=.1, end_time=120,
-                     ramp_time=100, solver="wecsim_ode45")
+    return wec
+
+
+def test_public_wec_run_pairs_published_end_stops_through_120_seconds():
+    """The configured public WEC uses its own adaptive steps and wave input."""
+    result = _public_end_stops_wec().run(
+        RegularWave(2.5, 8), dt=.1, end_time=120,
+        ramp_time=100, solver="wecsim_ode45",
+    )
 
     with np.load(FIXTURES / "rm3_end_stops_published_full.npz") as source:
         length = len(result.time)
@@ -138,6 +145,27 @@ def test_public_wec_run_pairs_published_end_stops_through_120_seconds():
             source["time"][:length],
         )
         assert abs(python_work - matlab_work) / matlab_work < 1e-5
+
+
+def test_public_wec_run_published_400s_damper_work():
+    """Gate independent full-run PTO work while motion remains qualified."""
+    result = _public_end_stops_wec().run(
+        RegularWave(2.5, 8), dt=.1, end_time=400,
+        ramp_time=100, solver="wecsim_ode45",
+    )
+    with np.load(FIXTURES / "rm3_end_stops_published_full.npz") as source:
+        np.testing.assert_allclose(result.time, source["time"],
+                                   rtol=0, atol=1e-10)
+        source_work = np.trapezoid(
+            1_200_000 * source["pto"][:, 1]**2, source["time"],
+        )
+        python_work = np.trapezoid(
+            result.ptos["relative_heave"].absorbed_power, result.time,
+        )
+        assert source_work > 0
+        # Reuse the existing 0.7% full-run End Stops damper-work limit.
+        gap = abs(python_work - source_work) / source_work
+        assert gap < .007, f"published 400 s damper work gap: {gap:.4%}"
 
 
 def test_published_full_duration_with_source_major_step_schedule():
