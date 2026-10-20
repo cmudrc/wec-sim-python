@@ -3322,6 +3322,14 @@ reset was at startup. The first two extra accepted steps were at `84.3801`
 and `84.4443` s. This points to adaptive step selection, rather than a
 detected stop event, as a source schedule mechanism. Later off-grid timing
 still separates after the 120 s paired prefix.
+A [bounded 122 s local Solver Profiler audit](tests/fixtures/matlab/rm3_end_stops_published_full.md)
+reproduces all 1,245 archived accepted times exactly. It finds no zero
+crossings and two state-8 tolerance exceptions at 116 and 120 s. Python
+rejects the same 0.1 s trials, but its accepted substeps drift after 120 s;
+MATLAB adds a step at 120.68356 s while Python advances directly to 120.7 s.
+The PTO is inside its stroke limits then. This narrows the remaining schedule
+gap to adaptive step selection, without establishing a full published-motion
+gate or changing the RM3 badge.
 
 Over the full 400 s, the two refined MATLAB runs differ by at most 2.79 mm
 PTO stroke, 18.8 mm/s PTO speed, and 242.4 kN PTO force. Their ordinary
