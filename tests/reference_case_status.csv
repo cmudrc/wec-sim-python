@@ -15,7 +15,7 @@ Controls/Passive (P),independent_motion,
 Controls/Reactive (PI),independent_motion,
 Controls/ReactiveWithPTO,independent_motion,
 Desalination,independent_motion,
-End_Stops,qualified_motion,Full-duration refined-step and MaxStep-only derived-source motion independently pair with Python; the unchanged 400 s published trajectory remains step-sensitive.
+End_Stops,qualified_motion,Full-duration refined-step and MaxStep-only derived-source motion independently pair with Python; source-timed delayed-mass replay now pairs the published 400 s trajectory but uses MATLAB's accepted solver steps. Independently selected published-step motion pairs only through 84.3 s; the unchanged full-duration case remains step-sensitive.
 Free_Decay/0m,independent_motion,
 Free_Decay/1m,independent_motion,
 Free_Decay/1m-ME,independent_motion,

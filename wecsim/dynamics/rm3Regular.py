@@ -89,6 +89,7 @@ def solve_rm3_regular(
     radiation_method: str | None = None,
     added_mass_scheme: str = "implicit",
     solver: str = "implicit",
+    _source_major_times: np.ndarray | None = None,
     excitation_force: np.ndarray | None = None,
     no_wave: bool = False,
     initial_coordinate: np.ndarray | None = None,
@@ -115,6 +116,10 @@ def solve_rm3_regular(
     feedback for numerical comparison. The delay is not a WEC property.
     ``solver="wecsim_ode4"`` follows the pinned no-wave PTO-extension
     convolution and delayed-mass timing without changing the physical default.
+    ``solver="wecsim_ode45"`` is a narrow regular-wave End Stops diagnostic:
+    it advances the split added mass at accepted RK45 steps. Its private
+    ``_source_major_times`` input can replay source step timing, but such a
+    run is conditional on MATLAB data and is not an independent parity gate.
     ``radiation_method="fir"`` instead samples the same kernel as a discrete
     FIR filter and holds its force through each RK4 step.
     ``radiation_method="state_space"`` advances the pinned HDF5 fitted
@@ -165,10 +170,17 @@ def solve_rm3_regular(
         radiation_memory = dt
     if added_mass_scheme not in ("implicit", "simulink_delay"):
         raise ValueError("added_mass_scheme must be implicit or simulink_delay")
-    if added_mass_scheme == "simulink_delay" and radiation_method != "convolution":
+    if (added_mass_scheme == "simulink_delay" and radiation_method != "convolution"
+            and solver != "wecsim_ode45"):
         raise ValueError("simulink_delay requires convolution radiation")
-    if solver not in ("implicit", "wecsim_ode4"):
-        raise ValueError("solver must be implicit or wecsim_ode4")
+    if solver not in ("implicit", "wecsim_ode4", "wecsim_ode45"):
+        raise ValueError("unsupported RM3 solver")
+    if _source_major_times is not None and solver != "wecsim_ode45":
+        raise ValueError("major-step replay needs source ode45")
+    if solver == "wecsim_ode45" and (
+            radiation_method != "constant" or added_mass_scheme != "simulink_delay"
+            or pto_hard_stops is None or b2b or moordyn is not None):
+        raise ValueError("source ode45 needs regular RM3 End Stops with delayed mass")
     if solver == "wecsim_ode4" and (
             not no_wave or radiation_method != "convolution"
             or added_mass_scheme != "simulink_delay" or b2b
@@ -193,7 +205,8 @@ def solve_rm3_regular(
     if pto_hard_stops is not None:
         if not isinstance(pto_hard_stops, LinearHardStops):
             raise TypeError("pto_hard_stops must be LinearHardStops")
-        if radiation_method != "constant" or added_mass_scheme != "implicit":
+        if (radiation_method != "constant" or
+                (added_mass_scheme != "implicit" and solver != "wecsim_ode45")):
             raise ValueError("PTO hard stops currently need constant radiation and implicit added mass")
     if moordyn is not None:
         if not isinstance(moordyn, MoorDyn) or moordyn_point is None:
@@ -352,6 +365,7 @@ def solve_rm3_regular(
         radiation_discretization=("fir" if radiation_method == "fir"
                                   else "trapezoid"),
         added_mass_delay=(1e-7 if added_mass_scheme == "simulink_delay" else None),
+        source_regular_delay=solver == "wecsim_ode45",
         nonlinear_force=(stop_generalized_force
                          if pto_hard_stops is not None else None),
     )
@@ -413,6 +427,7 @@ def solve_rm3_regular(
             adaptive_regular=pto_hard_stops is not None,
             radiation_state_space=fitted_radiation,
             solver=solver,
+            _source_major_times=_source_major_times,
         )
     q = solved.coordinate
     v = solved.speed
