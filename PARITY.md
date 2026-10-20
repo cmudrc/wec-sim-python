@@ -1314,7 +1314,7 @@ boundary in two separate action steps. The local result makes long runs
 segmentable, but it does not establish a 600 s
 published-case physical-motion gate. The 160 s MATLAB source-stability failure
 still stands, so the case remains qualified and badges are unchanged.
-An [ordinary-CI 140 s public `WEC.run` gate](tests/test_variable_yaw_140s_portable.py)
+An [ordinary-CI 140 s public `WEC.run` gate](tests/test_variable_yaw_physical_prefixes.py)
 now independently checks the physical-default selected-heading motion against
 the source-stable quarter-step prefix, using the pinned 40 s OSWEC BEMIO
 fixture. The published 600 s source artifact's common HDF5 has the same 68
@@ -1326,6 +1326,16 @@ work, below the predeclared 120/140 s limits. Wave elevation agrees within
 `4.77e-14` m. This keeps a useful independent prefix from regressing but
 does not change the 160 s source-stability failure or establish the
 published 600 s irregular-motion gate; the case and badge remain unchanged.
+A second ordinary-CI test in the same file independently advances the
+physical `WEC.run` path to 160 s with a `0.00125` s step and compares every
+other Python sample with the archived `0.0025` s quarter-step MATLAB source.
+On the pinned sea and heading bank, its maximum yaw, yaw-speed, and PTO-torque
+differences are `0.000115` rad, `2.35e-5` rad/s, and `2.82` N m; relative
+PTO-work difference is `0.0134%`. These pass the existing Python/source
+limits without source body or heading-event inputs. At 160 s, however, the
+same-bank MATLAB half-to-quarter-step changes exceed all four source
+self-change limits. The finer Python match is a bounded diagnostic against
+one source step, not a full published-case gate; the OSWEC badge is unchanged.
 
 The [RM3 MoorDyn visualization force export](https://github.com/cmudrc/wec-sim-python/actions/runs/38085085794)
 records acceleration, excitation, radiation, added mass, restoring, Morison,
