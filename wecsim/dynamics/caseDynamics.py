@@ -132,7 +132,10 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
         raise ValueError("configurable PTO connections require linear_subspace")
     if kind != "linear_subspace" and any("mean_drift" in body for body in bodies):
         raise ValueError("body.mean_drift currently requires linear_subspace")
-    if kind != "linear_subspace" and any("linear_damping" in body for body in bodies):
+    if kind != "linear_subspace" and any(
+            "linear_damping" in body
+            and not (kind == "fixed_hinge" and index == 0)
+            for index, body in enumerate(bodies)):
         raise ValueError("body.linear_damping currently requires linear_subspace")
     if kind != "linear_subspace" and any(
             "hydrostatic_stiffness" in body for body in bodies):
@@ -359,10 +362,22 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             fixed_center = np.asarray(bodies[1]["center_gravity"], dtype=float)
         _body_number(bodies[0], 1)
         if set(bodies[0]) - {"hydro_file", "hydro_body", "mass", "pitch_inertia",
-                              "name", "nonlinear_hydro", "geometry_file"}:
+                              "name", "nonlinear_hydro", "geometry_file",
+                              "linear_damping"}:
             raise ValueError("fixed-hinge pitch uses mass, pitch inertia, and optional mesh hydro")
         nonlinear = bodies[0].get("nonlinear_hydro")
         geometry = bodies[0].get("geometry_file")
+        try:
+            body_linear_damping = np.asarray(
+                bodies[0].get("linear_damping", np.zeros((6, 6))), dtype=float,
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("body.linear_damping needs a finite 6x6 matrix") from exc
+        if (body_linear_damping.shape != (6, 6)
+                or not np.isfinite(body_linear_damping).all()):
+            raise ValueError("body.linear_damping needs a finite 6x6 matrix")
+        if nonlinear is not None and "linear_damping" in bodies[0]:
+            raise ValueError("nonlinear fixed hinge does not support body.linear_damping")
         source_pm_ode4 = (sim.get("solver") == "wecsim_ode4"
                           and wave["type"] == "pm")
         if source_pm_ode4 and (
@@ -432,6 +447,8 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
                 ramp_time=ramp_time, rho=rho, g=g,
                 initial_angle=initial_angle,
                 initial_angular_velocity=initial_pitch_speed,
+                **({"body_linear_damping": body_linear_damping}
+                   if nonlinear is None else {}),
                 **source_options,
             )
             ramp = np.ones(len(solved.time))
@@ -589,6 +606,7 @@ def run_case(case: Mapping, *, base_dir: str | Path = ".") -> CaseResponse:
             rho=rho, g=g,
             initial_angle=initial_angle,
             initial_angular_velocity=initial_pitch_speed,
+            body_linear_damping=body_linear_damping,
         )
         position = np.zeros((len(solved.time), len(bodies), 6))
         velocity = np.zeros_like(position)
