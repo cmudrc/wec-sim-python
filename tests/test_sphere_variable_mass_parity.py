@@ -123,6 +123,10 @@ def test_source_uses_all_nine_draft_states_and_matches_bem_forces(paired_paths):
                "source hydrodynamic force assembly")
     _max_error(-200_000 * body[:, 9], pto[:, 15], 1e-6,
                "source PTO damping")
+    _max_error(pto[:, 9], body[:, 9], 1e-10,
+               "source PTO speed")
+    _max_error(pto[:, 21], pto[:, 15] * pto[:, 9], 1e-8,
+               "source PTO power")
 
 
 def test_public_python_variable_body_tracks_published_trajectory(paired_paths):
@@ -143,6 +147,16 @@ def test_public_python_variable_body_tracks_published_trajectory(paired_paths):
                .003, "PTO stroke")
     _max_error(result.ptos["PTO1"].force[sample], pto[:, 15],
                1_000, "PTO force")
+    _max_error(result.ptos["PTO1"].velocity[sample], pto[:, 9],
+               .005, "PTO speed")
+    # The 2.5 kW power limit follows the existing .005 m/s speed limit,
+    # 200 kN s/m damper, and the source's approximately 1.17 m/s peak speed.
+    python_power = result.ptos["PTO1"].absorbed_power[sample]
+    source_power = -pto[:, 21]
+    _max_error(python_power, source_power, 2_500, "PTO absorbed power")
+    python_work = np.trapezoid(python_power, result.time[sample])
+    source_work = np.trapezoid(source_power, pto[:, 0])
+    assert abs(python_work - source_work) / source_work < .01
     _max_error(result.wave_elevation, wave[:, 1], 1e-12,
                "wave elevation")
     np.testing.assert_array_equal(extras["body1_hydro_state"][sample],
