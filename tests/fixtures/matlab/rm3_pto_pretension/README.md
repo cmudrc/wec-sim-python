@@ -25,3 +25,9 @@ The bundled `examples/data/rm3.h5` SHA-256 is
 The test still accepts fresh MATLAB CSVs when they are supplied by the
 reference-model workflow. This configured PTO is an RM3 example variant,
 not an additional published input in the 63-case inventory.
+
+The paired test also computes irreversible damper work as
+`1_200_000 * pto_speed**2` from MATLAB's saved PTO speed. It gates separate
+0–100 s, 100–250 s, 250–400 s, and full 400 s windows against the public
+Python absorbed-power history at 1% relative error. The largest observed
+window gap is 0.7934%.

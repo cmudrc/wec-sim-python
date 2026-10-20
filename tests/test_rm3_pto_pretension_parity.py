@@ -120,3 +120,19 @@ def test_rm3_configured_spring_and_pretension_against_matlab():
     _max_error(-history.force * history.velocity,
                -source["pto_mechanical_power"],
                8_000, "PTO mechanical power")
+
+    # The source logs spring exchange and damping together as mechanical
+    # power. Compare irreversible damper work from its independently saved
+    # PTO speed, including separate ramp and steady windows.
+    source_damper_power = 1_200_000 * source["pto_velocity"]**2
+    for start, stop in ((0, 100), (100, 250), (250, 400), (0, 400)):
+        window = (time >= start) & (time <= stop)
+        source_work = np.trapezoid(source_damper_power[window], time[window])
+        python_work = np.trapezoid(
+            history.absorbed_power[window], result.time[window],
+        )
+        assert source_work > 1e6
+        relative_gap = abs(python_work - source_work) / source_work
+        assert relative_gap < .01, (
+            f"PTO damper work {start}–{stop} s: {relative_gap:.4%} exceeds 1%"
+        )
