@@ -15,7 +15,7 @@ Controls/Passive (P),independent_motion,
 Controls/Reactive (PI),independent_motion,
 Controls/ReactiveWithPTO,independent_motion,
 Desalination,independent_motion,
-End_Stops,qualified_motion,Full-duration refined-step and MaxStep-only derived-source motion independently pair with Python; source-timed delayed-mass replay pairs the published 400 s trajectory but uses MATLAB's accepted solver steps. Independently selected source-state ode45 motion now pairs the published first 120 s through public WEC.run; the unchanged full-duration case remains step-sensitive.
+End_Stops,qualified_motion,"Full-duration refined-step and MaxStep-only derived-source motion independently pair with Python; source-timed delayed-mass replay pairs the published 400 s trajectory but uses MATLAB's accepted solver steps. Independently selected source-state ode45 motion pairs the published first 120 s through public WEC.run. Its 400 s total damper-work gap is 0.4307% locally but 0.8246% in Linux CI against an unchanged 0.7% gate, so no portable full-run work gate is claimed; published full-duration motion remains step-sensitive."
 Free_Decay/0m,independent_motion,
 Free_Decay/1m,independent_motion,
 Free_Decay/1m-ME,independent_motion,
