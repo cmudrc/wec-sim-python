@@ -39,6 +39,8 @@ e20b75b6d1da9437ec37ba3d1aecc8bf043893709ccd099014b9e141d3c8d73c
 The ordinary Python test extracts these files into a temporary directory,
 checks source state selection and force assembly at all 9,001 source output
 times, then independently advances the public `WEC.variable_body` for the full
-900 s. It uses the same numerical limits as the fresh MATLAB workflow. This
-adds a durable regression for an already-gated case; it does not add a new
-badge case.
+900 s. It uses the same motion and force limits as the fresh MATLAB workflow.
+The additional PTO speed, pointwise absorbed-power, and integrated-work gates
+are 0.005 m/s, 2.5 kW, and 1%, respectively; the measured maxima are
+0.004135 m/s, 1.052 kW, and 0.00376% work. This tightens an already-gated
+case; it does not add a new badge case.
