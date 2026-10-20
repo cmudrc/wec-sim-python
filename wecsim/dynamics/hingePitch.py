@@ -30,6 +30,18 @@ class HingePitchResponse:
     excitation_force: np.ndarray | None = None
 
 
+def _body_damping_matrix(value):
+    if value is None:
+        return np.zeros((6, 6))
+    try:
+        matrix = np.asarray(value, dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("body_linear_damping needs a finite 6x6 matrix") from exc
+    if matrix.shape != (6, 6) or not np.isfinite(matrix).all():
+        raise ValueError("body_linear_damping needs a finite 6x6 matrix")
+    return matrix
+
+
 def hinged_pitch_motion(lever: float):
     """Exact center motion for one pitch angle about a fixed horizontal hinge."""
     if not np.isfinite(lever):
@@ -73,6 +85,7 @@ def solve_hinged_pitch_from_excitation(
     g: float = 9.81,
     initial_angle: float = 0.0,
     initial_angular_velocity: float = 0.0,
+    body_linear_damping: np.ndarray | None = None,
 ) -> HingePitchResponse:
     """Integrate hinge pitch with hydrodynamic radiation and a linear PTO.
 
@@ -105,6 +118,7 @@ def solve_hinged_pitch_from_excitation(
         raise ValueError("mass, inertia, dt, memory time, rho, and g must be positive")
     if added_mass_scheme not in ("implicit", "simulink_delay"):
         raise ValueError("added_mass_scheme must be implicit or simulink_delay")
+    body_linear_damping = _body_damping_matrix(body_linear_damping)
     if source_ode4:
         halfstep_excitation_force = np.asarray(
             halfstep_excitation_force, dtype=float,
@@ -147,7 +161,7 @@ def solve_hinged_pitch_from_excitation(
         "cd": np.zeros(6),
         "characteristicArea": np.zeros(6),
     }
-    body.linearDamping = np.zeros((6, 6))
+    body.linearDamping = body_linear_damping
     body.hydroForcePre(
         [], [0], len(convolution_time), convolution_time, [], dt, rho, g,
         "noWaveCIC", np.vstack((time, np.zeros_like(time))),
@@ -176,7 +190,7 @@ def solve_hinged_pitch_from_excitation(
     device = GeneralizedDynamics((DynamicBody(
         rigid_mass=rigid_mass,
         added_mass=(np.asarray(body.hydroForce["fAddedMass"]),),
-        damping=(np.zeros((6, 6)),),
+        damping=(body_linear_damping,),
         restoring=np.asarray(body.hydroForce["linearHydroRestCoef"]),
         static_force=static_force,
         reference_position=np.array([0, 0, cg_z, 0, 0, 0]),
@@ -235,6 +249,7 @@ def solve_hinged_pitch_regular(
     source_ode4: bool = False,
     initial_angle: float = 0.0,
     initial_angular_velocity: float = 0.0,
+    body_linear_damping: np.ndarray | None = None,
 ) -> HingePitchResponse:
     """Integrate the hinged flap under a regular wave and frequency damping.
 
@@ -250,6 +265,7 @@ def solve_hinged_pitch_regular(
             or pitch_inertia <= 0 or pto_damping < 0 or pto_stiffness < 0
             or dt <= 0 or end_time < 0 or ramp_time < 0 or rho <= 0 or g <= 0):
         raise ValueError("invalid wave, body, PTO, or time parameters")
+    body_linear_damping = _body_damping_matrix(body_linear_damping)
     steps = round(end_time / dt)
     if not np.isclose(steps * dt, end_time, rtol=0, atol=1e-10):
         raise ValueError("end_time must be an integer multiple of dt")
@@ -272,7 +288,7 @@ def solve_hinged_pitch_regular(
         "Drag": np.zeros((6, 6)), "cd": np.zeros(6),
         "characteristicArea": np.zeros(6),
     }
-    body.linearDamping = np.zeros((6, 6))
+    body.linearDamping = body_linear_damping
     body.hydroForcePre(
         omega, [0], 1, np.array([0.0]), [], dt, rho, g,
         "regular", np.vstack((time, np.zeros_like(time))),
@@ -300,7 +316,10 @@ def solve_hinged_pitch_regular(
     device = GeneralizedDynamics((DynamicBody(
         rigid_mass=rigid_mass,
         added_mass=(np.asarray(hydro["fAddedMass"]),),
-        damping=(np.asarray(hydro["fDamping"]),),
+        # WEC-Sim applies user body damping alongside frequency radiation.
+        # Project their sum through the nonlinear hinge Jacobian in the
+        # generalized dynamics force balance.
+        damping=(np.asarray(hydro["fDamping"]) + body_linear_damping,),
         restoring=np.asarray(hydro["linearHydroRestCoef"]),
         static_force=np.array([0, 0, vertical_bias, 0, 0, 0]),
         reference_position=np.array([0, 0, cg_z, 0, 0, 0]),

@@ -430,7 +430,6 @@ class _WECCaseMixin:
                 or (flap.geometry_file is None) != (flap.nonlinear_hydro is None)
                 or flap.mean_drift != "none" or flap.drag_coefficient
                 or flap.drag_area or flap.hydrostatic_stiffness is not None
-                or flap.linear_damping is not None
                 or flap.quadratic_drag is not None
                 or flap.quadratic_drag_coefficient is not None):
             raise ValueError("fixed_hinge needs positive flap mass and pitch inertia with supported mesh hydro settings")
@@ -438,6 +437,10 @@ class _WECCaseMixin:
                    "hydro_body": flap.hydro_body or 1,
                    "mass": float(flap.mass),
                    "pitch_inertia": float(flap.inertia[1])}]
+        if flap.linear_damping is not None:
+            if flap.nonlinear_hydro is not None:
+                raise ValueError("nonlinear fixed_hinge does not support body linear_damping")
+            bodies[0]["linear_damping"] = [list(row) for row in flap.linear_damping]
         if flap.nonlinear_hydro is not None:
             bodies[0]["nonlinear_hydro"] = flap.nonlinear_hydro
             bodies[0]["geometry_file"] = str(flap.geometry_file)
