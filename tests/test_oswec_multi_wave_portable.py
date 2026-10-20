@@ -104,3 +104,16 @@ def test_published_two_sea_oswec_motion_and_pto(tmp_path):
                "PTO torque (N m)")
     _max_error(-result.ptos["hinge"].absorbed_power, source_pto[:, 23], 350,
                "PTO mechanical power (W)")
+    source_power = -source_pto[:, 23]
+    python_power = result.ptos["hinge"].absorbed_power
+    # The pointwise 350 W gate alone allows a biased work integral. Bound
+    # three disjoint intervals as well as the complete published run.
+    for start, stop in ((0, 20), (20, 60), (60, 100), (0, 100)):
+        window = (time >= start) & (time <= stop)
+        source_work = np.trapezoid(source_power[window], time[window])
+        python_work = np.trapezoid(python_power[window], time[window])
+        assert source_work > 10_000
+        relative_gap = abs(python_work - source_work) / source_work
+        assert relative_gap < .05, (
+            f"PTO work {start}–{stop} s: {relative_gap:.4%} exceeds 5%"
+        )

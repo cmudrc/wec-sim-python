@@ -25,3 +25,7 @@ the saved phases, advances the public hinge over 100 s, and checks wave,
 both-body excitation, motion, PTO torque, and mechanical power against the
 existing published-case limits. This makes an already counted OSWEC case
 durable in ordinary Python CI; it does not add a case badge.
+
+The test also gates absorbed PTO work in 0–20 s, 20–60 s, 60–100 s, and full
+100 s windows at 5% relative error. The largest observed window gap is
+3.913%; source work is computed from its logged mechanical-power history.

@@ -35,7 +35,7 @@ Multiple_Condition_Runs/RM3_MCROPT1,independent_motion,
 Multiple_Condition_Runs/RM3_MCROPT2,independent_motion,
 Multiple_Condition_Runs/RM3_MCROPT3,independent_motion,
 Multiple_Condition_Runs/RM3_MCROPT3_SeaState,independent_motion,
-Multiple_Wave_Spectra,independent_motion,
+Multiple_Wave_Spectra,independent_motion,Full 100 s two-sea motion PTO power and absorbed work independently pair across three disjoint intervals and the complete run.
 Nonhydro_Body,independent_motion,
 Nonlinear_Hydro/ode4/Regular,independent_motion,
 Nonlinear_Hydro/ode4/RegularCIC,independent_motion,
