@@ -35,3 +35,19 @@ HDF5 and wave phases, recording each `WaveStarNmpcObserver.step` and
 run `tests/matlab/wavestar_nmpc_independent_qp_replay.m` with that MAT file and
 the pinned Applications `WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive`
 directory. The direct output is time, MATLAB command, and Python command.
+
+`early_horizons.npz` pins all 40 planned torques at the first 40 controller
+samples (15–16.95 s), generated on mali with R2025b Update 7 and the same
+pinned `NMPC.m`. The input is the first 40 `source.npz` Python states and
+forecasts, converted to MAT columns `states` (5×40), `forecasts` (40×40),
+`python_commands` (40×1), and `time` (40×1), with `A`, `Bu`, `Bw`, and `R`
+from `../wavestar_nmpc_full_step/direct_controller_inputs.npz`. Calling
+`wavestar_nmpc_independent_qp_replay` with the optional fourth CSV path
+exports the complete plans; `early_horizons.npz` stores its time column and
+40 plan columns. Its SHA-256 is
+`64ab78f62845ee27b55c66c867ff8979b2ee9d886c4d749c6f461167858a9c0e`.
+The MATLAB first plan entry exactly reproduces the archived direct command
+at all 40 samples. Python's maximum difference across the 1,600 plan
+entries is `1.09308e-5` N m, below the existing early-window `5e-5` N m
+controller limit. This checks the complete optimizer plan on identical
+independent inputs; it does not gate autonomous WaveStar motion.
