@@ -1,0 +1,44 @@
+name: OWC corrected source saved-step audit
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/owc-orifice-saved-step-audit.yml'
+      - 'tests/matlab/owc_orifice_saved_step_reference.m'
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: cmccomb/WEC-Sim_Applications
+          ref: 51b071b158d51cadeb98ccf4b05918cb8bb969fe
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: OWC/OrificeModel
+      - name: Install pinned cleaned hydrodynamics
+        run: cp tests/fixtures/matlab/owc_orifice.h5 applications/OWC/OrificeModel/hydroData/test17a_clean.h5
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody Signal_Processing_Toolbox Control_System_Toolbox
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: run('tests/matlab/owc_orifice_saved_step_reference.m')
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owc-orifice-corrected-saved-step
+          path: owc-orifice-saved-step-output/*.csv
+          if-no-files-found: ignore
