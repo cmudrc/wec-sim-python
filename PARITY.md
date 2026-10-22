@@ -1182,7 +1182,40 @@ limits by 140 s; at 250 s yaw differs by `0.02082` rad and PTO work by
 `1.286%`. The window metrics, input hashes, and evaluator hashes are in the
 linked audit; the full published 600 s case remains qualified.
 
-![OSWEC variable-yaw published, source-step, and Python-step yaw differences](docs/figures/oswec-variable-yaw-step-gap.png)
+A [reproducible source-equivalent full-duration sweep](docs/evidence/oswec-variable-yaw-sixteenth-600.json)
+uses the public `wecsim_ode4` path with only the pinned HDF5 and PM phase seed.
+That path matches independently saved MATLAB output to roundoff at 0.005 s
+through 250 s, and at 0.0025 and 0.00125 s through 160 s, including every
+selected heading. At 600 s its predicted PTO work is 2499.83, 2335.44,
+2350.91, and 2271.89 J at 0.005, 0.0025, 0.00125, and 0.000625 s.
+The finest prediction differs from published 0.01 s MATLAB by 0.05336 rad
+yaw and 12.87% PTO work over 600 s.
+The 0.00125-to-0.000625 s comparison exceeds all four unchanged 160 s
+limits by 160 s (0.00371 rad yaw, 0.000542 rad/s speed, 65.0 N m torque,
+0.368% work), and at 600 s differs by 0.02146 rad yaw and 3.48% work.
+The incident wave agrees exactly at common samples and none of these runs
+visits the bank edge. These full-duration refined traces are **surrogate
+predictions**: direct MATLAB identity was established only for the shorter
+windows above. They expose a likely source-event stability problem but do
+not replace a full-duration MATLAB reference or establish physical parity.
+The local runner is [tools/oswec_irregular_yaw_sweep.py](tools/oswec_irregular_yaw_sweep.py).
+An independent physical `WEC.run` at 0.000625 s then completed all 600 s
+from the same HDF5 and PM seed, with no source states, forces, or heading
+history as inputs. Against the source-equivalent path at the **same step**,
+all four unchanged limits pass through 140 s, but all fail by 160 s; the
+600 s maximum gaps are 0.04018 rad yaw, 0.00511 rad/s speed, and 613.2 N m
+PTO torque, with 2156.37 versus 2271.89 J of work (5.08%). Against the
+actual published 0.01 s MATLAB run, its 600 s yaw differs by 0.08711 rad,
+PTO torque by 1231 N m, and work by 17.30%. The incident wave differs by
+at most `2.01e-13` m. An instrumented 160 s physical control had zero
+frozen-heading fallback steps, so that safeguard does not explain the
+branch split. The physical default remains unchanged, and this published
+case is still qualified rather than counted as a gated pass.
+
+The [earlier published-step gap plot](docs/figures/oswec-variable-yaw-step-gap.png)
+shows when the previous 250 s comparisons breached the yaw limit.
+
+![OSWEC selected-heading yaw boundary and full-run work across solver steps](docs/figures/oswec-variable-yaw-sixteenth-600.png)
 
 The already gated 300 s OSWEC `Desalination` network and coupled-motion
 comparison now runs from a [portable source fixture](tests/fixtures/matlab/oswec_desalination/README.md)

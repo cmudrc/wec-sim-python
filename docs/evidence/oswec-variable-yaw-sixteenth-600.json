@@ -1,0 +1,398 @@
+{
+  "case": "Variable_Hydro/Passive_Yaw irregular PM wave, selected 0.25-degree bank",
+  "scope": "Local source-equivalent Python WEC.run(solver=wecsim_ode4) step-refinement diagnostic; full-duration refined traces are predictions, not direct MATLAB runs or a physical parity gate.",
+  "issue": "https://github.com/cmudrc/wec-sim-python/issues/621",
+  "hydro_sha256": "b9ccf3a32e0893c23b1645c15a2baef4a0c6f678b90d177d5797e3c65de4b7d3",
+  "environment": {
+    "python": "3.12.7",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  },
+  "unchanged_limits": {
+    "yaw_rad": 0.0006,
+    "yaw_speed_rad_s": 0.00015,
+    "pto_torque_Nm": 20,
+    "relative_pto_work": 0.001
+  },
+  "matlab_identity": [
+    {
+      "dt_s": 0.005,
+      "duration_s": 250,
+      "samples": 50001,
+      "max_yaw_rad": 1.1018963519404679e-14,
+      "max_speed_rad_s": 7.719519468096792e-16,
+      "max_torque_Nm": 2.460183168295771e-10,
+      "relative_work": 2.51654198573822e-14,
+      "heading_mismatch_samples": 0
+    },
+    {
+      "dt_s": 0.0025,
+      "duration_s": 160,
+      "samples": 64001,
+      "max_yaw_rad": 6.716849298982197e-15,
+      "max_speed_rad_s": 7.225123277443402e-16,
+      "max_torque_Nm": 2.433466761431191e-10,
+      "relative_work": 1.906708956185845e-14,
+      "heading_mismatch_samples": 0
+    },
+    {
+      "dt_s": 0.00125,
+      "duration_s": 160,
+      "samples": 128001,
+      "max_yaw_rad": 3.3861802251067274e-15,
+      "max_speed_rad_s": 6.461844948013606e-16,
+      "max_torque_Nm": 2.985416358569637e-10,
+      "relative_work": 2.5541056213140858e-14,
+      "heading_mismatch_samples": 0
+    }
+  ],
+  "source_equivalent_runs": [
+    {
+      "dt_s": 0.005,
+      "duration_s": 600,
+      "samples": 120001,
+      "pto_work_J": 2499.825840939635,
+      "heading_switches": 585,
+      "heading_range_deg": [
+        -8.75,
+        10.25
+      ],
+      "bank_edge_visits": 0,
+      "raw_trace_sha256": "d63f0c6584afecb5bd6e61d29f71afb7fe41ed08f5d1b0b668bc12796d3c947a"
+    },
+    {
+      "dt_s": 0.0025,
+      "duration_s": 600,
+      "samples": 240001,
+      "pto_work_J": 2335.4385456830432,
+      "heading_switches": 561,
+      "heading_range_deg": [
+        -8.75,
+        10.25
+      ],
+      "bank_edge_visits": 0,
+      "raw_trace_sha256": "d6be2ce3b25c2e7dabe884020d268cfaf08492caafcbbd6fa4d19f8fe9d4564a"
+    },
+    {
+      "dt_s": 0.00125,
+      "duration_s": 600,
+      "samples": 480001,
+      "pto_work_J": 2350.91440217544,
+      "heading_switches": 563,
+      "heading_range_deg": [
+        -8.75,
+        10.25
+      ],
+      "bank_edge_visits": 0,
+      "raw_trace_sha256": "69d91c462fe5d260ccae3d9672c4127dab7366b96091a12d4b24b238770680e0"
+    },
+    {
+      "dt_s": 0.000625,
+      "duration_s": 600,
+      "samples": 960001,
+      "pto_work_J": 2271.8858799389545,
+      "heading_switches": 536,
+      "heading_range_deg": [
+        -8.75,
+        10.25
+      ],
+      "bank_edge_visits": 0,
+      "raw_trace_sha256": "5b995a39c71ee1b54f925224f653e52ba64ee0a687ffda45881077ca0b4d5993"
+    }
+  ],
+  "adjacent_step_comparisons": [
+    {
+      "coarse_dt_s": 0.005,
+      "fine_dt_s": 0.0025,
+      "wave_max_gap_m": 0.0,
+      "windows": {
+        "120": {
+          "yaw_rad": 0.00017167466549408705,
+          "speed_rad_s": 4.371167671043778e-05,
+          "torque_Nm": 5.2454012052526195,
+          "relative_work": 0.0002123701731911719,
+          "heading_mismatch_samples": 163
+        },
+        "140": {
+          "yaw_rad": 0.00040187527501561737,
+          "speed_rad_s": 6.863561985769344e-05,
+          "torque_Nm": 8.236274382923227,
+          "relative_work": 0.0007609834738114044,
+          "heading_mismatch_samples": 320
+        },
+        "160": {
+          "yaw_rad": 0.005133030014537077,
+          "speed_rad_s": 0.0007689468123546588,
+          "torque_Nm": 92.2736174825593,
+          "relative_work": 0.004873535567964191,
+          "heading_mismatch_samples": 2143
+        },
+        "250": {
+          "yaw_rad": 0.014699149438104131,
+          "speed_rad_s": 0.0032819116868269965,
+          "torque_Nm": 393.8294024192395,
+          "relative_work": 0.02664839316684425,
+          "heading_mismatch_samples": 17007
+        },
+        "400": {
+          "yaw_rad": 0.014699149438104131,
+          "speed_rad_s": 0.0032819116868269965,
+          "torque_Nm": 393.8294024192395,
+          "relative_work": 0.033675786503149514,
+          "heading_mismatch_samples": 38319
+        },
+        "600": {
+          "yaw_rad": 0.024024631434157562,
+          "speed_rad_s": 0.0032819116868269965,
+          "torque_Nm": 393.8294024192395,
+          "relative_work": 0.07038819135723114,
+          "heading_mismatch_samples": 73262
+        }
+      }
+    },
+    {
+      "coarse_dt_s": 0.0025,
+      "fine_dt_s": 0.00125,
+      "wave_max_gap_m": 0.0,
+      "windows": {
+        "120": {
+          "yaw_rad": 0.00012577101600540208,
+          "speed_rad_s": 2.1687641541656873e-05,
+          "torque_Nm": 2.6025169849988288,
+          "relative_work": 0.0002673080209247226,
+          "heading_mismatch_samples": 205
+        },
+        "140": {
+          "yaw_rad": 0.0004032367798535996,
+          "speed_rad_s": 6.909665316720201e-05,
+          "torque_Nm": 8.291598380064272,
+          "relative_work": 0.000916977004071537,
+          "heading_mismatch_samples": 519
+        },
+        "160": {
+          "yaw_rad": 0.004952212038880299,
+          "speed_rad_s": 0.0007363936160631433,
+          "torque_Nm": 88.36723392757744,
+          "relative_work": 0.004497706281176893,
+          "heading_mismatch_samples": 4097
+        },
+        "250": {
+          "yaw_rad": 0.014831999572531618,
+          "speed_rad_s": 0.003288321793054578,
+          "torque_Nm": 394.5986151665493,
+          "relative_work": 0.023869016431583314,
+          "heading_mismatch_samples": 34169
+        },
+        "400": {
+          "yaw_rad": 0.014831999572531618,
+          "speed_rad_s": 0.003288321793054578,
+          "torque_Nm": 394.5986151665493,
+          "relative_work": 0.006804524173748832,
+          "heading_mismatch_samples": 66782
+        },
+        "600": {
+          "yaw_rad": 0.014831999572531618,
+          "speed_rad_s": 0.003288321793054578,
+          "torque_Nm": 394.5986151665493,
+          "relative_work": 0.006582909389672415,
+          "heading_mismatch_samples": 120914
+        }
+      }
+    },
+    {
+      "coarse_dt_s": 0.00125,
+      "fine_dt_s": 0.000625,
+      "wave_max_gap_m": 0.0,
+      "windows": {
+        "120": {
+          "yaw_rad": 4.1994947670723204e-05,
+          "speed_rad_s": 6.347809542013583e-06,
+          "torque_Nm": 0.7617371450414794,
+          "relative_work": 8.114757672462287e-05,
+          "heading_mismatch_samples": 134
+        },
+        "140": {
+          "yaw_rad": 0.0001473478987744914,
+          "speed_rad_s": 2.511213070330873e-05,
+          "torque_Nm": 3.0134556843970586,
+          "relative_work": 0.00031941495647617204,
+          "heading_mismatch_samples": 360
+        },
+        "160": {
+          "yaw_rad": 0.0037104891304626797,
+          "speed_rad_s": 0.0005420070637862755,
+          "torque_Nm": 65.04084765435323,
+          "relative_work": 0.0036843915047544405,
+          "heading_mismatch_samples": 5119
+        },
+        "250": {
+          "yaw_rad": 0.020859240832816206,
+          "speed_rad_s": 0.004877746161372773,
+          "torque_Nm": 585.3295393647329,
+          "relative_work": 0.035139173484921765,
+          "heading_mismatch_samples": 64226
+        },
+        "400": {
+          "yaw_rad": 0.020859240832816206,
+          "speed_rad_s": 0.004877746161372773,
+          "torque_Nm": 585.3295393647329,
+          "relative_work": 0.03767008179387046,
+          "heading_mismatch_samples": 131150
+        },
+        "600": {
+          "yaw_rad": 0.021461351501444514,
+          "speed_rad_s": 0.004877746161372773,
+          "torque_Nm": 585.3295393647329,
+          "relative_work": 0.034785427795611376,
+          "heading_mismatch_samples": 261177
+        }
+      }
+    }
+  ],
+  "independent_physical_run": {
+    "solver": "implicit",
+    "dt_s": 0.000625,
+    "duration_s": 600,
+    "samples": 960001,
+    "pto_work_J": 2156.373612113967,
+    "heading_switches": 479,
+    "heading_range_deg": [
+      -8.75,
+      10.25
+    ],
+    "bank_edge_visits": 0,
+    "raw_trace_sha256": "905d5598cc51ffe44acfeedfd69a249d84e4ae0343478d8dbdaa0931c7135185",
+    "same_hydro_as_source_equivalent": true,
+    "uses_matlab_body_force_or_heading_history": false
+  },
+  "independent_physical_comparisons": {
+    "same_step_source_equivalent": {
+      "120": {
+        "yaw_rad": 0.00011015259323386706,
+        "speed_rad_s": 1.6478456578486282e-05,
+        "torque_Nm": 1.9774147894183898,
+        "relative_work": 0.00021379329582140957,
+        "heading_mismatch_samples": 702,
+        "physical_work_J": 1152.503161350514,
+        "source_equivalent_work_J": 1152.749611489211
+      },
+      "140": {
+        "yaw_rad": 0.000403068700197573,
+        "speed_rad_s": 6.838842257700546e-05,
+        "torque_Nm": 8.206610709240636,
+        "relative_work": 0.0008590643897641877,
+        "heading_mismatch_samples": 1922,
+        "physical_work_J": 1465.3538586072614,
+        "source_equivalent_work_J": 1466.613774274278
+      },
+      "160": {
+        "yaw_rad": 0.0018263209512668355,
+        "speed_rad_s": 0.00036245776525264885,
+        "torque_Nm": 43.49493183031785,
+        "relative_work": 0.0011265109440075402,
+        "heading_mismatch_samples": 7983,
+        "physical_work_J": 1624.9657463616943,
+        "source_equivalent_work_J": 1623.1372644696428
+      },
+      "250": {
+        "yaw_rad": 0.014441727303815793,
+        "speed_rad_s": 0.0031209713118091446,
+        "torque_Nm": 374.51655741709726,
+        "relative_work": 0.02206386922777467,
+        "heading_mismatch_samples": 108180,
+        "physical_work_J": 1931.724541675976,
+        "source_equivalent_work_J": 1890.02331442897
+      },
+      "400": {
+        "yaw_rad": 0.014441727303815793,
+        "speed_rad_s": 0.0031209713118091446,
+        "torque_Nm": 374.51655741709726,
+        "relative_work": 0.0027925651770373313,
+        "heading_mismatch_samples": 301323,
+        "physical_work_J": 2087.294639087998,
+        "source_equivalent_work_J": 2081.4819650358077
+      },
+      "600": {
+        "yaw_rad": 0.040176283993004075,
+        "speed_rad_s": 0.005110266107112896,
+        "torque_Nm": 613.2319328535476,
+        "relative_work": 0.05084422102579004,
+        "heading_mismatch_samples": 592220,
+        "physical_work_J": 2156.373612113967,
+        "source_equivalent_work_J": 2271.8858799389545
+      }
+    },
+    "published_matlab_0p01": {
+      "120": {
+        "yaw_rad": 0.00019700751603776712,
+        "speed_rad_s": 3.251289274560417e-05,
+        "torque_Nm": 3.9015471294861754,
+        "relative_work": 0.00033885197543386306,
+        "heading_mismatch_samples": 86,
+        "physical_work_J": 1152.503161350514,
+        "matlab_work_J": 1152.8938216994623
+      },
+      "140": {
+        "yaw_rad": 0.0007164278005665492,
+        "speed_rad_s": 0.00012484012823884248,
+        "torque_Nm": 14.980815388653923,
+        "relative_work": 0.001371929599572262,
+        "heading_mismatch_samples": 225,
+        "physical_work_J": 1465.3538586072614,
+        "matlab_work_J": 1467.3669828044058
+      },
+      "160": {
+        "yaw_rad": 0.0032135961672775104,
+        "speed_rad_s": 0.0005792246711169109,
+        "torque_Nm": 69.50696053402612,
+        "relative_work": 0.002196399629441831,
+        "heading_mismatch_samples": 938,
+        "physical_work_J": 1624.9657463616943,
+        "matlab_work_J": 1621.4044941316083
+      },
+      "250": {
+        "yaw_rad": 0.020824665104405476,
+        "speed_rad_s": 0.003530540372628962,
+        "torque_Nm": 423.66484471547244,
+        "relative_work": 0.012863660766331069,
+        "heading_mismatch_samples": 7061,
+        "physical_work_J": 1931.724541675976,
+        "matlab_work_J": 1907.191082573183
+      },
+      "400": {
+        "yaw_rad": 0.028645477745648518,
+        "speed_rad_s": 0.004397241466529501,
+        "torque_Nm": 527.6689759835263,
+        "relative_work": 0.05562763172878599,
+        "heading_mismatch_samples": 21155,
+        "physical_work_J": 2087.294639087998,
+        "matlab_work_J": 2210.2453536511653
+      },
+      "600": {
+        "yaw_rad": 0.08711192534950449,
+        "speed_rad_s": 0.010259012508169135,
+        "torque_Nm": 1231.0815009802761,
+        "relative_work": 0.1729748769441196,
+        "heading_mismatch_samples": 40093,
+        "physical_work_J": 2156.373612113967,
+        "matlab_work_J": 2607.385860475565
+      }
+    }
+  },
+  "physical_published_wave_max_gap_m": 2.0029811143018605e-13,
+  "physical_same_step_source_wave_max_gap_m": 0.0,
+  "physical_solver_boundary_fallback_control": {
+    "duration_s": 160,
+    "dt_s": 0.0025,
+    "frozen_heading_steps": 0,
+    "note": "instrumented pre-optimization physical run; fallback did not explain the 145 s branch split"
+  },
+  "case_promotion": false,
+  "reproduction": {
+    "runner": "tools/oswec_irregular_yaw_sweep.py",
+    "source_equivalent": "python tools/oswec_irregular_yaw_sweep.py --solver wecsim_ode4 --dt STEP --duration 600 --output TRACE.npz",
+    "physical": "python tools/oswec_irregular_yaw_sweep.py --solver implicit --dt 0.000625 --duration 600 --output TRACE.npz",
+    "source_core_commit": "0753b2e47f2457c078751dcfe5d251d1767b80ab",
+    "applications_commit": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e"
+  }
+}
