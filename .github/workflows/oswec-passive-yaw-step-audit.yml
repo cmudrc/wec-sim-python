@@ -6,6 +6,7 @@ on:
       - '.github/workflows/oswec-passive-yaw-step-audit.yml'
       - 'tests/matlab/oswec_passive_yaw_step_refinement.m'
       - 'tools/oswec_held_yaw_step_audit.py'
+      - 'tools/oswec_held_yaw_physical_run.py'
   workflow_dispatch:
 
 jobs:
@@ -47,10 +48,17 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -e .
       - run: >-
+          python tools/oswec_held_yaw_physical_run.py
+          --hydro applications/_Common_Input_Files/OSWEC/hydroData/oswec.h5
+          --seed ${{ matrix.phase_seed }}
+          --dt 0.0025
+          --output matlab-oswec-passive-yaw-refinement/seed-${{ matrix.phase_seed }}-physical-dt-0.0025.npz
+      - run: >-
           python tools/oswec_held_yaw_step_audit.py
           --source-dir matlab-oswec-passive-yaw-refinement
           --hydro applications/_Common_Input_Files/OSWEC/hydroData/oswec.h5
           --seed ${{ matrix.phase_seed }}
+          --physical matlab-oswec-passive-yaw-refinement/seed-${{ matrix.phase_seed }}-physical-dt-0.0025.npz
           --output matlab-oswec-passive-yaw-refinement/seed-${{ matrix.phase_seed }}-summary.json
       - uses: actions/upload-artifact@v4
         if: always()

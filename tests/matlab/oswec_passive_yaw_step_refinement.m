@@ -80,6 +80,9 @@ save(fullfile(outDir, filename), 'phaseSeed', 'dt', 'time', 'yaw', ...
 end
 
 function restoreInput(inputFile, original, originalFolder)
+if bdIsLoaded('OSWEC')
+    close_system('OSWEC', 0);
+end
 fid = fopen(inputFile, 'w');
 assert(fid ~= -1, 'Could not restore passive-yaw input');
 fprintf(fid, '%s', original);
