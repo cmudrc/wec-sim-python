@@ -461,6 +461,14 @@ stable control here: across seeds 1 and 3, halving its step from `0.01` to
 `0.005` s changes PTO work by at most `0.0033%` and yaw by at most
 `4.5e-5` rad, consistent with its separately paired 250 s MATLAB cases.
 
+The proposed [Applications correction](https://github.com/WEC-Sim/WEC-Sim_Applications/pull/120)
+sets both yaw thresholds to zero and rebaselines its regression from the
+archived continuous-heading source. The new full-duration gate pins that
+candidate application commit, checks MATLAB 0.01/0.005 s self-change for
+each seed, then independently advances the public physical Python path at
+0.005 s against the refined source. Its predeclared yaw, speed, PTO torque,
+wave, and work limits remain unpromoted until all three seeds pass in CI.
+
 The remaining seed-2 source refinement uses the same pinned R2025b model,
 HDF5, and phase seed with only `simu.dt` changed from `0.01` to `0.005` to
 `0.0025` s. The local published-step rerun reproduces the archived seed-2
