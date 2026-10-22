@@ -549,7 +549,9 @@ against 864.422 J from the source's full internal solver trace (0.0717%).
 The source orifice signals also reconstruct from its logged piston speed and
 published air law. The [reproduction workflow](.github/workflows/owc-orifice-corrected-source.yml)
 runs the exact source model in upstream PR #119 from a pinned fork commit and
-pairs fresh outputs with independent Python. These extra output gates do
+pairs fresh outputs with independent Python. The [full R2025b CI run](https://github.com/cmudrc/wec-sim-python/actions/runs/39865258948)
+passes, and its fresh source arrays differ from the archived baseline by less
+than `4e-11` at every saved value. These extra output gates do
 not promote the unchanged published OrificeModel input. The source correction
 is proposed in [WEC-Sim_Applications PR #119](https://github.com/WEC-Sim/WEC-Sim_Applications/pull/119).
 

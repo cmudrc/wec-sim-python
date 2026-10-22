@@ -111,6 +111,9 @@ run the exact corrected model proposed in upstream PR #119 at fork commit
 `839f80183069832a95502d205de7ed47efd0639a` and pinned WEC-Sim core on
 CI, export independently logged source output, and pair that fresh output with
 Python. The candidate model SHA-256 matches the locally run corrected model
-above. This remains a derived-model gate; the unmodified published input and
-strict badge stay qualified until the correction is maintained upstream and
-paired again.
+above. The [R2025b CI run](https://github.com/cmudrc/wec-sim-python/actions/runs/39865258948)
+completed the full 130 s simulation and the independent Python gate. Across
+all archived arrays, the maximum fresh-source difference was below `4e-11` in
+the saved units; wave and PM components matched exactly. This remains a
+derived-model gate; the unmodified published input and strict badge stay
+qualified until the correction is maintained upstream and paired again.

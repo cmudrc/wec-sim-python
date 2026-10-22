@@ -47,17 +47,34 @@ jobs:
           python-version: '3.12'
           cache: pip
       - run: python -m pip install -e . pytest
-      - name: Gate freshly generated source against independent Python motion and air outputs
+      - name: Reproduce the archived corrected source trace
         run: |
           python tools/pack_owc_orifice_corrected.py \
             owc-orifice-corrected-output \
             owc-orifice-corrected-output/fresh_source.npz
-          python -m pytest -q tests/test_owc_orifice_corrected_full.py
+          python - <<'PY'
+          from pathlib import Path
+          import numpy as np
+
+          archived = Path('tests/fixtures/matlab/owc_orifice_corrected_piston/full_source.npz')
+          fresh = Path('owc-orifice-corrected-output/fresh_source.npz')
+          with np.load(archived) as expected, np.load(fresh) as actual:
+              assert set(expected.files) == set(actual.files)
+              for name in expected.files:
+                  np.testing.assert_allclose(
+                      actual[name], expected[name], rtol=0, atol=1e-9,
+                      err_msg=name,
+                  )
+          PY
+      - name: Gate freshly generated source against independent Python motion and air outputs
+        run: python -m pytest -q tests/test_owc_orifice_corrected_full.py
         env:
           WEC_SIM_OWC_CORRECTED_SOURCE: owc-orifice-corrected-output/fresh_source.npz
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: owc-orifice-corrected-source
-          path: owc-orifice-corrected-output/*.csv
+          path: |
+            owc-orifice-corrected-output/*.csv
+            owc-orifice-corrected-output/fresh_source.npz
           if-no-files-found: ignore
