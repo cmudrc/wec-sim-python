@@ -46,7 +46,7 @@ def audit(source_dir, seed):
     }
     assert differences["time"] < 1e-10
     work_change = 100 * (fine_work / coarse_work - 1)
-    within_limits = (
+    within_limits = bool(
         differences["wave"] < LIMITS["wave_m"]
         and differences["yaw"] < LIMITS["yaw_rad"]
         and differences["yawRate"] < LIMITS["yaw_speed_rad_s"]
