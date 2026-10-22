@@ -6,6 +6,7 @@ on:
       - '.github/workflows/oswec-passive-yaw-continuous-step.yml'
       - 'tests/matlab/oswec_passive_yaw_continuous_step_refinement.m'
       - 'tools/oswec_continuous_yaw_step_audit.py'
+      - 'tests/test_oswec_continuous_yaw_refinement.py'
   workflow_dispatch:
 
 jobs:
@@ -45,13 +46,18 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - run: python -m pip install -e .
+      - run: python -m pip install -e . pytest
       - run: >-
           python tools/oswec_continuous_yaw_step_audit.py
           --source-dir matlab-oswec-passive-yaw-continuous-refinement
           --seed ${{ matrix.phase_seed }}
           --output matlab-oswec-passive-yaw-continuous-refinement/seed-${{ matrix.phase_seed }}-summary.json
           --enforce
+      - run: python -m pytest -q -s tests/test_oswec_continuous_yaw_refinement.py
+        env:
+          WEC_SIM_APPLICATIONS_DIR: applications
+          WEC_SIM_CONTINUOUS_REFINEMENT_DIR: matlab-oswec-passive-yaw-continuous-refinement
+          WEC_SIM_PHASE_SEED: ${{ matrix.phase_seed }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
