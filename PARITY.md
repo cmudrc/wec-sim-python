@@ -548,7 +548,8 @@ surge/heave speed, 0.165 mrad/s pitch speed, 0.163 mm/s piston speed,
 against 864.422 J from the source's full internal solver trace (0.0717%).
 The source orifice signals also reconstruct from its logged piston speed and
 published air law. The [reproduction workflow](.github/workflows/owc-orifice-corrected-source.yml)
-reruns the corrected source from pinned inputs. These extra output gates do
+runs the exact source model in upstream PR #119 from a pinned fork commit and
+pairs fresh outputs with independent Python. These extra output gates do
 not promote the unchanged published OrificeModel input. The source correction
 is proposed in [WEC-Sim_Applications PR #119](https://github.com/WEC-Sim/WEC-Sim_Applications/pull/119).
 

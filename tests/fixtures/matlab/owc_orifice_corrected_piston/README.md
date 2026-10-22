@@ -107,7 +107,10 @@ motion and air outputs pointwise. Its measured maximum gaps are:
 The source reconstruction and Python gates pass on the local Apple silicon
 environment. [`owc_orifice_corrected_reference.m`](../../../matlab/owc_orifice_corrected_reference.m)
 and its [MATLAB workflow](../../../../.github/workflows/owc-orifice-corrected-source.yml)
-rerun the same one-connection correction from pinned core and Applications
-revisions on CI and export independently logged source output. This remains a
-derived-model gate; the unmodified published input and strict badge stay
-qualified until the correction is maintained upstream and paired again.
+run the exact corrected model proposed in upstream PR #119 at fork commit
+`839f80183069832a95502d205de7ed47efd0639a` and pinned WEC-Sim core on
+CI, export independently logged source output, and pair that fresh output with
+Python. The candidate model SHA-256 matches the locally run corrected model
+above. This remains a derived-model gate; the unmodified published input and
+strict badge stay qualified until the correction is maintained upstream and
+paired again.

@@ -26,8 +26,9 @@ jobs:
           sparse-checkout: source
       - uses: actions/checkout@v7
         with:
-          repository: WEC-Sim/WEC-Sim_Applications
-          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          # Exact model proposed in WEC-Sim/WEC-Sim_Applications#119.
+          repository: cmccomb/WEC-Sim_Applications
+          ref: 839f80183069832a95502d205de7ed47efd0639a
           path: applications
           filter: blob:none
           lfs: true

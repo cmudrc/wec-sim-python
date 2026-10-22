@@ -1,5 +1,5 @@
 function owc_orifice_corrected_reference()
-% Re-run the pinned OWC application with only the GBM piston connection fixed.
+% Re-run the pinned corrected OWC model proposed upstream in PR #119.
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 coreRoot = fullfile(repoRoot, 'matlab-ref');
 publishedDir = fullfile(repoRoot, 'applications', 'OWC', 'OrificeModel');
@@ -28,9 +28,25 @@ assert(fid ~= -1);
 fprintf(fid, '%% Plotting disabled for the source comparison.\n');
 fclose(fid);
 
-run(fullfile(repoRoot, 'tests', 'matlab', ...
-    'owc_orifice_correct_piston_path.m'));
 addpath(genpath(fullfile(coreRoot, 'source')));
+modelFile = fullfile(caseDir, 'OWC_GBM.slx');
+load_system(modelFile);
+sub = 'OWC_GBM/Flex Body/FlexibleBody';
+sumBlock = [sub '/Piston input to GBM'];
+assert(strcmp(get_param(sumBlock, 'BlockType'), 'Sum'));
+assert(strcmp(get_param(sumBlock, 'Inputs'), '++'));
+productPorts = get_param([sub '/Product4'], 'PortHandles');
+sumPorts = get_param(sumBlock, 'PortHandles');
+expectedInputs = {[sub '/Excitation'], [sub '/Gain']};
+for i = 1:2
+    line = get_param(sumPorts.Inport(i), 'Line');
+    source = get_param(line, 'SrcBlockHandle');
+    assert(strcmp(getfullname(source), expectedInputs{i}));
+end
+line = get_param(productPorts.Inport(2), 'Line');
+source = get_param(line, 'SrcBlockHandle');
+assert(strcmp(getfullname(source), sumBlock));
+close_system('OWC_GBM', 0);
 previousDir = pwd;
 cd(caseDir);
 run('initializeWecSim');
@@ -41,7 +57,12 @@ assert(simu.endTime == 130 && simu.dt == .005 && ...
 [~, model, ~] = fileparts(simu.simMechanicsFile);
 assert(abs(str2double(get_param(model, 'MaxStep')) - .005) < 1e-12);
 set_param(model, 'MaxStep', '0.00015625');
-sim(simu.simMechanicsFile, [], simset('SrcWorkspace', 'parent'));
+try
+    sim(simu.simMechanicsFile, [], simset('SrcWorkspace', 'parent'));
+catch error
+    fprintf(2, '%s\n', getReport(error, 'extended', 'hyperlinks', 'off'));
+    rethrow(error);
+end
 run('stopWecSim');
 
 time = output.bodies(1).time(:);
