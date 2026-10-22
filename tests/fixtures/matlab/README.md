@@ -760,6 +760,36 @@ The same-bank MATLAB self-change still fails all four unchanged limits at
 160 s; the independent Python/source comparison passes, and the published
 600 s irregular case remains qualified.
 
+`oswec_yaw_160_eighth_source.npz` adds the completed local R2025b Update 7
+`dt=0.00125` s trajectory, wave, and 500 incident-sea components through
+160 s. The [evidence record](oswec_yaw_160_eighth_evidence.json) retains the
+raw CSV hashes, fixed gate-specification hash, source/application commits,
+input and runner hashes, settings, and paired measurements. The [exact modified
+source input](oswec_yaw_160_eighth_input.m.gz) and [MATLAB
+runner](oswec_yaw_160_eighth_runner.m) are archived for provenance. Relocate
+the runner's local paths and extract the input to repeat the run. All 323 generated
+OSWEC HDF5 files in the pruned-case directory are byte-identical to those in
+the quarter-step bank; a 10 s full/pruned-bank control also matched motion and
+heading exactly, and the 160 s run never selected either pruned-bank edge.
+The source sea components and common-time wave samples agree exactly with the
+quarter-step run.
+
+Under the unchanged `0.0006` rad yaw, `0.00015` rad/s speed, `20` N m PTO
+torque, and `0.1%` relative-work limits, quarter-to-eighth MATLAB self-change
+and independent physical Python-to-eighth both pass at 120 and 140 s. At
+160 s, MATLAB self-change fails with `0.004952` rad, `0.0007364` rad/s,
+`88.37` N m, and `0.4518%`; Python/eighth fails with `0.004838` rad,
+`0.0007135` rad/s, `85.62` N m, and `0.4364%`. Half-to-eighth MATLAB yaw
+differs by only `0.000181` rad and work by `0.0354%` at 160 s, so the three
+steps do not form a monotone convergence sequence. Around 145.23 s,
+quarter-step yaw exceeds the `12.875°` threshold for selecting the `-3°`
+hydrodynamic bank, while both neighboring source steps remain below it.
+Quarter step enters that bank at 144.8475 s and reverses at 145.5925 s;
+eighth step first enters it at 146.45 s. The source-only diagnostic and the
+existing independent physical `WEC.run` test check these facts in ordinary
+Python CI. This is a failed bounded stability comparison, not a published
+600 s gate; the badge is unchanged.
+
 The independent 140 s physical-default `WEC.run` comparison now runs in
 ordinary Python CI against the source-stable part of this archive. It reuses
 the 40 s BEMIO HDF5 from the [published OSWEC two-sea fixture](oswec_multi_wave/README.md).

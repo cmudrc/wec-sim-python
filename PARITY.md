@@ -1339,6 +1339,23 @@ same-bank MATLAB half-to-quarter-step changes exceed all four source
 self-change limits. The finer Python match is a bounded diagnostic against
 one source step, not a full published-case gate; the OSWEC badge is unchanged.
 
+The completed [local R2025b eighth-step audit](tests/fixtures/matlab/oswec_yaw_160_eighth_evidence.json)
+advances the same irregular sea to 160 s at `dt=0.00125` s with byte-identical
+selected HDF5 files. Quarter-to-eighth MATLAB self-change and independent
+physical Python-to-eighth both pass the unchanged four-channel limits at
+120 and 140 s, then fail all four at 160 s. MATLAB self-change reaches
+`0.004952` rad yaw and `0.4518%` PTO work; Python/eighth reaches `0.004838`
+rad and `0.4364%`. The quarter-step run alone crosses the `12.875°` yaw
+selection threshold near 145 s, enters the `-3°` heading bank at 144.8475 s,
+and reverses at 145.5925 s. Half and eighth steps remain just below that
+threshold at the local peak and first enter `-3°` around 146.45 s. Their
+160 s yaw difference is only `0.000181` rad, but the intervening quarter step
+takes a different event branch; these three refinements do not establish
+monotone source convergence. The [portable source diagnostic](tests/test_variable_yaw_eighth_source_diagnostic.py)
+and existing independent public-API test retain the observed pass/fail result.
+This narrows the heading-event mechanism but does not close the published
+600 s physical case or change any parity badge.
+
 The [RM3 MoorDyn visualization force export](https://github.com/cmudrc/wec-sim-python/actions/runs/38085085794)
 records acceleration, excitation, radiation, added mass, restoring, Morison,
 linear damping, and total hydrodynamic force at every 0.01 s step of the

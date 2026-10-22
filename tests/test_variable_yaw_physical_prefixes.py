@@ -91,3 +91,35 @@ def test_finer_physical_python_matches_160s_quarter_step_diagnostic():
     }
     for channel, error in measured.items():
         assert error < limits[channel], f"{channel}: {error:.6g} >= {limits[channel]}"
+
+    # Reuse the same independently advanced Python trajectory against the
+    # completed eighth-step MATLAB run. This neighboring source step takes a
+    # different heading branch near 145 s, so early windows pass and 160 s
+    # fails the unchanged limits. It remains a diagnostic, not a parity gate.
+    with np.load(FIXTURES / "oswec_yaw_160_eighth_source.npz",
+                 allow_pickle=False) as saved:
+        eighth = saved["eighth"]
+        eighth_wave = saved["eighth_wave"]
+    evidence = json.loads((FIXTURES / "oswec_yaw_160_eighth_evidence.json").read_text())
+    np.testing.assert_allclose(result.time, eighth[:, 0], rtol=0, atol=1e-10)
+    np.testing.assert_allclose(result.wave_elevation, eighth_wave[:, 1],
+                               rtol=0, atol=1e-12)
+    for duration, row in zip((120, 140, 160), evidence["paired_metrics"]["windows"],
+                             strict=True):
+        count = round(duration / .00125) + 1
+        reference = eighth[:count]
+        source_work = -np.trapezoid(reference[:, 6], reference[:, 0])
+        python_work = np.trapezoid(result.ptos["hinge"].absorbed_power[:count],
+                                    result.time[:count])
+        measured = {
+            "yaw_rad": np.max(np.abs(
+                result.bodies["flap"].position[:count, 5] - reference[:, 1])),
+            "yaw_speed_rad_s": np.max(np.abs(
+                result.bodies["flap"].velocity[:count, 5] - reference[:, 2])),
+            "pto_torque_Nm": np.max(np.abs(
+                result.ptos["hinge"].force[:count] - reference[:, 5])),
+            "relative_pto_work": abs(python_work - source_work) / source_work,
+        }
+        for channel, error in measured.items():
+            assert bool(error < limits[channel]) is (duration < 160)
+        assert row["independent_python_pass"] is (duration < 160)

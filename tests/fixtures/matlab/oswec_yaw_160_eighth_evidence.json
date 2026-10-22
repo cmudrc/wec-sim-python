@@ -1,0 +1,109 @@
+{
+  "source": "Local MATLAB R2025b Update 7 OSWEC variable-yaw eighth-step audit",
+  "matlab_core_commit": "0753b2e47f2457c078751dcfe5d251d1767b80ab",
+  "matlab_applications_commit": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e",
+  "python_comparator_commit": "bbbd117af4b8ff6315c2dacf636c7e73ec93758d",
+  "source_input_sha256": "4ea025fe8134951afcb233f0ca768fd723c5f30bb9dfad28133b8b12aacc9a05",
+  "source_runner_sha256": "860e6e5378fcf8d2b4ba6f3c6db7b1870094c470ee6473715afde6307889fb81",
+  "quarter_trajectory_csv_sha256": "375f9fb517f386257c5d538960630497111f4251dcca03c918c1e19f0dd05d2c",
+  "quarter_wave_csv_sha256": "77188908365176bc5992a79df125291cc32d23ef4d1d36d23ef8682e268ebcc6",
+  "gate_spec_sha256": "a50186a2ce9b7ce9a611da5c95e9a2eb312991368b7255c3ef1b486311dc94bb",
+  "source_trajectory_csv_sha256": "bdca0812134f230971e5621e76297bdaebfda0e10ceacb710f6f29386ad9d005",
+  "source_wave_csv_sha256": "9dd6c4edcbb78059d464994c2fa7d107e6f5561927ef5722c31473f04985aff2",
+  "source_components_csv_sha256": "053265841734b875d53129e3dd5de92961a43f890a6004f3c68401ae5dcdb384",
+  "source_metrics_json_sha256": "da4611d87ea3defabce4bf2b2f75ec752149a000c27c330a410b3b155983253a",
+  "eighth_fixture_sha256": "3f32ea7e6d699976aa09c67f8acf94ee77e7aac60b2faa47065b65eeee0120b0",
+  "python_comparator_trace_sha256": "949841fde3d92102a9b80e78b0f2a43df57308c65999020fb1079a27b283e771",
+  "matlab_elapsed_seconds": 22562.443867958333,
+  "settings": {
+    "source_dt_s": 0.00125,
+    "duration_s": 160,
+    "ramp_s": 100,
+    "radiation_memory_s": 40,
+    "phase_seed": 1,
+    "heading_bank_deg": [
+      -12,
+      12,
+      0.25
+    ],
+    "python_heading_bank_deg": [
+      -30,
+      30,
+      0.25
+    ]
+  },
+  "ten_second_full_bank_control": {
+    "full_elapsed_s": 1026.607384167,
+    "pruned_elapsed_s": 439.380796833,
+    "time_motion_heading_pto_max_difference": 0,
+    "max_wave_difference_m": 1.0061396160665481e-16
+  },
+  "selected_hdf5_files_byte_identical_to_quarter_bank": true,
+  "published_case_promotion": false,
+  "paired_metrics": {
+    "published_case_promotion": false,
+    "wave_source_change_m": 0.0,
+    "wave_python_gap_m": 5.1958437552457326e-14,
+    "component_change": 0.0,
+    "pruned_bank_boundary_visits": 0,
+    "windows": [
+      {
+        "duration_s": 120,
+        "source_self": {
+          "yaw_rad": 0.00012577101600359797,
+          "yaw_speed_rad_s": 2.1687641541640393e-05,
+          "pto_torque_Nm": 2.602516985002012,
+          "relative_pto_work": 0.0002672365864418852
+        },
+        "source_self_pass": true,
+        "independent_python": {
+          "yaw_rad": 0.0001206805443463993,
+          "yaw_speed_rad_s": 1.7682209246343977e-05,
+          "pto_torque_Nm": 2.1218651095186942,
+          "relative_pto_work": 0.00028244025668478715
+        },
+        "independent_python_pass": true,
+        "source_heading_mismatch_samples": 205
+      },
+      {
+        "duration_s": 140,
+        "source_self": {
+          "yaw_rad": 0.000403236779857985,
+          "yaw_speed_rad_s": 6.909665316739023e-05,
+          "pto_torque_Nm": 8.291598380078028,
+          "relative_pto_work": 0.0009161369275791765
+        },
+        "source_self_pass": true,
+        "independent_python": {
+          "yaw_rad": 0.000365338219528083,
+          "yaw_speed_rad_s": 6.209065864759035e-05,
+          "pto_torque_Nm": 7.450879037711445,
+          "relative_pto_work": 0.0009273078428501243
+        },
+        "independent_python_pass": true,
+        "source_heading_mismatch_samples": 519
+      },
+      {
+        "duration_s": 160,
+        "source_self": {
+          "yaw_rad": 0.004952212038871973,
+          "yaw_speed_rad_s": 0.0007363936160629005,
+          "pto_torque_Nm": 88.36723392755016,
+          "relative_pto_work": 0.0045180270397657
+        },
+        "source_self_pass": false,
+        "independent_python": {
+          "yaw_rad": 0.004837578929860031,
+          "yaw_speed_rad_s": 0.0007135115259416271,
+          "pto_torque_Nm": 85.62138311296553,
+          "relative_pto_work": 0.004364005901924572
+        },
+        "independent_python_pass": false,
+        "source_heading_mismatch_samples": 4097
+      }
+    ],
+    "valid_input": true,
+    "all_bounded_gates_pass": false
+  },
+  "quarter_components_csv_sha256": "053265841734b875d53129e3dd5de92961a43f890a6004f3c68401ae5dcdb384"
+}
