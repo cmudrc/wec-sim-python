@@ -5,6 +5,7 @@ trace is derived from the published application, so this is not a published
 input badge gate.
 """
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -13,7 +14,10 @@ from wecsim import OrificePTO, PMWave, WEC
 
 
 FIXTURES = Path(__file__).parent / "fixtures/matlab"
-SOURCE = FIXTURES / "owc_orifice_corrected_piston/full_source.npz"
+SOURCE = Path(os.environ.get(
+    "WEC_SIM_OWC_CORRECTED_SOURCE",
+    FIXTURES / "owc_orifice_corrected_piston/full_source.npz",
+))
 ORIGINAL = FIXTURES / "owc_orifice_corrected_piston/source.npz"
 PUBLISHED = FIXTURES / "owc_orifice_130s/source.npz"
 HYDRO = FIXTURES / "owc_orifice.h5"

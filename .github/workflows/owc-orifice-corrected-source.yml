@@ -6,6 +6,9 @@ on:
       - '.github/workflows/owc-orifice-corrected-source.yml'
       - 'tests/matlab/owc_orifice_corrected_reference.m'
       - 'tests/matlab/owc_orifice_correct_piston_path.m'
+      - 'tests/test_owc_orifice_corrected_full.py'
+      - 'tools/pack_owc_orifice_corrected.py'
+      - 'tests/fixtures/matlab/owc_orifice_corrected_piston/full_source.npz'
   workflow_dispatch:
 
 jobs:
@@ -38,6 +41,19 @@ jobs:
       - uses: matlab-actions/run-command@v3
         with:
           command: addpath('tests/matlab'); owc_orifice_corrected_reference
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -e . pytest
+      - name: Gate freshly generated source against independent Python motion and air outputs
+        run: |
+          python tools/pack_owc_orifice_corrected.py \
+            owc-orifice-corrected-output \
+            owc-orifice-corrected-output/fresh_source.npz
+          python -m pytest -q tests/test_owc_orifice_corrected_full.py
+        env:
+          WEC_SIM_OWC_CORRECTED_SOURCE: owc-orifice-corrected-output/fresh_source.npz
       - uses: actions/upload-artifact@v4
         if: always()
         with:
