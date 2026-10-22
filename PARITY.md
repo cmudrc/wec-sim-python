@@ -549,7 +549,8 @@ against 864.422 J from the source's full internal solver trace (0.0717%).
 The source orifice signals also reconstruct from its logged piston speed and
 published air law. The [reproduction workflow](.github/workflows/owc-orifice-corrected-source.yml)
 reruns the corrected source from pinned inputs. These extra output gates do
-not promote the unchanged published OrificeModel input.
+not promote the unchanged published OrificeModel input. The source correction
+is proposed in [WEC-Sim_Applications PR #119](https://github.com/WEC-Sim/WEC-Sim_Applications/pull/119).
 
 A separate [local 30 s OWC clock audit](tests/fixtures/matlab/owc_orifice_dt_30s/README.md)
 sets MATLAB `simu.dt` and `ode23t` MaxStep together to `0.005`, `0.0025`,

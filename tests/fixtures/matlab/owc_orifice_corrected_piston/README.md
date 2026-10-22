@@ -8,6 +8,8 @@ published model, [this MATLAB script](../../../matlab/owc_orifice_correct_piston
 adds the existing piston signal to the state-space force input. It leaves the
 reported acceleration route, rigid-body coupling, orifice law, HDF5, and wave
 settings alone. This is a derived physical model, not the published application.
+The corresponding correction to the maintained application is under review in
+[WEC-Sim_Applications PR #119](https://github.com/WEC-Sim/WEC-Sim_Applications/pull/119).
 
 The source checkouts are WEC-Sim `0753b2e47f2457c078751dcfe5d251d1767b80ab`
 and Applications `d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The original
