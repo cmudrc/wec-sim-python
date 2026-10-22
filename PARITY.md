@@ -847,6 +847,23 @@ separation. These local controls isolate amplification in recursive controller
 feedback from the near-identical prescribed-command plant. They do not
 identify one faulty numerical library, reproduce either hosted Linux runner,
 or close portable physical parity; the gates and badges remain unchanged.
+The reproducible [Python-only platform audit](tools/wavestar_nmpc_platform_audit.py)
+now replays the first 75 s of the same pinned source-derived stroke and torque
+requests on native macOS ARM64 and Rosetta x86-64 with NumPy 2.5.4 and SciPy
+1.18.1. The independently calculated strokes from identical saved pitch
+differ by at most `5.55e-17` m. With the preceding request fixed, active
+observer states differ by at most `3.59e-13`, AR forecasts by `5.72e-12` N m,
+and resulting requested torques by `1.80e-6` N m. The QP replay on identical
+saved estimated states and forecasts differs by at most `2.94e-5` N m in
+requested torque by 75 s. On the same fixed stroke but each controller's *own*
+preceding request, torque first separates by more than `1e-6` N m at 30.75 s
+and reaches `0.317` N m at 67.6 s; observer and forecast gaps then grow with
+that recursive input. The first unstable 10–11 s AR fit is platform-sensitive,
+but the active 15–75 s fixed-input forecast is nearly identical. This narrows
+the remaining platform question to small numerical differences in the active
+controller/QP and their amplification through request feedback; it does not
+prove a particular BLAS or optimizer defect. The published physical pointwise
+gate and badge remain unchanged.
 An independent second local R2025b process reproduced the same 225 s Mali
 body, PTO, wave, and component CSVs byte for byte, and every controller torque
 request exactly. The first run disabled only post-run plotting, while the
