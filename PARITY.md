@@ -3455,6 +3455,18 @@ CI. This isolates solver-step sensitivity over the complete duration but
 does not pair the unchanged published trajectory; `End_Stops` remains
 qualified and the RM3 badge stays 17/21.
 
+The proposed published-case correction is to change the Simulink `ode45`
+`MaxStep` setting in Applications `End_Stops/RM3.slx` from `0.1` to `0.025` s.
+Keep `simu.dt=0.1` s in `wecSimInputFile.m`, the 400 s duration, 100 s ramp,
+wave, PTO, and output grid unchanged. The
+[in-repository two-arm audit](tests/matlab/rm3_end_stops_maxstep_audit.m)
+applies exactly this single solver-setting change to a disposable case copy;
+its [pinned 400 s records](tests/fixtures/matlab/rm3_end_stops_maxstep_400s.md)
+and [independent Python gate](tests/test_rm3_end_stops_maxstep_public.py)
+show why it is the candidate remedy. An upstream published-input revision and
+a checked baseline from that revision are still needed before the corrected
+case can replace the qualified row or close the published-input parity gap.
+
 The same pinned 120 and 400 s MaxStep audit was regenerated locally with
 R2025b on macOS using disposable copies of the Applications inputs. At 400 s,
 the local published PTO CSV is byte-identical to the archived Linux run;
