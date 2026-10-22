@@ -884,7 +884,14 @@ requests at a 1 ms plant step. Through 15.2 s, its maximum pitch and speed
 gaps against the MATLAB 1 ms `ode4` source are `3.62e-6` rad and
 `2.35e-5` rad/s on both native macOS ARM64 and Rosetta x86-64. The converged
 physical-default prescribed-request pitch gap through that window is about
-`9.19e-5` rad. The source-style path changes delayed added-mass routing,
+`9.19e-5` rad. Refining only the opt-in source-style plant step to 0.5 and
+0.25 ms, while keeping the prescribed controller at 50 ms, increases its
+maximum pitch gap against the fixed 1 ms MATLAB trace to `4.49e-5` and
+`6.84e-5` rad. Those values move toward the physical-default result rather
+than toward the published-step trace. This is evidence that the 1 ms source
+trajectory contains a step-sensitive delayed-mass effect; reproducing that
+trajectory at exactly 1 ms is not a physical-convergence result. The
+source-style path changes delayed added-mass routing,
 solver tableau, and excitation evaluation together, so this probe does not
 assign the whole improvement to one detail. Combined with the physical-step
 refinement, it points to the source numerical plant path as a material early
