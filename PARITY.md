@@ -878,6 +878,27 @@ Halving and quartering the physical plant step from 1 ms through 30 s changes
 the prescribed-request pitch gap by less than `1e-12` rad. The early gap is
 therefore not explained by Python RK4 step size. The autonomous gate and badge
 remain unchanged.
+As a separate Python-only source-path probe, the opt-in delayed-added-mass
+`wecsim_ode8` solver used the same pinned split-step HDF5, sea, and prescribed
+requests at a 1 ms plant step. Through 15.2 s, its maximum pitch and speed
+gaps against the MATLAB 1 ms `ode4` source are `3.62e-6` rad and
+`2.35e-5` rad/s on both native macOS ARM64 and Rosetta x86-64. The converged
+physical-default prescribed-request pitch gap through that window is about
+`9.19e-5` rad. The source-style path changes delayed added-mass routing,
+solver tableau, and excitation evaluation together, so this probe does not
+assign the whole improvement to one detail. Combined with the physical-step
+refinement, it points to the source numerical plant path as a material early
+gap. With the same source-style path but autonomous Python NMPC, the
+`0.0005` rad pointwise pitch limit is first exceeded at 26.2 s; by 30 s,
+the pitch and request gaps reach `0.002901` rad and `0.4038` N m. The smaller
+precontrol mismatch delays but does not prevent coupled divergence. A strict
+physical-default pointwise claim needs a checked source target whose delayed
+mass handling converges to the physical mass-matrix equations, followed by a
+fresh portable autonomous gate; this diagnostic does not supply either. The
+checked 225 s controller and physical aggregate tests do pass on both
+[Linux x86](https://github.com/cmudrc/wec-sim-python/actions/runs/39864624815/job/120123892763)
+and [macOS ARM64](https://github.com/cmudrc/wec-sim-python/actions/runs/39864624815/job/120123892787)
+CI runners, while the pointwise gate remains failing.
 An independent second local R2025b process reproduced the same 225 s Mali
 body, PTO, wave, and component CSVs byte for byte, and every controller torque
 request exactly. The first run disabled only post-run plotting, while the
