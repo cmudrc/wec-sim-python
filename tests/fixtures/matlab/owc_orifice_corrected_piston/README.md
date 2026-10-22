@@ -74,3 +74,38 @@ is 0.155. That flag does not switch force laws. The one-connection edit
 removes the large physical-path discrepancy; it does **not** establish parity
 with the original published Simulink model. `OWC/OrificeModel` remains
 `qualified_motion`, and strict badge counts do not change.
+
+## Full corrected-model output gate
+
+The original finer-arm CSVs above were packed with
+[`tools/pack_owc_orifice_corrected.py`](../../../../tools/pack_owc_orifice_corrected.py)
+into [`full_source.npz`](full_source.npz) (SHA-256
+`aecd4eea595a24f3450a637600871b6de4b8b7e3fe100c2362a2e433ea906c9e`).
+The archive retains all 26,001 output-grid body positions and velocities,
+flexible outputs, source piston/orifice force, pressure, flow, power, wave,
+and PM components. The orifice outputs were interpolated from the original
+832,001 strictly increasing internal samples onto the unchanged 0.005 s grid;
+the source work and maximum Mach number were calculated from the full internal
+record. The unchanged 130 s source work is 864.422 J and maximum Mach is
+0.1550, below the configured 0.3 warning threshold.
+
+The [full-output gate](../../../test_owc_orifice_corrected_full.py) independently
+advances the public Python physical model from the pinned HDF5 and wave phases.
+It first checks the exported source orifice signals against the separately
+saved source piston speed and the published air law, then compares Python
+motion and air outputs pointwise. Its measured maximum gaps are:
+
+| Quantity | Maximum Python/source gap | Declared limit |
+| --- | ---: | ---: |
+| Surge, heave, pitch, flexible displacement | 2.246 mm, 0.116 mm, 0.359 mrad, 0.022 mm | 20 mm, 10 mm, 1 mrad, 2 mm |
+| Surge, heave, pitch, piston speed | 0.357 mm/s, 0.245 mm/s, 0.165 mrad/s, 0.163 mm/s | 20 mm/s, 20 mm/s, 2 mrad/s, 5 mm/s |
+| PTO force, air pressure, flow, PTO power | 0.450 N, 0.00229 kPa, 0.0000320 m³/s, 0.0000405 kW | 3% of source peak for force, pressure, flow; 4% for power |
+| Integrated PTO work | 0.619 J, 0.0717% | 1% |
+
+The source reconstruction and Python gates pass on the local Apple silicon
+environment. [`owc_orifice_corrected_reference.m`](../../../matlab/owc_orifice_corrected_reference.m)
+and its [MATLAB workflow](../../../../.github/workflows/owc-orifice-corrected-source.yml)
+rerun the same one-connection correction from pinned core and Applications
+revisions on CI and export independently logged source output. This remains a
+derived-model gate; the unmodified published input and strict badge stay
+qualified until the correction is maintained upstream and paired again.

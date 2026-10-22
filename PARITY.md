@@ -539,6 +539,18 @@ reaches Mach 1.113. This establishes full-duration physical-path agreement
 against an explicitly **derived** model correction; the unmodified published
 application remains qualified, and badge counts stay unchanged.
 
+The original finer corrected-model source logs now also provide a
+[full-output physical gate](tests/test_owc_orifice_corrected_full.py). Its
+pointwise 130 s maximum Python/source differences are 0.357/0.245 mm/s in
+surge/heave speed, 0.165 mrad/s pitch speed, 0.163 mm/s piston speed,
+0.450 N PTO force, 0.00229 kPa pressure, 0.0000320 m³/s flow, and
+0.0000405 kW PTO power. Independently integrated Python PTO work is 865.042 J
+against 864.422 J from the source's full internal solver trace (0.0717%).
+The source orifice signals also reconstruct from its logged piston speed and
+published air law. The [reproduction workflow](.github/workflows/owc-orifice-corrected-source.yml)
+reruns the corrected source from pinned inputs. These extra output gates do
+not promote the unchanged published OrificeModel input.
+
 A separate [local 30 s OWC clock audit](tests/fixtures/matlab/owc_orifice_dt_30s/README.md)
 sets MATLAB `simu.dt` and `ode23t` MaxStep together to `0.005`, `0.0025`,
 and `0.00125` s. The first arm is the archived published-clock prefix; all
