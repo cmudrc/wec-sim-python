@@ -47,17 +47,27 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e . pytest
-      - run: >-
+      - id: source_gate
+        continue-on-error: true
+        run: >-
           python tools/oswec_continuous_yaw_step_audit.py
           --source-dir matlab-oswec-passive-yaw-continuous-refinement
           --seed ${{ matrix.phase_seed }}
           --output matlab-oswec-passive-yaw-continuous-refinement/seed-${{ matrix.phase_seed }}-summary.json
           --enforce
-      - run: python -m pytest -q -s tests/test_oswec_continuous_yaw_refinement.py
+      - id: physical_gate
+        continue-on-error: true
+        run: python -m pytest -q -s tests/test_oswec_continuous_yaw_refinement.py
         env:
           WEC_SIM_APPLICATIONS_DIR: applications
           WEC_SIM_CONTINUOUS_REFINEMENT_DIR: matlab-oswec-passive-yaw-continuous-refinement
           WEC_SIM_PHASE_SEED: ${{ matrix.phase_seed }}
+      - name: Require both source stability and physical parity
+        if: always()
+        env:
+          SOURCE_GATE: ${{ steps.source_gate.outcome }}
+          PHYSICAL_GATE: ${{ steps.physical_gate.outcome }}
+        run: test "$SOURCE_GATE" = success && test "$PHYSICAL_GATE" = success
       - uses: actions/upload-artifact@v4
         if: always()
         with:
