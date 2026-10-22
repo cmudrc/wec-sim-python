@@ -1,6 +1,7 @@
 function oswec_passive_yaw_step_refinement(phaseSeed)
 % Audit the published held-heading model's sensitivity to fixed time step.
-assert(ismember(phaseSeed, [1, 3]), 'Expected published or third audit seed');
+assert(ismember(phaseSeed, [1, 2, 3]), 'Expected published phase seed');
+originalFolder = pwd;
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 addpath(genpath(fullfile(repoRoot, 'matlab-ref', 'source')));
 hydroDir = fullfile(repoRoot, 'applications', '_Common_Input_Files', ...
@@ -19,12 +20,14 @@ assert(contains(original, 'simu.dt = 0.01;') && ...
     contains(original, 'body(1).yaw.threshold = 1;') && ...
     contains(original, 'body(2).yaw.threshold = 1;'), ...
     'Pinned passive-yaw case input changed');
+restore = onCleanup(@() restoreInput(inputFile, original, originalFolder));
 outDir = fullfile(repoRoot, 'matlab-oswec-passive-yaw-refinement');
 mkdir(outDir);
 steps = [0.01, 0.005, 0.0025];
 for dt = steps
     runOneStep(caseDir, inputFile, original, outDir, phaseSeed, dt);
 end
+
 for pair = 1:(numel(steps) - 1)
     coarse = load(fullfile(outDir, ...
         sprintf('seed-%d-dt-%g.mat', phaseSeed, steps(pair))));
@@ -74,4 +77,12 @@ assert(numel(time) == round(250 / dt) + 1 && ...
 filename = sprintf('seed-%d-dt-%g.mat', phaseSeed, dt);
 save(fullfile(outDir, filename), 'phaseSeed', 'dt', 'time', 'yaw', ...
     'yawRate', 'ptoPower', 'ptoForce', 'wave', 'work', '-v7');
+end
+
+function restoreInput(inputFile, original, originalFolder)
+fid = fopen(inputFile, 'w');
+assert(fid ~= -1, 'Could not restore passive-yaw input');
+fprintf(fid, '%s', original);
+fclose(fid);
+cd(originalFolder);
 end
