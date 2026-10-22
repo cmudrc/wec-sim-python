@@ -1,0 +1,80 @@
+{
+  "case": "OSWEC Variable_Hydro/Passive_Yaw irregular PM, 600 s, 0.005 s step",
+  "scope": "Local matched-solver initial-yaw sensitivity diagnostic. Continuous heading is a derived model, not WEC-Sim published input or a MATLAB parity gate.",
+  "issue": "https://github.com/cmudrc/wec-sim-python/issues/621",
+  "initial_yaw_perturbation_rad": 1e-07,
+  "unchanged_yaw_gate_rad": 0.0006,
+  "published_heading_bank_deg": "-30:0.25:30",
+  "hydro_sha256": "b9ccf3a32e0893c23b1645c15a2baef4a0c6f678b90d177d5797e3c65de4b7d3",
+  "environment": {
+    "python": "3.12.7",
+    "numpy": "2.5.4"
+  },
+  "direct_matlab_scope": "The published nearest-bank ode4 implementation has been checked against direct MATLAB through 250 s at this step. The derived continuous-heading variant has no direct MATLAB counterpart.",
+  "pairs": {
+    "nearest_bank_ode4": {
+      "solver": "wecsim_ode4",
+      "heading_model": "nearest",
+      "baseline_pto_work_J": 2499.825840939635,
+      "perturbed_pto_work_J": 2112.530636719248,
+      "relative_full_pto_work_change": 0.15492887459504395,
+      "max_yaw_gap_rad": 0.05103985859112778,
+      "max_speed_gap_rad_s": 0.006710695630106813,
+      "first_yaw_gate_breach_s": 136.065,
+      "heading_mismatch_samples": 79318,
+      "first_heading_mismatch_s": 68.33
+    },
+    "nearest_bank_implicit": {
+      "solver": "implicit",
+      "heading_model": "nearest",
+      "baseline_pto_work_J": 2408.0619701794517,
+      "perturbed_pto_work_J": 2098.7107708868507,
+      "relative_full_pto_work_change": 0.1284647999609195,
+      "max_yaw_gap_rad": 0.07916756310629541,
+      "max_speed_gap_rad_s": 0.009617260314008242,
+      "first_yaw_gate_breach_s": 184.385,
+      "heading_mismatch_samples": 75672,
+      "first_heading_mismatch_s": 86.08
+    },
+    "continuous_heading_ode4": {
+      "solver": "wecsim_ode4",
+      "heading_model": "continuous-unrotated",
+      "baseline_pto_work_J": 2211.283989938458,
+      "perturbed_pto_work_J": 2211.280697880219,
+      "relative_full_pto_work_change": 1.4887541599774585e-06,
+      "max_yaw_gap_rad": 1.4617492179484423e-07,
+      "max_speed_gap_rad_s": 2.339145594928982e-08,
+      "first_yaw_gate_breach_s": null,
+      "heading_mismatch_samples": null,
+      "first_heading_mismatch_s": null
+    },
+    "continuous_heading_implicit": {
+      "solver": "implicit",
+      "heading_model": "continuous-unrotated",
+      "baseline_pto_work_J": 2211.1752547712294,
+      "perturbed_pto_work_J": 2211.1719631437873,
+      "relative_full_pto_work_change": 1.4886325428490638e-06,
+      "max_yaw_gap_rad": 1.4614432523613746e-07,
+      "max_speed_gap_rad_s": 2.3386354873478066e-08,
+      "first_yaw_gate_breach_s": null,
+      "heading_mismatch_samples": null,
+      "first_heading_mismatch_s": null
+    }
+  },
+  "reproduction": {
+    "runner": "tools/oswec_irregular_yaw_sweep.py",
+    "nearest_example": "python tools/oswec_irregular_yaw_sweep.py --solver wecsim_ode4 --dt 0.005 --duration 600 --initial-yaw 1e-7 --output TRACE.npz",
+    "continuous_example": "python tools/oswec_irregular_yaw_sweep.py --solver wecsim_ode4 --dt 0.005 --duration 600 --initial-yaw 1e-7 --heading-model continuous-unrotated --output TRACE.npz",
+    "repeat_with_initial_yaw_zero": true
+  },
+  "case_promotion": false,
+  "derived_continuous_source_equivalent_vs_physical": {
+    "same_dt_s": 0.005,
+    "duration_s": 600,
+    "max_yaw_gap_rad": 1.2475254553723225e-05,
+    "max_speed_gap_rad_s": 1.922037607449828e-06,
+    "max_pto_torque_gap_Nm": 0.23064451289383214,
+    "relative_pto_work_gap": 4.917286414741051e-05,
+    "interpretation": "Numerical cross-solver control for a changed heading law; not a direct MATLAB or published-case parity gate."
+  }
+}
