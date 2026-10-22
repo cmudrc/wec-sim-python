@@ -1,0 +1,60 @@
+name: OWC R2023b refined source artifact
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/owc-orifice-r2023b-source-artifact.yml'
+
+jobs:
+  export:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          sparse-checkout: OWC/OrificeModel
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2023b
+          products: Simulink Simscape Simscape_Multibody Signal_Processing_Toolbox Control_System_Toolbox
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            coreRoot=fullfile(pwd,'matlab-ref');
+            caseDir=fullfile(pwd,'owc-orifice-r2023b-case');
+            [copied,message]=copyfile(fullfile(pwd,'applications','OWC','OrificeModel'),caseDir);
+            assert(copied,message);
+            run('tests/matlab/owc_orifice_correct_piston_path.m');
+            load_system(fullfile(caseDir,'OWC_GBM.slx'));
+            assert(abs(str2double(get_param('OWC_GBM','MaxStep'))-.005)<1e-12);
+            set_param('OWC_GBM','MaxStep','0.00015625');
+            save_system('OWC_GBM',fullfile(caseDir,'OWC_GBM.slx'));
+            close_system('OWC_GBM',0)
+      - name: Verify original release metadata
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          model = Path('owc-orifice-r2023b-case/OWC_GBM.slx')
+          with ZipFile(model) as archive:
+              properties = archive.read('metadata/coreProperties.xml')
+          assert b'R2023b' in properties, properties
+          print(f'{model}: R2023b model saved')
+          PY
+          sha256sum owc-orifice-r2023b-case/OWC_GBM.slx
+      - uses: actions/upload-artifact@v4
+        with:
+          name: owc-orifice-r2023b-refined-model
+          path: owc-orifice-r2023b-case/OWC_GBM.slx
