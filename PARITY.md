@@ -1233,6 +1233,20 @@ run or a MATLAB baseline, so it does not close the physical parity gate or
 change the badge count. The local
 [runner](tools/oswec_irregular_yaw_sweep.py) reproduces both heading laws.
 
+A [direct local R2025b 80 s perturbation](tests/fixtures/matlab/oswec_yaw_80_initial_perturb_evidence.json)
+then changed only the published selected-bank input's duration to 80 s,
+step to 0.005 s, and initial flap yaw to `1e-7` rad. Relative to the
+existing zero-yaw MATLAB run, its first heading mismatch is exactly
+68.33 s, with seven mismatched saved samples and a maximum 80 s yaw gap
+of `1.408e-5` rad. The independent public `WEC.run(solver="wecsim_ode4")`
+trajectory from the same HDF5 and seed matches the new direct MATLAB yaw
+within `1.20e-15` rad and every selected heading. The
+[compact source fixture](tests/fixtures/matlab/oswec_yaw_80_initial_perturb_source.npz),
+[exact input](tests/fixtures/matlab/oswec_yaw_80_initial_perturb_input.m.gz),
+and [regression test](tests/test_variable_yaw_initial_sensitivity.py)
+lock this branch split. This is bounded source evidence; it does not
+establish a 600 s physical parity gate.
+
 ![OSWEC irregular yaw sensitivity to a tiny initial perturbation](docs/figures/oswec-variable-yaw-sensitivity-600.png)
 
 The [earlier published-step gap plot](docs/figures/oswec-variable-yaw-step-gap.png)

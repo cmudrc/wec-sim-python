@@ -1,0 +1,20 @@
+{
+  "case": "Variable_Hydro/Passive_Yaw irregular PM 80 s initial-yaw perturbation",
+  "scope": "Direct local R2025b published selected-heading source probe, with endTime=80 s, dt=0.005 s, and body(1).initial.angle=1e-7 rad around world z; this is a bounded source diagnostic, not a 600 s physical parity gate.",
+  "source_core_commit": "0753b2e47f2457c078751dcfe5d251d1767b80ab",
+  "applications_commit": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e",
+  "simulink_model_sha256": "80eb2552f2cd36c96c6dc362d8a08878e9ada505a8b8437feaa574d616642099",
+  "heading_selector_sha256": "38dfb3b2b859f684ebc2734de3e9f03e85bc9ba939a2e412bdefd0ad1990782d",
+  "hydro_generation": "The pinned BEMIO script generated only the 0.25-degree headings selected by this input; the skipped 0.05-degree files are unused. The selected coefficients match the published generator.",
+  "input_sha256": "4bf951d6fd9320736ff7b56bf8de7e051e0177d2876f7127cf5ef3958b30ab4b",
+  "raw_trajectory_csv_sha256": "77b774bdabeadb21657dcf0355af485c0b1e0ae0cd74f5096b641358f6ad4e95",
+  "raw_wave_csv_sha256": "9c93006228c148a540fcf4a8f13d2b9bb7e74da94cc2504bbcb761770e90c11f",
+  "samples": 16001,
+  "first_heading_mismatch_s": 68.33,
+  "heading_mismatch_samples": 7,
+  "max_source_self_yaw_gap_rad": 1.408068532599005e-05,
+  "max_source_self_speed_gap_rad_s": 2.9609891492605317e-06,
+  "source_baseline_pto_work_J": 533.6496367982834,
+  "source_perturbed_pto_work_J": 533.6123228885592,
+  "published_case_promotion": false
+}
