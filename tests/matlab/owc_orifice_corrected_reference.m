@@ -59,7 +59,9 @@ assert(simu.endTime == 130 && simu.dt == .005 && ...
 assert(abs(str2double(get_param(model, 'MaxStep')) - .005) < 1e-12);
 set_param(model, 'MaxStep', '0.00015625');
 try
-    sim(simu.simMechanicsFile, [], simset('SrcWorkspace', 'parent'));
+    % matlab-actions runs this script in the base workspace; the model's
+    % masked blocks resolve the initialized body and variant values there.
+    sim(simu.simMechanicsFile);
 catch error
     fprintf(2, '%s\n', getReport(error, 'extended', 'hyperlinks', 'off'));
     rethrow(error);
