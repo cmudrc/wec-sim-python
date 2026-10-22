@@ -3388,6 +3388,19 @@ The PTO is inside its stroke limits then. This narrows the remaining schedule
 gap to adaptive step selection, without establishing a full published-motion
 gate or changing the RM3 badge.
 
+A bounded Python [step-growth diagnostic](tests/test_rm3_end_stops_source_timing.py)
+replays only the archived accepted times through 121 s and recomputes the
+source-state error estimate at the partial step from 120.56391 to 120.6 s.
+Its 0.8 × error^(-1/5) growth rule predicts the source's next 0.08355556 s
+interval to within 1e-5 s; that interval produces the extra 120.68356 s
+accepted step. The independently selected Python interval after 120.6 s is
+0.09111451 s, which its 10% target-stretch rule rounds to 0.1 s. With source
+times prescribed, Python's 121 s PTO stroke and speed differ from the archived
+source by under 0.1 µm and 0.03 µm/s, respectively. Thus the local branch is
+explained by earlier state and accepted-step drift feeding the same adaptive
+growth rule, rather than a force-law mismatch or a rejected trial at 120.6 s.
+This prescribed-time diagnostic does not promote the published case.
+
 Over the full 400 s, the two refined MATLAB runs differ by at most 2.79 mm
 PTO stroke, 18.8 mm/s PTO speed, and 242.4 kN PTO force. Their ordinary
 damper energies are 55.062 and 54.823 MJ, a 0.437% difference. Neither
@@ -3441,6 +3454,18 @@ preserves the derived source and independent Python comparison in ordinary
 CI. This isolates solver-step sensitivity over the complete duration but
 does not pair the unchanged published trajectory; `End_Stops` remains
 qualified and the RM3 badge stays 17/21.
+
+The proposed published-case correction is to change the Simulink `ode45`
+`MaxStep` setting in Applications `End_Stops/RM3.slx` from `0.1` to `0.025` s.
+Keep `simu.dt=0.1` s in `wecSimInputFile.m`, the 400 s duration, 100 s ramp,
+wave, PTO, and output grid unchanged. The
+[in-repository two-arm audit](tests/matlab/rm3_end_stops_maxstep_audit.m)
+applies exactly this single solver-setting change to a disposable case copy;
+its [pinned 400 s records](tests/fixtures/matlab/rm3_end_stops_maxstep_400s.md)
+and [independent Python gate](tests/test_rm3_end_stops_maxstep_public.py)
+show why it is the candidate remedy. An upstream published-input revision and
+a checked baseline from that revision are still needed before the corrected
+case can replace the qualified row or close the published-input parity gap.
 
 The same pinned 120 and 400 s MaxStep audit was regenerated locally with
 R2025b on macOS using disposable copies of the Applications inputs. At 400 s,
