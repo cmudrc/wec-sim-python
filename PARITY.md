@@ -1224,9 +1224,13 @@ perturbation changes full-run work by just 0.000149% and yaw by at most
 `1.46e-7` rad in either solver. The derived source-equivalent and physical
 600 s runs also agree within `1.25e-5` rad yaw, 0.231 N m PTO torque, and
 0.00492% PTO work at the same step. This strongly implicates the discrete
-heading law in the published case's sensitivity. The continuous-heading
-control is **not** a published WEC-Sim run or a MATLAB baseline, so it does
-not close the physical parity gate or change the badge count. The local
+heading law in the published case's sensitivity. The derived model's own
+0.01-to-0.005 s full-run step change passes all four unchanged limits in
+both solvers: maximum yaw changes are `3.21e-5` and `6.80e-5` rad, while
+PTO work changes by 0.0121% and 0.0260% for `ode4` and implicit,
+respectively. The continuous-heading control is **not** a published WEC-Sim
+run or a MATLAB baseline, so it does not close the physical parity gate or
+change the badge count. The local
 [runner](tools/oswec_irregular_yaw_sweep.py) reproduces both heading laws.
 
 ![OSWEC irregular yaw sensitivity to a tiny initial perturbation](docs/figures/oswec-variable-yaw-sensitivity-600.png)

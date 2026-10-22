@@ -76,5 +76,27 @@
     "max_pto_torque_gap_Nm": 0.23064451289383214,
     "relative_pto_work_gap": 4.917286414741051e-05,
     "interpretation": "Numerical cross-solver control for a changed heading law; not a direct MATLAB or published-case parity gate."
+  },
+  "derived_continuous_step_refinement": {
+    "wecsim_ode4": {
+      "coarse_dt_s": 0.01,
+      "fine_dt_s": 0.005,
+      "duration_s": 600,
+      "max_yaw_gap_rad": 3.212698931615021e-05,
+      "max_speed_gap_rad_s": 4.8538660366425485e-06,
+      "max_pto_torque_gap_Nm": 0.5824639243971887,
+      "relative_pto_work_gap": 0.00012095049893914144,
+      "interpretation": "Derived model step change only; no direct MATLAB or published-case parity claim."
+    },
+    "implicit": {
+      "coarse_dt_s": 0.01,
+      "fine_dt_s": 0.005,
+      "duration_s": 600,
+      "max_yaw_gap_rad": 6.799634909063212e-05,
+      "max_speed_gap_rad_s": 1.0251690209227629e-05,
+      "max_pto_torque_gap_Nm": 1.2302028251071988,
+      "relative_pto_work_gap": 0.00026022468700091263,
+      "interpretation": "Derived model step change only; no direct MATLAB or published-case parity claim."
+    }
   }
 }
