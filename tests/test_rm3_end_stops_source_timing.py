@@ -10,6 +10,7 @@ import numpy as np
 
 from wecsim import LinearHardStops, RegularWave, WEC
 from wecsim.dynamics.rm3Regular import solve_rm3_regular
+from wecsim.dynamics import sourceRegularOde45
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -94,6 +95,54 @@ def test_independently_selected_source_state_steps_through_120_seconds():
         matlab_work = np.trapezoid(1_200_000 * source["pto"][:length, 1]**2,
                                    source["time"][:length])
         assert abs(python_work - matlab_work) / matlab_work < 1e-5
+
+
+def test_archived_step_schedule_predicts_the_120p68356_branch(monkeypatch):
+    """Check the adaptive growth rule on a bounded source-timing replay.
+
+    The source step times enter this diagnostic run, so it does not establish
+    independently selected published-case parity.
+    """
+    with np.load(FIXTURES / "rm3_end_stops_internal_steps.npz") as steps:
+        major_times = steps["internal_times"]
+    major_times = major_times[major_times <= 121 + 1e-9]
+    at_120p6 = int(np.searchsorted(major_times, 120.6))
+    assert abs(major_times[at_120p6] - 120.6) < 1e-10
+    prior_time = major_times[at_120p6 - 1]
+    next_interval = major_times[at_120p6 + 1] - major_times[at_120p6]
+    assert .08 < next_interval < .09
+
+    trials = []
+
+    class RecordingPrescribedRK45(sourceRegularOde45._SourceRK45):
+        def _estimate_error_norm(self, K, h, scale):
+            error = super()._estimate_error_norm(K, h, scale)
+            if 120.5 <= self.t <= 120.7:
+                trials.append((float(self.t), float(h), error))
+            # Only the archived times select steps in this diagnostic.
+            return 0.0
+
+    monkeypatch.setattr(sourceRegularOde45, "_PrescribedRK45",
+                        RecordingPrescribedRK45)
+    result = _solve(121, major_times=major_times)
+    with np.load(FIXTURES / "rm3_end_stops_published_full.npz") as source:
+        at_121 = 1210
+        _maximum(result.pto_stroke[at_121], source["pto"][at_121, 0],
+                 1e-5, "121 s prescribed-step stroke")
+        _maximum(result.pto_velocity[at_121], source["pto"][at_121, 1],
+                 1e-4, "121 s prescribed-step speed")
+        _maximum(result.pto_force[at_121], source["pto"][at_121, 2],
+                 20, "121 s prescribed-step force")
+
+    preceding = [(h, error) for t, h, error in trials
+                 if abs(t - prior_time) < 1e-9]
+    assert len(preceding) == 1
+    h, error = preceding[0]
+    assert 0 < error < 1  # This partial step did not need trial rejection.
+    # Source-style ode45 grows an accepted step by 0.8 * error**(-1/5).
+    predicted_interval = h * .8 * error ** (-.2)
+    assert abs(predicted_interval - next_interval) < 1e-5
+    assert 1.1 * predicted_interval < .1  # The next step stays off-grid.
 
 
 def test_public_wec_run_pairs_published_end_stops_through_120_seconds():
