@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np
 
 from wecsim import PMWave, WEC, WorldPoint
+from wecsim.hydrodynamics.passiveYaw import NearestSampledHeadingExcitation
 
 
 HYDRO = (Path(__file__).resolve().parents[1] / "tests/fixtures/matlab/"
@@ -27,12 +28,17 @@ def main():
                         required=True)
     parser.add_argument("--dt", type=float, required=True)
     parser.add_argument("--duration", type=float, default=600)
+    parser.add_argument("--initial-yaw", type=float, default=0,
+                        help="Initial flap yaw in radians; for sensitivity diagnostics")
+    parser.add_argument("--heading-model", choices=("nearest", "continuous-unrotated"),
+                        default="nearest",
+                        help="Continuous mode is a derived diagnostic, not the published case")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if (not np.isfinite(args.dt) or args.dt <= 0
-            or not np.isfinite(args.duration) or args.duration <= 0):
-        parser.error("dt and duration must be positive and finite")
-
+            or not np.isfinite(args.duration) or args.duration <= 0
+            or not np.isfinite(args.initial_yaw)):
+        parser.error("dt and duration must be positive and finite; initial yaw must be finite")
     wec = WEC("OSWEC irregular selected-heading refinement")
     flap = wec.body("flap", HYDRO, mass=12_700, inertia=(1.85e6,) * 3,
                     passive_yaw=True, yaw_heading_bank=HEADING_BANK)
@@ -41,20 +47,36 @@ def main():
         "yaw", pivot=WorldPoint(0, 0, -8.9),
     ))
     wec.rotational_pto("hinge", yaw, damping=120_000)
-    result = wec.run(
-        PMWave(2.5, 8, direction=10, seed=1, phase_generator="matlab"),
-        dt=args.dt, end_time=args.duration, ramp_time=100,
-        radiation_memory=40, solver=args.solver,
-    )
+    original_heading = NearestSampledHeadingExcitation.heading
+    if args.heading_model == "continuous-unrotated":
+        # Keep the published model's unrotated force frame, but interpolate
+        # its BEM coefficients continuously instead of selecting a bank entry.
+        # Only the heading-selection law changes, for this one-process audit.
+        def continuous_heading(model, yaw):
+            return float(model.model.incident_directions[0] - np.degrees(yaw))
+
+        NearestSampledHeadingExcitation.heading = continuous_heading
+    try:
+        result = wec.run(
+            PMWave(2.5, 8, direction=10, seed=1, phase_generator="matlab"),
+            dt=args.dt, end_time=args.duration, ramp_time=100,
+            radiation_memory=40, solver=args.solver,
+            initial_coordinate={"yaw": args.initial_yaw},
+        )
+    finally:
+        NearestSampledHeadingExcitation.heading = original_heading
     angle = result.bodies["flap"].position[:, 5]
     relative = 10 - np.degrees(angle)
-    right = np.clip(np.searchsorted(HEADING_BANK, relative),
-                    0, len(HEADING_BANK) - 1)
-    left = np.maximum(right - 1, 0)
-    # A tie selects the lower bank entry, as the source's first min index does.
-    nearest = np.where(np.abs(HEADING_BANK[right] - relative)
-                       < np.abs(HEADING_BANK[left] - relative), right, left)
-    heading = HEADING_BANK[nearest]
+    if args.heading_model == "nearest":
+        right = np.clip(np.searchsorted(HEADING_BANK, relative),
+                        0, len(HEADING_BANK) - 1)
+        left = np.maximum(right - 1, 0)
+        # A tie selects the lower bank entry, as the source's first min index does.
+        nearest = np.where(np.abs(HEADING_BANK[right] - relative)
+                           < np.abs(HEADING_BANK[left] - relative), right, left)
+        heading = HEADING_BANK[nearest]
+    else:
+        heading = relative
     pto = result.ptos["hinge"]
     args.output.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
@@ -66,8 +88,10 @@ def main():
     print(json.dumps({
         "output": str(args.output), "solver": args.solver,
         "dt_s": args.dt, "duration_s": args.duration,
+        "initial_yaw_rad": args.initial_yaw, "heading_model": args.heading_model,
         "samples": len(result.time),
-        "heading_switches": int(np.count_nonzero(np.diff(heading))),
+        "heading_switches": (int(np.count_nonzero(np.diff(heading)))
+                             if args.heading_model == "nearest" else None),
         "pto_work_J": float(np.trapezoid(pto.absorbed_power, result.time)),
         "hydro_sha256": hashlib.sha256(HYDRO.read_bytes()).hexdigest(),
     }))
