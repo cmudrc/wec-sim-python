@@ -41,7 +41,7 @@ jobs:
           products: Simulink Simscape Simscape_Multibody Signal_Processing_Toolbox Control_System_Toolbox
       - uses: matlab-actions/run-command@v3
         with:
-          command: addpath('tests/matlab'); owc_orifice_corrected_reference
+          command: run('tests/matlab/owc_orifice_corrected_reference.m')
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'

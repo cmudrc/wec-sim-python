@@ -1,5 +1,6 @@
-function owc_orifice_corrected_reference()
 % Re-run the pinned corrected OWC model proposed upstream in PR #119.
+% Run as a script so Simulink mask and variant initialization can resolve the
+% WEC-Sim variables in the same workspace as initializeWecSim.
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 coreRoot = fullfile(repoRoot, 'matlab-ref');
 publishedDir = fullfile(repoRoot, 'applications', 'OWC', 'OrificeModel');
@@ -93,4 +94,3 @@ writematrix([trapz(orificeData.time(:), ...
     fullfile(outputDir, 'summary.csv'));
 close_system(model, 0);
 cd(previousDir);
-end
