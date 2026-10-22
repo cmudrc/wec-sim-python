@@ -864,6 +864,20 @@ the remaining platform question to small numerical differences in the active
 controller/QP and their amplification through request feedback; it does not
 prove a particular BLAS or optimizer defect. The published physical pointwise
 gate and badge remain unchanged.
+On the derived 1 ms split-step source, the new ordinary-CI
+[controller replay](tests/test_wavestar_split_step_portable.py) supplies the
+saved 225 s stroke and preceding request to Python's observer, AR predictor,
+and QP. Its requested torque differs by at most `0.001691` N m (RMS
+`4.70e-5` N m), within the existing `0.01` N m peak and `0.0003` N m RMS
+component limits. In a bounded 75 s diagnostic from the same HDF5 and sea,
+independent physical Python first exceeds the `0.0005` rad pointwise pitch
+limit at 17.55 s, shortly after NMPC activation. Giving the physical Python
+plant only the saved source requests keeps its 75 s pitch gap below
+`0.000243` rad; this remains a component control, not autonomous parity.
+Halving and quartering the physical plant step from 1 ms through 30 s changes
+the prescribed-request pitch gap by less than `1e-12` rad. The early gap is
+therefore not explained by Python RK4 step size. The autonomous gate and badge
+remain unchanged.
 An independent second local R2025b process reproduced the same 225 s Mali
 body, PTO, wave, and component CSVs byte for byte, and every controller torque
 request exactly. The first run disabled only post-run plotting, while the

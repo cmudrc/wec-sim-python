@@ -51,6 +51,32 @@ class _DelayedSampledPTO:
         return self.actuator.force_at(stroke)
 
 
+def test_full_split_step_controller_on_saved_stroke_and_prior_request():
+    """The Python control law pairs source inputs before plant feedback."""
+    with np.load(SPLIT_STEP, allow_pickle=False) as source:
+        time = source["time"]
+        stroke = source["stroke"]
+        request = source["command"]
+    assert time.shape == stroke.shape == request.shape == (4501,)
+    np.testing.assert_allclose(time, np.arange(4501) * .05,
+                               rtol=0, atol=1e-9)
+    assert np.isfinite(stroke).all() and np.isfinite(request).all()
+
+    observer = WaveStarNmpcObserver(dt=.05)
+    predictor = WaveStarNmpcPredictor(dt=.05)
+    controller = WaveStarNmpcController(dt=.05)
+    replayed = np.empty_like(request)
+    for index, position in enumerate(stroke):
+        prior = request[index - 1] if index else 0.
+        state = observer.step(float(position), float(prior))
+        forecast = predictor.step(float(state[-1]))
+        replayed[index] = controller.step(state, forecast, float(time[index]))
+
+    gap = replayed - request
+    assert np.max(np.abs(gap)) < .01  # Published controller replay peak gate.
+    assert np.sqrt(np.mean(gap**2)) < .0003  # Existing RMS gate.
+
+
 def test_current_physical_path_matches_split_step_aggregates():
     """An aggregate pass does not promote the still-unpaired pointwise case."""
     with np.load(PUBLISHED, allow_pickle=False) as published, \
