@@ -25,7 +25,9 @@ SHA-256: `source.npz`
 
 `test_wavestar_split_step_portable.py` independently advances the 1 ms
 physical plant with the 50 ms controller and its one-sample source rate delay,
-using only the pinned hydro data and incident sea phases. It applies the
+using only the pinned hydro data and incident sea phases. It checks both
+fixture hashes before replay, and the macOS ARM64 and Linux x86 CI jobs run
+the full portable test. It applies the
 existing `<0.5%` limits to seven full-duration motion, force, command, and
 PTO-work aggregates. The stricter pointwise autonomous gate remains failing:
 current master differs by 0.007289 rad pitch against its 0.0005 rad limit

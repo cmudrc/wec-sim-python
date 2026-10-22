@@ -154,7 +154,7 @@ def compare(first, second):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--until", type=float, default=75.)
+    parser.add_argument("--until", type=float, default=225.)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--compare", type=Path,
                         help="compare this run with another architecture's NPZ")

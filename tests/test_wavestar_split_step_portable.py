@@ -1,5 +1,6 @@
 """Keep the derived 225 s WaveStar split-step aggregate gate portable."""
 
+from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
@@ -17,6 +18,13 @@ FIXTURE = ROOT / "tests/fixtures/matlab/wavestar_nmpc_split_step_225s"
 HYDRO = FIXTURE / "wavestar.h5"
 PUBLISHED = ROOT / "tests/fixtures/matlab/wavestar_nmpc_full_step/baseline.npz"
 SPLIT_STEP = FIXTURE / "source.npz"
+SOURCE_SHA256 = "be50ad71195b5ff2d20c97bb3270845354c5a703d3829bf4aa0e915196ba7866"
+HYDRO_SHA256 = "b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1"
+
+
+def _check_source_fixture():
+    assert sha256(SPLIT_STEP.read_bytes()).hexdigest() == SOURCE_SHA256
+    assert sha256(HYDRO.read_bytes()).hexdigest() == HYDRO_SHA256
 
 
 class _DelayedSampledPTO:
@@ -53,6 +61,7 @@ class _DelayedSampledPTO:
 
 def test_full_split_step_controller_on_saved_stroke_and_prior_request():
     """The Python control law pairs source inputs before plant feedback."""
+    _check_source_fixture()
     with np.load(SPLIT_STEP, allow_pickle=False) as source:
         time = source["time"]
         stroke = source["stroke"]
@@ -79,6 +88,7 @@ def test_full_split_step_controller_on_saved_stroke_and_prior_request():
 
 def test_current_physical_path_matches_split_step_aggregates():
     """An aggregate pass does not promote the still-unpaired pointwise case."""
+    _check_source_fixture()
     with np.load(PUBLISHED, allow_pickle=False) as published, \
          np.load(SPLIT_STEP, allow_pickle=False) as source:
         components = source["components"]
