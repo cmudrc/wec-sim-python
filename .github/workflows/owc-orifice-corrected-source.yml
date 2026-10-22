@@ -28,7 +28,7 @@ jobs:
         with:
           # Exact model proposed in WEC-Sim/WEC-Sim_Applications#119.
           repository: cmccomb/WEC-Sim_Applications
-          ref: 51b071b158d51cadeb98ccf4b05918cb8bb969fe
+          ref: 093c3dcbf88e44c9dcb7fe87393a4f95e4e85157
           path: applications
           filter: blob:none
           lfs: true

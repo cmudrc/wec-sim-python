@@ -56,8 +56,8 @@ assert(simu.endTime == 130 && simu.dt == .005 && ...
     waves.phaseSeed == 128 && waves.height == 1 && waves.period == 4, ...
     'Published OWC settings changed');
 [~, model, ~] = fileparts(simu.simMechanicsFile);
-assert(abs(str2double(get_param(model, 'MaxStep')) - .005) < 1e-12);
-set_param(model, 'MaxStep', '0.00015625');
+assert(abs(str2double(get_param(model, 'MaxStep')) - .00015625) < 1e-12, ...
+    'Corrected OWC source must save the resolved MaxStep');
 try
     % matlab-actions runs this script in the base workspace; the model's
     % masked blocks resolve the initialized body and variant values there.

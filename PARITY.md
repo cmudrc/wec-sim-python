@@ -549,12 +549,13 @@ against 864.422 J from the source's full internal solver trace (0.0717%).
 The source orifice signals also reconstruct from its logged piston speed and
 published air law. The [reproduction workflow](.github/workflows/owc-orifice-corrected-source.yml)
 runs the exact source model in upstream PR #119 from a pinned fork commit and
-pairs fresh outputs with independent Python. The previous R2025b-saved model
-passed a [full source CI run](https://github.com/cmudrc/wec-sim-python/actions/runs/39866431677)
-with archived-trace reproduction. The candidate is now saved in the original
-R2023b model format and checked by the same source workflow. These extra
-output gates do
-not promote the unchanged published OrificeModel input. The source correction
+pairs fresh outputs with independent Python. The [R2023b-model source run](https://github.com/cmudrc/wec-sim-python/actions/runs/39869444227)
+passed after refining MaxStep at runtime. A [full saved-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/39871054213)
+found 1.687 m surge and a 1.62% PTO-work change at the original 0.005 s
+MaxStep, so upstream PR #119 now saves the validated 0.00015625 s limit in
+the original R2023b model format. The reproduction workflow checks that
+saved configuration directly. These extra output gates do not promote the
+unchanged published OrificeModel input. The source correction
 is proposed in [WEC-Sim_Applications PR #119](https://github.com/WEC-Sim/WEC-Sim_Applications/pull/119).
 
 A separate [local 30 s OWC clock audit](tests/fixtures/matlab/owc_orifice_dt_30s/README.md)

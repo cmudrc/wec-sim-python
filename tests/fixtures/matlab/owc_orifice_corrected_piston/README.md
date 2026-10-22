@@ -108,13 +108,17 @@ The source reconstruction and Python gates pass on the local Apple silicon
 environment. [`owc_orifice_corrected_reference.m`](../../../matlab/owc_orifice_corrected_reference.m)
 and its [MATLAB workflow](../../../../.github/workflows/owc-orifice-corrected-source.yml)
 run the exact corrected model proposed in upstream PR #119 at fork commit
-`51b071b158d51cadeb98ccf4b05918cb8bb969fe` and pinned WEC-Sim core on
+`093c3dcbf88e44c9dcb7fe87393a4f95e4e85157` and pinned WEC-Sim core on
 CI, export independently logged source output, and pair that fresh output with
-Python. This candidate is saved in the original R2023b format (SHA-256
-`ddbebffc905baf63f58143fc41f4253f9d105c39926d8a76c63edc865d7b0277`).
-The preceding R2025b-saved version passed a [full 130 s CI run](https://github.com/cmudrc/wec-sim-python/actions/runs/39866431677):
-its arrays matched the archive within `1e-9`, and the independent Python gate
-passed. The workflow applies those same gates to the R2023b-saved candidate.
+Python. This candidate is saved in the original R2023b format with the
+resolved 0.00015625 s MaxStep (SHA-256
+`5f9f1da3bf73e85b52224a3ff483991c3ec60774b92856e3c45cda4347927b59`).
+The preceding R2023b-saved version passed a [full 130 s CI run](https://github.com/cmudrc/wec-sim-python/actions/runs/39869444227)
+when MaxStep was refined at runtime. Its six output arrays matched the earlier
+R2025b-model run exactly, and the independent Python gate passed. A separate
+[saved 0.005 s step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/39871054213)
+showed 1.687 m surge and 1.62% PTO-work changes, motivating the saved setting.
+The workflow now gates the refined setting directly from the model.
 This remains a derived-model gate; the unmodified published input and strict
 badge stay qualified until the correction is maintained upstream and paired
 again.
