@@ -890,17 +890,23 @@ maximum pitch gap against the fixed 1 ms MATLAB trace to `4.49e-5` and
 `6.84e-5` rad. Those values move toward the physical-default result rather
 than toward the published-step trace. This is evidence that the 1 ms source
 trajectory contains a step-sensitive delayed-mass effect; reproducing that
-trajectory at exactly 1 ms is not a physical-convergence result. The
-source-style path changes delayed added-mass routing,
-solver tableau, and excitation evaluation together, so this probe does not
-assign the whole improvement to one detail. Combined with the physical-step
-refinement, it points to the source numerical plant path as a material early
-gap. With the same source-style path but autonomous Python NMPC, the
+trajectory at exactly 1 ms is not a physical-convergence result. To separate
+mass routing from the other source-style changes, a disposable Python probe
+used the same `ode8` tableau and stage excitation but retained the physical
+mass-matrix solve. Its 15.2 s pitch gap is `9.193477879e-5` rad; the
+ordinary RK4 mass-matrix runner gives `9.193477772e-5` rad, only
+`1.07e-12` rad apart in peak gap. Within this reconstruction, the delayed
+added-mass route explains the source-style improvement, rather than solver
+order or wave-force evaluation. The diagnostic option was reverted, leaving
+the public physical default unchanged. With the source-style path but
+autonomous Python NMPC, the
 `0.0005` rad pointwise pitch limit is first exceeded at 26.2 s; by 30 s,
 the pitch and request gaps reach `0.002901` rad and `0.4038` N m. The smaller
 precontrol mismatch delays but does not prevent coupled divergence. A strict
 physical-default pointwise claim needs a checked source target whose delayed
-mass handling converges to the physical mass-matrix equations, followed by a
+mass handling converges to the physical mass-matrix equations. The necessary
+upstream numerical correction is to solve that added mass implicitly or
+demonstrate convergence of the source delay at fixed HDF5 and sea, then run a
 fresh portable autonomous gate; this diagnostic does not supply either. The
 checked 225 s controller and physical aggregate tests do pass on both
 [Linux x86](https://github.com/cmudrc/wec-sim-python/actions/runs/39864624815/job/120123892763)
