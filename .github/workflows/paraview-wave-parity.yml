@@ -11,6 +11,8 @@ on:
       - 'tests/test_paraview_wave_source.py'
       - 'tests/test_paraview_body_source.py'
       - 'tests/test_paraview_mooring_source.py'
+      - 'tests/test_paraview_pyvista_writer.py'
+      - 'pyproject.toml'
       - 'wecsim/visualization/paraviewClass.py'
   pull_request:
     paths:
@@ -21,6 +23,8 @@ on:
       - 'tests/test_paraview_wave_source.py'
       - 'tests/test_paraview_body_source.py'
       - 'tests/test_paraview_mooring_source.py'
+      - 'tests/test_paraview_pyvista_writer.py'
+      - 'pyproject.toml'
       - 'wecsim/visualization/paraviewClass.py'
   workflow_dispatch:
 
@@ -45,7 +49,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - run: python -m pip install -e . pytest
+      - run: python -m pip install -e ".[paraview]" pytest
       - run: python -m pytest -q tests/test_paraview_wave_source.py
         env:
           WEC_SIM_MATLAB_PARAVIEW_WAVE_DIR: matlab-paraview-wave
@@ -55,6 +59,10 @@ jobs:
       - run: python -m pytest -q tests/test_paraview_mooring_source.py
         env:
           WEC_SIM_MATLAB_PARAVIEW_MOORING_DIR: matlab-paraview-mooring
+      - run: python -m pytest -q tests/test_paraview_pyvista_writer.py
+        env:
+          WEC_SIM_MATLAB_PARAVIEW_WAVE_DIR: matlab-paraview-wave
+          WEC_SIM_MATLAB_PARAVIEW_BODY_DIR: matlab-paraview-body
       - uses: actions/upload-artifact@v4
         if: always()
         with:

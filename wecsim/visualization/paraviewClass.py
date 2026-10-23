@@ -9,6 +9,27 @@ from xml.etree import ElementTree
 import numpy as np
 
 
+def _pyvista_writer():
+    try:
+        import pyvista
+    except ImportError as exc:
+        raise ImportError(
+            "PyVista VTP output requires the optional 'paraview' extra "
+            "(pip install 'wec-sim-python[paraview]')"
+        ) from exc
+    return pyvista
+
+
+def _save_pyvista_polydata(pyvista, path, points, cells, cell_data=None):
+    """Save one polygonal frame without changing its source cell order."""
+    cells = np.asarray(cells, dtype=np.int64)
+    faces = np.column_stack((np.full(len(cells), cells.shape[1]), cells)).ravel()
+    mesh = pyvista.PolyData(np.asarray(points, dtype=np.float32), faces=faces)
+    for name, values in (cell_data or {}).items():
+        mesh.cell_data[name] = np.asarray(values, dtype=np.float32)
+    mesh.save(path, binary=False)
+
+
 class ParaviewClass:
     def __init__(self, waves):
         self.waves = waves
@@ -169,13 +190,14 @@ class ParaviewClass:
     def write_paraview_vtp_wave(
         self, times, directory, *, domain_size,
         num_points_x=None, num_points_y=None, water_depth=None,
-        num_moordyn=0, g=9.81,
+        num_moordyn=0, g=9.81, writer="source",
     ) -> tuple[Path, ...]:
         """Write a WEC-Sim-style wave grid as numbered VTP PolyData frames.
 
         The grid covers ``[-domain_size, domain_size]`` on both axes. This
         writes the wave and ``ground.txt`` only; body and mooring meshes are
-        separate visualization outputs.
+        separate visualization outputs. ``writer='pyvista'`` uses the optional
+        PyVista package; the default preserves the pinned source XML layout.
         """
         times = np.asarray(times, dtype=float)
         if (times.ndim != 1 or not len(times)
@@ -197,6 +219,9 @@ class ParaviewClass:
         depth = np.asarray(depth, dtype=float)
         if depth.size != 1 or not np.isfinite(depth).all() or depth.item() <= 0:
             raise ValueError("wave VTP needs a positive water depth")
+        if writer not in ("source", "pyvista"):
+            raise ValueError("wave VTP writer must be 'source' or 'pyvista'")
+        pyvista = _pyvista_writer() if writer == "pyvista" else None
 
         directory = Path(directory)
         wave_dir = directory / "waves"
@@ -218,6 +243,14 @@ class ParaviewClass:
             Z = self.waveElevationGrid(float(time), X, Y, g=g)
             if Z.shape != X.shape or not np.isfinite(Z).all():
                 raise ValueError("wave VTP elevation must be finite on the grid")
+            path = wave_dir / f"waves_{index}.vtp"
+            if pyvista is not None:
+                _save_pyvista_polydata(
+                    pyvista, path, np.column_stack((X.ravel(), Y.ravel(), Z.ravel())),
+                    connectivity,
+                )
+                paths.append(path)
+                continue
             root = ElementTree.Element("VTKFile", type="PolyData", version="0.1")
             polydata = ElementTree.SubElement(root, "PolyData")
             piece = ElementTree.SubElement(
@@ -248,7 +281,6 @@ class ParaviewClass:
             offsets.text = " " + " ".join(
                 str(4 * cell) for cell in range(1, len(connectivity) + 1)
             ) + " "
-            path = wave_dir / f"waves_{index}.vtp"
             ElementTree.ElementTree(root).write(
                 path, encoding="utf-8", xml_declaration=True,
             )
@@ -361,12 +393,14 @@ class ParaviewClass:
         self, times, directory, *, body_name, vertices, faces, poses,
         body_index=1, cell_areas=None, hydrostatic_pressure=None,
         nonlinear_wave_pressure=None, linear_wave_pressure=None,
+        writer="source",
     ) -> tuple[Path, ...]:
         """Write numbered body VTP meshes using WEC-Sim's XYZ pose order.
 
         ``faces`` use zero-based triangular vertex indices. Each row of
         ``poses`` holds surge, sway, heave, roll, pitch, and yaw in SI units.
         Optional pressure arrays have one row per time and one column per face.
+        ``writer='pyvista'`` uses the optional PyVista package.
         """
         times = np.asarray(times, dtype=float)
         vertices = np.asarray(vertices, dtype=float)
@@ -410,6 +444,9 @@ class ParaviewClass:
                         or not np.isfinite(field).all()):
                     raise ValueError(f"body VTP {name} must match time and faces")
                 pressure_fields[name] = field
+        if writer not in ("source", "pyvista"):
+            raise ValueError("body VTP writer must be 'source' or 'pyvista'")
+        pyvista = _pyvista_writer() if writer == "pyvista" else None
 
         body_dir = Path(directory) / f"body{body_index}_{body_name}"
         body_dir.mkdir(parents=True, exist_ok=True)
@@ -423,6 +460,14 @@ class ParaviewClass:
             ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
             rz = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
             moved = vertices @ (rz @ ry @ rx).T + pose[:3]
+            path = body_dir / f"{body_name}_{index}.vtp"
+            if pyvista is not None:
+                fields = {"CellArea": areas}
+                fields.update({name: values[index - 1]
+                               for name, values in pressure_fields.items()})
+                _save_pyvista_polydata(pyvista, path, moved, faces, fields)
+                paths.append(path)
+                continue
             root = ElementTree.Element("VTKFile", type="PolyData", version="0.1")
             polydata = ElementTree.SubElement(root, "PolyData")
             piece = ElementTree.SubElement(
@@ -460,7 +505,6 @@ class ParaviewClass:
                     NumberOfComponents="1", format="ascii",
                 )
                 data.text = " " + " ".join(f"{value:.8g}" for value in field) + " "
-            path = body_dir / f"{body_name}_{index}.vtp"
             ElementTree.ElementTree(root).write(
                 path, encoding="utf-8", xml_declaration=True,
             )
