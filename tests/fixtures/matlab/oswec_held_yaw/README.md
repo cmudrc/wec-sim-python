@@ -20,3 +20,14 @@ These gates reproduce the published `ode4` numerical path through the opt-in
 `wecsim_ode4` solver. The physical implicit-radiation default and source
 step sensitivity remain separate, so this fixture does not add a published
 physical-motion badge.
+
+## Repository-owned continuous-heading control
+
+[`continuous_heading.patch`](continuous_heading.patch) changes only the two
+body yaw thresholds from 1° to zero in the pinned Applications input above.
+The [three-seed source and physical gate](https://github.com/cmudrc/wec-sim-python/actions/workflows/oswec-passive-yaw-continuous-step.yml)
+checks out that unmodified upstream revision and applies the patch in CI.
+WEC-Sim's pinned `irregnLYaw.m` uses threshold zero to interpolate heading
+coefficients every step. This control has no discrete held-heading events.
+It is a derived input owned by this repository; it does not change the
+published Applications input or promote the original 1° case.
