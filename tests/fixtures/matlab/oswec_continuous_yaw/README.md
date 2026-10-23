@@ -1,14 +1,17 @@
 # Repository-owned OSWEC continuous-heading source
 
-This is a derived control for the published 250 s `PassiveYawRegression`
-irregular sea. The [source workflow](../../../../.github/workflows/oswec-passive-yaw-continuous-step.yml)
+This is the repository-owned corrected validation baseline for the published
+250 s `PassiveYawRegression` irregular sea. The
+[source workflow](../../../../.github/workflows/oswec-passive-yaw-continuous-step.yml)
 checks out WEC-Sim `0753b2e47f2457c078751dcfe5d251d1767b80ab` and the
 unchanged WEC-Sim Applications input at
 `d53d4d4c9eda2581f04204f5d394a6ef84bb099e`, then applies the
 [repository-owned patch](../oswec_held_yaw/continuous_heading.patch). Only
 the two body yaw thresholds change from 1° to zero. Zero interpolates the
 heading coefficients every step, so this control has no discrete held-heading
-events. The published one-degree case remains qualified.
+events. The published one-degree trajectory remains qualified; the badge counts
+the adopted corrected baseline and does not claim parity for that held-heading
+trajectory.
 
 The six raw MATLAB R2025b `.mat` files retain the 0.01 and 0.005 s runs for
 each of phase seeds 1–3. Each contains time, flap yaw and yaw speed, PTO
