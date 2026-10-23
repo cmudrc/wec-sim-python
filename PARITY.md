@@ -135,7 +135,7 @@ values and all attributes as the existing MooringMatrix fixture, so the public
 gate now runs with that source-equivalent input as well as the bundled RM3
 HDF5. The [case fixture](tests/fixtures/matlab/rm3_wave_markers/README.md)
 records the source hashes and the CI identity check. This strengthens an
-already counted case; the unchanged published-input RM3 count remains 17/21.
+already counted case; the RM3 validation badge remains 18/21.
 
 Two pinned MATLAB source behaviors have upstream follow-ups: [passive-yaw
 heading-hold step sensitivity](https://github.com/WEC-Sim/WEC-Sim/issues/1662)
@@ -838,8 +838,8 @@ The four README case badges partition that inventory by model family: RM3
 18/21, OSWEC 10/13, Sphere 12/12, and other published cases 13/17 have
 full-duration gates against the unchanged published input or an explicitly
 adopted repository-owned corrected baseline. RM3 End Stops is the one
-corrected-baseline entry; the unchanged published-input count is 17/21 RM3
-and 52/63 overall. A named system gets its own badge when it has more than
+corrected-baseline entry; its unchanged published 0.1 s trajectory remains
+unpaired. A named system gets its own badge when it has more than
 five inventoried cases; smaller systems stay in the disjoint remainder.
 
 ### Current priority and feasible closeout
@@ -903,7 +903,8 @@ using the same pinned phases, Python package versions, and Ubuntu image.
 The autonomous source-ode8 Python trajectory is therefore runner-sensitive even
 within Linux x86; the proposed strict pointwise gate has not been established.
 The physical default's split-step pitch gate also fails. WaveStar remains
-qualified, and the WaveStar and total strict badges remain 2/3 and 52/63.
+qualified. The WaveStar badge remains 2/3 and the total validation badge is
+53/63.
 An additional local R2025b comparison ran the same 225 s Python input on
 Mali as native ARM64 and Rosetta x86-64, both with NumPy 2.5.4, SciPy 1.18.1,
 randomgen 2.3.0, and Accelerate-backed NumPy/SciPy. Against the local MATLAB
@@ -3164,8 +3165,8 @@ case](tests/fixtures/matlab/rm3_end_stops_maxstep_400s.md) retains the
 published 0.1 s input/output grid and changes only `ode45` MaxStep to
 0.025 s in a disposable model copy. Its full 400 s MATLAB reference pairs
 with independent public Python in ordinary CI. The corrected case counts in
-the RM3 validation badge at 18/21; the unchanged published-input count
-remains 17/21.
+the RM3 validation badge at 18/21; the unchanged published 0.1 s trajectory
+remains unpaired.
 
 The [public source-ode4 gate](tests/test_rm3_pto_extension_source_ode4.py)
 now runs both published 30 s `RM3_PTO_Extension` free decays through
@@ -3183,8 +3184,8 @@ at the archived 0.05, 0.025, and 0.0125 s source steps, with `1e-8` m and
 m/s body/PTO limits and `1e-7` N/W zero-force/power limits. This establishes
 published-step *numerical* reproduction for these two inputs. The physical
 implicit default still differs substantially, and the MATLAB step audits
-show source sensitivity, so both cases stay qualified and the unchanged
-published-input RM3 count remains 17/21.
+show source sensitivity, so both cases stay qualified and the RM3 validation
+badge remains 18/21.
 
 A [portable 30 s PTO-extension step diagnostic](tests/test_rm3_pto_extension_physical_step.py)
 compares both public `WEC.run` free decays with the pinned four-step R2025b
@@ -3261,8 +3262,8 @@ and `0.00605` mm / `0.106` mm/s for float and spar. The
 preserves these trend checks in ordinary Python CI. The float still fails the
 unchanged `1` mm / `3` mm/s source-stability screen, so this does not establish
 a converged MATLAB reference or published-case parity.
-Both published 0.1 s cases remain qualified, and the unchanged published-input
-RM3 count stays 17/21.
+Both published 0.1 s cases remain qualified, and the RM3 validation badge
+remains 18/21.
 
 A [further local R2025b source audit](tests/fixtures/matlab/rm3_pto_extension_00078125/README.md)
 halves the same 30 s float and spar no-wave cases to `0.0015625` and
@@ -3575,8 +3576,7 @@ preserves the derived source and independent Python comparison in ordinary
 CI. We adopt this one-setting corrected arm as the **wec-sim-python
 validation baseline** for End Stops, counted as
 `corrected_independent_motion` in the 18/21 RM3 validation badge. The
-unchanged published input remains unpaired; the strict published-input count
-stays 17/21.
+unchanged published input remains unpaired.
 
 The repository validation rule changes the copied Simulink model's `ode45`
 `MaxStep` from `0.1` to `0.025` s. It keeps `simu.dt=0.1` s in

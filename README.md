@@ -14,8 +14,8 @@ A gated case has full-duration independent Python motion or fixed-body force
 paired to MATLAB using either the unchanged published input or an explicitly
 adopted, repository-owned corrected validation baseline. **53/63** currently
 meet that standard, including RM3 End Stops at a copied-model `ode45`
-`MaxStep=0.025` s. The unchanged published-input count remains **52/63**:
-RM3 is 18/21 with the corrected baseline and 17/21 at the original setting.
+`MaxStep=0.025` s. RM3 is **18/21**. The unchanged published End Stops
+`MaxStep=0.1` s trajectory remains unpaired.
 The other published cases include OWC, WaveBot, WaveStar, Morison, and
 nonlinear hydrodynamics; see the parity ledger for the full breakdown. The
 MATLAB badge counts 42 selected source workflow jobs, not additional cases.
