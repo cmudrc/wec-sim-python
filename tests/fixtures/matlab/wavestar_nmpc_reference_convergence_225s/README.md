@@ -63,9 +63,7 @@ pointwise limit. [`single_thread_repeat.json`](single_thread_repeat.json)
 records the numerical comparison, MATLAB versions and thread counts, and
 runner CPU details. This associates the two source trajectories with the
 tested CPU models despite one MATLAB computational thread; it does not
-identify the exact CPU-dependent operation. The follow-up workflow probes a
-common BLAS code branch using [MathWorks' MATLAB override](https://www.mathworks.com/matlabcentral/answers/2066506-how-do-i-make-matlab-use-the-mkl_cbwr-environment-variable-as-the-cnr-branch)
-and [Intel's compatible branch](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2026-0/getting-started-with-conditional-numerical.html).
+identify the exact CPU-dependent operation.
 
 The two single-thread controller logs also permit a 0–40 s frozen-input
 probe. [`single_thread_controller_probe.json`](single_thread_controller_probe.json)
@@ -81,15 +79,39 @@ which upstream floating-point operation first perturbs the closed loop. The
 logged AR forecasts already differ by up to `17.77` N m at 10.4 s, during the
 resistive startup interval when the forecast does not drive the command.
 
+A [compatible-BLAS repeat](https://github.com/cmudrc/wec-sim-python/actions/runs/39894739858)
+then used [MathWorks' MATLAB override](https://www.mathworks.com/matlabcentral/answers/2066506-how-do-i-make-matlab-use-the-mkl_cbwr-environment-variable-as-the-cnr-branch)
+and [Intel's common code branch](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2026-0/getting-started-with-conditional-numerical.html).
+Both source jobs reported R2025b Update 7, one computational thread, and
+oneMKL 2024.1's `CNR branch compatible` in `version -blas`. Both happened to
+run on AMD EPYC 7763. Their full 225 s exported pitch, speed, stroke, force,
+and request traces match numerically exactly; the compact
+[`source_0p25ms_compatible_amd7763.npz`](source_0p25ms_compatible_amd7763.npz)
+and [`compatible_repeat_summary.json`](compatible_repeat_summary.json)
+preserve that result and its audit. This is a same-CPU repeat, so it does not
+show that compatible BLAS removes the Intel/AMD source difference. The
+[`compatible_controller_probe.json`](compatible_controller_probe.json) also
+finds identical logged observer states, AR forecasts, and source requests
+through 40 s; Python's frozen-input QP request stays within `0.000012` N m
+of each source. The
+independent physical Python run at the same 0.25 ms plant step misses every
+pointwise limit: its maximum pitch gap is `0.017938` rad versus `0.0005`
+rad, and its requested-torque gap is `0.937424` N m versus `0.1` N m. The
+pitch-peak aggregate gap is `0.6762%` versus `0.5%`. This source can be used
+to diagnose the Python discrepancy on that CPU, but it is not an accepted
+portable physical parity baseline.
+
 SHA-256:
 
 - `source_1ms_repeat.npz`: `42f3264022177833634731711086cc90a1a39eb313ccdc05110123eb9c3035f6`
 - `source_0p5ms.npz`: `71d5745bfd28ad25be4b25fb73b6656d9374c6923d6059d72c1ec6d105e63ad3`
 - `source_0p25ms.npz`: `0f62bc5692e845f739bb0df715970d006124d4514cdb928059fb2115263596a6`
 - `source_0p25ms_repeat.npz`: `5f6f576b94e4064352ce5bf1ba7a83e69c83faf157c8f1abe77488645b627d24`
+- `source_0p25ms_compatible_amd7763.npz`: `48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6`
 
 The Python repository's
 [`wavestar-nmpc-reference-convergence.yml`](../../../../.github/workflows/wavestar-nmpc-reference-convergence.yml)
 regenerates the MATLAB exports, audits autonomous physical Python, and
-compares the source traces. A repeatable, step-converged source target is
-still required before issue #623's pointwise gate can close.
+compares the source traces. A source target that passes across supported CPU
+classes, a step-convergence argument, and a passing independent physical
+pointwise gate are still required before issue #623 can close.

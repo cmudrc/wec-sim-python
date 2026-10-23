@@ -1,0 +1,33 @@
+{
+  "end_time_s": 40.0,
+  "python_qp_replay_vs_source_command": {
+    "a": {
+      "time_s": 29.35,
+      "value": 1.190369443271333e-05
+    },
+    "b": {
+      "time_s": 29.35,
+      "value": 1.190369443271333e-05
+    }
+  },
+  "source_a_sha256": "7d527a5133acf46893b60ac408162d06dfef154aa3738e90bc49234c682dee42",
+  "source_a_vs_b": {
+    "AR_excM_pred": {
+      "time_s": 0.0,
+      "value": 0.0
+    },
+    "estimated_states": {
+      "time_s": 0.0,
+      "value": 0.0
+    },
+    "python_replayed_command": {
+      "time_s": 0.0,
+      "value": 0.0
+    },
+    "source_command": {
+      "time_s": 0.0,
+      "value": 0.0
+    }
+  },
+  "source_b_sha256": "f5ef2e8013e9c5a20e89e3fc1a7a56568f34a3c2a6b3275e9107903e13d3fedc"
+}

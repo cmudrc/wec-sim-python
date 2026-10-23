@@ -986,13 +986,28 @@ while the two MATLAB requests differ by `0.196588` N m by 39.55 s; the two
 Python replays reproduce that request separation within `8.84e-8` N m at
 that sample. A large QP replay error is therefore not needed to explain the
 early divergence. The exact CPU-dependent operation remains unisolated. A
-follow-up workflow tests a common
+follow-up workflow tested a common
 MKL BLAS code branch; [MathWorks says](https://www.mathworks.com/matlabcentral/answers/2066506-how-do-i-make-matlab-use-the-mkl_cbwr-environment-variable-as-the-cnr-branch)
 `MATLAB_DISABLE_CBWR=1` is required for MATLAB to honor `MKL_CBWR`, and
 [Intel documents](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2026-0/getting-started-with-conditional-numerical.html)
-`COMPATIBLE` as a common Intel/AMD branch. This experiment still requires
-source repetition and a
-physical pointwise pass before WaveStar can be promoted.
+`COMPATIBLE` as a common Intel/AMD branch.
+
+That [compatible-BLAS repeat](https://github.com/cmudrc/wec-sim-python/actions/runs/39894739858)
+finished with `version -blas` reporting oneMKL 2024.1's `CNR branch
+compatible` and MATLAB limited to one computational thread. Both hosted
+runners were AMD EPYC 7763, so this was a same-CPU control: their full 225 s
+source pitch, speed, PTO stroke, force, and request traces agree numerically
+exactly. The [compact checked trace and audit](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/README.md)
+preserve that result. Cross-CPU portability is still untested under this BLAS
+setting. More decisively for the physical gate, matched-step independent
+Python misses all five pointwise limits against this repeated source trace:
+maximum pitch differs by `0.017938` rad (`0.0005` rad limit), pitch speed by
+`0.084155` rad/s (`0.005` limit), PTO stroke by `0.003587` m (`0.0001` m
+limit), axial force by `4.767355` N (`1` N limit), and requested torque by
+`0.937424` N m (`0.1` N m limit). Pitch peak differs by `0.6762%` against
+the `0.5%` aggregate limit. A repeatable same-CPU MATLAB export therefore
+still cannot be promoted as the required portable autonomous physical gate;
+issue #623 remains open.
 
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,

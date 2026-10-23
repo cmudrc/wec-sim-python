@@ -1,0 +1,67 @@
+{
+  "github_actions_run": "https://github.com/cmudrc/wec-sim-python/actions/runs/39894739858",
+  "source": {
+    "wec_sim_commit": "0753b2e47f2457c078751dcfe5d251d1767b80ab",
+    "applications_commit": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e",
+    "hydro_sha256": "b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1",
+    "plant_step_s": 0.00025,
+    "controller_step_s": 0.05,
+    "samples": 4501
+  },
+  "matlab_version": "25.2.0.3360999 (R2025b) Update 7",
+  "matlab_computational_threads": 1,
+  "matlab_blas": "Intel oneAPI MKL 2024.1 CNR branch compatible",
+  "cpu_model_both": "AMD EPYC 7763 64-Core Processor",
+  "source_repeat": {
+    "pitch_rad": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "stroke_m": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "axial_force_N": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "pitch_rad_first_15p2s": 0.0,
+    "within_pointwise_limits": true
+  },
+  "python_physical_pointwise": {
+    "pitch_rad": 0.017937748301747714,
+    "pitch_speed_rad_s": 0.08415492543504488,
+    "stroke_m": 0.0035869958589778185,
+    "axial_force_N": 4.767354741120499,
+    "requested_torque_Nm": 0.9374243866462475
+  },
+  "pointwise_limits": {
+    "pitch_rad": 0.0005,
+    "pitch_speed_rad_s": 0.005,
+    "stroke_m": 0.0001,
+    "axial_force_N": 1.0,
+    "requested_torque_Nm": 0.1
+  },
+  "pointwise_pass": false,
+  "python_physical_aggregate_relative_gap": {
+    "pitch_rms": 0.0009526874101878334,
+    "pitch_peak": 0.006761772893933509,
+    "pitch_speed_rms": 0.00017918138463972707,
+    "axial_force_rms": 0.0010889094796270168,
+    "axial_force_peak": 0.0006801622510977327,
+    "requested_torque_rms": 0.001056789029972967,
+    "pto_work_J": 0.00115534461896496
+  },
+  "aggregate_limit": 0.005,
+  "aggregate_pass": false,
+  "compact_source_trace_sha256": "48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6",
+  "cross_cpu_tested": false
+}

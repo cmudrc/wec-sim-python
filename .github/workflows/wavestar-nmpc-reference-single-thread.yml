@@ -1,14 +1,6 @@
 name: MATLAB WaveStar compatible BLAS 0.25 ms repeat
 
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/wavestar-nmpc-reference-single-thread.yml'
-      - 'tools/wavestar_nmpc_reference_repeat.py'
-      - 'tools/wavestar_nmpc_reference_audit.py'
-      - 'tools/wavestar_nmpc_reference_compare.py'
-      - 'tests/matlab/reference_model_baseline.m'
-      - 'tests/test_wavestar_split_step_portable.py'
   workflow_dispatch:
 
 jobs:
@@ -102,15 +94,24 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - run: python -m pip install numpy scipy
+      - run: python -m pip install -e .
       - name: Compare identical-input source repeats
         run: |
           python tools/wavestar_nmpc_reference_repeat.py \
             --left reference-artifacts/wavestar-nmpc-compatible-a \
             --right reference-artifacts/wavestar-nmpc-compatible-b \
             --output reference-artifacts/repeat.json
+      - name: Replay logged controller inputs through Python
+        run: |
+          python tools/wavestar_nmpc_controller_source_probe.py \
+            reference-artifacts/wavestar-nmpc-compatible-a/WECCCOMP_NMPC_SPLIT_STEP_FULL_controller.mat \
+            reference-artifacts/wavestar-nmpc-compatible-b/WECCCOMP_NMPC_SPLIT_STEP_FULL_controller.mat \
+            --end-time 40 \
+            --output reference-artifacts/controller-probe.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: wavestar-nmpc-compatible-repeat-report
-          path: reference-artifacts/repeat.json
+          path: |
+            reference-artifacts/repeat.json
+            reference-artifacts/controller-probe.json
