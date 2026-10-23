@@ -1,0 +1,80 @@
+name: OWC corrected piston source
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/owc-orifice-corrected-source.yml'
+      - 'tests/matlab/owc_orifice_corrected_reference.m'
+      - 'tests/matlab/owc_orifice_correct_piston_path.m'
+      - 'tests/test_owc_orifice_corrected_full.py'
+      - 'tools/pack_owc_orifice_corrected.py'
+      - 'tests/fixtures/matlab/owc_orifice_corrected_piston/full_source.npz'
+  workflow_dispatch:
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          # Exact model proposed in WEC-Sim/WEC-Sim_Applications#119.
+          repository: cmccomb/WEC-Sim_Applications
+          ref: 3c0c05fefce55125d8ea084deedbd2defb103811
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: OWC/OrificeModel
+      - name: Install pinned cleaned hydrodynamics
+        run: cp tests/fixtures/matlab/owc_orifice.h5 applications/OWC/OrificeModel/hydroData/test17a_clean.h5
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody Signal_Processing_Toolbox Control_System_Toolbox
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: run('tests/matlab/owc_orifice_corrected_reference.m')
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -e . pytest
+      - name: Reproduce archived corrected source from published input
+        run: |
+          python tools/pack_owc_orifice_corrected.py \
+            owc-orifice-corrected-output \
+            owc-orifice-corrected-output/fresh_source.npz
+          python - <<'PY'
+          from pathlib import Path
+          import numpy as np
+
+          archived = Path('tests/fixtures/matlab/owc_orifice_corrected_piston/full_source.npz')
+          fresh = Path('owc-orifice-corrected-output/fresh_source.npz')
+          with np.load(archived) as expected, np.load(fresh) as actual:
+              assert set(expected.files) == set(actual.files)
+              for name in expected.files:
+                  np.testing.assert_allclose(
+                      actual[name], expected[name], rtol=0, atol=1e-9,
+                      err_msg=name,
+                  )
+          PY
+      - name: Gate freshly generated source against independent Python motion and air outputs
+        run: python -m pytest -q tests/test_owc_orifice_corrected_full.py
+        env:
+          WEC_SIM_OWC_CORRECTED_SOURCE: owc-orifice-corrected-output/fresh_source.npz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owc-orifice-corrected-source
+          path: |
+            owc-orifice-corrected-output/*.csv
+            owc-orifice-corrected-output/fresh_source.npz
+          if-no-files-found: ignore

@@ -8,6 +8,8 @@ published model, [this MATLAB script](../../../matlab/owc_orifice_correct_piston
 adds the existing piston signal to the state-space force input. It leaves the
 reported acceleration route, rigid-body coupling, orifice law, HDF5, and wave
 settings alone. This is a derived physical model, not the published application.
+The corresponding correction to the maintained application is under review in
+[WEC-Sim_Applications PR #119](https://github.com/WEC-Sim/WEC-Sim_Applications/pull/119).
 
 The source checkouts are WEC-Sim `0753b2e47f2457c078751dcfe5d251d1767b80ab`
 and Applications `d53d4d4c9eda2581f04204f5d394a6ef84bb099e`. The original
@@ -74,3 +76,53 @@ is 0.155. That flag does not switch force laws. The one-connection edit
 removes the large physical-path discrepancy; it does **not** establish parity
 with the original published Simulink model. `OWC/OrificeModel` remains
 `qualified_motion`, and strict badge counts do not change.
+
+## Full corrected-model output gate
+
+The original finer-arm CSVs above were packed with
+[`tools/pack_owc_orifice_corrected.py`](../../../../tools/pack_owc_orifice_corrected.py)
+into [`full_source.npz`](full_source.npz) (SHA-256
+`aecd4eea595a24f3450a637600871b6de4b8b7e3fe100c2362a2e433ea906c9e`).
+The archive retains all 26,001 output-grid body positions and velocities,
+flexible outputs, source piston/orifice force, pressure, flow, power, wave,
+and PM components. The orifice outputs were interpolated from the original
+832,001 strictly increasing internal samples onto the unchanged 0.005 s grid;
+the source work and maximum Mach number were calculated from the full internal
+record. The unchanged 130 s source work is 864.422 J and maximum Mach is
+0.1550, below the configured 0.3 warning threshold.
+
+The [full-output gate](../../../test_owc_orifice_corrected_full.py) independently
+advances the public Python physical model from the pinned HDF5 and wave phases.
+It first checks the exported source orifice signals against the separately
+saved source piston speed and the published air law, then compares Python
+motion and air outputs pointwise. Its measured maximum gaps are:
+
+| Quantity | Maximum Python/source gap | Declared limit |
+| --- | ---: | ---: |
+| Surge, heave, pitch, flexible displacement | 2.246 mm, 0.116 mm, 0.359 mrad, 0.022 mm | 20 mm, 10 mm, 1 mrad, 2 mm |
+| Surge, heave, pitch, piston speed | 0.357 mm/s, 0.245 mm/s, 0.165 mrad/s, 0.163 mm/s | 20 mm/s, 20 mm/s, 2 mrad/s, 5 mm/s |
+| PTO force, air pressure, flow, PTO power | 0.450 N, 0.00229 kPa, 0.0000320 m³/s, 0.0000405 kW | 3% of source peak for force, pressure, flow; 4% for power |
+| Integrated PTO work | 0.619 J, 0.0717% | 1% |
+
+The source reconstruction and Python gates pass on the local Apple silicon
+environment. [`owc_orifice_corrected_reference.m`](../../../matlab/owc_orifice_corrected_reference.m)
+and its [MATLAB workflow](../../../../.github/workflows/owc-orifice-corrected-source.yml)
+run the exact corrected model proposed in upstream PR #119 at fork commit
+`3c0c05fefce55125d8ea084deedbd2defb103811` and pinned WEC-Sim core on
+CI, export independently logged source output, and pair that fresh output with
+Python. This candidate is saved in the original R2023b format (SHA-256
+`5f9f1da3bf73e85b52224a3ff483991c3ec60774b92856e3c45cda4347927b59`).
+WEC-Sim initialization resets the model MaxStep from `simu.dt`, so the proposed
+published input sets `simu.dt = 0.00015625` s while explicitly preserving
+0.005 s output, radiation-convolution, nonlinear-force, and Morison-force
+clocks. The proposed input file has SHA-256
+`e5f19816c78e5e4316b30c426035d1f06b22c4c313ac5ec373bfeca6b084f10f`.
+A [full 130 s hosted run of that input](https://github.com/cmudrc/wec-sim-python/actions/runs/39877611225)
+passed the independent Python gate. Its fresh body, flexible, orifice, wave,
+component, and summary arrays differ from the archived refined trace by at
+most `3.96e-11`; work is 864.422 J and peak Mach is 0.155. A separate
+[0.005 s solver-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/39871054213)
+showed 1.687 m surge and 1.62% PTO-work changes. The workflow now requires
+`1e-9` reproduction of the archive from the proposed published input.
+The case remains qualified until the upstream correction is merged and pinned
+as the maintained application revision.
