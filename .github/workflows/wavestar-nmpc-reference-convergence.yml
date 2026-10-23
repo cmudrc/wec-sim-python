@@ -6,6 +6,7 @@ on:
       - '.github/workflows/wavestar-nmpc-reference-convergence.yml'
       - 'tests/matlab/reference_model_baseline.m'
       - 'tools/wavestar_nmpc_reference_audit.py'
+      - 'tools/wavestar_nmpc_reference_compare.py'
       - 'tests/test_wavestar_split_step_portable.py'
       - 'wecsim/control/wavestarNmpc.py'
       - 'wecsim/dynamics/wavestar.py'
@@ -75,3 +76,28 @@ jobs:
           path: |
             matlab-reference-model-output/WECCCOMP_NMPC_SPLIT_STEP_FULL_*
             matlab-reference-model-output/wavestar-reference-audit.json
+
+  compare-source-steps:
+    needs: source-reference
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wavestar-nmpc-source-reference-*
+          path: reference-artifacts
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy scipy
+      - name: Compare full source trajectories
+        run: |
+          python tools/wavestar_nmpc_reference_compare.py \
+            --directory reference-artifacts \
+            --output reference-artifacts/convergence.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wavestar-nmpc-source-convergence-report
+          path: reference-artifacts/convergence.json

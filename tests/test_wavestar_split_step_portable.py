@@ -30,7 +30,13 @@ def _check_source_fixture():
 class _DelayedSampledPTO:
     """Hold the derived Simulink controller's one-sample actuator delay."""
 
-    def __init__(self):
+    def __init__(self, plant_dt=.001):
+        self.samples_per_tick = round(.05 / plant_dt)
+        if self.samples_per_tick < 1 or abs(
+            self.samples_per_tick * plant_dt - .05
+        ) > 1e-12:
+            raise ValueError("The plant step must divide the controller step")
+        self.plant_dt = plant_dt
         self.observer = WaveStarNmpcObserver(dt=.05)
         self.predictor = WaveStarNmpcPredictor(dt=.05)
         self.controller = WaveStarNmpcController(dt=.05)
@@ -42,8 +48,8 @@ class _DelayedSampledPTO:
 
     def step(self, stroke, *, noise=0., dropout=False):
         assert noise == 0. and not dropout
-        if self.sample % 50 == 0:
-            instant = self.sample * .001
+        if self.sample % self.samples_per_tick == 0:
+            instant = self.sample * self.plant_dt
             state = self.observer.step(stroke, self.previous_command)
             forecast = self.predictor.step(state[-1])
             command = self.controller.step(state, forecast, instant)

@@ -917,6 +917,41 @@ body, PTO, wave, and component CSVs byte for byte, and every controller torque
 request exactly. The first run disabled only post-run plotting, while the
 second retained it; the numerical source trajectory was unchanged.
 
+A separate [hosted R2025b reference convergence diagnostic](https://github.com/cmudrc/wec-sim-python/actions/runs/39883276159)
+generated new 225 s autonomous WaveStar NMPC traces at 1, 0.5, and 0.25 ms
+`ode4` plant steps, holding the controller and output grid at 50 ms. Its
+[compact traces and comparison report](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/README.md)
+preserve the measured result in this Python repository. The
+workflow in this Python repository checked out pinned WEC-Sim and Applications
+commits, copied the exact HDF5 fixture (SHA-256
+`b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1`),
+and verified that all 500 wave components match the pinned fixture. No
+changes were pushed to either MATLAB repository. The fresh 1 ms source pitch
+matches the older pinned 1 ms trace within `2.29e-15` rad through 15.2 s,
+but differs by up to `0.010596` rad over 225 s; requested torque differs by
+`0.792728` N m. The first request difference over `1e-10` N m occurs at
+16.45 s and later amplifies through feedback. This is a source-run
+repeatability failure at the existing `0.0005` rad and `0.1` N m pointwise
+limits, despite matched hydrodynamics and sea.
+
+The fresh 1 versus 0.5 ms source traces differ by up to `0.009193` rad pitch
+and `0.573686` N m requested torque; 0.5 versus 0.25 ms differ by `0.004763`
+rad and `0.450018` N m. Over the first 15.2 s, the corresponding pitch gaps
+shrink from `2.6722e-5` to `1.3348e-5` rad, but the full closed loop is not
+converged within the predeclared pointwise limits at these steps. Against the
+fresh 0.5 ms source trace, independent physical Python at the same 0.5 ms
+plant step has a `0.006714` rad maximum pitch gap; it also misses the force,
+stroke, speed, and request pointwise limits. At matched 0.25 ms steps, the
+independent physical pitch gap is `0.009435` rad against the `0.0005` rad
+limit; its pitch-peak aggregate differs by `0.7149%` against the `0.5%`
+limit. Both matched-step audits use only the exact HDF5 and generated sea
+phases to drive Python feedback, with no saved MATLAB motion, force, stroke,
+or request as inputs. Generating an additional source
+trace therefore does not yet supply a stable target or a passing physical
+gate. A repeatable, step-converged source configuration or numerical
+correction remains necessary before promoting the case or closing issue
+[#623](https://github.com/cmudrc/wec-sim-python/issues/623).
+
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,
 or an **open** result with the specific missing evidence and next experiment.

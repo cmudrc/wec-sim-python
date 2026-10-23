@@ -50,6 +50,9 @@ def _rms(values):
 
 
 def audit(source_dir, hydro, step):
+    samples_per_tick = round(.05 / step)
+    if samples_per_tick < 1 or abs(samples_per_tick * step - .05) > 1e-12:
+        raise ValueError("The source plant step must divide the controller step")
     digest = sha256(hydro.read_bytes()).hexdigest()
     if digest != HYDRO_SHA256:
         raise ValueError(f"HDF5 hash differs from the pinned fixture: {digest}")
@@ -84,10 +87,11 @@ def audit(source_dir, hydro, step):
         directions=np.array([0.]), spreading=np.array([1.]),
         gamma=3.3, phase=components[:, 3, None],
     )
-    controller = _DelayedSampledPTO()
+    controller = _DelayedSampledPTO(plant_dt=step)
     response = run_wavestar_published(
-        hydro, sea, dt=.001, end_time=225., ramp_time=25.,
-        g=9.80665, pto_controller=controller, output_stride=50,
+        hydro, sea, dt=step, end_time=225., ramp_time=25.,
+        g=9.80665, pto_controller=controller,
+        output_stride=samples_per_tick,
     )
     np.testing.assert_allclose(response.time, time, rtol=0, atol=1e-9)
     own_request = np.asarray(controller.commands)
@@ -151,7 +155,10 @@ def audit(source_dir, hydro, step):
             "controller_step_s": .05,
             "samples": len(time),
         },
-        "python": {"numpy": np.__version__, "scipy": scipy.__version__},
+        "python": {
+            "numpy": np.__version__, "scipy": scipy.__version__,
+            "physical_plant_step_s": step,
+        },
         "source_vs_pinned_1ms": baseline_gap,
         "python_physical_pointwise": pointwise,
         "pointwise_limits": POINTWISE_LIMITS,
