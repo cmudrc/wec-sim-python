@@ -2,9 +2,16 @@ name: MATLAB WaveStar compatible BLAS 0.25 ms repeat
 
 on:
   workflow_dispatch:
+    inputs:
+      qp_only:
+        description: Replay the checked controller fixture without rerunning the source plant
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   source-repeat:
+    if: ${{ !inputs.qp_only }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -82,6 +89,7 @@ jobs:
             matlab-reference-model-output/cpu.txt
 
   compare-repeats:
+    if: ${{ !inputs.qp_only }}
     needs: source-repeat
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -115,3 +123,65 @@ jobs:
           path: |
             reference-artifacts/repeat.json
             reference-artifacts/controller-probe.json
+
+  checked-qp-replay:
+    if: ${{ inputs.qp_only }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MATLAB_DISABLE_CBWR: '1'
+      MKL_CBWR: COMPATIBLE
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          sparse-checkout: WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .
+      - name: Prepare checked source controller inputs
+        run: |
+          python tools/wavestar_nmpc_checked_qp_replay.py prepare \
+            --controller tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/controller_0p25ms_compatible_amd7763.npz \
+            --matrices tests/fixtures/matlab/wavestar_nmpc_full_step/direct_controller_inputs.npz \
+            --controller-sha256 06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3 \
+            --matrices-sha256 3ff8f4ba8654ef66bf9058a9fe717cfa6c60868300d19e64a089fcb06781dbf0 \
+            --output checked-qp-input.mat
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Optimization_Toolbox
+      - name: Replay pinned MATLAB QP on checked inputs
+        uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            maxNumCompThreads(1);
+            assert(maxNumCompThreads == 1);
+            blasInfo=evalc('version -blas');
+            assert(contains(upper(blasInfo),'COMPATIBLE'));
+            addpath('tests/matlab');
+            wavestar_nmpc_checked_qp_replay('checked-qp-input.mat',
+            'applications/WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive',
+            'checked-qp-replay.mat')
+      - name: Compare complete MATLAB and Python QP plans
+        run: |
+          python tools/wavestar_nmpc_checked_qp_replay.py compare \
+            --controller tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/controller_0p25ms_compatible_amd7763.npz \
+            --matrices tests/fixtures/matlab/wavestar_nmpc_full_step/direct_controller_inputs.npz \
+            --controller-sha256 06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3 \
+            --matrices-sha256 3ff8f4ba8654ef66bf9058a9fe717cfa6c60868300d19e64a089fcb06781dbf0 \
+            --matlab-result checked-qp-replay.mat \
+            --output checked-qp-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wavestar-checked-qp-replay
+          path: |
+            checked-qp-input.mat
+            checked-qp-replay.mat
+            checked-qp-report.json
