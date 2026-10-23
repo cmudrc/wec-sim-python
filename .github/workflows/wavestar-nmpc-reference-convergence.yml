@@ -1,0 +1,77 @@
+name: WaveStar NMPC source reference convergence
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/wavestar-nmpc-reference-convergence.yml'
+      - 'tests/matlab/reference_model_baseline.m'
+      - 'tools/wavestar_nmpc_reference_audit.py'
+      - 'tests/test_wavestar_split_step_portable.py'
+      - 'wecsim/control/wavestarNmpc.py'
+      - 'wecsim/dynamics/wavestar.py'
+  workflow_dispatch:
+
+jobs:
+  source-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - step: '0.001'
+            label: 1ms
+          - step: '0.0005'
+            label: 0p5ms
+          - step: '0.00025'
+            label: 0p25ms
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: |
+            WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive
+            WECCCOMP/hydroData
+            WECCCOMP/geometry
+      - name: Use the exact pinned hydrodynamic fixture
+        run: |
+          cp tests/fixtures/matlab/wavestar_nmpc_split_step_225s/wavestar.h5 applications/WECCCOMP/hydroData/wavestar.h5
+          cmp tests/fixtures/matlab/wavestar_nmpc_split_step_225s/wavestar.h5 applications/WECCCOMP/hydroData/wavestar.h5
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody Stateflow Control_System_Toolbox Optimization_Toolbox System_Identification_Toolbox Statistics_and_Machine_Learning_Toolbox
+      - name: Generate autonomous MATLAB reference
+        uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); reference_model_baseline('WECCCOMP_NMPC_SPLIT_STEP_FULL', ${{ matrix.step }})
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .
+      - name: Audit against the independent Python physical path
+        run: |
+          python tools/wavestar_nmpc_reference_audit.py \
+            --source-dir matlab-reference-model-output \
+            --hydro applications/WECCCOMP/hydroData/wavestar.h5 \
+            --step ${{ matrix.step }} \
+            --output matlab-reference-model-output/wavestar-reference-audit.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wavestar-nmpc-source-reference-${{ matrix.label }}
+          path: |
+            matlab-reference-model-output/WECCCOMP_NMPC_SPLIT_STEP_FULL_*
+            matlab-reference-model-output/wavestar-reference-audit.json
