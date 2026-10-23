@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/oswec-passive-yaw-continuous-step.yml'
+      - 'tests/fixtures/matlab/oswec_held_yaw/continuous_heading.patch'
       - 'tests/matlab/oswec_passive_yaw_continuous_step_refinement.m'
       - 'tools/oswec_continuous_yaw_step_audit.py'
       - 'tests/test_oswec_continuous_yaw_refinement.py'
@@ -28,14 +29,18 @@ jobs:
           sparse-checkout: source
       - uses: actions/checkout@v7
         with:
-          repository: cmccomb/WEC-Sim_Applications
-          ref: 34ca45db2b82bb1d2f344175b2b3c51be72266db
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
           path: applications
           filter: blob:none
           lfs: true
           sparse-checkout: |
             _Common_Input_Files/OSWEC
             Passive_Yaw/PassiveYawRegression
+      - name: Apply repository-owned continuous-heading control
+        run: |
+          git -C applications apply --unidiff-zero --check ../tests/fixtures/matlab/oswec_held_yaw/continuous_heading.patch
+          git -C applications apply --unidiff-zero ../tests/fixtures/matlab/oswec_held_yaw/continuous_heading.patch
       - uses: matlab-actions/setup-matlab@v3
         with:
           release: R2025b

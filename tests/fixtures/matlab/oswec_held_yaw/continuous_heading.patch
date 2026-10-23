@@ -1,0 +1,10 @@
+diff --git a/Passive_Yaw/PassiveYawRegression/wecSimInputFile.m b/Passive_Yaw/PassiveYawRegression/wecSimInputFile.m
+index 1069475..6bce7c8 100644
+--- a/Passive_Yaw/PassiveYawRegression/wecSimInputFile.m
++++ b/Passive_Yaw/PassiveYawRegression/wecSimInputFile.m
+@@ -30 +30 @@ body(1).yaw.option = 1;                         % Turn passive yaw ON
+-body(1).yaw.threshold = 1;                      % Set passive yaw threshold
++body(1).yaw.threshold = 0;                      % Interpolate heading coefficients every step
+@@ -38 +38 @@ body(2).yaw.option = 1;                         % Turn passive yaw ON
+-body(2).yaw.threshold = 1;                      % Set passive yaw threshold
++body(2).yaw.threshold = 0;                      % Interpolate heading coefficients every step
