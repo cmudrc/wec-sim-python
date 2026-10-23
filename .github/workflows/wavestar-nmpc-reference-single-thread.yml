@@ -1,4 +1,4 @@
-name: MATLAB WaveStar 0.25 ms source repeatability
+name: MATLAB WaveStar fine-step source repeatability
 
 on:
   workflow_dispatch:
@@ -17,12 +17,20 @@ on:
           - ubuntu-latest
           - macos-15-intel
           - macos-15
+      plant_step:
+        description: Plant integration step for the 225 s source and independent Python audit
+        type: choice
+        required: false
+        default: '0.00025'
+        options:
+          - '0.00025'
+          - '0.000125'
 
 jobs:
   source-repeat:
     if: ${{ !inputs.qp_only }}
     runs-on: ${{ inputs.runner }}
-    timeout-minutes: 90
+    timeout-minutes: 150
     env:
       MATLAB_DISABLE_CBWR: ${{ inputs.runner == 'ubuntu-latest' && '1' || '' }}
       MKL_CBWR: ${{ inputs.runner == 'ubuntu-latest' && 'COMPATIBLE' || '' }}
@@ -84,7 +92,7 @@ jobs:
             assert(contains(upper(blasInfo),'COMPATIBLE'),'Compatible BLAS branch was not selected');
             end;
             addpath('tests/matlab');
-            reference_model_baseline('WECCCOMP_NMPC_SPLIT_STEP_FULL',0.00025)
+            reference_model_baseline('WECCCOMP_NMPC_SPLIT_STEP_FULL',${{ inputs.plant_step }})
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -94,7 +102,7 @@ jobs:
           python tools/wavestar_nmpc_reference_audit.py \
             --source-dir matlab-reference-model-output \
             --hydro applications/WECCCOMP/hydroData/wavestar.h5 \
-            --step 0.00025 \
+            --step ${{ inputs.plant_step }} \
             --output matlab-reference-model-output/wavestar-reference-audit.json
       - uses: actions/upload-artifact@v4
         if: always()
