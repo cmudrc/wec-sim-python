@@ -152,6 +152,26 @@ separation to within `5.8e-8` N m. This supports feedback amplification of
 small platform numerical differences, while the startup AR fit also has a
 separate transient forecast difference before NMPC activation.
 
+Two further [Apple silicon source jobs](https://github.com/cmudrc/wec-sim-python/actions/runs/39992588386)
+halved the plant step to 0.125 ms while retaining the pinned sea, 50 ms
+controller, and 225 s duration. Their compact
+[`source_0p125ms_macos_arm_m1.npz`](source_0p125ms_macos_arm_m1.npz)
+traces are byte-identical; the [corrected archived repeat
+comparison](https://github.com/cmudrc/wec-sim-python/actions/runs/39999436632)
+passes with zero differences in pitch, speed, stroke, force, and request.
+The original workflow's compare job failed because its earlier comparator
+hardcoded 0.25 ms; both source and physical audit jobs succeeded, and the
+corrected comparator was rerun on those same artifacts. The
+[`half-step comparison`](macos_arm_half_step_source_comparison.json) shows
+that the 0.125 and 0.25 ms Apple source traces themselves differ by up to
+`0.006753` rad pitch and `0.687034` N m request; their pitch-peak aggregate
+gap is `0.5691%`, above the original `0.5%` limit. The independent physical
+Python run at the matching 0.125 ms step still misses all five pointwise
+limits, including `0.006806` rad pitch against `0.0005` and `0.434049` N m
+request against `0.1`. All seven aggregates pass. Refining the source and
+Python plant steps together therefore does not meet the unchanged autonomous
+gate. This finer trace remains a diagnostic, not an accepted parity target.
+
 Two [native Intel macOS source runs](https://github.com/cmudrc/wec-sim-python/actions/runs/39954640642)
 on the `macos-15-intel` runner with MATLAB R2025b Update 7, one computational
 thread, and oneMKL 2023.2.2 with CNR off also generated identical 225 s
@@ -230,6 +250,24 @@ succeeded. These fixed-input QP differences are many orders smaller than the
 autonomous source gaps. They do not establish which upstream calculation first
 perturbs feedback, or make the independent physical Python gate pass.
 
+The [fixed-input AR replay](fixed_input_ar_platform_comparison.json) calls the
+pinned Applications `predictor.m` on the same checked 4,501-sample estimated
+excitation sequence on [compatible Linux](https://github.com/cmudrc/wec-sim-python/actions/runs/39995149681),
+[native Intel macOS](https://github.com/cmudrc/wec-sim-python/actions/runs/39995153765),
+and [native Apple silicon](https://github.com/cmudrc/wec-sim-python/actions/runs/39995157574).
+All use MATLAB R2025b Update 7 and one computational thread. Linux reproduces
+the checked forecast exactly. Intel and Apple forecasts differ from it by at
+most `2.75e-12` and `2.84e-12` N m during active NMPC (15–225 s). Their
+larger `0.00883` and `0.00748` N m differences occur at 10.4 s, before the
+forecast drives commands; the next integer-second AR refit removes that
+transient. At activation, replaying the different platform source
+estimated-moment histories through the same Python predictor produces
+`2.73e-12`/`5.08e-12` N m Intel/Apple forecast gaps from the AMD history,
+compared with `3.40e-12`/`5.72e-12` N m in the source logs. This points to
+the already different estimated-moment histories as the main initial active
+predictor perturbation. It does not identify the upstream floating-point
+operation or establish autonomous physical parity.
+
 The [Python comparison](compatible_checked_qp_replay.json), reproduced by
 [`wavestar_nmpc_checked_qp_replay.py`](../../../../tools/wavestar_nmpc_checked_qp_replay.py),
 finds a `0.001071` N m maximum request gap and `0.002058` N m maximum
@@ -255,6 +293,7 @@ SHA-256:
 - `source_0p25ms_repeat.npz`: `5f6f576b94e4064352ce5bf1ba7a83e69c83faf157c8f1abe77488645b627d24`
 - `source_0p25ms_compatible_amd7763.npz`: `48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6`
 - `source_0p25ms_macos_arm_m1.npz`: `b7c09d34fa247a897ac55ad3d7d4cd8251b679ed55ec01c3d4155b17d072a3d6`
+- `source_0p125ms_macos_arm_m1.npz`: `ee791a11bb3c199e510dcc33e9f1b718313a34473694258ce5f75fd44ae55df0`
 - `source_0p25ms_macos_intel.npz`: `3c7596c0f39bb51bf3836802643597c827bac1ecb2cb6d625669a897baad92ef`
 - `controller_0p25ms_compatible_amd7763.npz`: `06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3`
 - `checked_qp_replay_compatible_amd7763.mat`: `cbc5a2acfe651f3570db0405d040ee3d40791b07f30ac4b3d282ae289ec5af7d`

@@ -20,10 +20,13 @@ EXPECTED_SOURCE = {
 }
 
 
-def pack(artifact: Path, output: Path):
-    trace, _ = _read_artifact(artifact, .00025)
+def pack(artifact: Path, output: Path, step: float = .00025):
+    if step not in (.00025, .000125):
+        raise ValueError("Unsupported WaveStar source plant step")
+    trace, _ = _read_artifact(artifact, step)
     audit = json.loads((artifact / "wavestar-reference-audit.json").read_text())
-    if audit["source"] != EXPECTED_SOURCE:
+    expected_source = {**EXPECTED_SOURCE, "plant_step_s": step}
+    if audit["source"] != expected_source:
         raise ValueError("Source provenance does not match the pinned case")
     components = np.loadtxt(artifact / f"{PREFIX}components.csv",
                             delimiter=",", ndmin=2)
@@ -51,8 +54,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--step", type=float, default=.00025)
     args = parser.parse_args()
-    pack(args.artifact, args.output)
+    pack(args.artifact, args.output, args.step)
 
 
 if __name__ == "__main__":

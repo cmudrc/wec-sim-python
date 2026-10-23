@@ -1,4 +1,4 @@
-name: MATLAB WaveStar 0.25 ms source repeatability
+name: MATLAB WaveStar fine-step source repeatability
 
 on:
   workflow_dispatch:
@@ -8,6 +8,20 @@ on:
         type: boolean
         required: false
         default: false
+      ar_only:
+        description: Replay the checked excitation sequence through the pinned MATLAB predictor
+        type: boolean
+        required: false
+        default: false
+      compare_only:
+        description: Compare source artifacts from an earlier workflow run
+        type: boolean
+        required: false
+        default: false
+      source_run_id:
+        description: Completed source workflow run ID for compare-only mode
+        type: string
+        required: false
       runner:
         description: Host for the full source repeatability probe
         type: choice
@@ -17,12 +31,24 @@ on:
           - ubuntu-latest
           - macos-15-intel
           - macos-15
+      plant_step:
+        description: Plant integration step for the 225 s source and independent Python audit
+        type: choice
+        required: false
+        default: '0.00025'
+        options:
+          - '0.00025'
+          - '0.000125'
+
+permissions:
+  actions: read
+  contents: read
 
 jobs:
   source-repeat:
-    if: ${{ !inputs.qp_only }}
+    if: ${{ !inputs.qp_only && !inputs.ar_only && !inputs.compare_only }}
     runs-on: ${{ inputs.runner }}
-    timeout-minutes: 90
+    timeout-minutes: 150
     env:
       MATLAB_DISABLE_CBWR: ${{ inputs.runner == 'ubuntu-latest' && '1' || '' }}
       MKL_CBWR: ${{ inputs.runner == 'ubuntu-latest' && 'COMPATIBLE' || '' }}
@@ -84,7 +110,7 @@ jobs:
             assert(contains(upper(blasInfo),'COMPATIBLE'),'Compatible BLAS branch was not selected');
             end;
             addpath('tests/matlab');
-            reference_model_baseline('WECCCOMP_NMPC_SPLIT_STEP_FULL',0.00025)
+            reference_model_baseline('WECCCOMP_NMPC_SPLIT_STEP_FULL',${{ inputs.plant_step }})
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -94,7 +120,7 @@ jobs:
           python tools/wavestar_nmpc_reference_audit.py \
             --source-dir matlab-reference-model-output \
             --hydro applications/WECCCOMP/hydroData/wavestar.h5 \
-            --step 0.00025 \
+            --step ${{ inputs.plant_step }} \
             --output matlab-reference-model-output/wavestar-reference-audit.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -107,7 +133,7 @@ jobs:
             matlab-reference-model-output/cpu.txt
 
   compare-repeats:
-    if: ${{ !inputs.qp_only }}
+    if: ${{ !inputs.qp_only && !inputs.ar_only && !inputs.compare_only }}
     needs: source-repeat
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -142,8 +168,41 @@ jobs:
             reference-artifacts/repeat.json
             reference-artifacts/controller-probe.json
 
+  compare-archived:
+    if: ${{ inputs.compare_only }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate source run ID
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        run: |
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]] || exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wavestar-nmpc-platform-*
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: reference-artifacts
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .
+      - name: Compare independently generated source traces
+        run: |
+          python tools/wavestar_nmpc_reference_repeat.py \
+            --left reference-artifacts/wavestar-nmpc-platform-a \
+            --right reference-artifacts/wavestar-nmpc-platform-b \
+            --output reference-artifacts/repeat.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wavestar-nmpc-archived-repeat-report
+          path: reference-artifacts/repeat.json
+
   checked-qp-replay:
-    if: ${{ inputs.qp_only }}
+    if: ${{ inputs.qp_only && !inputs.ar_only && !inputs.compare_only }}
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 45
     env:
@@ -215,3 +274,63 @@ jobs:
             checked-qp-replay.mat
             checked-qp-report.json
             checked-qp-runtime.txt
+
+  checked-ar-replay:
+    if: ${{ inputs.ar_only && !inputs.compare_only }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 45
+    env:
+      MATLAB_DISABLE_CBWR: ${{ inputs.runner == 'ubuntu-latest' && '1' || '' }}
+      MKL_CBWR: ${{ inputs.runner == 'ubuntu-latest' && 'COMPATIBLE' || '' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          sparse-checkout: WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .
+      - name: Prepare the checked source moment sequence
+        run: >-
+          python tools/wavestar_nmpc_checked_ar_replay.py prepare
+          --output checked-ar-input.mat
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: System_Identification_Toolbox
+      - name: Replay the pinned predictor on identical inputs
+        uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            maxNumCompThreads(1);
+            assert(maxNumCompThreads == 1);
+            blasInfo=evalc('version -blas');
+            fid=fopen('checked-ar-runtime.txt','w');
+            assert(fid ~= -1);
+            fprintf(fid,'version=%s\nthreads=%d\nblas=%s\n',version,maxNumCompThreads,strtrim(blasInfo));
+            fclose(fid);
+            if strcmp(getenv('RUNNER_OS'),'Linux');
+            assert(contains(upper(blasInfo),'COMPATIBLE'));
+            end;
+            addpath('tests/matlab');
+            wavestar_nmpc_checked_ar_replay('checked-ar-input.mat',
+            'applications','checked-ar-replay.mat')
+      - name: Compare with the checked source forecast
+        run: >-
+          python tools/wavestar_nmpc_checked_ar_replay.py compare
+          --matlab-result checked-ar-replay.mat
+          --output checked-ar-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wavestar-checked-ar-replay
+          path: |
+            checked-ar-input.mat
+            checked-ar-replay.mat
+            checked-ar-report.json
+            checked-ar-runtime.txt
