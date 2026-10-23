@@ -1,4 +1,4 @@
-name: MATLAB WaveStar compatible BLAS 0.25 ms repeat
+name: MATLAB WaveStar 0.25 ms source repeatability
 
 on:
   workflow_dispatch:
@@ -16,6 +16,7 @@ on:
         options:
           - ubuntu-latest
           - macos-15-intel
+          - macos-15
 
 jobs:
   source-repeat:
@@ -23,8 +24,8 @@ jobs:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 90
     env:
-      MATLAB_DISABLE_CBWR: '1'
-      MKL_CBWR: COMPATIBLE
+      MATLAB_DISABLE_CBWR: ${{ inputs.runner == 'ubuntu-latest' && '1' || '' }}
+      MKL_CBWR: ${{ inputs.runner == 'ubuntu-latest' && 'COMPATIBLE' || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -63,20 +64,22 @@ jobs:
         with:
           release: R2025b
           products: Simulink Simscape Simscape_Multibody Stateflow Control_System_Toolbox Optimization_Toolbox System_Identification_Toolbox Statistics_and_Machine_Learning_Toolbox
-      - name: Generate source with compatible BLAS and one thread
+      - name: Generate source with recorded BLAS and one thread
         uses: matlab-actions/run-command@v3
         with:
           command: >-
             maxNumCompThreads(1);
             assert(maxNumCompThreads == 1);
-            assert(strcmp(getenv('MATLAB_DISABLE_CBWR'),'1'));
-            assert(strcmp(getenv('MKL_CBWR'),'COMPATIBLE'));
             blasInfo=evalc('version -blas');
-            assert(contains(upper(blasInfo),'COMPATIBLE'),'Compatible BLAS branch was not selected');
             fid=fopen('matlab-reference-model-output/matlab-runtime.txt','w');
             assert(fid ~= -1);
             fprintf(fid,'version=%s\nthreads=%d\nblas=%s\n',version,maxNumCompThreads,strtrim(blasInfo));
             fclose(fid);
+            if strcmp(getenv('RUNNER_OS'),'Linux');
+            assert(strcmp(getenv('MATLAB_DISABLE_CBWR'),'1'));
+            assert(strcmp(getenv('MKL_CBWR'),'COMPATIBLE'));
+            assert(contains(upper(blasInfo),'COMPATIBLE'),'Compatible BLAS branch was not selected');
+            end;
             addpath('tests/matlab');
             reference_model_baseline('WECCCOMP_NMPC_SPLIT_STEP_FULL',0.00025)
       - uses: actions/setup-python@v7
@@ -93,7 +96,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: wavestar-nmpc-compatible-${{ matrix.repeat }}
+          name: wavestar-nmpc-platform-${{ matrix.repeat }}
           path: |
             matlab-reference-model-output/WECCCOMP_NMPC_SPLIT_STEP_FULL_*
             matlab-reference-model-output/wavestar-reference-audit.json
@@ -109,7 +112,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v4
         with:
-          pattern: wavestar-nmpc-compatible-*
+          pattern: wavestar-nmpc-platform-*
           path: reference-artifacts
       - uses: actions/setup-python@v7
         with:
@@ -118,20 +121,20 @@ jobs:
       - name: Compare identical-input source repeats
         run: |
           python tools/wavestar_nmpc_reference_repeat.py \
-            --left reference-artifacts/wavestar-nmpc-compatible-a \
-            --right reference-artifacts/wavestar-nmpc-compatible-b \
+            --left reference-artifacts/wavestar-nmpc-platform-a \
+            --right reference-artifacts/wavestar-nmpc-platform-b \
             --output reference-artifacts/repeat.json
       - name: Replay logged controller inputs through Python
         run: |
           python tools/wavestar_nmpc_controller_source_probe.py \
-            reference-artifacts/wavestar-nmpc-compatible-a/WECCCOMP_NMPC_SPLIT_STEP_FULL_controller.mat \
-            reference-artifacts/wavestar-nmpc-compatible-b/WECCCOMP_NMPC_SPLIT_STEP_FULL_controller.mat \
+            reference-artifacts/wavestar-nmpc-platform-a/WECCCOMP_NMPC_SPLIT_STEP_FULL_controller.mat \
+            reference-artifacts/wavestar-nmpc-platform-b/WECCCOMP_NMPC_SPLIT_STEP_FULL_controller.mat \
             --end-time 40 \
             --output reference-artifacts/controller-probe.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: wavestar-nmpc-compatible-repeat-report
+          name: wavestar-nmpc-platform-repeat-report
           path: |
             reference-artifacts/repeat.json
             reference-artifacts/controller-probe.json
