@@ -598,15 +598,16 @@ surge/heave speed, 0.165 mrad/s pitch speed, 0.163 mm/s piston speed,
 against 864.422 J from the source's full internal solver trace (0.0717%).
 The source orifice signals also reconstruct from its logged piston speed and
 published air law. The [reproduction workflow](.github/workflows/owc-orifice-corrected-source.yml)
-runs the proposed application in [WEC-Sim_Applications PR #119](https://github.com/WEC-Sim/WEC-Sim_Applications/pull/119)
-from a pinned fork commit and pairs fresh outputs with independent Python.
-WEC-Sim initialization resets the model MaxStep from `simu.dt`; the proposed
-published input therefore sets `simu.dt = 0.00015625` s while retaining 0.005 s
+checks out the pinned original Applications case, applies the documented
+piston-force patch and solver-clock refinement to a disposable copy, and pairs
+fresh outputs with independent Python. WEC-Sim initialization resets the model
+MaxStep from `simu.dt`; the repository-local input therefore sets
+`simu.dt = 0.00015625` s while retaining 0.005 s
 output and force-sampling clocks. A [full 130 s hosted run](https://github.com/cmudrc/wec-sim-python/actions/runs/39877611225)
 of that input passed the independent motion and air-system gate and reproduced
 the earlier corrected archive within `3.96e-11`. A [full 0.005 s solver-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/39871054213)
-found 1.687 m surge and a 1.62% PTO-work change. The case remains qualified
-until the correction is merged and pinned as the maintained application revision.
+found 1.687 m surge and a 1.62% PTO-work change. The unchanged published case
+retains `qualified_motion` status; this derived correction does not promote it.
 
 A separate [local 30 s OWC clock audit](tests/fixtures/matlab/owc_orifice_dt_30s/README.md)
 sets MATLAB `simu.dt` and `ode23t` MaxStep together to `0.005`, `0.0025`,

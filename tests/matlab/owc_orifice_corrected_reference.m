@@ -1,4 +1,4 @@
-% Re-run the pinned corrected OWC model proposed upstream in PR #119.
+% Re-run a repository-local correction to the pinned original OWC model.
 % Run as a script so Simulink mask and variant initialization can resolve the
 % WEC-Sim variables in the same workspace as initializeWecSim.
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
@@ -14,9 +14,23 @@ assert(~isfolder(caseDir), 'Do not reuse a previously modified model');
 assert(copied, message);
 mkdir(outputDir);
 
-% Avoid opening the Mechanics Explorer or post-run plots on the CI runner.
+% Refine only the solver clock while retaining the published output and
+% force-sampling clocks. These changes apply only to the disposable copy.
 inputFile = fullfile(caseDir, 'wecSimInputFile.m');
 input = fileread(inputFile);
+assert(~contains(input, 'simu.dtOut') && ~contains(input, 'simu.nonlinearDt') ...
+    && ~contains(input, 'simu.cicDt') && ~contains(input, 'simu.morisonDt'), ...
+    'Original OWC clocks changed');
+dtLine = '(?m)^simu\.dt = 0\.005;[^\r\n]*';
+assert(numel(regexp(input, dtLine, 'match')) == 1, ...
+    'Original OWC solver step changed');
+refinedClocks = sprintf(['simu.dt = 0.00015625; %% Solver maximum step [s]\n' ...
+    'simu.dtOut = 0.005; %% Output sampling step [s]\n' ...
+    'simu.cicDt = 0.005; %% Radiation convolution sampling step [s]\n' ...
+    'simu.nonlinearDt = 0.005; %% Nonlinear-force sampling step [s]\n' ...
+    'simu.morisonDt = 0.005; %% Morison-force sampling step [s]']);
+input = regexprep(input, dtLine, refinedClocks);
+% Avoid opening the Mechanics Explorer or post-run plots on the CI runner.
 old = "simu.explorer = 'on';";
 assert(count(input, old) == 1, 'Published input changed');
 input = replace(input, old, "simu.explorer = 'off';");
@@ -29,6 +43,10 @@ assert(fid ~= -1);
 fprintf(fid, '%% Plotting disabled for the source comparison.\n');
 fclose(fid);
 
+% The original model routes excitation alone to the GBM state equation.
+% Apply the one-connection piston correction, then verify the resulting graph.
+run(fullfile(repoRoot, 'tests', 'matlab', ...
+    'owc_orifice_correct_piston_path.m'));
 addpath(genpath(fullfile(coreRoot, 'source')));
 modelFile = fullfile(caseDir, 'OWC_GBM.slx');
 load_system(modelFile);
@@ -56,10 +74,10 @@ assert(simu.endTime == 130 && simu.dt == .00015625 && ...
     simu.nonlinearDt == .005 && simu.morisonDt == .005 && ...
     strcmp(simu.solver, 'ode23t') && ...
     waves.phaseSeed == 128 && waves.height == 1 && waves.period == 4, ...
-    'Published OWC settings changed');
+    'Repository-local corrected OWC settings changed');
 [~, model, ~] = fileparts(simu.simMechanicsFile);
 assert(abs(str2double(get_param(model, 'MaxStep')) - .00015625) < 1e-12, ...
-    'Published OWC input must resolve the refined MaxStep');
+    'Corrected OWC input must resolve the refined MaxStep');
 try
     % matlab-actions runs this script in the base workspace; the model's
     % masked blocks resolve the initialized body and variant values there.
