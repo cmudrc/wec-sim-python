@@ -47,9 +47,9 @@ def compare(result_path, other_path=None):
         active_peak = int(np.argmax(active)) + 300
         return {
             "max_abs_Nm": float(by_sample[peak]),
-            "time_of_max_s": float(time[peak]),
+            "time_of_max_s": round(float(time[peak]), 10),
             "max_active_after_15s_Nm": float(by_sample[active_peak]),
-            "active_time_of_max_s": float(time[active_peak]),
+            "active_time_of_max_s": round(float(time[active_peak]), 10),
         }
 
     report = {

@@ -1,0 +1,60 @@
+{
+  "checked_controller_fixture_sha256": "06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3",
+  "source_inputs": "Identical checked 4501-sample estimated excitation sequence; pinned Applications predictor.m; 18th-order AR, 40-step forecast.",
+  "platforms": {
+    "linux": {
+      "workflow_run": "https://github.com/cmudrc/wec-sim-python/actions/runs/39995149681",
+      "matlab_result_sha256": "f974edef8f3b91e30de1e095f04ca9d9aef0bd1eea46921243a4150adb41a212",
+      "runtime": "version=25.2.0.3360999 (R2025b) Update 7\nthreads=1\nblas=ans =\n\n    'Intel(R) oneAPI Math Kernel Library Version 2024.1-Product Build 20240215 for Intel(R) 64 architecture applications (CNR branch compatible)'",
+      "replay_vs_checked_source": {
+        "max_abs_Nm": 0.0,
+        "time_of_max_s": 0.0,
+        "max_active_after_15s_Nm": 0.0,
+        "active_time_of_max_s": 15.0
+      }
+    },
+    "intel_macos": {
+      "workflow_run": "https://github.com/cmudrc/wec-sim-python/actions/runs/39995153765",
+      "matlab_result_sha256": "9a3594f5d8a64ce657c7495cb114af8fad0fda6ac579864b5063d719cdbd6a9a",
+      "runtime": "version=25.2.0.3360999 (R2025b) Update 7\nthreads=1\nblas=ans =\n\n    'Intel(R) oneAPI Math Kernel Library Version 2023.2.2-Product Build 20240416 for Intel(R) 64 architecture applications (CNR branch off)'",
+      "replay_vs_checked_source": {
+        "max_abs_Nm": 0.00883034807338845,
+        "time_of_max_s": 10.4,
+        "max_active_after_15s_Nm": 2.7480240305521875e-12,
+        "active_time_of_max_s": 97.1
+      }
+    },
+    "apple_silicon": {
+      "workflow_run": "https://github.com/cmudrc/wec-sim-python/actions/runs/39995157574",
+      "matlab_result_sha256": "a2c5fe0a833a522e5f04060d18a778df90d6adb8da5fcee79bef1328b669aeca",
+      "runtime": "version=25.2.0.3360999 (R2025b) Update 7\nthreads=1\nblas=ans =\n\n    'Apple Accelerate BLAS (ILP64)'",
+      "replay_vs_checked_source": {
+        "max_abs_Nm": 0.007482271525077522,
+        "time_of_max_s": 10.4,
+        "max_active_after_15s_Nm": 2.8403945862010005e-12,
+        "active_time_of_max_s": 44.5
+      }
+    }
+  },
+  "pairwise": {
+    "linux_vs_intel_macos": {
+      "max_abs_Nm": 0.00883034807338845,
+      "time_of_max_s": 10.4,
+      "max_active_after_15s_Nm": 2.7480240305521875e-12,
+      "active_time_of_max_s": 97.1
+    },
+    "linux_vs_apple_silicon": {
+      "max_abs_Nm": 0.007482271525077522,
+      "time_of_max_s": 10.4,
+      "max_active_after_15s_Nm": 2.8403945862010005e-12,
+      "active_time_of_max_s": 44.5
+    },
+    "intel_macos_vs_apple_silicon": {
+      "max_abs_Nm": 0.007308837957680225,
+      "time_of_max_s": 10.4,
+      "max_active_after_15s_Nm": 2.097877427331696e-12,
+      "active_time_of_max_s": 44.4
+    }
+  },
+  "interpretation": "The active 15-225 s fixed-input forecast differences are around 1e-12 N m; the larger 10.4 s differences occur before NMPC uses the forecast. These are component diagnostics, not the autonomous physical gate."
+}

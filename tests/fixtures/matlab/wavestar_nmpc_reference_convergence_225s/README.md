@@ -230,6 +230,24 @@ succeeded. These fixed-input QP differences are many orders smaller than the
 autonomous source gaps. They do not establish which upstream calculation first
 perturbs feedback, or make the independent physical Python gate pass.
 
+The [fixed-input AR replay](fixed_input_ar_platform_comparison.json) calls the
+pinned Applications `predictor.m` on the same checked 4,501-sample estimated
+excitation sequence on [compatible Linux](https://github.com/cmudrc/wec-sim-python/actions/runs/39995149681),
+[native Intel macOS](https://github.com/cmudrc/wec-sim-python/actions/runs/39995153765),
+and [native Apple silicon](https://github.com/cmudrc/wec-sim-python/actions/runs/39995157574).
+All use MATLAB R2025b Update 7 and one computational thread. Linux reproduces
+the checked forecast exactly. Intel and Apple forecasts differ from it by at
+most `2.75e-12` and `2.84e-12` N m during active NMPC (15–225 s). Their
+larger `0.00883` and `0.00748` N m differences occur at 10.4 s, before the
+forecast drives commands; the next integer-second AR refit removes that
+transient. At activation, replaying the different platform source
+estimated-moment histories through the same Python predictor produces
+`2.73e-12`/`5.08e-12` N m Intel/Apple forecast gaps from the AMD history,
+compared with `3.40e-12`/`5.72e-12` N m in the source logs. This points to
+the already different estimated-moment histories as the main initial active
+predictor perturbation. It does not identify the upstream floating-point
+operation or establish autonomous physical parity.
+
 The [Python comparison](compatible_checked_qp_replay.json), reproduced by
 [`wavestar_nmpc_checked_qp_replay.py`](../../../../tools/wavestar_nmpc_checked_qp_replay.py),
 finds a `0.001071` N m maximum request gap and `0.002058` N m maximum
