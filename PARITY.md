@@ -1023,6 +1023,22 @@ that the physical plant can track the repeated source when given the same
 delayed requests; the independently computed NMPC feedback still fails the
 full-duration pointwise gate.
 
+The same compatible-BLAS source jobs' complete 4,501-sample controller logs
+match each other numerically exactly and are preserved as a
+[compact checked controller fixture](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/controller_0p25ms_compatible_amd7763.npz).
+On the source stroke and preceding source request, Python's observer states
+match to `1.75e-12` and the active NMPC AR forecasts to `2.77e-11` N m.
+The larger `4.70` N m forecast difference occurs at 10.4 s while the
+resistive startup command does not use the forecast. The
+[full controller component audit](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/compatible_controller_components.json)
+finds a `0.001070` N m maximum and `0.0000335` N m RMS request gap, within
+the existing `0.01` and `0.0003` N m component gates. Python's QP replay on
+the source's *own* logged states and forecasts has a comparable `0.001071`
+N m peak gap. The observer and active AR predictor therefore do not explain
+the fixed-input request difference; the remaining QP-side difference is
+small enough to pass a component gate but can seed the sensitive autonomous
+loop. This does not satisfy issue #623's independent closed-loop gate.
+
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,
 or an **open** result with the specific missing evidence and next experiment.

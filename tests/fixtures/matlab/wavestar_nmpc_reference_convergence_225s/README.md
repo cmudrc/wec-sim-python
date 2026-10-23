@@ -113,6 +113,25 @@ tool reproduces the check, and the ordinary Python parity workflow runs this
 component gate on Linux x86 and Apple silicon. It deliberately feeds the
 saved source request, so it does not satisfy the autonomous feedback gate.
 
+The two compatible-BLAS source jobs also exported identical observer states,
+AR forecasts, and requested torques at all 4,501 controller samples. Their
+checked compact [controller signals](controller_0p25ms_compatible_amd7763.npz)
+and [full replay report](compatible_controller_components.json) allow the
+[`wavestar_nmpc_reference_controller_audit.py`](../../../../tools/wavestar_nmpc_reference_controller_audit.py)
+tool to replay the observer, predictor, and QP without requiring an expiring
+workflow artifact. On the source stroke and preceding source requests, the
+Python observer differs by at most `1.75e-12` in its five states. The AR
+forecast differs by at most `2.77e-11` N m during active NMPC; its larger
+`4.70` N m difference occurs at 10.4 s, before the forecast drives requests.
+The complete Python request replay differs by at most `0.001071` N m and
+`0.0000336` N m RMS, passing the existing `0.01` and `0.0003` N m component
+limits. Replaying the QP on the *source's own* logged states and forecasts
+still gives a `0.001071` N m peak difference. Thus the active observer and
+predictor replay are not the source of this fixed-input request gap; a small
+QP numerical difference remains and can be amplified in autonomous feedback.
+The portable Python CI now gates this controller component on Linux x86 and
+Apple silicon separately from the autonomous run.
+
 SHA-256:
 
 - `source_1ms_repeat.npz`: `42f3264022177833634731711086cc90a1a39eb313ccdc05110123eb9c3035f6`
@@ -120,6 +139,7 @@ SHA-256:
 - `source_0p25ms.npz`: `0f62bc5692e845f739bb0df715970d006124d4514cdb928059fb2115263596a6`
 - `source_0p25ms_repeat.npz`: `5f6f576b94e4064352ce5bf1ba7a83e69c83faf157c8f1abe77488645b627d24`
 - `source_0p25ms_compatible_amd7763.npz`: `48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6`
+- `controller_0p25ms_compatible_amd7763.npz`: `06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3`
 
 The Python repository's
 [`wavestar-nmpc-reference-convergence.yml`](../../../../.github/workflows/wavestar-nmpc-reference-convergence.yml)
