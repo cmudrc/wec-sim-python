@@ -215,6 +215,13 @@ then independently computes all 400 s of excitation and fixed-body loads.
 
 ## OSWEC nonlinear visualization motion
 
+The adopted [corrected nonlinear visualization baseline](oswec_nonlinear_viz_corrected/README.md)
+preserves all 1,201 source motion, PTO, and facet-pressure frames, plus
+source VTP samples and collection metadata. Its ordinary Python gate advances
+physical motion and generates the scene independently; the hosted workflow
+also compares every fresh source VTP frame. The archived published-step
+record below remains the unchanged input's numerical reference.
+
 `oswec_nonlinear_viz_published_motion.npz` keeps all 1,201 samples of the
 published 120 s, 0.1 s `ode4` flap motion and its principal force channels.
 It was copied without rounding from the untouched R2025b
