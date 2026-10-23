@@ -15,9 +15,10 @@ is an option to evaluate. The existing `wecsim.MoorDyn` bridge calls the
 legacy native API used by the pinned MATLAB parity cases; use that bridge for
 those comparisons. Neither Capytaine nor the current MoorDyn binding is a
 runtime dependency of this package.
-The current VTP writer preserves MATLAB's file layout for parity checks;
-[PyVista](https://docs.pyvista.org/api/core/_autosummary/pyvista.polydata.save)
-is a possible future route for general mesh export, not a current dependency.
+The default VTP writer preserves MATLAB's file layout for parity checks.
+An optional [PyVista](https://docs.pyvista.org/api/core/_autosummary/pyvista.polydata.save)
+writer is available for wave and body frames through the `paraview` extra.
+It is not a core simulation dependency.
 
 ## Current status
 
@@ -1936,6 +1937,15 @@ ParaviewClass(waves).write_paraview_vtp_wave(
     [0, 1, 2], "results/paraview", domain_size=40,
 )
 ```
+
+From the repository root, install `pip install -e '.[paraview]'` to write wave frames with
+`writer="pyvista"` in the call above. The same option applies to
+`write_paraview_vtp(...)` for body frames. PyVista writes VTP XML with
+different metadata and array formatting, while preserving the tested points,
+polygon connectivity, cell-field names, and numeric values. The default
+writer remains the source-compatible choice; mooring frames retain its
+multiple-`Piece` layout. The project still writes PVD collections,
+`bodies.txt`, and `ground.txt` in both modes.
 
 For a body mesh, `ParaviewClass(waves).write_paraview_vtp(...)` accepts
 zero-based triangular `faces`, local `vertices`, one six-DOF `pose` per time,
