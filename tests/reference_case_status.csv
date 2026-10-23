@@ -15,7 +15,7 @@ Controls/Passive (P),independent_motion,
 Controls/Reactive (PI),independent_motion,
 Controls/ReactiveWithPTO,independent_motion,
 Desalination,independent_motion,
-End_Stops,qualified_motion,"The wec-sim-python corrected validation baseline changes only copied-model ode45 MaxStep from 0.1 to 0.025 s; its full 400 s motion and PTO force/work independently pair with Python in ordinary CI. The unchanged published 0.1 s trajectory remains step-sensitive and has no portable independent full-duration gate. Source-timed replay uses MATLAB accepted steps, while independently selected source-style ode45 pairs only the published first 120 s; its 400 s work gap is 0.4307% locally but 0.8246% in Linux CI against the 0.7% gate."
+End_Stops,corrected_independent_motion,"The adopted wec-sim-python validation baseline changes only copied-model ode45 MaxStep from 0.1 to 0.025 s; its full 400 s body motion and PTO force/work independently pair with Python in ordinary CI. The unchanged published 0.1 s trajectory remains step-sensitive and has no portable independent full-duration gate. Source-timed replay uses MATLAB accepted steps, while independently selected source-style ode45 pairs only the published first 120 s; its 400 s work gap is 0.4307% locally but 0.8246% in Linux CI against the 0.7% gate."
 Free_Decay/0m,independent_motion,
 Free_Decay/1m,independent_motion,
 Free_Decay/1m-ME,independent_motion,
