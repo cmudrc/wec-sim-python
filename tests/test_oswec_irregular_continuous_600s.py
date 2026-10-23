@@ -64,7 +64,7 @@ def test_physical_public_wec_matches_full_direct_matlab_continuous_case():
 
     wec = WEC("OSWEC 600 s continuous-heading control")
     flap = wec.body("flap", HYDRO, mass=12_700, inertia=(1.85e6,) * 3,
-                    passive_yaw=True)
+                    passive_yaw=True, passive_yaw_threshold=0)
     wec.body("base", HYDRO, mass=999, inertia=(999,) * 3)
     yaw = wec.coordinate("yaw", flap.move("yaw", pivot=WorldPoint(0, 0, -8.9)))
     wec.rotational_pto("hinge", yaw, damping=120_000)
