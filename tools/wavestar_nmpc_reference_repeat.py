@@ -13,7 +13,7 @@ def compare(left_dir, right_dir):
     if left_audit["source"] != right_audit["source"]:
         raise ValueError("The repeated runs did not share source inputs and limits")
     step = left_audit["source"]["plant_step_s"]
-    if step not in (.00025, .000125):
+    if step not in (.00025, .000125, .0000625):
         raise ValueError("Unsupported WaveStar source plant step")
     left, left_limits = _read_artifact(left_dir, step)
     right, right_limits = _read_artifact(right_dir, step)

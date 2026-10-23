@@ -1189,6 +1189,24 @@ independent physical gate.
 Issue [#623](https://github.com/cmudrc/wec-sim-python/issues/623) remains
 open and the case qualified.
 
+A further [0.0625 ms Apple silicon source repeat](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/macos_arm_quarter_step_repeat.json)
+is again exact at all 4,501 samples, yet the [0.125-to-0.0625 ms source
+comparison](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/macos_arm_quarter_step_source_comparison.json)
+changes pitch by `0.010800` rad and requested torque by `0.721063` N m.
+The original pitch limit is crossed at 17.95 s. All seven aggregate
+source-to-source measures remain within `0.5%`, which does not repair
+pointwise instability. A [0–40 s controller-input replay](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/macos_arm_quarter_step_controller_probe.json)
+matches each source request within `3.01e-6` N m. On the same 0.0625 ms
+source, an independently running experimental Python physical plant that
+includes the light BC rod and motor still differs by `0.008512` rad pitch,
+`0.040802` rad/s speed,
+`0.001701` m stroke, `3.1800` N axial force, and `0.659784` N m requested
+torque; all five exceed the original limits. Its pitch-peak aggregate also
+misses `0.5%` at `0.8871%`. The correction remains unmerged because it
+regresses the existing 1 ms aggregate gate. Neither a finer common step nor
+that physical correction closes the autonomous gate. WaveStar NMPC stays
+qualified, and issue #623 remains open.
+
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,
 or an **open** result with the specific missing evidence and next experiment.

@@ -1,11 +1,13 @@
 # WaveStar NMPC source reference convergence diagnostic
 
-The `source_*.npz` files preserve 4,501 samples of independent 225 s
-MATLAB R2025b WaveStar NMPC runs from [Python-repository CI run
+The first 4,501-sample, independent 225 s MATLAB R2025b WaveStar NMPC
+step diagnostic came from [Python-repository CI run
 39883276159](https://github.com/cmudrc/wec-sim-python/actions/runs/39883276159)
 and its [repeat run
 39886232300](https://github.com/cmudrc/wec-sim-python/actions/runs/39886232300).
-They are **diagnostics, not accepted physical parity references**. Each run's
+The `source_*.npz` files also preserve compact traces from the later runs
+documented below. They are **diagnostics, not accepted physical parity
+references**. Each initial run's
 three source artifacts contain the original body/PTO CSV files and controller MAT
 files. `convergence.json` and `convergence_rerun.json` record the full
 source-to-source comparisons in the two runs.
@@ -15,9 +17,10 @@ Applications `d53d4d4c9eda2581f04204f5d394a6ef84bb099e`, and the exact
 `wavestar.h5` in
 [`../wavestar_nmpc_split_step_225s`](../wavestar_nmpc_split_step_225s/README.md)
 (SHA-256 `b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1`).
-The 500 wave components match that pinned fixture exactly. All runs use the
-`ode4` source plant, the same 50 ms controller and output interval, and plant
-steps of 1, 0.5, or 0.25 ms. Only disposable Applications input files were
+The 500 wave components match that pinned fixture exactly. The first runs use
+the `ode4` source plant, the same 50 ms controller and output interval, and
+plant steps of 1, 0.5, or 0.25 ms. Later runs refine the step further, as
+described below. Only disposable Applications input files were
 configured for the runs; no changes were pushed to either MATLAB repository.
 The NPZ arrays are float64 copies of exported source time, pitch, pitch
 speed, PTO stroke and speed, axial force, requested torque, and components.
@@ -171,6 +174,37 @@ limits, including `0.006806` rad pitch against `0.0005` and `0.434049` N m
 request against `0.1`. All seven aggregates pass. Refining the source and
 Python plant steps together therefore does not meet the unchanged autonomous
 gate. This finer trace remains a diagnostic, not an accepted parity target.
+
+Two more [Apple silicon source jobs](https://github.com/cmudrc/wec-sim-python/actions/runs/40006669298)
+halved the plant step again to 0.0625 ms. Both use the same pinned HDF5 and
+wave phases, MATLAB R2025b Update 7, Apple Accelerate BLAS, one computational
+thread, and the 50 ms controller for all 225 s. Their five source channels
+match exactly at all 4,501 samples; packing either artifact produces the
+byte-identical
+[`source_0p0625ms_macos_arm_m1.npz`](source_0p0625ms_macos_arm_m1.npz)
+(SHA-256 `b3fe52fe66256a218c924c1c039f60c4b3d9d2192f36b1d9d4efe56831fac26b`).
+The [repeat report](macos_arm_quarter_step_repeat.json) preserves this check.
+The [step comparison](macos_arm_quarter_step_source_comparison.json) shows
+that the 0.125 and 0.0625 ms *MATLAB source* traces differ by up to
+`0.010800` rad pitch and `0.721063` N m request. Pitch first crosses the
+unchanged `0.0005` rad pointwise limit at 17.95 s, although all seven
+aggregate source-to-source gaps are below `0.5%`.
+On each source's logged observer states and AR forecast, a separate Python
+controller replay stays within `3.01e-6` N m of the source request through
+40 s; its [probe report](macos_arm_quarter_step_controller_probe.json)
+also shows exact agreement between the two MATLAB repeats. This is a
+fixed-input component check, not autonomous parity.
+
+The matching independent physical Python audit at experimental commit
+[`7d4824d`](https://github.com/cmudrc/wec-sim-python/commit/7d4824d8a96baa0e6f6804308379f4f6efc1c1a0)
+includes the source's light BC rod and motor bodies. It still misses all five
+pointwise limits: `0.008512` rad pitch, `0.040802` rad/s pitch speed,
+`0.001701` m stroke, `3.1800` N axial force, and `0.659784` N m request.
+Its pitch-peak aggregate gap is `0.8871%`, above the unchanged `0.5%` limit.
+The auxiliary-body correction also fails the existing 1 ms aggregate test,
+so it was not merged. The checked source trace and these failed audits are
+diagnostics, not an accepted physical parity baseline. Issue
+[#623](https://github.com/cmudrc/wec-sim-python/issues/623) remains open.
 
 Two [native Intel macOS source runs](https://github.com/cmudrc/wec-sim-python/actions/runs/39954640642)
 on the `macos-15-intel` runner with MATLAB R2025b Update 7, one computational
