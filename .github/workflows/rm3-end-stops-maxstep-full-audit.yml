@@ -6,7 +6,10 @@ on:
       - '.github/workflows/rm3-end-stops-maxstep-full-audit.yml'
       - 'tests/matlab/rm3_end_stops_maxstep_audit.m'
       - 'tests/test_rm3_end_stops_maxstep_audit.py'
+      - 'tests/test_rm3_end_stops_maxstep_public.py'
       - 'tests/test_rm3_end_stops_internal_steps.py'
+      - 'tests/fixtures/matlab/rm3_end_stops_maxstep_400s.npz'
+      - 'tests/fixtures/matlab/rm3_end_stops_maxstep_400s.md'
       - 'tests/fixtures/matlab/rm3_end_stops_internal_steps.npz'
   workflow_dispatch:
 
@@ -44,7 +47,12 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e ".[test]"
-      - run: python -m pytest -q -s tests/test_rm3_end_stops_maxstep_audit.py tests/test_rm3_end_stops_internal_steps.py
+      - name: Check regenerated MATLAB baseline and independent Python motion
+        run: >-
+          python -m pytest -q -s
+          tests/test_rm3_end_stops_maxstep_audit.py
+          tests/test_rm3_end_stops_maxstep_public.py
+          tests/test_rm3_end_stops_internal_steps.py
         env:
           WEC_SIM_RM3_END_STOPS_MAXSTEP_DIR: matlab-rm3-end-stops-maxstep-400s
           WEC_SIM_RM3_END_STOPS_MAXSTEP_END_TIME: '400'

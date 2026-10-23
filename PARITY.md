@@ -3151,8 +3151,12 @@ The [full 400 s portable gate](tests/test_rm3_end_stops_portable_parity.py)
 now runs the 0.025-to-0.0125 s MATLAB source-stability check and the
 independent 0.0125 s public `WEC.floating_joint`/`WEC.run` body, PTO, and
 energy comparison in ordinary Python CI from the exact generated HDF5 and
-all saved source samples. The 0.1 s published case remains qualified, and
-the RM3 badge remains 17/21.
+all saved source samples. The separate [repository-owned corrected validation
+case](tests/fixtures/matlab/rm3_end_stops_maxstep_400s.md) retains the
+published 0.1 s input/output grid and changes only `ode45` MaxStep to
+0.025 s in a disposable model copy. Its full 400 s MATLAB reference pairs
+with independent public Python in ordinary CI. The unchanged 0.1 s
+published case remains qualified, and the RM3 badge remains 17/21.
 
 The [public source-ode4 gate](tests/test_rm3_pto_extension_source_ode4.py)
 now runs both published 30 s `RM3_PTO_Extension` free decays through
@@ -3557,21 +3561,22 @@ work. All predeclared full-duration gates pass, including the tight
 `1e-4` rad pitch and 0.7% work limits. The
 [portable fixture](tests/fixtures/matlab/rm3_end_stops_maxstep_400s.md)
 preserves the derived source and independent Python comparison in ordinary
-CI. This isolates solver-step sensitivity over the complete duration but
-does not pair the unchanged published trajectory; `End_Stops` remains
-qualified and the RM3 badge stays 17/21.
+CI. We adopt this one-setting corrected arm as the **wec-sim-python
+validation baseline** for End Stops. The unchanged published input remains
+qualified in the published-case inventory, so the RM3 badge stays 17/21.
 
-The proposed published-case correction is to change the Simulink `ode45`
-`MaxStep` setting in Applications `End_Stops/RM3.slx` from `0.1` to `0.025` s.
-Keep `simu.dt=0.1` s in `wecSimInputFile.m`, the 400 s duration, 100 s ramp,
-wave, PTO, and output grid unchanged. The
+The repository validation rule changes the copied Simulink model's `ode45`
+`MaxStep` from `0.1` to `0.025` s. It keeps `simu.dt=0.1` s in
+`wecSimInputFile.m`, the 400 s duration, 100 s ramp, wave, PTO, and output
+grid unchanged. The
 [in-repository two-arm audit](tests/matlab/rm3_end_stops_maxstep_audit.m)
 applies exactly this single solver-setting change to a disposable case copy;
 its [pinned 400 s records](tests/fixtures/matlab/rm3_end_stops_maxstep_400s.md)
 and [independent Python gate](tests/test_rm3_end_stops_maxstep_public.py)
-show why it is the candidate remedy. An upstream published-input revision and
-a checked baseline from that revision are still needed before the corrected
-case can replace the qualified row or close the published-input parity gap.
+are the baseline and gate for the corrected case. An upstream revision or an
+independent published-step solver match would be needed to promote the
+**unchanged published input** in the inventory; the local correction does not
+claim either of those results.
 
 The same pinned 120 and 400 s MaxStep audit was regenerated locally with
 R2025b on macOS using disposable copies of the Applications inputs. At 400 s,
