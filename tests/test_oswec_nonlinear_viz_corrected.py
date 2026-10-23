@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 from scipy.optimize import brentq
 from scipy.spatial import cKDTree
+from scipy.spatial.transform import Rotation
 import trimesh
 
 from wecsim import RegularWave, WEC, WorldPoint
@@ -168,6 +169,22 @@ def test_corrected_oswec_full_motion_pressure_and_scene(tmp_path):
              source["hydrostatic"] + source["nonlinearWave"],
              12, "combined wet-surface pressure")
     assert np.max(linear_gap) < 2
+    # Confirm each large individual-field jump is a genuine wet/dry branch
+    # crossing within 1 mm of the free surface, not a pressure calculation
+    # error elsewhere on the mesh.
+    centers = mesh.triangles_center
+    for frame, facet in zip(*np.where(switches)):
+        margins = []
+        for state in (source["pose"][frame], pose[frame]):
+            moved = Rotation.from_euler("xyz", state[3:]).apply(centers[facet])
+            moved += state[:3]
+            ramp = (1 if time[frame] >= 40 else
+                    (1 - np.cos(np.pi * time[frame] / 40)) / 2)
+            elevation = 1.25 * ramp * np.cos(
+                wave_number * moved[0] - omega * time[frame])
+            margins.append(moved[2] - elevation)
+        assert margins[0] < 0 < margins[1]
+        assert max(abs(margins[0]), abs(margins[1])) < .001
 
     # This is the complete 1,201-frame scene driven by the Python states and
     # pressures above, with the project's unchanged PVD/metadata writers.

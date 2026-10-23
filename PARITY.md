@@ -836,11 +836,12 @@ file paths, plus 17 other or dynamic cases. Generate the CSV with
 `python tools/build_reference_case_inventory.py CORE_CHECKOUT APPLICATIONS_CHECKOUT`.
 This is a source inventory, not a claim that every case runs in Python.
 The four README case badges partition that inventory by model family: RM3
-18/21, OSWEC 10/13, Sphere 12/12, and other published cases 13/17 have
+18/21, OSWEC 11/13, Sphere 12/12, and other published cases 13/17 have
 full-duration gates against the unchanged published input or an explicitly
-adopted repository-owned corrected baseline. RM3 End Stops is the one
-corrected-baseline entry; its unchanged published 0.1 s trajectory remains
-unpaired. A named system gets its own badge when it has more than
+adopted repository-owned corrected baseline. RM3 End Stops and OSWEC
+nonlinear visualization are the two corrected-baseline entries; their
+unchanged published coarse-step trajectories remain unpaired. A named system
+gets its own badge when it has more than
 five inventoried cases; smaller systems stay in the disjoint remainder.
 
 ### Current priority and feasible closeout
@@ -850,11 +851,11 @@ investigation phase records the work that can be established with independent
 evidence while source numerical limitations keep some published badges below
 100%.
 The current ledger classifies all 63 inputs: 50 have independent motion gates
-against unchanged published inputs, one has an adopted corrected-baseline
-motion gate, two stationary cases have full-duration force gates, and ten are
+against unchanged published inputs, two have adopted corrected-baseline
+motion gates, two stationary cases have full-duration force gates, and nine are
 qualified or mixed-mode. WaveStar NMPC has a macOS ARM numerical gate but
 remains open for portable physical parity. The core RM3, OSWEC, and Sphere
-accepted-baseline motion count is 40/46; unchanged published-input motion is
+accepted-baseline motion count is 41/46; unchanged published-input motion is
 39/46. A qualified result documents a measured
 limit; it does not add to the passing badge fraction. Case investigation is
 reasonably closed when every remaining gap has a specific experiment or
@@ -905,7 +906,7 @@ The autonomous source-ode8 Python trajectory is therefore runner-sensitive even
 within Linux x86; the proposed strict pointwise gate has not been established.
 The physical default's split-step pitch gate also fails. WaveStar remains
 qualified. The WaveStar badge remains 2/3 and the total validation badge is
-53/63.
+54/63.
 An additional local R2025b comparison ran the same 225 s Python input on
 Mali as native ARM64 and Rosetta x86-64, both with NumPy 2.5.4, SciPy 1.18.1,
 randomgen 2.3.0, and Accelerate-backed NumPy/SciPy. Against the local MATLAB
@@ -958,9 +959,10 @@ qualified when the source trajectory is strongly step-sensitive, even if an
 opt-in solver reproduces its published numerical path. Refined-step motion,
 source poses, or prescribed events alone do not close that gap. The remaining
 RM3 cases are `End_Stops`, `RM3_MoorDyn_Viz`, and both `RM3_PTO_Extension`
-free decays; the remaining OSWEC cases are `OSWEC_NonLinear_Viz`,
-`PassiveYawRegression`, and the irregular mode of
-`Variable_Hydro/Passive_Yaw`. Their measured blockers are recorded below.
+free decays; the remaining OSWEC cases are `PassiveYawRegression` and the
+irregular mode of `Variable_Hydro/Passive_Yaw`. Their measured blockers are
+recorded below. `OSWEC_NonLinear_Viz` is gated against its documented
+corrected baseline; its unchanged coarse-step trajectory remains unpaired.
 The existing 80 s `RM3_MoorDyn_Viz` records isolate the leading surge gap:
 refining only MATLAB's ode45 MaxStep changes float surge by up to `203.37` mm,
 while the original-to-fully-refined change is `203.4` mm. The independent
@@ -1132,9 +1134,9 @@ every output or the generality of the Python API:
 | Motion evidence | Cases | Meaning |
 | --- | ---: | --- |
 | `independent_motion` | 50 | A full-duration Python motion run using the published case inputs has an explicit MATLAB gate. Source wave phases or external stochastic input may be replayed; source body trajectories and forces are not advanced as inputs. The detailed rows above record output and physical-model limits. |
-| `corrected_independent_motion` | 1 | A documented repository-owned correction to a copied source case is adopted as the validation baseline. Full-duration independent Python motion and PTO gates pass against that baseline; the unchanged published setting still has a documented gap. Currently this is RM3 End Stops with only `ode45` MaxStep changed to 0.025 s. |
+| `corrected_independent_motion` | 2 | A documented repository-owned correction to a copied source case is adopted as the validation baseline. Full-duration independent Python motion and PTO gates pass against that baseline; the unchanged published setting still has a documented gap. RM3 End Stops changes only `ode45` MaxStep to 0.025 s; OSWEC nonlinear visualization changes the copied input's `simu.dt` to 0.0125 s while holding the 0.1 s output grid. |
 | `stationary_force` | 2 | Published bodies are fixed; wave and force histories have paired gates. |
-| `qualified_motion` | 9 | A full-duration comparison needs a refined MATLAB step, source-specific force or solver route, or same-platform source baseline; some published-step physical motion remains unpaired despite related gates. |
+| `qualified_motion` | 8 | A full-duration comparison needs a refined MATLAB step, source-specific force or solver route, or same-platform source baseline; some published-step physical motion remains unpaired despite related gates. |
 | `mixed_modes` | 1 | Some published settings have independent motion gates and another material setting remains open. |
 | `open_motion` | 0 | No inventoried input lacks a full-duration independent Python comparison; qualified inputs still have unresolved physical or published-step limits. |
 
@@ -2066,7 +2068,31 @@ rad/s. The paired gates are `2`/`0.8` mm and `0.00045` rad for motion,
 and `2`/`1` mm/s and `0.0005` rad/s for speed. The implicit physical
 default remains unchanged and retains the documented published-step gap.
 This is bounded numerical reproduction of a strongly step-sensitive source
-case, so the qualified label and OSWEC badge count remain unchanged.
+case; the unchanged published trajectory remains unpaired by the physical
+Python default.
+
+The [corrected full-scene baseline](tests/fixtures/matlab/oswec_nonlinear_viz_corrected/README.md)
+now adopts a copied pinned Applications input with `simu.dt=0.0125` s and
+`simu.dtOut=0.1` s. This refines the solver, nonlinear-force, and radiation
+clocks together while preserving the published wave, body, PTO, pressure,
+120 s duration, and 1,201-frame visualization grid. A separate copied
+0.00625 s source arm checks motion stability. The 0.0125-to-0.00625 s
+maximum flap changes are 0.482 mm surge, 0.181 mm heave, and `0.0001014`
+rad pitch. The independent Python physical-default run differs from the
+0.0125 s source by at most 0.622 mm surge, 0.262 mm heave, `0.0001351` rad
+pitch, 0.522 mm/s surge speed, 0.240 mm/s heave speed, and `0.0001095`
+rad/s pitch speed; full PTO stroke, speed, force, and power gates pass. Python
+then computes all 1,201×1,042 flap facet pressures and 3,603 wave/flap/base
+VTP files from **its own** poses. Maximum combined physical pressure and
+linear pressure gaps are 7.45 and 1.10 Pa. Eighteen frame-facet points
+switch wet/dry classification within 1 mm of the water surface; the test
+gates their hydrostatic-plus-nonlinear sum and verifies those crossings.
+The complete PVD collection and source scene are paired in the hosted
+[MATLAB workflow](https://github.com/cmudrc/wec-sim-python/actions/runs/39891610586),
+while the portable fixture gates three source VTP frames and the entire
+collection in ordinary CI. This is `corrected_independent_motion` and makes
+the OSWEC badge 11/13. The unchanged `simu.dt=0.1` s published trajectory
+remains a documented coarse-step numerical gap.
 
 The [pinned MoorDyn ParaView writer gate](https://github.com/cmudrc/wec-sim-python/actions/runs/38080388695)
 interpolates two lines with three and four nodes to two intermediate frames.

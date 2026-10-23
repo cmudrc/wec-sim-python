@@ -1983,6 +1983,11 @@ All 1,201 published OSWEC wave, flap, and base VTP frames and all 801
 published RM3 wave, float/spar body, and MoorDyn line VTP frames are
 paired numerically on saved MATLAB body histories. The body and line checks use saved MATLAB poses and
 line histories; the original-step independent coupled motion remains unpaired.
+The [corrected OSWEC validation baseline](../tests/fixtures/matlab/oswec_nonlinear_viz_corrected/README.md)
+also gates a complete 120 s Python-generated wave/flap/base scene from
+independently advanced flap motion and facet pressures against a copied
+MATLAB input with a refined 0.0125 s numerical step and the published 0.1 s
+output grid.
 
 
 ## Design direction
@@ -1992,5 +1997,6 @@ constraint layout, avoiding numerical joint drift. New layouts and force
 models need explicit MATLAB comparisons before they are called supported.
 Wave, body, and mooring VTP serialization now have pinned MATLAB source gates;
 the published OSWEC nonlinear flap pressure fields and full VTP history have
-separate paired gates. Other application visualization and BEMIO conversion
+separate paired gates, and its corrected baseline has a full scene gate from
+independent Python motion. Other application visualization and BEMIO conversion
 remain future work.
