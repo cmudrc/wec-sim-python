@@ -1,8 +1,11 @@
 # OSWEC irregular continuous-heading control
 
-This is a **derived 600 s control**, not the published `Variable_Hydro/Passive_Yaw`
-selected-bank input. The published irregular case remains qualified, and this
-control does not increase the OSWEC badge count.
+This is the repository-owned corrected validation baseline for the 600 s
+`Variable_Hydro/Passive_Yaw` irregular case. It changes the heading selection
+rule and uses the original all-direction HDF5. The published 0.25° selected-bank
+trajectory remains qualified; the case badge counts this adopted baseline.
+The archived `evidence.json` flag `published_case_promotion=false` refers to
+the unchanged nearest-bank trajectory, which remains unpaired.
 
 The direct MATLAB runs use WEC-Sim 7.1.0 source commit
 `0753b2e47f2457c078751dcfe5d251d1767b80ab` and Applications commit
@@ -70,4 +73,5 @@ pass the unchanged issue #621 limits over all 600 s. All three independently
 computed relative headings remain between `-8.756°` and `10.270°`, inside
 the original `-30°` to `30°` selected-bank span. The MATLAB work is
 2,211.017 J at 0.01 s and 2,211.284 J at 0.005 s; Python gives 2,211.175 J.
-This derived control does not promote the published nearest-bank case.
+This adopted baseline earns the case badge without claiming parity for the
+published nearest-bank trajectory.

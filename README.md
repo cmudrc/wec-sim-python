@@ -12,14 +12,15 @@
 The four case badges partition 63 published input identities by model family.
 A gated case has full-duration independent Python motion or fixed-body force
 paired to MATLAB using either the unchanged published input or an explicitly
-adopted, repository-owned corrected validation baseline. **55/63** currently
+adopted, repository-owned corrected validation baseline. **56/63** currently
 meet that standard, including RM3 End Stops at a copied-model `ode45`
 `MaxStep=0.025` s, OSWEC nonlinear visualization at a copied-input
-`simu.dt=0.0125` s, and OSWEC passive yaw with a zero-degree coefficient
-hold threshold. RM3 is **18/21** and OSWEC is **12/13**. The unchanged
-published End Stops and nonlinear-visualization coarse-step trajectories
-and the published one-degree passive-yaw hold remain unpaired by the physical
-Python default.
+`simu.dt=0.0125` s, OSWEC passive yaw with a zero-degree coefficient
+hold threshold, and OSWEC irregular variable yaw with continuous heading
+interpolation. RM3 is **18/21** and OSWEC is **13/13**. The unchanged
+published End Stops and nonlinear-visualization coarse-step trajectories,
+the published one-degree passive-yaw hold, and the variable-yaw
+nearest-heading bank remain unpaired by the physical Python default.
 The other published cases include OWC, WaveBot, WaveStar, Morison, and
 nonlinear hydrodynamics; see the parity ledger for the full breakdown. The
 MATLAB badge counts 42 selected source workflow jobs, not additional cases.
