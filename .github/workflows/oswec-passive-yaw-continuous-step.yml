@@ -38,7 +38,9 @@ jobs:
             _Common_Input_Files/OSWEC
             Passive_Yaw/PassiveYawRegression
       - name: Apply repository-owned continuous-heading control
-        run: git -C applications apply --check ../tests/fixtures/matlab/oswec_held_yaw/continuous_heading.patch && git -C applications apply ../tests/fixtures/matlab/oswec_held_yaw/continuous_heading.patch
+        run: |
+          git -C applications apply --unidiff-zero --check ../tests/fixtures/matlab/oswec_held_yaw/continuous_heading.patch
+          git -C applications apply --unidiff-zero ../tests/fixtures/matlab/oswec_held_yaw/continuous_heading.patch
       - uses: matlab-actions/setup-matlab@v3
         with:
           release: R2025b
