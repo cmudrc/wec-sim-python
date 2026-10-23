@@ -1,0 +1,35 @@
+{
+  "samples": 4201,
+  "python_platform": "macOS-26.5.1-arm64-arm-64bit",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "source_controller_sha256": "06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3",
+  "matrices_sha256": "3ff8f4ba8654ef66bf9058a9fe717cfa6c60868300d19e64a089fcb06781dbf0",
+  "matlab_replay_sha256": "cbc5a2acfe651f3570db0405d040ee3d40791b07f30ac4b3d282ae289ec5af7d",
+  "source_vs_matlab_qp": {
+    "max_abs_Nm": 6.427214316317986e-11,
+    "time_of_max_s": 202.25,
+    "rms_Nm": 2.405192621996288e-12,
+    "max_15_to_20s_Nm": 3.801403636316536e-13
+  },
+  "python_vs_matlab_qp": {
+    "max_abs_Nm": 0.0010707475571676284,
+    "time_of_max_s": 202.25,
+    "rms_Nm": 3.471362316667343e-05,
+    "max_15_to_20s_Nm": 2.656827163001474e-06
+  },
+  "python_vs_source": {
+    "max_abs_Nm": 0.0010707476214397715,
+    "time_of_max_s": 202.25,
+    "rms_Nm": 3.471362540156715e-05,
+    "max_15_to_20s_Nm": 2.6568273672825105e-06
+  },
+  "full_plan_python_vs_matlab_max_abs_Nm": 0.0020584174018183354,
+  "python_one_step_from_matlab_prior_vs_matlab_qp": {
+    "max_abs_Nm": 1.761370818087471e-07,
+    "time_of_max_s": 97.25,
+    "rms_Nm": 6.55161289225966e-09,
+    "max_15_to_20s_Nm": 3.151687133495784e-08
+  },
+  "full_plan_one_step_from_matlab_prior_max_abs_Nm": 1.761370818087471e-07
+}

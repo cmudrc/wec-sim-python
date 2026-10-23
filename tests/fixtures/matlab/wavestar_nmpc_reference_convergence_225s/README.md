@@ -132,6 +132,28 @@ QP numerical difference remains and can be amplified in autonomous feedback.
 The portable Python CI now gates this controller component on Linux x86 and
 Apple silicon separately from the autonomous run.
 
+A further [direct QP replay](https://github.com/cmudrc/wec-sim-python/actions/runs/39905055593)
+called the pinned Applications `NMPC.m` on all 4,201 active states and
+forecasts in the checked compatible controller log. It used the checked
+`A`, `Bu`, `Bw`, and `R` matrices from the earlier direct-controller fixture,
+with MATLAB R2025b, one computational thread, and compatible BLAS. The
+resulting full 40-step plans are preserved in
+[`checked_qp_replay_compatible_amd7763.mat`](checked_qp_replay_compatible_amd7763.mat).
+Its first commands reproduce the source simulation's requests within
+`6.43e-11` N m over 15–225 s. Thus the direct source QP replay is an
+independent check of the logged source controller inputs and command timing.
+
+The [Python comparison](compatible_checked_qp_replay.json), reproduced by
+[`wavestar_nmpc_checked_qp_replay.py`](../../../../tools/wavestar_nmpc_checked_qp_replay.py),
+finds a `0.001071` N m maximum request gap and `0.002058` N m maximum
+40-step plan gap when each solver carries its own plan. If Python starts each
+QP from the *preceding MATLAB plan*, the next request and complete plan
+instead differ by at most `1.76e-7` N m on the recorded macOS ARM run.
+The large fixed-input replay gap therefore accumulates in the persistent
+nominal-plan recursion; it is not a comparably large one-step QP discrepancy.
+This result identifies the remaining Python controller numerical defect more
+precisely, but the autonomous full-duration physical gate still fails.
+
 SHA-256:
 
 - `source_1ms_repeat.npz`: `42f3264022177833634731711086cc90a1a39eb313ccdc05110123eb9c3035f6`
@@ -140,6 +162,7 @@ SHA-256:
 - `source_0p25ms_repeat.npz`: `5f6f576b94e4064352ce5bf1ba7a83e69c83faf157c8f1abe77488645b627d24`
 - `source_0p25ms_compatible_amd7763.npz`: `48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6`
 - `controller_0p25ms_compatible_amd7763.npz`: `06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3`
+- `checked_qp_replay_compatible_amd7763.mat`: `cbc5a2acfe651f3570db0405d040ee3d40791b07f30ac4b3d282ae289ec5af7d`
 
 The Python repository's
 [`wavestar-nmpc-reference-convergence.yml`](../../../../.github/workflows/wavestar-nmpc-reference-convergence.yml)

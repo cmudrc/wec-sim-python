@@ -1039,6 +1039,20 @@ the fixed-input request difference; the remaining QP-side difference is
 small enough to pass a component gate but can seed the sensitive autonomous
 loop. This does not satisfy issue #623's independent closed-loop gate.
 
+A [checked direct MATLAB QP replay](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/README.md)
+now feeds all 4,201 active logged source states and forecasts to the pinned
+`NMPC.m` with checked controller matrices. Its requests reproduce the source
+simulation within `6.43e-11` N m. Against the complete saved 40-step plans,
+Python's freely propagated nominal plans differ by up to `0.002058` N m
+and its requests by `0.001071` N m. Resetting each Python QP to the preceding
+MATLAB plan reduces the one-step request and plan gap to at most
+`1.76e-7` N m on macOS ARM. The observed fixed-input mismatch grows through
+the persistent plan recursion, while each individual QP solution is close on
+identical states, forecasts, matrices, and prior plan. The checked plans and
+[replay tool](tools/wavestar_nmpc_checked_qp_replay.py) preserve this
+diagnosis entirely in the Python repository; they do not replace the missing
+autonomous physical gate.
+
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,
 or an **open** result with the specific missing evidence and next experiment.

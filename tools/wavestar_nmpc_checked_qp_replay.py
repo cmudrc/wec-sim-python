@@ -2,10 +2,12 @@
 
 import argparse
 import json
+import platform
 from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
+import scipy
 from scipy.io import loadmat, savemat
 
 from wecsim import WaveStarNmpcController
@@ -96,26 +98,48 @@ def main():
     if not np.isfinite(commands).all() or not np.isfinite(plans).all():
         raise ValueError("MATLAB QP replay contains nonfinite values")
     np.testing.assert_allclose(commands, plans[:, 0], rtol=0, atol=1e-12)
+    source_replay_gap = _stats(arrays["source_commands"] - commands, time)
+    if source_replay_gap["max_abs_Nm"] >= 1e-8:
+        raise ValueError("Direct MATLAB QP did not reproduce the source requests")
 
     controller = WaveStarNmpcController()
     controller._transition = arrays["A"].copy()
     controller._input = arrays["Bu"][:, 0].copy()
     controller._wave_input = arrays["Bw"][:, 0].copy()
+    frozen_prior = WaveStarNmpcController()
+    frozen_prior._transition = arrays["A"].copy()
+    frozen_prior._input = arrays["Bu"][:, 0].copy()
+    frozen_prior._wave_input = arrays["Bw"][:, 0].copy()
     python_plans = np.empty_like(plans)
+    frozen_prior_plans = np.empty_like(plans)
     for index, instant in enumerate(time):
         controller.step(arrays["states"][:, index],
                         arrays["forecasts"][:, index], float(instant))
         python_plans[index] = controller._nominal
+        frozen_prior._nominal = (plans[index - 1].copy() if index else
+                                 np.zeros(40))
+        frozen_prior.step(arrays["states"][:, index],
+                          arrays["forecasts"][:, index], float(instant))
+        frozen_prior_plans[index] = frozen_prior._nominal
     result = {
         "samples": len(time),
+        "python_platform": platform.platform(),
+        "numpy": np.__version__,
+        "scipy": scipy.__version__,
         "source_controller_sha256": args.controller_sha256,
         "matrices_sha256": args.matrices_sha256,
         "matlab_replay_sha256": sha256(args.matlab_result.read_bytes()).hexdigest(),
-        "source_vs_matlab_qp": _stats(arrays["source_commands"] - commands, time),
+        "source_vs_matlab_qp": source_replay_gap,
         "python_vs_matlab_qp": _stats(python_plans[:, 0] - commands, time),
         "python_vs_source": _stats(python_plans[:, 0] - arrays["source_commands"], time),
         "full_plan_python_vs_matlab_max_abs_Nm": float(
             np.max(np.abs(python_plans - plans))
+        ),
+        "python_one_step_from_matlab_prior_vs_matlab_qp": _stats(
+            frozen_prior_plans[:, 0] - commands, time
+        ),
+        "full_plan_one_step_from_matlab_prior_max_abs_Nm": float(
+            np.max(np.abs(frozen_prior_plans - plans))
         ),
     }
     args.output.write_text(json.dumps(result, indent=2) + "\n")
