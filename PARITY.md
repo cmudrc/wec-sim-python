@@ -979,7 +979,14 @@ unchanged; matched independent Python pitch gaps are `0.011711` and
 [runtime and CPU comparison](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/single_thread_repeat.json)
 therefore isolates a CPU-class association in this experiment, not an exact
 floating-point operation. Limiting MATLAB to one computational thread does
-not yield a portable source target. A follow-up workflow tests a common
+not yield a portable source target. A [0–40 s frozen-input QP probe](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/single_thread_controller_probe.json)
+feeds each source run's logged observer states and AR forecast to Python.
+The maximum replay-to-source request gaps are `0.000136` and `0.000085` N m,
+while the two MATLAB requests differ by `0.196588` N m by 39.55 s; the two
+Python replays reproduce that request separation within `8.84e-8` N m at
+that sample. A large QP replay error is therefore not needed to explain the
+early divergence. The exact CPU-dependent operation remains unisolated. A
+follow-up workflow tests a common
 MKL BLAS code branch; [MathWorks says](https://www.mathworks.com/matlabcentral/answers/2066506-how-do-i-make-matlab-use-the-mkl_cbwr-environment-variable-as-the-cnr-branch)
 `MATLAB_DISABLE_CBWR=1` is required for MATLAB to honor `MKL_CBWR`, and
 [Intel documents](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2026-0/getting-started-with-conditional-numerical.html)
