@@ -40,7 +40,9 @@ def _inputs(controller_path, matrices_path, controller_hash, matrices_hash):
         ("Bw", controller._wave_input[:, None]),
         ("R", controller._penalty),
     ):
-        np.testing.assert_array_equal(matrices[key], expected)
+        # SciPy's matrix exponential can differ by a few ulps across CPUs.
+        # Both QP replays use the checked matrix, not the local recomputation.
+        np.testing.assert_allclose(matrices[key], expected, rtol=0, atol=1e-14)
     arrays = {
         "time": time[active],
         "states": states[active].T,
@@ -96,6 +98,9 @@ def main():
     np.testing.assert_allclose(commands, plans[:, 0], rtol=0, atol=1e-12)
 
     controller = WaveStarNmpcController()
+    controller._transition = arrays["A"].copy()
+    controller._input = arrays["Bu"][:, 0].copy()
+    controller._wave_input = arrays["Bw"][:, 0].copy()
     python_plans = np.empty_like(plans)
     for index, instant in enumerate(time):
         controller.step(arrays["states"][:, index],
