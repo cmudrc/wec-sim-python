@@ -26,9 +26,9 @@ jobs:
           sparse-checkout: source
       - uses: actions/checkout@v7
         with:
-          # Exact model proposed in WEC-Sim/WEC-Sim_Applications#119.
-          repository: cmccomb/WEC-Sim_Applications
-          ref: 3c0c05fefce55125d8ea084deedbd2defb103811
+          # Pin the original application; MATLAB patches only a disposable copy.
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
           path: applications
           filter: blob:none
           lfs: true
@@ -47,7 +47,7 @@ jobs:
           python-version: '3.12'
           cache: pip
       - run: python -m pip install -e . pytest
-      - name: Reproduce archived corrected source from published input
+      - name: Reproduce archived corrected source from locally patched input
         run: |
           python tools/pack_owc_orifice_corrected.py \
             owc-orifice-corrected-output \
