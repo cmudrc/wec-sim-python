@@ -1,4 +1,4 @@
-"""Render disjoint parity badges for each published model family."""
+"""Render disjoint validation badges for each inventoried model family."""
 
 import argparse
 import csv
@@ -20,10 +20,11 @@ BADGES = (
     ),
 )
 EVIDENCE = {
-    "independent_motion", "stationary_force", "qualified_motion",
-    "mixed_modes", "open_motion",
+    "independent_motion", "corrected_independent_motion",
+    "stationary_force", "qualified_motion", "mixed_modes", "open_motion",
 }
-GATED = {"independent_motion", "stationary_force"}
+GATED = {"independent_motion", "corrected_independent_motion",
+         "stationary_force"}
 
 
 def rows(path):
