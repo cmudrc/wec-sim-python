@@ -930,9 +930,17 @@ changes were pushed to either MATLAB repository. The fresh 1 ms source pitch
 matches the older pinned 1 ms trace within `2.29e-15` rad through 15.2 s,
 but differs by up to `0.010596` rad over 225 s; requested torque differs by
 `0.792728` N m. The first request difference over `1e-10` N m occurs at
-16.45 s and later amplifies through feedback. This is a source-run
-repeatability failure at the existing `0.0005` rad and `0.1` N m pointwise
-limits, despite matched hydrodynamics and sea.
+16.45 s and later amplifies through feedback. This is a cross-setup source
+discrepancy at the existing `0.0005` rad and `0.1` N m pointwise limits,
+despite matched hydrodynamics and sea. A [second isolated workflow run](https://github.com/cmudrc/wec-sim-python/actions/runs/39886232300)
+reproduces the first standalone 1 ms and 0.5 ms source exports numerically
+exactly, so the older-to-newer 1 ms difference does not by itself establish
+stochastic variation within the new workflow. The current multi-case
+workflow [regenerates a different HDF5 file](https://github.com/cmudrc/wec-sim-python/actions/runs/39886232250)
+(SHA-256 `3e97f0b19f58bdfd375bc81952738090f475bd0a9e7c9da094c43b2c3554b5fa`)
+and is not an exact-input control
+for the standalone runs; the cause of the older trace's difference remains
+unisolated.
 
 The fresh 1 versus 0.5 ms source traces differ by up to `0.009193` rad pitch
 and `0.573686` N m requested torque; 0.5 versus 0.25 ms differ by `0.004763`
@@ -946,9 +954,16 @@ independent physical pitch gap is `0.009435` rad against the `0.0005` rad
 limit; its pitch-peak aggregate differs by `0.7149%` against the `0.5%`
 limit. Both matched-step audits use only the exact HDF5 and generated sea
 phases to drive Python feedback, with no saved MATLAB motion, force, stroke,
-or request as inputs. Generating an additional source
-trace therefore does not yet supply a stable target or a passing physical
-gate. A repeatable, step-converged source configuration or numerical
+or request as inputs. In the second standalone run, the 0.25 ms source has
+the same HDF5 hash, sea, source revisions, and step settings as the first;
+its pitch matches within `1.10e-15` rad through 15.2 s, then diverges by up
+to `0.012014` rad pitch and `0.732573` N m request over 225 s. Its matching
+Linux Python pitch gap is `0.011711` rad and pitch-peak aggregate gap is
+`0.7851%`, again beyond the original limits. The second run's fresh 0.5
+versus 0.25 ms source pitch gap is `0.008547` rad, also above the pointwise
+limit. Generating an additional source trace therefore does not yet supply a
+stable full-duration target or a passing physical gate. A repeatable,
+step-converged source configuration or numerical
 correction remains necessary before promoting the case or closing issue
 [#623](https://github.com/cmudrc/wec-sim-python/issues/623).
 

@@ -1,0 +1,81 @@
+{
+  "pointwise_limits": {
+    "pitch_rad": 0.0005,
+    "pitch_speed_rad_s": 0.005,
+    "stroke_m": 0.0001,
+    "axial_force_N": 1.0,
+    "requested_torque_Nm": 0.1
+  },
+  "pinned_vs_fresh_1ms": {
+    "pitch_rad": {
+      "max_abs": 0.0105958275925856,
+      "first_limit_crossing_s": 39.75
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.070792028651389,
+      "first_limit_crossing_s": 39.65
+    },
+    "stroke_m": {
+      "max_abs": 0.002117232030491219,
+      "first_limit_crossing_s": 39.75
+    },
+    "axial_force_N": {
+      "max_abs": 3.8990878411360503,
+      "first_limit_crossing_s": 43.95
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.7927277128285652,
+      "first_limit_crossing_s": 39.55
+    },
+    "pitch_rad_first_15p2s": 2.2898349882893854e-15,
+    "within_pointwise_limits": false
+  },
+  "fresh_1ms_vs_0p5ms": {
+    "pitch_rad": {
+      "max_abs": 0.0091927430686701,
+      "first_limit_crossing_s": 17.7
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.04218472448589701,
+      "first_limit_crossing_s": 17.95
+    },
+    "stroke_m": {
+      "max_abs": 0.0018326878976832398,
+      "first_limit_crossing_s": 17.7
+    },
+    "axial_force_N": {
+      "max_abs": 2.8269862972051394,
+      "first_limit_crossing_s": 27.9
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.5736862841947517,
+      "first_limit_crossing_s": 21.6
+    },
+    "pitch_rad_first_15p2s": 2.6721960590087024e-05,
+    "within_pointwise_limits": false
+  },
+  "fresh_0p5ms_vs_0p25ms": {
+    "pitch_rad": {
+      "max_abs": 0.008546825693196099,
+      "first_limit_crossing_s": 17.6
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.04872488545059819,
+      "first_limit_crossing_s": 17.85
+    },
+    "stroke_m": {
+      "max_abs": 0.0017038747007654099,
+      "first_limit_crossing_s": 17.6
+    },
+    "axial_force_N": {
+      "max_abs": 2.7472350919256403,
+      "first_limit_crossing_s": 27.85
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.5635971110873381,
+      "first_limit_crossing_s": 23.85
+    },
+    "pitch_rad_first_15p2s": 1.3348068309909644e-05,
+    "within_pointwise_limits": false
+  }
+}
