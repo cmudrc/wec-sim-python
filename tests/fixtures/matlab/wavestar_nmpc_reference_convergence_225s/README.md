@@ -101,6 +101,78 @@ pitch-peak aggregate gap is `0.6762%` versus `0.5%`. This source can be used
 to diagnose the Python discrepancy on that CPU, but it is not an accepted
 portable physical parity baseline.
 
+A further [compatible-BLAS run](https://github.com/cmudrc/wec-sim-python/actions/runs/39950081356)
+used two AMD EPYC 9V45 runners, with the same pinned inputs, MATLAB release,
+single-thread setting, and reported compatible oneMKL branch. Both generated
+identical 225 s source traces. Comparing either with the earlier AMD EPYC 7763
+compatible source also gives exactly zero pitch, pitch-speed, stroke, force,
+and requested-torque difference at all 4,501 saved samples; the
+[`cross-model report`](compatible_cross_amd_models.json) records the comparison.
+This establishes
+source repeatability across those two tested AMD CPU models. At that stage,
+Intel and Apple silicon source portability remained unverified. The
+independently running Python physical loop still fails all five pointwise
+limits on the EPYC 9V45 runners:
+maximum pitch `0.006638` rad and requested torque `0.561726` N m. Both CPU
+groups used NumPy 2.5.4 and SciPy 1.18.1, yet their autonomous Python
+trajectories differ. The matching checked source trace does not remove
+Python closed-loop numerical sensitivity.
+
+The [physical startup refinement](physical_startup_refinement_mac_arm.json),
+reproduced by
+[`wavestar_nmpc_startup_refinement.py`](../../../../tools/wavestar_nmpc_startup_refinement.py),
+runs the independent physical Python path through NMPC activation at 15 s
+against the checked 0.25 ms source. Refining only Python's plant step from
+1 ms to 0.0625 ms changes the maximum startup pitch gap by less than
+`2.0e-12` rad; it remains `1.06414e-5` rad. The command gap through 15 s
+remains `0.00320464` N m. The physical Python startup is already converged
+at these steps relative to this fixed source trace. Further Python RK4 step
+refinement alone cannot remove the mismatch that enters NMPC feedback.
+
+Two [native Apple silicon source runs](https://github.com/cmudrc/wec-sim-python/actions/runs/39954652940)
+on macOS 15 with MATLAB R2025b Update 7, one computational thread, and
+Apple Accelerate BLAS generated identical 225 s traces. The checked compact
+[`source_0p25ms_macos_arm_m1.npz`](source_0p25ms_macos_arm_m1.npz)
+(SHA-256 `b7c09d34fa247a897ac55ad3d7d4cd8251b679ed55ec01c3d4155b17d072a3d6`)
+can be regenerated from either artifact with
+[`wavestar_nmpc_compact_source.py`](../../../../tools/wavestar_nmpc_compact_source.py).
+It is a platform-specific diagnostic, not an accepted physical parity
+reference. Against the checked AMD compatible source, the Apple source differs
+by up to `0.006697` rad pitch and `0.472857` N m request, beyond the
+original pointwise limits. The independent physical Python run against its
+own Apple source still misses all five limits, including `0.005875` rad
+pitch and `0.542261` N m request. Its pitch-peak aggregate gap is `0.6555%`,
+over the original `0.5%` aggregate limit. The
+[`macOS source comparison`](macos_arm_source_comparison.json) records the
+full pointwise, aggregate, and 40 s controller probes. The two sources'
+commands agree within `8.2e-14` N m at NMPC activation, then separate by
+`0.145978` N m
+at 39.55 s; Python QP replays on each source's logged inputs reproduce that
+separation to within `5.8e-8` N m. This supports feedback amplification of
+small platform numerical differences, while the startup AR fit also has a
+separate transient forecast difference before NMPC activation.
+
+Two [native Intel macOS source runs](https://github.com/cmudrc/wec-sim-python/actions/runs/39954640642)
+on the `macos-15-intel` runner with MATLAB R2025b Update 7, one computational
+thread, and oneMKL 2023.2.2 with CNR off also generated identical 225 s
+traces. Both independently packed copies of
+[`source_0p25ms_macos_intel.npz`](source_0p25ms_macos_intel.npz)
+have SHA-256 `3c7596c0f39bb51bf3836802643597c827bac1ecb2cb6d625669a897baad92ef`.
+The Intel source differs from the checked compatible AMD source by up to
+`0.006825` rad pitch and `0.507981` N m request, and from the Apple source by
+up to `0.007742` rad pitch and `0.624313` N m request. These are all beyond
+the original pointwise limits, although the three source traces agree to
+roughly `2e-15` rad pitch through 15.2 s. The
+[`Intel source comparison`](macos_intel_source_comparison.json) records both
+full-duration physical Python audits. They miss every pointwise limit: pitch
+gaps are `0.007962` and `0.007568` rad, and request gaps are `0.722569` and
+`0.605466` N m. All seven aggregate gaps pass on both Intel runners. A 40 s
+controller probe finds the AMD and Intel source commands only `6.4e-14` N m
+apart at NMPC activation but `0.082210` N m apart at 38.65 s. Python QP
+replays on each logged input reproduce that later command separation within
+`6.9e-8` N m. The native Intel trace is a diagnostic, not an accepted
+physical parity reference.
+
 The [prescribed-request physical component audit](compatible_prescribed_physical.json)
 holds the same source's torque requests with the source's one-sample actuator
 delay and independently advances the physical Python plant for 225 s. On
@@ -143,6 +215,21 @@ Its first commands reproduce the source simulation's requests within
 `6.43e-11` N m over 15–225 s. Thus the direct source QP replay is an
 independent check of the logged source controller inputs and command timing.
 
+The [platform-fixed QP replay](fixed_input_qp_platform_comparison.json) uses
+those same 4,201 states, forecasts, and matrices on compatible-BLAS Linux,
+native Intel macOS, and native Apple silicon macOS. All three MATLAB runs
+reproduce the checked source requests within `6.43e-11` N m. Their complete
+40-step plans differ across platforms by at most `1.68e-10` N m and their
+first commands by at most `8.75e-11` N m. The linked
+[Linux](https://github.com/cmudrc/wec-sim-python/actions/runs/39963460737),
+[Intel](https://github.com/cmudrc/wec-sim-python/actions/runs/39963448239), and
+[Apple silicon](https://github.com/cmudrc/wec-sim-python/actions/runs/39963448268)
+workflow runs record each MATLAB release, thread count, and native BLAS.
+The first Apple job could not acquire a hosted runner; its second attempt
+succeeded. These fixed-input QP differences are many orders smaller than the
+autonomous source gaps. They do not establish which upstream calculation first
+perturbs feedback, or make the independent physical Python gate pass.
+
 The [Python comparison](compatible_checked_qp_replay.json), reproduced by
 [`wavestar_nmpc_checked_qp_replay.py`](../../../../tools/wavestar_nmpc_checked_qp_replay.py),
 finds a `0.001071` N m maximum request gap and `0.002058` N m maximum
@@ -167,6 +254,8 @@ SHA-256:
 - `source_0p25ms.npz`: `0f62bc5692e845f739bb0df715970d006124d4514cdb928059fb2115263596a6`
 - `source_0p25ms_repeat.npz`: `5f6f576b94e4064352ce5bf1ba7a83e69c83faf157c8f1abe77488645b627d24`
 - `source_0p25ms_compatible_amd7763.npz`: `48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6`
+- `source_0p25ms_macos_arm_m1.npz`: `b7c09d34fa247a897ac55ad3d7d4cd8251b679ed55ec01c3d4155b17d072a3d6`
+- `source_0p25ms_macos_intel.npz`: `3c7596c0f39bb51bf3836802643597c827bac1ecb2cb6d625669a897baad92ef`
 - `controller_0p25ms_compatible_amd7763.npz`: `06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3`
 - `checked_qp_replay_compatible_amd7763.mat`: `cbc5a2acfe651f3570db0405d040ee3d40791b07f30ac4b3d282ae289ec5af7d`
 

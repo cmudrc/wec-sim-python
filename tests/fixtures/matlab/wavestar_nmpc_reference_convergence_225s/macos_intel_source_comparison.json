@@ -1,0 +1,173 @@
+{
+  "run_url": "https://github.com/cmudrc/wec-sim-python/actions/runs/39954640642",
+  "checked_amd_source_sha256": "48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6",
+  "macos_arm_source_sha256": "b7c09d34fa247a897ac55ad3d7d4cd8251b679ed55ec01c3d4155b17d072a3d6",
+  "macos_intel_source_sha256": "3c7596c0f39bb51bf3836802643597c827bac1ecb2cb6d625669a897baad92ef",
+  "runner": "macos-15-intel GitHub-hosted Mac mini",
+  "matlab": "R2025b Update 7",
+  "matlab_threads": 1,
+  "blas": "Intel oneMKL 2023.2.2 (CNR branch off)",
+  "source": {
+    "wec_sim_commit": "0753b2e47f2457c078751dcfe5d251d1767b80ab",
+    "applications_commit": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e",
+    "hydro_sha256": "b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1",
+    "plant_step_s": 0.00025,
+    "controller_step_s": 0.05,
+    "samples": 4501
+  },
+  "pointwise_limits": {
+    "pitch_rad": 0.0005,
+    "pitch_speed_rad_s": 0.005,
+    "stroke_m": 0.0001,
+    "axial_force_N": 1.0,
+    "requested_torque_Nm": 0.1
+  },
+  "checked_amd_vs_macos_intel": {
+    "pitch_rad": {
+      "max_abs": 0.006824968022566991,
+      "first_limit_crossing_s": 38.55
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.03710831491621602,
+      "first_limit_crossing_s": 38.75
+    },
+    "stroke_m": {
+      "max_abs": 0.0013649057034537011,
+      "first_limit_crossing_s": 38.55
+    },
+    "axial_force_N": {
+      "max_abs": 2.4563507404414504,
+      "first_limit_crossing_s": 43.1
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.5079806573044605,
+      "first_limit_crossing_s": 41.85
+    },
+    "pitch_rad_first_15p2s": 1.5057399771478686e-15,
+    "within_pointwise_limits": false
+  },
+  "macos_arm_vs_macos_intel": {
+    "pitch_rad": {
+      "max_abs": 0.0077416273931116796,
+      "first_limit_crossing_s": 32.25
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.04925291144369198,
+      "first_limit_crossing_s": 39.65
+    },
+    "stroke_m": {
+      "max_abs": 0.001542143691952778,
+      "first_limit_crossing_s": 32.25
+    },
+    "axial_force_N": {
+      "max_abs": 3.0899802202790028,
+      "first_limit_crossing_s": 43.75
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.624313330969045,
+      "first_limit_crossing_s": 31.95
+    },
+    "pitch_rad_first_15p2s": 1.897787482718627e-15,
+    "within_pointwise_limits": false
+  },
+  "aggregate_limit": 0.005,
+  "amd_vs_macos_intel_controller_first_40s": {
+    "end_time_s": 40.0,
+    "python_qp_replay_vs_source_command": {
+      "a": {
+        "time_s": 29.35,
+        "value": 1.190369443271333e-05
+      },
+      "b": {
+        "time_s": 29.35,
+        "value": 0.00012199616673511104
+      }
+    },
+    "source_a_sha256": "a49b91778ca9f41db2ab545d96285036ed1f4fc6767c62e3910d4eb70566becc",
+    "source_a_vs_b": {
+      "AR_excM_pred": {
+        "time_s": 10.4,
+        "value": 2.4125470123253763
+      },
+      "estimated_states": {
+        "time_s": 38.7,
+        "value": 0.08211830736677506
+      },
+      "python_replayed_command": {
+        "time_s": 38.65,
+        "value": 0.08221045104125313
+      },
+      "source_command": {
+        "time_s": 38.65,
+        "value": 0.08221038206321296
+      }
+    },
+    "source_b_sha256": "da3dff101d25206a588e1243f56484aff4d25b3adef8b158b76f6eaed1c8e0e8"
+  },
+  "macos_intel_repeat_comparison": {
+    "pitch_rad": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "stroke_m": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "axial_force_N": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "pitch_rad_first_15p2s": 0.0,
+    "within_pointwise_limits": true
+  },
+  "python_physical_macos_intel": {
+    "a": {
+      "pointwise": {
+        "pitch_rad": 0.007961581131498174,
+        "pitch_speed_rad_s": 0.044769854951793,
+        "stroke_m": 0.0015863043939393726,
+        "axial_force_N": 3.4900787908730955,
+        "requested_torque_Nm": 0.7225685419811878
+      },
+      "aggregate_relative_gap": {
+        "pitch_rms": 0.00245877332482547,
+        "pitch_peak": 0.0020955998897782243,
+        "pitch_speed_rms": 0.0019103606287885306,
+        "axial_force_rms": 0.0019159251802197497,
+        "axial_force_peak": 0.00045701349240111157,
+        "requested_torque_rms": 0.0018277007049272815,
+        "pto_work_J": 5.8149397438971045e-05
+      },
+      "pointwise_pass": false,
+      "aggregate_pass": true
+    },
+    "b": {
+      "pointwise": {
+        "pitch_rad": 0.0075683602660752,
+        "pitch_speed_rad_s": 0.04474061625338144,
+        "stroke_m": 0.0015133314510815087,
+        "axial_force_N": 2.9863695426231516,
+        "requested_torque_Nm": 0.6054661985291432
+      },
+      "aggregate_relative_gap": {
+        "pitch_rms": 0.0017777363816329076,
+        "pitch_peak": 0.0010740963275784287,
+        "pitch_speed_rms": 0.001734115314089447,
+        "axial_force_rms": 0.0017431274326759074,
+        "axial_force_peak": 0.0002616872192207048,
+        "requested_torque_rms": 0.0016379471087075638,
+        "pto_work_J": 0.0009241122573430109
+      },
+      "pointwise_pass": false,
+      "aggregate_pass": true
+    }
+  }
+}

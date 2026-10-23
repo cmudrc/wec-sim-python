@@ -1,0 +1,83 @@
+{
+  "controller_signals_sha256": "06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3",
+  "matrices_sha256": "3ff8f4ba8654ef66bf9058a9fe717cfa6c60868300d19e64a089fcb06781dbf0",
+  "active_samples": 4201,
+  "source_reproduction_limit_Nm": 1e-08,
+  "runs": {
+    "linux_compatible": {
+      "run_url": "https://github.com/cmudrc/wec-sim-python/actions/runs/39963460737",
+      "matlab": "R2025b Update 7",
+      "matlab_threads": 1,
+      "blas": "oneMKL 2024.1 CNR branch compatible",
+      "source_vs_matlab_qp": {
+        "max_abs_Nm": 6.427214316317986e-11,
+        "time_of_max_s": 202.25,
+        "rms_Nm": 2.405192621996288e-12,
+        "max_15_to_20s_Nm": 3.801403636316536e-13
+      },
+      "source_reproduction_pass": true,
+      "python_vs_matlab_qp": {
+        "max_abs_Nm": 0.0010700087275026249,
+        "time_of_max_s": 202.25,
+        "rms_Nm": 3.462456546744784e-05,
+        "max_15_to_20s_Nm": 2.6568272659746595e-06
+      },
+      "full_plan_python_vs_matlab_max_abs_Nm": 0.0020569954062839013
+    },
+    "macos_intel_native": {
+      "run_url": "https://github.com/cmudrc/wec-sim-python/actions/runs/39963448239",
+      "matlab": "R2025b Update 7",
+      "matlab_threads": 1,
+      "blas": "oneMKL 2023.2.2 CNR branch off",
+      "source_vs_matlab_qp": {
+        "max_abs_Nm": 2.7686297698892304e-11,
+        "time_of_max_s": 210.25,
+        "rms_Nm": 9.185038726326151e-13,
+        "max_15_to_20s_Nm": 9.14823772291129e-13
+      },
+      "source_reproduction_pass": true,
+      "python_vs_matlab_qp": {
+        "max_abs_Nm": 0.001072792898583419,
+        "time_of_max_s": 202.25,
+        "rms_Nm": 3.477888939827651e-05,
+        "max_15_to_20s_Nm": 2.6568267925200506e-06
+      },
+      "full_plan_python_vs_matlab_max_abs_Nm": 0.002062353946926665
+    },
+    "macos_arm_native": {
+      "run_url": "https://github.com/cmudrc/wec-sim-python/actions/runs/39963448268",
+      "attempt": 2,
+      "matlab": "R2025b Update 7",
+      "matlab_threads": 1,
+      "blas": "Apple Accelerate BLAS (ILP64)",
+      "source_vs_matlab_qp": {
+        "max_abs_Nm": 5.235456512764358e-11,
+        "time_of_max_s": 210.25,
+        "rms_Nm": 1.866426688779475e-12,
+        "max_15_to_20s_Nm": 3.836930773104541e-13
+      },
+      "source_reproduction_pass": true,
+      "python_vs_matlab_qp": {
+        "max_abs_Nm": 0.0010684127430544699,
+        "time_of_max_s": 202.25,
+        "rms_Nm": 3.4649737359070096e-05,
+        "max_15_to_20s_Nm": 2.656826983589433e-06
+      },
+      "full_plan_python_vs_matlab_max_abs_Nm": 0.002053923636362587
+    }
+  },
+  "cross_platform_fixed_input": {
+    "linux_compatible_vs_macos_intel_native": {
+      "commands_max_abs_Nm": 8.749267976781994e-11,
+      "complete_plans_max_abs_Nm": 1.6798118451788469e-10
+    },
+    "linux_compatible_vs_macos_arm_native": {
+      "commands_max_abs_Nm": 1.999822529796802e-11,
+      "complete_plans_max_abs_Nm": 3.8403058510994015e-11
+    },
+    "macos_intel_native_vs_macos_arm_native": {
+      "commands_max_abs_Nm": 8.004086282653589e-11,
+      "complete_plans_max_abs_Nm": 1.2957812600689067e-10
+    }
+  }
+}
