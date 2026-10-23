@@ -461,6 +461,46 @@ stable control here: across seeds 1 and 3, halving its step from `0.01` to
 `0.005` s changes PTO work by at most `0.0033%` and yaw by at most
 `4.5e-5` rad, consistent with its separately paired 250 s MATLAB cases.
 
+The proposed [Applications correction](https://github.com/WEC-Sim/WEC-Sim_Applications/pull/120)
+sets both yaw thresholds to zero and rebaselines its regression from the
+archived continuous-heading source. The new full-duration gate pins that
+candidate application commit, checks MATLAB 0.01/0.005 s self-change for
+each seed, then independently advances the public physical Python path at
+0.005 s against the refined source. Its predeclared yaw, speed, PTO torque,
+wave, and work limits remain unpromoted until all three seeds pass in CI.
+
+The remaining seed-2 source refinement uses the same pinned R2025b model,
+HDF5, and phase seed with only `simu.dt` changed from `0.01` to `0.005` to
+`0.0025` s. The local published-step rerun reproduces the archived seed-2
+trajectory within `4.1e-15` rad yaw, `8.7e-16` rad/s speed, and
+`2.4e-10` N m torque. Wave elevation is identical at matched samples across
+all three steps. MATLAB self-selected heading updates number `52`, `51`,
+and `39`; PTO work is `1990.936`, `2045.774`, and `1521.927` J. The
+half/quarter-step source self-change reaches `0.125657` rad yaw,
+`0.024061` rad/s speed, and `2887.33` N m torque, while work changes
+`-25.606%`. An independently advanced public physical Python run at
+`0.0025` s selects `57` events and absorbs `2681.039` J, differing from
+that source step by `0.128375` rad yaw, `0.030576` rad/s speed,
+`3669.08` N m torque, and `76.161%` work. Its own `0.00125` s refinement
+selects `53` events and absorbs `1746.504` J, a `-34.857%` work change
+and `0.322703` rad maximum yaw change, with identical matched wave samples.
+The independently advanced Python run at `0.0025` s also completes the other
+two seas. The full-duration quarter-step comparisons are:
+
+| Phase seed | MATLAB / Python heading updates | Maximum yaw gap (rad) | Maximum speed gap (rad/s) | Maximum PTO torque gap (N m) | Python versus MATLAB PTO work |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 | 121 / 134 | 0.192312 | 0.025656 | 3078.70 | +31.780% |
+| 2 | 39 / 57 | 0.128375 | 0.030576 | 3669.08 | +76.161% |
+| 3 | 125 / 104 | 0.097148 | 0.018322 | 2198.59 | -34.823% |
+
+The [three-seed step runner](tests/matlab/oswec_passive_yaw_step_refinement.m),
+[independent physical runner](tools/oswec_held_yaw_physical_run.py), and
+[audit](tools/oswec_held_yaw_step_audit.py) retain source and physical
+trajectories separately and report event times, force, motion, wave, and
+work with limits recorded before the quarter-step result. None of the
+three one-degree held-heading seeds has a source-stable full-duration
+physical baseline at the tested steps; the published case remains qualified.
+
 The pinned OWC Simulink model has a force-path difference:
 its flexible `GBM` state-space block integrates inverse effective mass times
 the hydrodynamic force, while the piston force joins a separate reported

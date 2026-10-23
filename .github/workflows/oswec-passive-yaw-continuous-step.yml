@@ -1,0 +1,77 @@
+name: OSWEC continuous-heading source step gate
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/oswec-passive-yaw-continuous-step.yml'
+      - 'tests/matlab/oswec_passive_yaw_continuous_step_refinement.m'
+      - 'tools/oswec_continuous_yaw_step_audit.py'
+      - 'tests/test_oswec_continuous_yaw_refinement.py'
+  workflow_dispatch:
+
+jobs:
+  refine:
+    strategy:
+      fail-fast: false
+      matrix:
+        phase_seed: [1, 2, 3]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: cmccomb/WEC-Sim_Applications
+          ref: 34ca45db2b82bb1d2f344175b2b3c51be72266db
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: |
+            _Common_Input_Files/OSWEC
+            Passive_Yaw/PassiveYawRegression
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); oswec_passive_yaw_continuous_step_refinement(${{ matrix.phase_seed }})
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e . pytest
+      - id: source_gate
+        continue-on-error: true
+        run: >-
+          python tools/oswec_continuous_yaw_step_audit.py
+          --source-dir matlab-oswec-passive-yaw-continuous-refinement
+          --seed ${{ matrix.phase_seed }}
+          --output matlab-oswec-passive-yaw-continuous-refinement/seed-${{ matrix.phase_seed }}-summary.json
+          --enforce
+      - id: physical_gate
+        continue-on-error: true
+        run: python -m pytest -q -s tests/test_oswec_continuous_yaw_refinement.py
+        env:
+          WEC_SIM_APPLICATIONS_DIR: applications
+          WEC_SIM_CONTINUOUS_REFINEMENT_DIR: matlab-oswec-passive-yaw-continuous-refinement
+          WEC_SIM_PHASE_SEED: ${{ matrix.phase_seed }}
+      - name: Require both source stability and physical parity
+        if: always()
+        env:
+          SOURCE_GATE: ${{ steps.source_gate.outcome }}
+          PHYSICAL_GATE: ${{ steps.physical_gate.outcome }}
+        run: test "$SOURCE_GATE" = success && test "$PHYSICAL_GATE" = success
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: matlab-oswec-continuous-yaw-step-seed-${{ matrix.phase_seed }}
+          path: |
+            matlab-oswec-passive-yaw-continuous-refinement/
+            applications/_Common_Input_Files/OSWEC/hydroData/oswec.h5
