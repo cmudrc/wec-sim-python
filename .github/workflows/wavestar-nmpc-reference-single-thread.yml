@@ -8,11 +8,19 @@ on:
         type: boolean
         required: false
         default: false
+      runner:
+        description: Host for the full source repeatability probe
+        type: choice
+        required: false
+        default: ubuntu-latest
+        options:
+          - ubuntu-latest
+          - macos-15-intel
 
 jobs:
   source-repeat:
     if: ${{ !inputs.qp_only }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 90
     env:
       MATLAB_DISABLE_CBWR: '1'
@@ -46,7 +54,11 @@ jobs:
           cp tests/fixtures/matlab/wavestar_nmpc_split_step_225s/wavestar.h5 applications/WECCCOMP/hydroData/wavestar.h5
           cmp tests/fixtures/matlab/wavestar_nmpc_split_step_225s/wavestar.h5 applications/WECCCOMP/hydroData/wavestar.h5
           mkdir -p matlab-reference-model-output
-          lscpu > matlab-reference-model-output/cpu.txt
+          if command -v lscpu >/dev/null 2>&1; then
+            lscpu > matlab-reference-model-output/cpu.txt
+          else
+            system_profiler SPHardwareDataType > matlab-reference-model-output/cpu.txt
+          fi
       - uses: matlab-actions/setup-matlab@v3
         with:
           release: R2025b
