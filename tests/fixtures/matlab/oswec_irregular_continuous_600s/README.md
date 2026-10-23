@@ -22,8 +22,21 @@ the copied Simulink model still contains the indexing block. The application
 plotting hook is disabled because it assumes a selected-bank index. No source
 states, forces, or headings are fed into the Python run.
 
+To reproduce either source trace, copy the pinned application's
+`Variable_Hydro/Passive_Yaw` directory next to its `_Common_Input_Files`
+directory. Replace its `wecSimInputFile.m` with the corresponding archived
+step file and copy `calcIndex.m` and `userDefinedFunctions.m` into that case.
+Call `run_source(source_dir, case_dir, output_dir, step)` from MATLAB. It
+exports time, flap yaw and speed, signed PTO torque and power, and incident
+wave elevation without modifying the WEC-Sim or Applications checkouts.
+
 The local MATLAB HDF5 SHA-256 is
 `a423b49b9e09e3303902e576a1f57a696f01c51e877d3271a7d71b59e00493e5`.
+All 34 common non-excitation numeric datasets in that full-direction file and
+the published `oswec_10.h5` bank member are exactly equal, including added
+mass, radiation, restoring stiffness, and body properties.
+The flap excitation real and imaginary arrays also match exactly at the
+initial 10° incidence; only the heading-selection law changes during yaw.
 The corresponding [Python fixture](../oswec_multi_wave/oswec.h5) stores the
 same numeric hydrodynamic arrays; the largest dataset difference is
 `1.46e-11` in an IRF array from HDF5 regeneration. `gate_spec.json` records
