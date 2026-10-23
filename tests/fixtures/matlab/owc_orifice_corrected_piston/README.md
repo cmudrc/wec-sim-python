@@ -110,7 +110,7 @@ logged source output, and pairs that fresh output with Python. WEC-Sim
 initialization resets the model MaxStep from `simu.dt`, so the local input sets
 `simu.dt = 0.00015625` s while explicitly preserving the 0.005 s output,
 radiation-convolution, nonlinear-force, and Morison-force clocks.
-A [full 130 s hosted run of the same corrected configuration](https://github.com/cmudrc/wec-sim-python/actions/runs/39877611225)
+A [full 130 s repository-local source run](https://github.com/cmudrc/wec-sim-python/actions/runs/39883245004)
 passed the independent Python gate. Its fresh body, flexible, orifice, wave,
 component, and summary arrays differ from the archived refined trace by at
 most `3.96e-11`; work is 864.422 J and peak Mach is 0.155. A separate

@@ -603,7 +603,7 @@ piston-force patch and solver-clock refinement to a disposable copy, and pairs
 fresh outputs with independent Python. WEC-Sim initialization resets the model
 MaxStep from `simu.dt`; the repository-local input therefore sets
 `simu.dt = 0.00015625` s while retaining 0.005 s
-output and force-sampling clocks. A [full 130 s hosted run](https://github.com/cmudrc/wec-sim-python/actions/runs/39877611225)
+output and force-sampling clocks. A [full 130 s repository-local source run](https://github.com/cmudrc/wec-sim-python/actions/runs/39883245004)
 of that input passed the independent motion and air-system gate and reproduced
 the earlier corrected archive within `3.96e-11`. A [full 0.005 s solver-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/39871054213)
 found 1.687 m surge and a 1.62% PTO-work change. The unchanged published case
