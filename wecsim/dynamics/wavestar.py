@@ -230,6 +230,8 @@ def run_wavestar_published(
     arm_center = np.array([-.3301, .2551])
     float_mass, arm_mass = 3.075, 1.157
     float_inertia, arm_inertia = .001450, .0606
+    auxiliary_mass = 1e-4
+    auxiliary_inertia = 1e-4
     float_rigid = np.diag([float_mass] * 3 + [0., float_inertia, 0.])
     arm_rigid = np.diag([arm_mass] * 3 + [0., arm_inertia, 0.])
     source_ode8 = solver == "wecsim_ode8"
@@ -265,6 +267,67 @@ def run_wavestar_published(
         bias_acceleration = np.array([bias[0], 0., bias[1], 0., 0., 0.])
         return position, jacobian, bias_acceleration
 
+    def auxiliary_motion(angle):
+        """Project the pinned BC rod and motor onto the arm coordinate."""
+        base = np.asarray(linkage.pto_base)
+        tip = np.asarray(linkage.pto_arm)
+        pivot = np.asarray(linkage.pivot)
+        cosine, sine = np.cos(angle), np.sin(angle)
+        offset = tip - pivot
+        moving_tip = pivot + np.array([
+            cosine * offset[0] + sine * offset[1],
+            -sine * offset[0] + cosine * offset[1],
+        ])
+        tip_tangent = np.array([
+            -sine * offset[0] + cosine * offset[1],
+            -cosine * offset[0] - sine * offset[1],
+        ])
+        tip_curvature = -(moving_tip - pivot)
+        rod = moving_tip - base
+        length_squared = rod @ rod
+        numerator = rod[1] * tip_tangent[0] - rod[0] * tip_tangent[1]
+        rod_angle_rate = numerator / length_squared
+        numerator_rate = (rod[1] * tip_curvature[0]
+                          - rod[0] * tip_curvature[1])
+        rod_angle_curvature = (
+            numerator_rate / length_squared
+            - 2 * numerator * (rod @ tip_tangent) / length_squared**2
+        )
+        neutral_rod = tip - base
+        rod_angle = (np.arctan2(-rod[0], -rod[1])
+                     - np.arctan2(-neutral_rod[0], -neutral_rod[1]))
+        rod_cosine, rod_sine = np.cos(rod_angle), np.sin(rod_angle)
+
+        def rotated(point):
+            return np.array([
+                rod_cosine * point[0] + rod_sine * point[1],
+                -rod_sine * point[0] + rod_cosine * point[1],
+            ])
+
+        def tangent(point):
+            return np.array([
+                -rod_sine * point[0] + rod_cosine * point[1],
+                -rod_cosine * point[0] - rod_sine * point[1],
+            ])
+
+        rod_tangent = tip_tangent - rod_angle_rate * tangent(tip)
+        motor_tangent = -rod_angle_rate * tangent(base)
+        rod_curvature = (tip_curvature
+                         - rod_angle_curvature * tangent(tip)
+                         + rod_angle_rate**2 * rotated(tip))
+        motor_curvature = (-rod_angle_curvature * tangent(base)
+                           + rod_angle_rate**2 * rotated(base))
+        mass = (auxiliary_mass * (rod_tangent @ rod_tangent
+                                  + motor_tangent @ motor_tangent)
+                + 2 * auxiliary_inertia * rod_angle_rate**2)
+        gravity = (-auxiliary_mass * g
+                   * (rod_tangent[1] + motor_tangent[1]))
+        bias = (auxiliary_mass * (rod_tangent @ rod_curvature
+                                  + motor_tangent @ motor_curvature)
+                + 2 * auxiliary_inertia * rod_angle_rate
+                * rod_angle_curvature)
+        return mass, gravity, bias
+
     def derivative(state, excitation, time, pto_force,
                    delayed_acceleration=None):
         angle, speed = state[:2]
@@ -284,6 +347,11 @@ def run_wavestar_published(
                 + arm_jacobian @ arm_rigid @ arm_jacobian)
         torque = (float_jacobian @ (force - float_effective @ float_bias)
                   + arm_jacobian @ (arm_gravity - arm_rigid @ arm_bias))
+        auxiliary_effective_mass, auxiliary_gravity, auxiliary_bias = (
+            auxiliary_motion(angle)
+        )
+        mass += auxiliary_effective_mass
+        torque += auxiliary_gravity - auxiliary_bias * speed**2
         if delayed_acceleration is not None:
             torque -= float_jacobian @ (delayed_added_mass @ delayed_acceleration)
         torque += pto_force * linkage.pto_speed(angle, 1.)

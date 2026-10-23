@@ -21,7 +21,7 @@ EXPECTED_SOURCE = {
 
 
 def pack(artifact: Path, output: Path, step: float = .00025):
-    if step not in (.00025, .000125):
+    if step not in (.00025, .000125, .0000625):
         raise ValueError("Unsupported WaveStar source plant step")
     trace, _ = _read_artifact(artifact, step)
     audit = json.loads((artifact / "wavestar-reference-audit.json").read_text())
