@@ -1,0 +1,49 @@
+{
+  "source_self_change": {
+    "yaw_rad": 3.212698932900104e-05,
+    "yaw_speed_rad_s": 4.85386604030108e-06,
+    "pto_torque_Nm": 0.5824639248298809,
+    "relative_pto_work": 0.00012095049903767722,
+    "wave_m": 0.0
+  },
+  "python_vs_source": {
+    "yaw_rad": 1.2475254545007974e-05,
+    "yaw_speed_rad_s": 1.922037606972779e-06,
+    "pto_torque_Nm": 0.2306445128285759,
+    "relative_pto_work": 4.917286409538399e-05,
+    "wave_m": 2.1238566461079245e-13
+  },
+  "work_j": {
+    "matlab_dt_001": 2211.0165663812586,
+    "matlab_dt_0005": 2211.283989938343,
+    "physical_python_dt_0005": 2211.1752547712294
+  },
+  "source_npz_sha256": "a282fd2726727917ccd3de19f3ed683536541c5504055d7428d2c6fe7554dea8",
+  "published_case_promotion": false,
+  "matlab_elapsed_s": {
+    "dt_001": 3657.718795375,
+    "dt_0005": 6996.890055791667
+  },
+  "provenance": {
+    "wecsim_source_commit": "0753b2e47f2457c078751dcfe5d251d1767b80ab",
+    "applications_commit": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e",
+    "source_model_sha256": "80eb2552f2cd36c96c6dc362d8a08878e9ada505a8b8437feaa574d616642099",
+    "source_interpolator_sha256": "9b16fe36ba655b700662765655ea6411f795f1b8bff4a847d318c976448cadba",
+    "matlab_hdf5_sha256": "a423b49b9e09e3303902e576a1f57a696f01c51e877d3271a7d71b59e00493e5",
+    "python_hdf5_sha256": "b9ccf3a32e0893c23b1645c15a2baef4a0c6f678b90d177d5797e3c65de4b7d3"
+  },
+  "relative_heading_deg": {
+    "matlab_dt_001": [
+      -8.755622284678669,
+      10.269114821065365
+    ],
+    "matlab_dt_0005": [
+      -8.75557675749862,
+      10.26911453042137
+    ],
+    "physical_python_dt_0005": [
+      -8.755593484249157,
+      10.269112986979703
+    ]
+  }
+}
