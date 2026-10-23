@@ -51,6 +51,22 @@ also differs from both standalone 1 ms runs, although those standalone runs
 match each other numerically. This record does not isolate which runner or
 source setup detail caused the difference.
 
+A [single-thread repeat](https://github.com/cmudrc/wec-sim-python/actions/runs/39891127477)
+held [MATLAB's computational thread limit](https://www.mathworks.com/help/matlab/ref/maxnumcompthreads.html)
+at one in two fresh 0.25 ms runs. Both used R2025b Update 7, the exact HDF5,
+the same sea components, and identical source revisions. The Intel Xeon
+Platinum 8573C run reproduced `source_0p25ms_repeat.npz` exactly; the AMD EPYC
+9V45 run reproduced `source_0p25ms.npz` exactly. Their pitch and request gaps
+remain `0.012014` rad and `0.732573` N m. The matched independent Python
+pitch gaps are `0.011711` and `0.006740` rad respectively, both beyond the
+pointwise limit. [`single_thread_repeat.json`](single_thread_repeat.json)
+records the numerical comparison, MATLAB versions and thread counts, and
+runner CPU details. This associates the two source trajectories with the
+tested CPU models despite one MATLAB computational thread; it does not
+identify the exact CPU-dependent operation. The follow-up workflow probes a
+common BLAS code branch using [MathWorks' MATLAB override](https://www.mathworks.com/matlabcentral/answers/2066506-how-do-i-make-matlab-use-the-mkl_cbwr-environment-variable-as-the-cnr-branch)
+and [Intel's compatible branch](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2026-0/getting-started-with-conditional-numerical.html).
+
 SHA-256:
 
 - `source_1ms_repeat.npz`: `42f3264022177833634731711086cc90a1a39eb313ccdc05110123eb9c3035f6`

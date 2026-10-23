@@ -1,15 +1,6 @@
 name: WaveStar NMPC source reference convergence
 
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/wavestar-nmpc-reference-convergence.yml'
-      - 'tests/matlab/reference_model_baseline.m'
-      - 'tools/wavestar_nmpc_reference_audit.py'
-      - 'tools/wavestar_nmpc_reference_compare.py'
-      - 'tests/test_wavestar_split_step_portable.py'
-      - 'wecsim/control/wavestarNmpc.py'
-      - 'wecsim/dynamics/wavestar.py'
   workflow_dispatch:
 
 jobs:

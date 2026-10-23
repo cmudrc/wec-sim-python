@@ -967,6 +967,26 @@ step-converged source configuration or numerical
 correction remains necessary before promoting the case or closing issue
 [#623](https://github.com/cmudrc/wec-sim-python/issues/623).
 
+A [controlled single-thread rerun](https://github.com/cmudrc/wec-sim-python/actions/runs/39891127477)
+then used `maxNumCompThreads(1)` in the MATLAB source process on two hosted
+Linux x86 runners. Both report R2025b Update 7, one computational thread,
+the same HDF5 hash and sea components, and the same pinned source revisions.
+The Intel Xeon Platinum 8573C runner exactly reproduced the second 0.25 ms
+source trajectory above, while the AMD EPYC 9V45 runner exactly reproduced
+the first. Their `0.012014` rad pitch and `0.732573` N m request gaps remain
+unchanged; matched independent Python pitch gaps are `0.011711` and
+`0.006740` rad, both over the `0.0005` rad gate. The
+[runtime and CPU comparison](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/single_thread_repeat.json)
+therefore isolates a CPU-class association in this experiment, not an exact
+floating-point operation. Limiting MATLAB to one computational thread does
+not yield a portable source target. A follow-up workflow tests a common
+MKL BLAS code branch; [MathWorks says](https://www.mathworks.com/matlabcentral/answers/2066506-how-do-i-make-matlab-use-the-mkl_cbwr-environment-variable-as-the-cnr-branch)
+`MATLAB_DISABLE_CBWR=1` is required for MATLAB to honor `MKL_CBWR`, and
+[Intel documents](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2026-0/getting-started-with-conditional-numerical.html)
+`COMPATIBLE` as a common Intel/AMD branch. This experiment still requires
+source repetition and a
+physical pointwise pass before WaveStar can be promoted.
+
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,
 or an **open** result with the specific missing evidence and next experiment.
