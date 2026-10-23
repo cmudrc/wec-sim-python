@@ -1081,15 +1081,18 @@ compatible` and MATLAB limited to one computational thread. Both hosted
 runners were AMD EPYC 7763, so this was a same-CPU control: their full 225 s
 source pitch, speed, PTO stroke, force, and request traces agree numerically
 exactly. The [compact checked trace and audit](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/README.md)
-preserve that result. Cross-CPU portability is still untested under this BLAS
-setting. More decisively for the physical gate, matched-step independent
-Python misses all five pointwise limits against this repeated source trace:
+preserve that result. A later
+[compatible-BLAS EPYC 9V45 repeat](https://github.com/cmudrc/wec-sim-python/actions/runs/39950081356)
+matches the EPYC 7763 trace exactly at all 4,501 samples; this establishes
+repeatability across those two tested AMD CPU models. More decisively for the
+physical gate, matched-step independent Python misses all five pointwise
+limits against this repeated source trace:
 maximum pitch differs by `0.017938` rad (`0.0005` rad limit), pitch speed by
 `0.084155` rad/s (`0.005` limit), PTO stroke by `0.003587` m (`0.0001` m
 limit), axial force by `4.767355` N (`1` N limit), and requested torque by
 `0.937424` N m (`0.1` N m limit). Pitch peak differs by `0.6762%` against
-the `0.5%` aggregate limit. A repeatable same-CPU MATLAB export therefore
-still cannot be promoted as the required portable autonomous physical gate;
+the `0.5%` aggregate limit. A repeatable compatible-BLAS MATLAB export
+therefore still cannot be promoted as the required portable autonomous physical gate;
 issue #623 remains open.
 
 To separate this autonomous gap from the plant, a
@@ -1138,6 +1141,34 @@ autonomous physical gate.
 The largest isolated one-step difference is at a torque bound: MATLAB's
 default interior-point `quadprog` returns `-11.999999823863` N m at 97.25 s,
 while Python's L-BFGS-B returns exactly `-12` N m.
+
+The [native macOS source probes](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/README.md)
+each generated two identical 225 s source traces with the same pinned HDF5,
+sea, MATLAB release, source commits, plant step, and one computational thread.
+Apple Accelerate and native Intel oneMKL traces differ from the checked
+compatible AMD source by up to `0.006697`/`0.006825` rad pitch and
+`0.472857`/`0.507981` N m request. Each exceeds the unchanged `0.0005` rad
+and `0.1` N m limits. All three source pitches agree to about `2e-15` rad
+through 15.2 s, before feedback amplifies numerical differences. The
+independent physical Python run also fails all five pointwise limits against
+its matching native Apple or Intel source; Apple additionally misses the
+`0.5%` pitch-peak aggregate limit at `0.6555%`. Both Intel runs pass the seven
+aggregate checks but miss the original pointwise gate. The compact source
+traces and sanitized comparison reports are checked in the Python repository.
+
+A [platform-fixed direct QP replay](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/fixed_input_qp_platform_comparison.json)
+ran the same 4,201 checked states, forecasts, and matrices on compatible
+Linux, native Intel macOS, and native Apple silicon macOS. The MATLAB runs
+reproduce the checked source request within `6.43e-11` N m; their first
+commands differ across platforms by at most `8.75e-11` N m and complete
+plans by at most `1.68e-10` N m. A
+[physical startup refinement](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/physical_startup_refinement_mac_arm.json)
+from 1 to 0.0625 ms leaves Python's pitch gap against the fixed source near
+`1.06414e-5` rad, so simply reducing the Python RK4 step does not remove
+the seed discrepancy. These diagnostics narrow the numerical blocker but do
+not provide a portable source target or a passing independent physical gate.
+Issue [#623](https://github.com/cmudrc/wec-sim-python/issues/623) remains
+open and the case qualified.
 
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,
