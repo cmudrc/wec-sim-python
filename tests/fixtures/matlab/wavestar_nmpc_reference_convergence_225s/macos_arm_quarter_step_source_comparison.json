@@ -1,0 +1,52 @@
+{
+  "workflow_run": "https://github.com/cmudrc/wec-sim-python/actions/runs/40006669298",
+  "earlier_half_step_workflow_run": "https://github.com/cmudrc/wec-sim-python/actions/runs/39992588386",
+  "half_step_source_sha256": "ee791a11bb3c199e510dcc33e9f1b718313a34473694258ce5f75fd44ae55df0",
+  "quarter_step_source_sha256": "b3fe52fe66256a218c924c1c039f60c4b3d9d2192f36b1d9d4efe56831fac26b",
+  "source_step_s": {
+    "half": 0.000125,
+    "quarter": 6.25e-05
+  },
+  "pointwise_limits": {
+    "pitch_rad": 0.0005,
+    "pitch_speed_rad_s": 0.005,
+    "stroke_m": 0.0001,
+    "axial_force_N": 1.0,
+    "requested_torque_Nm": 0.1
+  },
+  "half_vs_quarter": {
+    "pitch_rad": {
+      "max_abs": 0.010800047009331015,
+      "first_limit_crossing_s": 17.95
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.057609864539682004,
+      "first_limit_crossing_s": 21.5
+    },
+    "stroke_m": {
+      "max_abs": 0.0021581679653852014,
+      "first_limit_crossing_s": 17.95
+    },
+    "axial_force_N": {
+      "max_abs": 3.4746706199945097,
+      "first_limit_crossing_s": 26.7
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.7210627885203973,
+      "first_limit_crossing_s": 21.6
+    },
+    "pitch_rad_first_15p2s": 3.332820049412044e-06,
+    "within_pointwise_limits": false
+  },
+  "aggregate_relative_gaps": {
+    "pitch_rms": 0.0011920757467701138,
+    "pitch_peak": 0.0013821188241425243,
+    "pitch_speed_rms": 0.0017774487885096675,
+    "axial_force_rms": 0.0016895715075422335,
+    "axial_force_peak": 5.380699873358253e-05,
+    "requested_torque_rms": 0.0016572596431766288,
+    "pto_work_J": 0.0006581757734630303
+  },
+  "aggregate_limit": 0.005,
+  "within_aggregate_limits": true
+}

@@ -1,0 +1,59 @@
+{
+  "source": {
+    "wec_sim_commit": "0753b2e47f2457c078751dcfe5d251d1767b80ab",
+    "applications_commit": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e",
+    "hydro_sha256": "b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1",
+    "plant_step_s": 6.25e-05,
+    "controller_step_s": 0.05,
+    "samples": 4501
+  },
+  "pointwise_limits": {
+    "pitch_rad": 0.0005,
+    "pitch_speed_rad_s": 0.005,
+    "stroke_m": 0.0001,
+    "axial_force_N": 1.0,
+    "requested_torque_Nm": 0.1
+  },
+  "repeat_comparison": {
+    "pitch_rad": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "stroke_m": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "axial_force_N": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "pitch_rad_first_15p2s": 0.0,
+    "within_pointwise_limits": true
+  },
+  "python_physical_pointwise_left": {
+    "pitch_rad": 0.008511655030598614,
+    "pitch_speed_rad_s": 0.04080175610107428,
+    "stroke_m": 0.0017007998666376395,
+    "axial_force_N": 3.180012711217934,
+    "requested_torque_Nm": 0.6597835679108686
+  },
+  "python_physical_pointwise_right": {
+    "pitch_rad": 0.008511655030598614,
+    "pitch_speed_rad_s": 0.04080175610107428,
+    "stroke_m": 0.0017007998666376395,
+    "axial_force_N": 3.180012711217934,
+    "requested_torque_Nm": 0.6597835679108686
+  },
+  "matlab_runtime_left": "version=25.2.0.3360999 (R2025b) Update 7\nthreads=1\nblas=ans =\n\n    'Apple Accelerate BLAS (ILP64)'\n",
+  "cpu_left": "arm64\nhw.model: VirtualMac2,1\nhw.ncpu: 3\nmachdep.cpu.brand_string: Apple M1 (Virtual)\n",
+  "matlab_runtime_right": "version=25.2.0.3360999 (R2025b) Update 7\nthreads=1\nblas=ans =\n\n    'Apple Accelerate BLAS (ILP64)'\n",
+  "cpu_right": "arm64\nhw.model: VirtualMac2,1\nhw.ncpu: 3\nmachdep.cpu.brand_string: Apple M1 (Virtual)\n"
+}

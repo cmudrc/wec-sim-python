@@ -39,6 +39,7 @@ on:
         options:
           - '0.00025'
           - '0.000125'
+          - '0.0000625'
 
 permissions:
   actions: read
