@@ -1,0 +1,41 @@
+{
+  "source_trace_sha256": "48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6",
+  "controller_signals_sha256": "06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3",
+  "platform": "macOS-26.5.1-arm64-arm-64bit",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "samples": 4501,
+  "observer_state": {
+    "max_abs": 1.7426060594516457e-12,
+    "time_of_max_s": 146.35,
+    "rms_sample_max": 3.9893553765518317e-13,
+    "max_active_after_15s": 1.7426060594516457e-12,
+    "max_30_to_225s": 1.7426060594516457e-12
+  },
+  "ar_forecast": {
+    "max_abs": 4.702186867594719,
+    "time_of_max_s": 10.4,
+    "rms_sample_max": 0.12358403176830132,
+    "max_active_after_15s": 2.768651974349723e-11,
+    "max_30_to_225s": 2.2582824499295384e-11
+  },
+  "complete_controller_request": {
+    "max_abs": 0.0010702321077387111,
+    "time_of_max_s": 202.25,
+    "rms_sample_max": 3.352158601239848e-05,
+    "max_active_after_15s": 0.0010702321077387111,
+    "max_30_to_225s": 0.0010702321077387111
+  },
+  "frozen_source_state_forecast_qp_request": {
+    "max_abs": 0.0010707476214397715,
+    "time_of_max_s": 202.25,
+    "rms_sample_max": 3.3536814364238254e-05,
+    "max_active_after_15s": 0.0010707476214397715,
+    "max_30_to_225s": 0.0010707476214397715
+  },
+  "command_component_limits": {
+    "max_abs_Nm": 0.01,
+    "rms_Nm": 0.0003
+  },
+  "complete_controller_component_pass": true
+}

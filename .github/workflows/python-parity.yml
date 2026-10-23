@@ -84,6 +84,34 @@ jobs:
       - run: python -m pip install -e ".[test]"
       - name: Gate autonomous WaveStar window work and envelope
         run: python -m pytest -q -s tests/test_wavestar_nmpc_window_envelope.py
+      - name: Gate WaveStar split-step controller and physical aggregates
+        run: python -m pytest -q tests/test_wavestar_split_step_portable.py
+      - name: Gate compatible-source observer AR and QP component replay
+        run: |
+          python tools/wavestar_nmpc_reference_controller_audit.py \
+            --source tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/source_0p25ms_compatible_amd7763.npz \
+            --controller tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/controller_0p25ms_compatible_amd7763.npz \
+            --expect-source-sha256 48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6 \
+            --expect-controller-sha256 06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3 \
+            --check-limits
+      - name: Gate checked full-plan MATLAB QP replay
+        run: |
+          python tools/wavestar_nmpc_checked_qp_replay.py compare \
+            --controller tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/controller_0p25ms_compatible_amd7763.npz \
+            --matrices tests/fixtures/matlab/wavestar_nmpc_full_step/direct_controller_inputs.npz \
+            --controller-sha256 06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3 \
+            --matrices-sha256 3ff8f4ba8654ef66bf9058a9fe717cfa6c60868300d19e64a089fcb06781dbf0 \
+            --matlab-result tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/checked_qp_replay_compatible_amd7763.mat \
+            --matlab-replay-sha256 cbc5a2acfe651f3570db0405d040ee3d40791b07f30ac4b3d282ae289ec5af7d \
+            --output "$RUNNER_TEMP/wavestar-qp-report.json" --check-limits
+      - name: Gate WaveStar physical plant on delayed compatible-source requests
+        run: |
+          python tools/wavestar_nmpc_prescribed_reference_audit.py \
+            --source tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/source_0p25ms_compatible_amd7763.npz \
+            --hydro tests/fixtures/matlab/wavestar_nmpc_split_step_225s/wavestar.h5 \
+            --expect-source-sha256 48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6 \
+            --expect-hydro-sha256 b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1 \
+            --step 0.00025 --end-time 225 --check-limits
 
   wavestar-autonomous-m1:
     runs-on: macos-15
@@ -99,6 +127,34 @@ jobs:
         run: python -c 'import platform; assert platform.machine() == "arm64"'
       - name: Gate autonomous WaveStar window work and envelope
         run: python -m pytest -q -s tests/test_wavestar_nmpc_window_envelope.py
+      - name: Gate WaveStar split-step controller and physical aggregates
+        run: python -m pytest -q tests/test_wavestar_split_step_portable.py
+      - name: Gate compatible-source observer AR and QP component replay
+        run: |
+          python tools/wavestar_nmpc_reference_controller_audit.py \
+            --source tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/source_0p25ms_compatible_amd7763.npz \
+            --controller tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/controller_0p25ms_compatible_amd7763.npz \
+            --expect-source-sha256 48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6 \
+            --expect-controller-sha256 06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3 \
+            --check-limits
+      - name: Gate checked full-plan MATLAB QP replay
+        run: |
+          python tools/wavestar_nmpc_checked_qp_replay.py compare \
+            --controller tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/controller_0p25ms_compatible_amd7763.npz \
+            --matrices tests/fixtures/matlab/wavestar_nmpc_full_step/direct_controller_inputs.npz \
+            --controller-sha256 06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3 \
+            --matrices-sha256 3ff8f4ba8654ef66bf9058a9fe717cfa6c60868300d19e64a089fcb06781dbf0 \
+            --matlab-result tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/checked_qp_replay_compatible_amd7763.mat \
+            --matlab-replay-sha256 cbc5a2acfe651f3570db0405d040ee3d40791b07f30ac4b3d282ae289ec5af7d \
+            --output "$RUNNER_TEMP/wavestar-qp-report.json" --check-limits
+      - name: Gate WaveStar physical plant on delayed compatible-source requests
+        run: |
+          python tools/wavestar_nmpc_prescribed_reference_audit.py \
+            --source tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/source_0p25ms_compatible_amd7763.npz \
+            --hydro tests/fixtures/matlab/wavestar_nmpc_split_step_225s/wavestar.h5 \
+            --expect-source-sha256 48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6 \
+            --expect-hydro-sha256 b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1 \
+            --step 0.00025 --end-time 225 --check-limits
       - name: Pair full WaveStar motion with local R2025b source
         run: python -m pytest -q -s tests/test_wavestar_local_full_source.py
 

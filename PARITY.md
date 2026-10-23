@@ -929,10 +929,214 @@ separation. These local controls isolate amplification in recursive controller
 feedback from the near-identical prescribed-command plant. They do not
 identify one faulty numerical library, reproduce either hosted Linux runner,
 or close portable physical parity; the gates and badges remain unchanged.
+The reproducible [Python-only platform audit](tools/wavestar_nmpc_platform_audit.py)
+now replays all 225 s of the same pinned source-derived stroke and torque
+requests on native macOS ARM64 and Rosetta x86-64 with NumPy 2.5.4 and SciPy
+1.18.1. The independently calculated strokes from identical saved pitch
+differ by at most `1.11e-16` m. With the preceding request fixed, active
+observer states differ by at most `7.05e-13`, AR forecasts by `5.79e-12` N m,
+and resulting requested torques by `1.80e-6` N m. The QP replay on identical
+saved estimated states and forecasts differs by at most `2.94e-5` N m in
+requested torque. On the same fixed stroke but each controller's *own*
+preceding request, torque first separates by more than `1e-6` N m at 30.75 s
+and reaches `0.831` N m at 101.55 s; observer and forecast gaps then grow with
+that recursive input. The first unstable 10–11 s AR fit is platform-sensitive,
+but the active 15–225 s fixed-input forecast is nearly identical. This narrows
+the remaining platform question to small numerical differences in the active
+controller/QP and their amplification through request feedback; it does not
+prove a particular BLAS or optimizer defect. The published physical pointwise
+gate and badge remain unchanged.
+On the derived 1 ms split-step source, the new ordinary-CI
+[controller replay](tests/test_wavestar_split_step_portable.py) supplies the
+saved 225 s stroke and preceding request to Python's observer, AR predictor,
+and QP. Its requested torque differs by at most `0.001691` N m (RMS
+`4.70e-5` N m), within the existing `0.01` N m peak and `0.0003` N m RMS
+component limits. In a bounded 75 s diagnostic from the same HDF5 and sea,
+independent physical Python first exceeds the `0.0005` rad pointwise pitch
+limit at 17.55 s, shortly after NMPC activation. Giving the physical Python
+plant only the saved source requests keeps its 75 s pitch gap below
+`0.000243` rad; this remains a component control, not autonomous parity.
+Halving and quartering the physical plant step from 1 ms through 30 s changes
+the prescribed-request pitch gap by less than `1e-12` rad. The early gap is
+therefore not explained by Python RK4 step size. The autonomous gate and badge
+remain unchanged.
+As a separate Python-only source-path probe, the opt-in delayed-added-mass
+`wecsim_ode8` solver used the same pinned split-step HDF5, sea, and prescribed
+requests at a 1 ms plant step. Through 15.2 s, its maximum pitch and speed
+gaps against the MATLAB 1 ms `ode4` source are `3.62e-6` rad and
+`2.35e-5` rad/s on both native macOS ARM64 and Rosetta x86-64. The converged
+physical-default prescribed-request pitch gap through that window is about
+`9.19e-5` rad. Refining only the opt-in source-style plant step to 0.5 and
+0.25 ms, while keeping the prescribed controller at 50 ms, increases its
+maximum pitch gap against the fixed 1 ms MATLAB trace to `4.49e-5` and
+`6.84e-5` rad. Those values move toward the physical-default result rather
+than toward the published-step trace. This is evidence that the 1 ms source
+trajectory contains a step-sensitive delayed-mass effect; reproducing that
+trajectory at exactly 1 ms is not a physical-convergence result. To separate
+mass routing from the other source-style changes, a disposable Python probe
+used the same `ode8` tableau and stage excitation but retained the physical
+mass-matrix solve. Its 15.2 s pitch gap is `9.193477879e-5` rad; the
+ordinary RK4 mass-matrix runner gives `9.193477772e-5` rad, only
+`1.07e-12` rad apart in peak gap. Within this reconstruction, the delayed
+added-mass route explains the source-style improvement, rather than solver
+order or wave-force evaluation. The diagnostic option was reverted, leaving
+the public physical default unchanged. With the source-style path but
+autonomous Python NMPC, the
+`0.0005` rad pointwise pitch limit is first exceeded at 26.2 s; by 30 s,
+the pitch and request gaps reach `0.002901` rad and `0.4038` N m. The smaller
+precontrol mismatch delays but does not prevent coupled divergence. A strict
+physical-default pointwise claim needs a checked source target whose delayed
+mass handling converges to the physical mass-matrix equations. The necessary
+upstream numerical correction is to solve that added mass implicitly or
+demonstrate convergence of the source delay at fixed HDF5 and sea, then run a
+fresh portable autonomous gate; this diagnostic does not supply either. The
+checked 225 s controller and physical aggregate tests do pass on both
+[Linux x86](https://github.com/cmudrc/wec-sim-python/actions/runs/39864624815/job/120123892763)
+and [macOS ARM64](https://github.com/cmudrc/wec-sim-python/actions/runs/39864624815/job/120123892787)
+CI runners, while the pointwise gate remains failing.
 An independent second local R2025b process reproduced the same 225 s Mali
 body, PTO, wave, and component CSVs byte for byte, and every controller torque
 request exactly. The first run disabled only post-run plotting, while the
 second retained it; the numerical source trajectory was unchanged.
+
+A separate [hosted R2025b reference convergence diagnostic](https://github.com/cmudrc/wec-sim-python/actions/runs/39883276159)
+generated new 225 s autonomous WaveStar NMPC traces at 1, 0.5, and 0.25 ms
+`ode4` plant steps, holding the controller and output grid at 50 ms. Its
+[compact traces and comparison report](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/README.md)
+preserve the measured result in this Python repository. The
+workflow in this Python repository checked out pinned WEC-Sim and Applications
+commits, copied the exact HDF5 fixture (SHA-256
+`b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1`),
+and verified that all 500 wave components match the pinned fixture. No
+changes were pushed to either MATLAB repository. The fresh 1 ms source pitch
+matches the older pinned 1 ms trace within `2.29e-15` rad through 15.2 s,
+but differs by up to `0.010596` rad over 225 s; requested torque differs by
+`0.792728` N m. The first request difference over `1e-10` N m occurs at
+16.45 s and later amplifies through feedback. This is a cross-setup source
+discrepancy at the existing `0.0005` rad and `0.1` N m pointwise limits,
+despite matched hydrodynamics and sea. A [second isolated workflow run](https://github.com/cmudrc/wec-sim-python/actions/runs/39886232300)
+reproduces the first standalone 1 ms and 0.5 ms source exports numerically
+exactly, so the older-to-newer 1 ms difference does not by itself establish
+stochastic variation within the new workflow. The current multi-case
+workflow [regenerates a different HDF5 file](https://github.com/cmudrc/wec-sim-python/actions/runs/39886232250)
+(SHA-256 `3e97f0b19f58bdfd375bc81952738090f475bd0a9e7c9da094c43b2c3554b5fa`)
+and is not an exact-input control
+for the standalone runs; the cause of the older trace's difference remains
+unisolated.
+
+The fresh 1 versus 0.5 ms source traces differ by up to `0.009193` rad pitch
+and `0.573686` N m requested torque; 0.5 versus 0.25 ms differ by `0.004763`
+rad and `0.450018` N m. Over the first 15.2 s, the corresponding pitch gaps
+shrink from `2.6722e-5` to `1.3348e-5` rad, but the full closed loop is not
+converged within the predeclared pointwise limits at these steps. Against the
+fresh 0.5 ms source trace, independent physical Python at the same 0.5 ms
+plant step has a `0.006714` rad maximum pitch gap; it also misses the force,
+stroke, speed, and request pointwise limits. At matched 0.25 ms steps, the
+independent physical pitch gap is `0.009435` rad against the `0.0005` rad
+limit; its pitch-peak aggregate differs by `0.7149%` against the `0.5%`
+limit. Both matched-step audits use only the exact HDF5 and generated sea
+phases to drive Python feedback, with no saved MATLAB motion, force, stroke,
+or request as inputs. In the second standalone run, the 0.25 ms source has
+the same HDF5 hash, sea, source revisions, and step settings as the first;
+its pitch matches within `1.10e-15` rad through 15.2 s, then diverges by up
+to `0.012014` rad pitch and `0.732573` N m request over 225 s. Its matching
+Linux Python pitch gap is `0.011711` rad and pitch-peak aggregate gap is
+`0.7851%`, again beyond the original limits. The second run's fresh 0.5
+versus 0.25 ms source pitch gap is `0.008547` rad, also above the pointwise
+limit. Generating an additional source trace therefore does not yet supply a
+stable full-duration target or a passing physical gate. A repeatable,
+step-converged source configuration or numerical
+correction remains necessary before promoting the case or closing issue
+[#623](https://github.com/cmudrc/wec-sim-python/issues/623).
+
+A [controlled single-thread rerun](https://github.com/cmudrc/wec-sim-python/actions/runs/39891127477)
+then used `maxNumCompThreads(1)` in the MATLAB source process on two hosted
+Linux x86 runners. Both report R2025b Update 7, one computational thread,
+the same HDF5 hash and sea components, and the same pinned source revisions.
+The Intel Xeon Platinum 8573C runner exactly reproduced the second 0.25 ms
+source trajectory above, while the AMD EPYC 9V45 runner exactly reproduced
+the first. Their `0.012014` rad pitch and `0.732573` N m request gaps remain
+unchanged; matched independent Python pitch gaps are `0.011711` and
+`0.006740` rad, both over the `0.0005` rad gate. The
+[runtime and CPU comparison](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/single_thread_repeat.json)
+therefore isolates a CPU-class association in this experiment, not an exact
+floating-point operation. Limiting MATLAB to one computational thread does
+not yield a portable source target. A [0–40 s frozen-input QP probe](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/single_thread_controller_probe.json)
+feeds each source run's logged observer states and AR forecast to Python.
+The maximum replay-to-source request gaps are `0.000136` and `0.000085` N m,
+while the two MATLAB requests differ by `0.196588` N m by 39.55 s; the two
+Python replays reproduce that request separation within `8.84e-8` N m at
+that sample. A large QP replay error is therefore not needed to explain the
+early divergence. The exact CPU-dependent operation remains unisolated. A
+follow-up workflow tested a common
+MKL BLAS code branch; [MathWorks says](https://www.mathworks.com/matlabcentral/answers/2066506-how-do-i-make-matlab-use-the-mkl_cbwr-environment-variable-as-the-cnr-branch)
+`MATLAB_DISABLE_CBWR=1` is required for MATLAB to honor `MKL_CBWR`, and
+[Intel documents](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2026-0/getting-started-with-conditional-numerical.html)
+`COMPATIBLE` as a common Intel/AMD branch.
+
+That [compatible-BLAS repeat](https://github.com/cmudrc/wec-sim-python/actions/runs/39894739858)
+finished with `version -blas` reporting oneMKL 2024.1's `CNR branch
+compatible` and MATLAB limited to one computational thread. Both hosted
+runners were AMD EPYC 7763, so this was a same-CPU control: their full 225 s
+source pitch, speed, PTO stroke, force, and request traces agree numerically
+exactly. The [compact checked trace and audit](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/README.md)
+preserve that result. Cross-CPU portability is still untested under this BLAS
+setting. More decisively for the physical gate, matched-step independent
+Python misses all five pointwise limits against this repeated source trace:
+maximum pitch differs by `0.017938` rad (`0.0005` rad limit), pitch speed by
+`0.084155` rad/s (`0.005` limit), PTO stroke by `0.003587` m (`0.0001` m
+limit), axial force by `4.767355` N (`1` N limit), and requested torque by
+`0.937424` N m (`0.1` N m limit). Pitch peak differs by `0.6762%` against
+the `0.5%` aggregate limit. A repeatable same-CPU MATLAB export therefore
+still cannot be promoted as the required portable autonomous physical gate;
+issue #623 remains open.
+
+To separate this autonomous gap from the plant, a
+[225 s prescribed-request component audit](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/compatible_prescribed_physical.json)
+ran the public physical mass-matrix plant on the same compatible-BLAS source
+requests at 0.25 ms, with the split-step model's one-sample actuator delay.
+On macOS ARM64, pitch differs by at most `0.0000625` rad, pitch speed by
+`0.000368` rad/s, PTO stroke by `0.0000125` m, and axial force by `0.000962`
+N over all 225 s. They pass the existing `0.0005` rad, `0.005` rad/s,
+`0.0001` m, and `1` N limits. PTO work differs by `0.0233%`. The
+[reproducible Python audit](tools/wavestar_nmpc_prescribed_reference_audit.py)
+now runs this component gate on Linux x86 and Apple silicon CI. This shows
+that the physical plant can track the repeated source when given the same
+delayed requests; the independently computed NMPC feedback still fails the
+full-duration pointwise gate.
+
+The same compatible-BLAS source jobs' complete 4,501-sample controller logs
+match each other numerically exactly and are preserved as a
+[compact checked controller fixture](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/controller_0p25ms_compatible_amd7763.npz).
+On the source stroke and preceding source request, Python's observer states
+match to `1.75e-12` and the active NMPC AR forecasts to `2.77e-11` N m.
+The larger `4.70` N m forecast difference occurs at 10.4 s while the
+resistive startup command does not use the forecast. The
+[full controller component audit](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/compatible_controller_components.json)
+finds a `0.001070` N m maximum and `0.0000335` N m RMS request gap, within
+the existing `0.01` and `0.0003` N m component gates. Python's QP replay on
+the source's *own* logged states and forecasts has a comparable `0.001071`
+N m peak gap. The observer and active AR predictor therefore do not explain
+the fixed-input request difference; the remaining QP-side difference is
+small enough to pass a component gate but can seed the sensitive autonomous
+loop. This does not satisfy issue #623's independent closed-loop gate.
+
+A [checked direct MATLAB QP replay](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/README.md)
+now feeds all 4,201 active logged source states and forecasts to the pinned
+`NMPC.m` with checked controller matrices. Its requests reproduce the source
+simulation within `6.43e-11` N m. Against the complete saved 40-step plans,
+Python's freely propagated nominal plans differ by up to `0.002058` N m
+and its requests by `0.001071` N m. Resetting each Python QP to the preceding
+MATLAB plan reduces the one-step request and plan gap to at most
+`1.76e-7` N m on macOS ARM. The observed fixed-input mismatch grows through
+the persistent plan recursion, while each individual QP solution is close on
+identical states, forecasts, matrices, and prior plan. The checked plans and
+[replay tool](tools/wavestar_nmpc_checked_qp_replay.py) preserve this
+diagnosis entirely in the Python repository; they do not replace the missing
+autonomous physical gate.
+The largest isolated one-step difference is at a torque bound: MATLAB's
+default interior-point `quadprog` returns `-11.999999823863` N m at 97.25 s,
+while Python's L-BFGS-B returns exactly `-12` N m.
 
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,

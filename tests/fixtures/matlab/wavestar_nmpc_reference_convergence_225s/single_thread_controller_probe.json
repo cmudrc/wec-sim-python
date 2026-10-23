@@ -1,0 +1,33 @@
+{
+  "end_time_s": 40.0,
+  "python_qp_replay_vs_source_command": {
+    "a": {
+      "time_s": 29.35,
+      "value": 0.0001356299600911437
+    },
+    "b": {
+      "time_s": 29.35,
+      "value": 8.486012610409155e-05
+    }
+  },
+  "source_a_sha256": "ea2ba18f0f196600da7f554b4d713390622eee6433e5f54546f083f2de8dac9d",
+  "source_a_vs_b": {
+    "AR_excM_pred": {
+      "time_s": 10.4,
+      "value": 17.771823140326887
+    },
+    "estimated_states": {
+      "time_s": 39.6,
+      "value": 0.15878337187718294
+    },
+    "python_replayed_command": {
+      "time_s": 39.55,
+      "value": 0.1965882556136908
+    },
+    "source_command": {
+      "time_s": 39.55,
+      "value": 0.19658834397118774
+    }
+  },
+  "source_b_sha256": "27077e59c4ea00271534c0974051638d458dc5413ad76a8b4b56a06554525d56"
+}

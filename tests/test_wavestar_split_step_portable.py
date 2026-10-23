@@ -1,5 +1,6 @@
 """Keep the derived 225 s WaveStar split-step aggregate gate portable."""
 
+from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
@@ -17,12 +18,25 @@ FIXTURE = ROOT / "tests/fixtures/matlab/wavestar_nmpc_split_step_225s"
 HYDRO = FIXTURE / "wavestar.h5"
 PUBLISHED = ROOT / "tests/fixtures/matlab/wavestar_nmpc_full_step/baseline.npz"
 SPLIT_STEP = FIXTURE / "source.npz"
+SOURCE_SHA256 = "be50ad71195b5ff2d20c97bb3270845354c5a703d3829bf4aa0e915196ba7866"
+HYDRO_SHA256 = "b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1"
+
+
+def _check_source_fixture():
+    assert sha256(SPLIT_STEP.read_bytes()).hexdigest() == SOURCE_SHA256
+    assert sha256(HYDRO.read_bytes()).hexdigest() == HYDRO_SHA256
 
 
 class _DelayedSampledPTO:
     """Hold the derived Simulink controller's one-sample actuator delay."""
 
-    def __init__(self):
+    def __init__(self, plant_dt=.001):
+        self.samples_per_tick = round(.05 / plant_dt)
+        if self.samples_per_tick < 1 or abs(
+            self.samples_per_tick * plant_dt - .05
+        ) > 1e-12:
+            raise ValueError("The plant step must divide the controller step")
+        self.plant_dt = plant_dt
         self.observer = WaveStarNmpcObserver(dt=.05)
         self.predictor = WaveStarNmpcPredictor(dt=.05)
         self.controller = WaveStarNmpcController(dt=.05)
@@ -34,8 +48,8 @@ class _DelayedSampledPTO:
 
     def step(self, stroke, *, noise=0., dropout=False):
         assert noise == 0. and not dropout
-        if self.sample % 50 == 0:
-            instant = self.sample * .001
+        if self.sample % self.samples_per_tick == 0:
+            instant = self.sample * self.plant_dt
             state = self.observer.step(stroke, self.previous_command)
             forecast = self.predictor.step(state[-1])
             command = self.controller.step(state, forecast, instant)
@@ -51,8 +65,36 @@ class _DelayedSampledPTO:
         return self.actuator.force_at(stroke)
 
 
+def test_full_split_step_controller_on_saved_stroke_and_prior_request():
+    """The Python control law pairs source inputs before plant feedback."""
+    _check_source_fixture()
+    with np.load(SPLIT_STEP, allow_pickle=False) as source:
+        time = source["time"]
+        stroke = source["stroke"]
+        request = source["command"]
+    assert time.shape == stroke.shape == request.shape == (4501,)
+    np.testing.assert_allclose(time, np.arange(4501) * .05,
+                               rtol=0, atol=1e-9)
+    assert np.isfinite(stroke).all() and np.isfinite(request).all()
+
+    observer = WaveStarNmpcObserver(dt=.05)
+    predictor = WaveStarNmpcPredictor(dt=.05)
+    controller = WaveStarNmpcController(dt=.05)
+    replayed = np.empty_like(request)
+    for index, position in enumerate(stroke):
+        prior = request[index - 1] if index else 0.
+        state = observer.step(float(position), float(prior))
+        forecast = predictor.step(float(state[-1]))
+        replayed[index] = controller.step(state, forecast, float(time[index]))
+
+    gap = replayed - request
+    assert np.max(np.abs(gap)) < .01  # Published controller replay peak gate.
+    assert np.sqrt(np.mean(gap**2)) < .0003  # Existing RMS gate.
+
+
 def test_current_physical_path_matches_split_step_aggregates():
     """An aggregate pass does not promote the still-unpaired pointwise case."""
+    _check_source_fixture()
     with np.load(PUBLISHED, allow_pickle=False) as published, \
          np.load(SPLIT_STEP, allow_pickle=False) as source:
         components = source["components"]
