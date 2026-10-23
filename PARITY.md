@@ -463,7 +463,7 @@ stable control here: across seeds 1 and 3, halving its step from `0.01` to
 
 The [repository-owned continuous-heading patch](tests/fixtures/matlab/oswec_held_yaw/continuous_heading.patch)
 sets both yaw thresholds to zero in a checkout of the pinned published
-Applications input. The [full-duration CI gate](https://github.com/cmudrc/wec-sim-python/actions/runs/39873398353)
+Applications input. The [repo-owned full-duration CI gate](https://github.com/cmudrc/wec-sim-python/actions/runs/39883249936)
 checks MATLAB 0.01/0.005 s
 self-change for each seed, then independently advances the public physical
 Python path at 0.005 s against the refined source. All three seeds pass the
@@ -474,6 +474,10 @@ physical Python gaps against the matched 0.005 s source are `8.27e-6` rad
 yaw, `1.90e-6` rad/s speed, `0.228` N m torque, less than `1e-13` m wave,
 and `0.00303%` work. These 250 s comparisons use generated phases and the
 pinned HDF5 without prescribed source states, forces, or heading choices.
+The [raw source archive](tests/fixtures/matlab/oswec_continuous_yaw/README.md)
+retains both steps for every seed with source hashes and run provenance;
+its [portable gate](tests/test_oswec_continuous_yaw_portable.py) repeats the
+independent physical comparison in ordinary Python CI.
 With threshold zero, both implementations interpolate heading coefficients
 continuously; there are no discrete hold events to match. The corrected
 input is a derived control inside this repository; the original published

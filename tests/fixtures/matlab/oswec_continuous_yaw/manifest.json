@@ -1,0 +1,88 @@
+{
+  "continuous_heading_patch_sha256": "129907237de194c4265d4df64907999f399871ee25e64a4a9e9325fdb29967cd",
+  "head_sha": "8ea64f3a5c37a68ff4b740ad63c80bc459ba3a3d",
+  "run_url": "https://github.com/cmudrc/wec-sim-python/actions/runs/39883249936",
+  "seeds": {
+    "1": {
+      "limits": {
+        "pto_torque_nm": 2.4,
+        "pto_work_percent": 0.02,
+        "wave_m": 1e-11,
+        "yaw_rad": 0.0001,
+        "yaw_speed_rad_s": 2e-05
+      },
+      "max_common_grid_difference": {
+        "ptoForce": 0.5723545271632702,
+        "time": 0.0,
+        "wave": 0.0,
+        "yaw": 2.0746976336777356e-05,
+        "yawRate": 4.769621059704486e-06
+      },
+      "pto_work_change_percent": 0.001289421425854087,
+      "pto_work_j": {
+        "0.005": 1934.263802361152,
+        "0.01": 1934.2388618708399
+      },
+      "seed": 1,
+      "source_sha256": {
+        "0.005": "f35b1e8435c48ca5ed2486dcfdb4c204fd9b523ea5e105fa8eb574f6ecda6ed0",
+        "0.01": "efe5818d1df9e5902f3c3d878ea40f0729f120565343fd21b809d73fa579220c"
+      },
+      "within_limits": true
+    },
+    "2": {
+      "limits": {
+        "pto_torque_nm": 2.4,
+        "pto_work_percent": 0.02,
+        "wave_m": 1e-11,
+        "yaw_rad": 0.0001,
+        "yaw_speed_rad_s": 2e-05
+      },
+      "max_common_grid_difference": {
+        "ptoForce": 0.43917192678372885,
+        "time": 0.0,
+        "wave": 0.0,
+        "yaw": 1.834332745989306e-05,
+        "yawRate": 3.6597660565129697e-06
+      },
+      "pto_work_change_percent": -0.006538177845394344,
+      "pto_work_j": {
+        "0.005": 4419.7887812967565,
+        "0.01": 4420.077773842515
+      },
+      "seed": 2,
+      "source_sha256": {
+        "0.005": "4f6dbf318349eb0b4a7c25313d2a39c1974188b57a5eb53109c5638d7be4fd50",
+        "0.01": "e6d783a75866732f46318ffee20616c0eae31776559a2935056c374280fcef31"
+      },
+      "within_limits": true
+    },
+    "3": {
+      "limits": {
+        "pto_torque_nm": 2.4,
+        "pto_work_percent": 0.02,
+        "wave_m": 1e-11,
+        "yaw_rad": 0.0001,
+        "yaw_speed_rad_s": 2e-05
+      },
+      "max_common_grid_difference": {
+        "ptoForce": 0.21474461222624086,
+        "time": 0.0,
+        "wave": 0.0,
+        "yaw": 1.0677812015309762e-05,
+        "yawRate": 1.7895384350832821e-06
+      },
+      "pto_work_change_percent": 1.0652841786473743e-05,
+      "pto_work_j": {
+        "0.005": 8189.749016110224,
+        "0.01": 8189.748143669312
+      },
+      "seed": 3,
+      "source_sha256": {
+        "0.005": "05dd64fdfd08abf02def68e5589f0d3e83060aaa933c29e6f642c0db875f9a55",
+        "0.01": "cdda0c4e5884d12bc4c1190a37af3817843ccbe2db3720fdafbca1501583a515"
+      },
+      "within_limits": true
+    }
+  }
+}

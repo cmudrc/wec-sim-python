@@ -18,6 +18,16 @@ hash, source-file hashes, and audited full-duration step changes. The archive
 was copied from that run using
 [`tools/archive_oswec_continuous_yaw.py`](../../../../tools/archive_oswec_continuous_yaw.py),
 which rejects missing files, hash mismatches, or failed source limits.
+The files came from [CI run 39883249936](https://github.com/cmudrc/wec-sim-python/actions/runs/39883249936)
+at `8ea64f3a5c37a68ff4b740ad63c80bc459ba3a3d`; all three live MATLAB
+source and independent physical Python jobs passed. Wave samples match
+exactly between source steps. The audited source changes are:
+
+| Seed | Max yaw (rad) | Max yaw speed (rad/s) | Max PTO torque (N m) | PTO work change |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 2.075e-5 | 4.770e-6 | 0.5724 | +0.001289% |
+| 2 | 1.834e-5 | 3.660e-6 | 0.4392 | -0.006538% |
+| 3 | 1.068e-5 | 1.790e-6 | 0.2147 | +0.00001065% |
 
 The [portable gate](../../../test_oswec_continuous_yaw_portable.py) uses the
 same full-duration source limits and independently advances all three public
