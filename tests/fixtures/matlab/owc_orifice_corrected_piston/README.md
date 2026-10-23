@@ -108,17 +108,21 @@ The source reconstruction and Python gates pass on the local Apple silicon
 environment. [`owc_orifice_corrected_reference.m`](../../../matlab/owc_orifice_corrected_reference.m)
 and its [MATLAB workflow](../../../../.github/workflows/owc-orifice-corrected-source.yml)
 run the exact corrected model proposed in upstream PR #119 at fork commit
-`093c3dcbf88e44c9dcb7fe87393a4f95e4e85157` and pinned WEC-Sim core on
+`3c0c05fefce55125d8ea084deedbd2defb103811` and pinned WEC-Sim core on
 CI, export independently logged source output, and pair that fresh output with
-Python. This candidate is saved in the original R2023b format with the
-resolved 0.00015625 s MaxStep (SHA-256
+Python. This candidate is saved in the original R2023b format (SHA-256
 `5f9f1da3bf73e85b52224a3ff483991c3ec60774b92856e3c45cda4347927b59`).
-The preceding R2023b-saved version passed a [full 130 s CI run](https://github.com/cmudrc/wec-sim-python/actions/runs/39869444227)
-when MaxStep was refined at runtime. Its six output arrays matched the earlier
-R2025b-model run exactly, and the independent Python gate passed. A separate
-[saved 0.005 s step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/39871054213)
-showed 1.687 m surge and 1.62% PTO-work changes, motivating the saved setting.
-The workflow now gates the refined setting directly from the model.
-This remains a derived-model gate; the unmodified published input and strict
-badge stay qualified until the correction is maintained upstream and paired
-again.
+WEC-Sim initialization resets the model MaxStep from `simu.dt`, so the proposed
+published input sets `simu.dt = 0.00015625` s while explicitly preserving
+0.005 s output, radiation-convolution, nonlinear-force, and Morison-force
+clocks. The proposed input file has SHA-256
+`e5f19816c78e5e4316b30c426035d1f06b22c4c313ac5ec373bfeca6b084f10f`.
+A [full 130 s hosted run of that input](https://github.com/cmudrc/wec-sim-python/actions/runs/39877611225)
+passed the independent Python gate. Its fresh body, flexible, orifice, wave,
+component, and summary arrays differ from the archived refined trace by at
+most `3.96e-11`; work is 864.422 J and peak Mach is 0.155. A separate
+[0.005 s solver-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/39871054213)
+showed 1.687 m surge and 1.62% PTO-work changes. The workflow now requires
+`1e-9` reproduction of the archive from the proposed published input.
+The case remains qualified until the upstream correction is merged and pinned
+as the maintained application revision.
