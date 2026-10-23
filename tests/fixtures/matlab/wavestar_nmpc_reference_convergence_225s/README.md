@@ -109,9 +109,10 @@ compatible source also gives exactly zero pitch, pitch-speed, stroke, force,
 and requested-torque difference at all 4,501 saved samples; the
 [`cross-model report`](compatible_cross_amd_models.json) records the comparison.
 This establishes
-source repeatability across those two tested AMD CPU models; Intel and Apple
-silicon source portability remain unverified. The independently running Python
-physical loop still fails all five pointwise limits on the EPYC 9V45 runners:
+source repeatability across those two tested AMD CPU models. At that stage,
+Intel and Apple silicon source portability remained unverified. The
+independently running Python physical loop still fails all five pointwise
+limits on the EPYC 9V45 runners:
 maximum pitch `0.006638` rad and requested torque `0.561726` N m. Both CPU
 groups used NumPy 2.5.4 and SciPy 1.18.1, yet their autonomous Python
 trajectories differ. The matching checked source trace does not remove
@@ -127,6 +128,27 @@ against the checked 0.25 ms source. Refining only Python's plant step from
 remains `0.00320464` N m. The physical Python startup is already converged
 at these steps relative to this fixed source trace. Further Python RK4 step
 refinement alone cannot remove the mismatch that enters NMPC feedback.
+
+Two [native Apple silicon source runs](https://github.com/cmudrc/wec-sim-python/actions/runs/39954652940)
+on macOS 15 with MATLAB R2025b Update 7, one computational thread, and
+Apple Accelerate BLAS generated identical 225 s traces. The checked compact
+[`source_0p25ms_macos_arm_m1.npz`](source_0p25ms_macos_arm_m1.npz)
+(SHA-256 `b7c09d34fa247a897ac55ad3d7d4cd8251b679ed55ec01c3d4155b17d072a3d6`)
+can be regenerated from either artifact with
+[`wavestar_nmpc_compact_source.py`](../../../../tools/wavestar_nmpc_compact_source.py).
+It is a platform-specific diagnostic, not an accepted physical parity
+reference. Against the checked AMD compatible source, the Apple source differs
+by up to `0.006697` rad pitch and `0.472857` N m request, beyond the
+original pointwise limits. The independent physical Python run against its
+own Apple source still misses all five limits, including `0.005875` rad
+pitch and `0.542261` N m request. The
+[`macOS source comparison`](macos_arm_source_comparison.json) records the
+full pointwise and 40 s controller probes. The two sources' commands agree
+within `8.2e-14` N m at NMPC activation, then separate by `0.145978` N m
+at 39.55 s; Python QP replays on each source's logged inputs reproduce that
+separation to within `5.8e-8` N m. This supports feedback amplification of
+small platform numerical differences, while the startup AR fit also has a
+separate transient forecast difference before NMPC activation.
 
 The [prescribed-request physical component audit](compatible_prescribed_physical.json)
 holds the same source's torque requests with the source's one-sample actuator

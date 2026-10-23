@@ -58,7 +58,10 @@ jobs:
           if command -v lscpu >/dev/null 2>&1; then
             lscpu > matlab-reference-model-output/cpu.txt
           else
-            system_profiler SPHardwareDataType > matlab-reference-model-output/cpu.txt
+            uname -m > matlab-reference-model-output/cpu.txt
+            sysctl hw.model >> matlab-reference-model-output/cpu.txt
+            sysctl hw.ncpu >> matlab-reference-model-output/cpu.txt
+            sysctl machdep.cpu.brand_string >> matlab-reference-model-output/cpu.txt 2>/dev/null || true
           fi
       - uses: matlab-actions/setup-matlab@v3
         with:
