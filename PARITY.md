@@ -1328,6 +1328,28 @@ and [regression test](tests/test_variable_yaw_initial_sensitivity.py)
 lock this branch split. This is bounded source evidence; it does not
 establish a 600 s physical parity gate.
 
+A [direct local R2025b continuous-heading control](tests/fixtures/matlab/oswec_irregular_continuous_600s/README.md)
+uses the published 600 s irregular sea and unchanged OSWEC Simulink model,
+with the flap drawing from the original all-direction BEM file and WEC-Sim's
+existing zero-threshold passive-yaw interpolation. The 0.01 and 0.005 s
+**direct MATLAB** runs complete all 600 s. Their maximum self-change is
+`3.21e-5` rad yaw, `4.85e-6` rad/s speed, and `0.582` N m PTO torque;
+absorbed work changes by `0.0121%`. Independently advanced public physical
+`WEC.run` at 0.005 s differs from direct MATLAB by `1.25e-5` rad yaw,
+`1.92e-6` rad/s speed, `0.231` N m torque, and `0.00492%` PTO work. Wave
+elevation agrees within `2.13e-13` m, and both independently computed
+relative-heading histories stay inside the original BEM direction span.
+The [portable gate](tests/test_oswec_irregular_continuous_600s.py) checks
+both full-duration comparisons against the unchanged issue #621 limits;
+its source fixture and provenance are in
+[`evidence.json`](tests/fixtures/matlab/oswec_irregular_continuous_600s/evidence.json).
+No source states, forces, or headings are supplied to Python. This validates
+the **derived continuous-heading control**. The published 0.25° nearest-bank
+input remains step sensitive and qualified, and the OSWEC badge count is
+unchanged.
+
+![OSWEC continuous-heading 600 s direct MATLAB and physical Python comparison](docs/figures/oswec-irregular-continuous-600s.png)
+
 ![OSWEC irregular yaw sensitivity to a tiny initial perturbation](docs/figures/oswec-variable-yaw-sensitivity-600.png)
 
 The [earlier published-step gap plot](docs/figures/oswec-variable-yaw-step-gap.png)
