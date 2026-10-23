@@ -7,16 +7,18 @@ from pathlib import Path
 from wavestar_nmpc_reference_compare import _compare, _read_artifact
 
 
-STEP = .00025
-
-
 def compare(left_dir, right_dir):
-    left, left_limits = _read_artifact(left_dir, STEP)
-    right, right_limits = _read_artifact(right_dir, STEP)
     left_audit = json.loads((left_dir / "wavestar-reference-audit.json").read_text())
     right_audit = json.loads((right_dir / "wavestar-reference-audit.json").read_text())
-    if left_limits != right_limits or left_audit["source"] != right_audit["source"]:
+    if left_audit["source"] != right_audit["source"]:
         raise ValueError("The repeated runs did not share source inputs and limits")
+    step = left_audit["source"]["plant_step_s"]
+    if step not in (.00025, .000125):
+        raise ValueError("Unsupported WaveStar source plant step")
+    left, left_limits = _read_artifact(left_dir, step)
+    right, right_limits = _read_artifact(right_dir, step)
+    if left_limits != right_limits:
+        raise ValueError("The repeated runs did not share pointwise limits")
     result = {
         "source": left_audit["source"],
         "pointwise_limits": left_limits,

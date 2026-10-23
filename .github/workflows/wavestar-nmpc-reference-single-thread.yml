@@ -13,6 +13,15 @@ on:
         type: boolean
         required: false
         default: false
+      compare_only:
+        description: Compare source artifacts from an earlier workflow run
+        type: boolean
+        required: false
+        default: false
+      source_run_id:
+        description: Completed source workflow run ID for compare-only mode
+        type: string
+        required: false
       runner:
         description: Host for the full source repeatability probe
         type: choice
@@ -31,9 +40,13 @@ on:
           - '0.00025'
           - '0.000125'
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
   source-repeat:
-    if: ${{ !inputs.qp_only && !inputs.ar_only }}
+    if: ${{ !inputs.qp_only && !inputs.ar_only && !inputs.compare_only }}
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 150
     env:
@@ -120,7 +133,7 @@ jobs:
             matlab-reference-model-output/cpu.txt
 
   compare-repeats:
-    if: ${{ !inputs.qp_only && !inputs.ar_only }}
+    if: ${{ !inputs.qp_only && !inputs.ar_only && !inputs.compare_only }}
     needs: source-repeat
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -155,8 +168,41 @@ jobs:
             reference-artifacts/repeat.json
             reference-artifacts/controller-probe.json
 
+  compare-archived:
+    if: ${{ inputs.compare_only }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate source run ID
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        run: |
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]] || exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wavestar-nmpc-platform-*
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: reference-artifacts
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .
+      - name: Compare independently generated source traces
+        run: |
+          python tools/wavestar_nmpc_reference_repeat.py \
+            --left reference-artifacts/wavestar-nmpc-platform-a \
+            --right reference-artifacts/wavestar-nmpc-platform-b \
+            --output reference-artifacts/repeat.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wavestar-nmpc-archived-repeat-report
+          path: reference-artifacts/repeat.json
+
   checked-qp-replay:
-    if: ${{ inputs.qp_only && !inputs.ar_only }}
+    if: ${{ inputs.qp_only && !inputs.ar_only && !inputs.compare_only }}
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 45
     env:
@@ -230,7 +276,7 @@ jobs:
             checked-qp-runtime.txt
 
   checked-ar-replay:
-    if: ${{ inputs.ar_only }}
+    if: ${{ inputs.ar_only && !inputs.compare_only }}
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 45
     env:
