@@ -1166,8 +1166,26 @@ plans by at most `1.68e-10` N m. A
 [physical startup refinement](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/physical_startup_refinement_mac_arm.json)
 from 1 to 0.0625 ms leaves Python's pitch gap against the fixed source near
 `1.06414e-5` rad, so simply reducing the Python RK4 step does not remove
-the seed discrepancy. These diagnostics narrow the numerical blocker but do
-not provide a portable source target or a passing independent physical gate.
+the seed discrepancy. A [fixed-input AR replay](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/fixed_input_ar_platform_comparison.json)
+on all 4,501 checked excitation inputs reproduces the source forecast exactly
+on compatible Linux; native Intel macOS and Apple silicon differ by at most
+`2.75e-12` and `2.84e-12` N m during active NMPC. Replaying each platform's
+different source estimated-moment history through one Python predictor at
+15 s produces forecast gaps of the same order as the source-to-source gaps.
+The estimated-moment histories appear to contribute more than fixed-input
+predictor dispatch to the first active separation; the exact upstream
+floating-point operation remains unidentified.
+
+Two independent [0.125 ms Apple silicon MATLAB source runs](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/macos_arm_half_step_source_comparison.json)
+reproduce each other exactly over 225 s. Yet their checked source trace
+differs from the 0.25 ms Apple source by `0.006753` rad pitch and `0.687034`
+N m requested torque, with a `0.5691%` pitch-peak aggregate gap. An
+independent physical Python run at the matching 0.125 ms step still fails all
+five pointwise limits (`0.006806` rad pitch and `0.434049` N m request), though
+its seven aggregate gaps pass. Reducing both source and Python plant steps
+has not produced the original pointwise gate. These diagnostics narrow the
+numerical blocker but do not provide a portable source target or a passing
+independent physical gate.
 Issue [#623](https://github.com/cmudrc/wec-sim-python/issues/623) remains
 open and the case qualified.
 

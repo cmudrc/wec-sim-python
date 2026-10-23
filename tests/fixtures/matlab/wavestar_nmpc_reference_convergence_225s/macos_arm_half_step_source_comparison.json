@@ -1,0 +1,106 @@
+{
+  "workflow_run": "https://github.com/cmudrc/wec-sim-python/actions/runs/39992588386",
+  "source": {
+    "wec_sim_commit": "0753b2e47f2457c078751dcfe5d251d1767b80ab",
+    "applications_commit": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e",
+    "hydro_sha256": "b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1",
+    "plant_step_s": 0.000125,
+    "controller_step_s": 0.05,
+    "samples": 4501
+  },
+  "source_fixture_sha256": "ee791a11bb3c199e510dcc33e9f1b718313a34473694258ce5f75fd44ae55df0",
+  "earlier_0p25ms_apple_source_sha256": "b7c09d34fa247a897ac55ad3d7d4cd8251b679ed55ec01c3d4155b17d072a3d6",
+  "repeat": {
+    "pitch_rad": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "stroke_m": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "axial_force_N": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "pitch_rad_first_15p2s": 0.0,
+    "within_pointwise_limits": true
+  },
+  "source_0p25ms_vs_0p125ms_pointwise": {
+    "pitch_rad": {
+      "max_abs": 0.006753074188036702,
+      "first_limit_crossing_s": 17.9
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.04990130004087201,
+      "first_limit_crossing_s": 18.1
+    },
+    "stroke_m": {
+      "max_abs": 0.0013490066558974698,
+      "first_limit_crossing_s": 17.9
+    },
+    "axial_force_N": {
+      "max_abs": 3.3217503358714993,
+      "first_limit_crossing_s": 28.35
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.6870343783326582,
+      "first_limit_crossing_s": 22.15
+    },
+    "pitch_rad_first_15p2s": 6.668771683690511e-06,
+    "within_pointwise_limits": false
+  },
+  "source_0p25ms_vs_0p125ms_aggregate_relative_gap": {
+    "pitch_rms": 0.0007417492847239088,
+    "pitch_peak": 0.005690955826923152,
+    "pitch_speed_rms": 0.0005730753902563543,
+    "axial_force_rms": 0.00047748820755368987,
+    "axial_force_peak": 0.0006418083772876764,
+    "requested_torque_rms": 0.0005330917259638287,
+    "pto_work_J": 0.0012968204638070596
+  },
+  "aggregate_limit": 0.005,
+  "matched_independent_python": {
+    "environment": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "physical_plant_step_s": 0.000125
+    },
+    "pointwise_gaps": {
+      "pitch_rad": 0.00680579967883748,
+      "pitch_speed_rad_s": 0.036390037226633254,
+      "stroke_m": 0.0013559038764856296,
+      "axial_force_N": 2.1150905448217268,
+      "requested_torque_Nm": 0.4340490899882894
+    },
+    "pointwise_limits": {
+      "pitch_rad": 0.0005,
+      "pitch_speed_rad_s": 0.005,
+      "stroke_m": 0.0001,
+      "axial_force_N": 1.0,
+      "requested_torque_Nm": 0.1
+    },
+    "pointwise_pass": false,
+    "aggregate_relative_gap": {
+      "pitch_rms": 0.00013394472112237413,
+      "pitch_peak": 0.0008434736590223657,
+      "pitch_speed_rms": 1.3304589362129004e-05,
+      "axial_force_rms": 0.0009949877372893387,
+      "axial_force_peak": 0.00019529876462997544,
+      "requested_torque_rms": 0.0009567127566347259,
+      "pto_work_J": 5.1498452319967763e-05
+    },
+    "aggregate_pass": true
+  },
+  "qualification": "Diagnostics only; the original 225 s independent physical pointwise gate remains unmet.",
+  "source_jobs_outcome": "Both 0.125 ms source and independent Python audit jobs succeeded; the original compare job failed because the then-current comparator hardcoded 0.25 ms.",
+  "corrected_archived_comparison_run": "https://github.com/cmudrc/wec-sim-python/actions/runs/39999436632"
+}
