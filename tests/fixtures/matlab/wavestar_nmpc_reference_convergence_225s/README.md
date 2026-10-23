@@ -101,6 +101,33 @@ pitch-peak aggregate gap is `0.6762%` versus `0.5%`. This source can be used
 to diagnose the Python discrepancy on that CPU, but it is not an accepted
 portable physical parity baseline.
 
+A further [compatible-BLAS run](https://github.com/cmudrc/wec-sim-python/actions/runs/39950081356)
+used two AMD EPYC 9V45 runners, with the same pinned inputs, MATLAB release,
+single-thread setting, and reported compatible oneMKL branch. Both generated
+identical 225 s source traces. Comparing either with the earlier AMD EPYC 7763
+compatible source also gives exactly zero pitch, pitch-speed, stroke, force,
+and requested-torque difference at all 4,501 saved samples; the
+[`cross-model report`](compatible_cross_amd_models.json) records the comparison.
+This establishes
+source repeatability across those two tested AMD CPU models; Intel and Apple
+silicon source portability remain unverified. The independently running Python
+physical loop still fails all five pointwise limits on the EPYC 9V45 runners:
+maximum pitch `0.006638` rad and requested torque `0.561726` N m. Both CPU
+groups used NumPy 2.5.4 and SciPy 1.18.1, yet their autonomous Python
+trajectories differ. The matching checked source trace does not remove
+Python closed-loop numerical sensitivity.
+
+The [physical startup refinement](physical_startup_refinement_mac_arm.json),
+reproduced by
+[`wavestar_nmpc_startup_refinement.py`](../../../../tools/wavestar_nmpc_startup_refinement.py),
+runs the independent physical Python path through NMPC activation at 15 s
+against the checked 0.25 ms source. Refining only Python's plant step from
+1 ms to 0.0625 ms changes the maximum startup pitch gap by less than
+`2.0e-12` rad; it remains `1.06414e-5` rad. The command gap through 15 s
+remains `0.00320464` N m. The physical Python startup is already converged
+at these steps relative to this fixed source trace. Further Python RK4 step
+refinement alone cannot remove the mismatch that enters NMPC feedback.
+
 The [prescribed-request physical component audit](compatible_prescribed_physical.json)
 holds the same source's torque requests with the source's one-sample actuator
 delay and independently advances the physical Python plant for 225 s. On

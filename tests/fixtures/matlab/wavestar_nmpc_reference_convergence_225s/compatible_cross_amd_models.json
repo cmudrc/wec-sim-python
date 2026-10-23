@@ -1,0 +1,54 @@
+{
+  "checked_source_sha256": "48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6",
+  "new_run_url": "https://github.com/cmudrc/wec-sim-python/actions/runs/39950081356",
+  "cpu_left": "AMD EPYC 7763",
+  "cpu_right": "AMD EPYC 9V45",
+  "source": {
+    "wec_sim_commit": "0753b2e47f2457c078751dcfe5d251d1767b80ab",
+    "applications_commit": "d53d4d4c9eda2581f04204f5d394a6ef84bb099e",
+    "hydro_sha256": "b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1",
+    "plant_step_s": 0.00025,
+    "controller_step_s": 0.05,
+    "samples": 4501
+  },
+  "source_repeat_comparison": {
+    "pitch_rad": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "stroke_m": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "axial_force_N": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "requested_torque_Nm": {
+      "max_abs": 0.0,
+      "first_limit_crossing_s": null
+    },
+    "pitch_rad_first_15p2s": 0.0,
+    "within_pointwise_limits": true
+  },
+  "python_physical_pointwise_left": {
+    "pitch_rad": 0.017937748301747714,
+    "pitch_speed_rad_s": 0.08415492543504488,
+    "stroke_m": 0.0035869958589778185,
+    "axial_force_N": 4.767354741120499,
+    "requested_torque_Nm": 0.9374243866462475
+  },
+  "python_physical_pointwise_right": {
+    "pitch_rad": 0.00663812402163181,
+    "pitch_speed_rad_s": 0.03789234711364903,
+    "stroke_m": 0.0013260252774993098,
+    "axial_force_N": 2.702903367287547,
+    "requested_torque_Nm": 0.561725843835374
+  },
+  "python_numpy": "2.5.4",
+  "python_scipy": "1.18.1"
+}
