@@ -51,7 +51,7 @@ Paraview_Visualization/OSWEC_NonLinear_Viz,corrected_independent_motion,"The ado
 Paraview_Visualization/RM3_MoorDyn_Viz,qualified_motion,Published-step independent MoorDyn motion is unpaired; refined-step motion and source-pose VTP are gated.
 Passive_Yaw/PassiveYawOFF,independent_motion,
 Passive_Yaw/PassiveYawON,independent_motion,
-Passive_Yaw/PassiveYawRegression,qualified_motion,Opt-in source ode4 independently reproduces all three published 250 s held-yaw trajectories; the physical default differs and the MATLAB source is step-sensitive.
+Passive_Yaw/PassiveYawRegression,corrected_independent_motion,"The adopted repository-owned validation baseline changes both yaw thresholds from 1 degree to zero, interpolating coefficients continuously. All three 250 s phase seeds pass full-duration MATLAB step-stability and independent physical Python yaw, speed, PTO torque, wave, and work gates in live MATLAB and ordinary Python CI. The unchanged published 1-degree hold is step-sensitive and remains unpaired by the physical default; opt-in source ode4 reproduces its numerical trajectory only."
 RM3_PTO_Extension/float,qualified_motion,Published-step opt-in source ode4 pairs; physical Python pairs a derived full-duration FixedStep-only source and exposes published ode4 step sensitivity.
 RM3_PTO_Extension/spar,qualified_motion,Published-step opt-in source ode4 pairs; physical Python pairs a derived full-duration FixedStep-only source and exposes published ode4 step sensitivity.
 Radiation_Force_Options,independent_motion,"All four radiation modes have motion gates; the fitted state-space option is nonpassive."
