@@ -6,6 +6,8 @@ on:
       - '.github/workflows/oswec-nonlinear-viz-corrected.yml'
       - 'tests/matlab/oswec_nonlinear_viz_corrected_baseline.m'
       - 'tests/test_oswec_nonlinear_viz_corrected.py'
+      - 'tests/fixtures/matlab/oswec_nonlinear_viz_corrected/**'
+      - 'tools/archive_oswec_nonlinear_viz_corrected.py'
       - 'wecsim/hydrodynamics/nonlinearHydro.py'
       - 'wecsim/visualization/paraviewClass.py'
   workflow_dispatch:
@@ -40,6 +42,15 @@ jobs:
       - uses: matlab-actions/run-command@v3
         with:
           command: addpath('tests/matlab'); oswec_nonlinear_viz_corrected_baseline
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e ".[test]"
+      - name: Gate independent Python motion, pressure, and full VTP scene
+        run: python -m pytest -q -s tests/test_oswec_nonlinear_viz_corrected.py
+        env:
+          WEC_SIM_OSWEC_CORRECTED_DIR: matlab-oswec-nonlinear-viz-corrected
+          WEC_SIM_OSWEC_CORRECTED_VTP_DIR: applications/Paraview_Visualization/OSWEC_NonLinear_Viz_corrected_0.0125/vtk
       - uses: actions/upload-artifact@v4
         if: always()
         with:
