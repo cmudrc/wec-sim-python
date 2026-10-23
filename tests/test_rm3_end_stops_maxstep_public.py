@@ -1,4 +1,4 @@
-"""Gate public RM3 End_Stops motion against a MaxStep-only MATLAB arm."""
+"""Gate RM3 End_Stops against the repository's corrected MATLAB baseline."""
 
 from pathlib import Path
 
@@ -40,7 +40,7 @@ def test_independent_public_motion_against_maxstep_only_source(source_path):
         wave, source_pto, source_position, source_velocity,
     ))
 
-    wec = WEC("RM3 End Stops MaxStep audit")
+    wec = WEC("RM3 End Stops corrected validation case")
     float_body = wec.body("float", HYDRO,
                           inertia=(0, 21_306_090.66, 0))
     spar = wec.body("spar", HYDRO,
@@ -52,6 +52,8 @@ def test_independent_public_motion_against_maxstep_only_source(source_path):
     result = wec.run(RegularWave(2.5, 8), dt=.1, end_time=end_time,
                      ramp_time=100)
     np.testing.assert_allclose(result.time, time, rtol=0, atol=1e-9)
+    np.testing.assert_allclose(result.wave_elevation, wave[:, 1],
+                               rtol=0, atol=1e-8)
     for index, name in enumerate(("float", "spar")):
         body = result.bodies[name]
         for kind, actual, expected, limits in (

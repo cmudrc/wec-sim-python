@@ -18,6 +18,8 @@ SMALLER_120 = (Path(__file__).parent / "fixtures/matlab"
                / "rm3_end_stops_maxstep_120s.npz")
 REFINED = (Path(__file__).parent / "fixtures/matlab"
            / "rm3_end_stops_full.npz")
+VALIDATION_400 = (Path(__file__).parent / "fixtures/matlab"
+                  / "rm3_end_stops_maxstep_400s.npz")
 
 
 def _read(directory, label):
@@ -123,6 +125,33 @@ def test_maxstep_only_source_separation():
     # published case or alter the physical Python default on its own.
     assert np.count_nonzero(np.abs(published[2][:, 1]) > .6) > 0
     assert np.count_nonzero(np.abs(smaller[2][:, 1]) > .6) > 0
+
+
+@pytest.mark.skipif(END_TIME != 400, reason="400 s baseline required")
+def test_regenerated_corrected_baseline_matches_archive():
+    """Check the complete fresh MATLAB history against the CI fixture."""
+    settings, wave, pto, bodies = _read(Path(OUTPUT), "maxstep_0025")
+    with np.load(VALIDATION_400, allow_pickle=False) as baseline:
+        np.testing.assert_allclose(settings, baseline["settings"],
+                                   rtol=0, atol=1e-12)
+        np.testing.assert_allclose(pto[:, 0], baseline["time"],
+                                   rtol=0, atol=1e-9)
+        np.testing.assert_allclose(wave, baseline["wave"],
+                                   rtol=0, atol=1e-12)
+        for index, body in enumerate(bodies):
+            for actual, expected, limits in (
+                (body[:, 1:4], baseline["body_position"][:, index],
+                 (1e-3, 1e-3, 1e-4)),
+                (body[:, 4:7], baseline["body_velocity"][:, index],
+                 (1e-3, 1e-3, 1e-4)),
+            ):
+                for axis, limit in enumerate(limits):
+                    error = np.max(np.abs(actual[:, axis] - expected[:, axis]))
+                    assert error < limit, (index, axis, error, limit)
+        for column, limit in enumerate((1e-3, 1e-3, 10_000)):
+            error = np.max(np.abs(pto[:, column + 1]
+                                  - baseline["pto"][:, column]))
+            assert error < limit, (column, error, limit)
 
 
 @pytest.mark.skipif(

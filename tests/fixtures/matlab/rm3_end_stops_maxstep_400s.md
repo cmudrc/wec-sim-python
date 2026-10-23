@@ -1,4 +1,33 @@
-# RM3 End_Stops full-duration MaxStep-only source
+# RM3 End_Stops corrected validation baseline
+
+This is the **repository-owned corrected validation case** for RM3
+`End_Stops`. Starting from the pinned Applications input, the
+[in-repository MATLAB runner](../../matlab/rm3_end_stops_maxstep_audit.m)
+copies `End_Stops` into a disposable directory and changes only the copied
+Simulink model's `ode45` `MaxStep` from 0.1 to 0.025 s. It retains
+`simu.dt=0.1` s, the 400 s duration, 100 s ramp, regular wave, PTO, and
+0.1 s output grid. No WEC-Sim or Applications checkout is edited.
+
+The 400 s `maxstep_0025` arm is the MATLAB baseline for
+[`test_rm3_end_stops_maxstep_public.py`](../../test_rm3_end_stops_maxstep_public.py).
+That test independently advances the public Python physical solver from the
+pinned HDF5 and case settings and gates both active bodies' motion, PTO
+stroke, speed, force, and ordinary damper work. It does not feed MATLAB
+states, forces, events, or accepted step times into Python. The unchanged
+0.1 s `published` arm is retained to measure source solver sensitivity. It
+is not the corrected validation baseline and remains qualified in the
+published-case inventory and badges.
+
+To regenerate the baseline, use the pinned WEC-Sim and Applications revisions
+below and run `rm3_end_stops_maxstep_audit(400)` as in the
+[`rm3-end-stops-maxstep-full-audit.yml`](../../../.github/workflows/rm3-end-stops-maxstep-full-audit.yml)
+workflow. Compare the generated CSVs with this record using
+[`test_rm3_end_stops_maxstep_audit.py`](../../test_rm3_end_stops_maxstep_audit.py)
+and then run the independent portable Python gate. The regeneration check
+compares all 4,001 saved samples of both bodies, the PTO, and wave against
+the checked fixture, allowing at most 1 mm for body translation and PTO
+stroke, 1 mm/s for speed, 10 kN for PTO force, and `1e-12` m for wave.
+The local R2025b rerun and its cross-platform checks are recorded below.
 
 `rm3_end_stops_maxstep_400s.npz` contains the 4,001 saved samples from the
 [fresh R2025b 400 s audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38854937372)
@@ -21,9 +50,7 @@ The source artifact CSV SHA-256 values are:
 The compressed fixture SHA-256 is
 `4a01cc6119c5ba1606e3ccdef3001cfc5b941a0c5881fc9a7631e8f7780f358d`.
 The portable test advances the physical Python default from the HDF5 and
-case configuration; MATLAB states and loads enter only the comparison. This
-is a derived solver-setting gate. The unchanged published case remains
-qualified.
+case configuration; MATLAB states and loads enter only the comparison.
 
 ## Local R2025b platform audit
 
