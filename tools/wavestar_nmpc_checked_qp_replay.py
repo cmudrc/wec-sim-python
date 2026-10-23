@@ -13,6 +13,10 @@ from scipy.io import loadmat, savemat
 from wecsim import WaveStarNmpcController
 
 
+COMMAND_MAX_LIMIT = .01
+COMMAND_RMS_LIMIT = .0003
+
+
 def _checked(path, expected_hash):
     digest = sha256(path.read_bytes()).hexdigest()
     if digest != expected_hash:
@@ -77,6 +81,8 @@ def main():
     parser.add_argument("--matrices-sha256", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--matlab-result", type=Path)
+    parser.add_argument("--matlab-replay-sha256")
+    parser.add_argument("--check-limits", action="store_true")
     args = parser.parse_args()
     arrays = _inputs(args.controller, args.matrices, args.controller_sha256,
                      args.matrices_sha256)
@@ -88,6 +94,8 @@ def main():
         return
     if args.matlab_result is None:
         parser.error("compare requires --matlab-result")
+    if args.matlab_replay_sha256 is not None:
+        _checked(args.matlab_result, args.matlab_replay_sha256)
     saved = loadmat(args.matlab_result)
     time = np.asarray(saved["time"]).ravel()
     commands = np.asarray(saved["commands"]).ravel()
@@ -154,6 +162,11 @@ def main():
     }
     args.output.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
+    request_gap = result["python_vs_matlab_qp"]
+    if (args.check_limits and
+            (request_gap["max_abs_Nm"] >= COMMAND_MAX_LIMIT or
+             request_gap["rms_Nm"] >= COMMAND_RMS_LIMIT)):
+        raise SystemExit("The checked QP request component gate failed")
 
 
 if __name__ == "__main__":
