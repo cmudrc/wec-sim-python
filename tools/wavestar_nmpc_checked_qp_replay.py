@@ -82,6 +82,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--matlab-result", type=Path)
     parser.add_argument("--matlab-replay-sha256")
+    parser.add_argument("--allow-source-difference", action="store_true")
     parser.add_argument("--check-limits", action="store_true")
     args = parser.parse_args()
     arrays = _inputs(args.controller, args.matrices, args.controller_sha256,
@@ -107,7 +108,8 @@ def main():
         raise ValueError("MATLAB QP replay contains nonfinite values")
     np.testing.assert_allclose(commands, plans[:, 0], rtol=0, atol=1e-12)
     source_replay_gap = _stats(arrays["source_commands"] - commands, time)
-    if source_replay_gap["max_abs_Nm"] >= 1e-8:
+    if (not args.allow_source_difference and
+            source_replay_gap["max_abs_Nm"] >= 1e-8):
         raise ValueError("Direct MATLAB QP did not reproduce the source requests")
 
     controller = WaveStarNmpcController()
@@ -140,6 +142,8 @@ def main():
         "matrices_sha256": args.matrices_sha256,
         "matlab_replay_sha256": sha256(args.matlab_result.read_bytes()).hexdigest(),
         "source_vs_matlab_qp": source_replay_gap,
+        "source_reproduction_limit_Nm": 1e-8,
+        "source_reproduction_pass": source_replay_gap["max_abs_Nm"] < 1e-8,
         "python_vs_matlab_qp": _stats(python_plans[:, 0] - commands, time),
         "python_vs_source": _stats(python_plans[:, 0] - arrays["source_commands"], time),
         "full_plan_python_vs_matlab_max_abs_Nm": float(

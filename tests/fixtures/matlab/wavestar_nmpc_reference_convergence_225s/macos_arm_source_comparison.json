@@ -108,5 +108,17 @@
       }
     },
     "source_b_sha256": "1311a2cd778f9d6383d323eacb69288ad0771ee200d931de28756c3c00782ca7"
-  }
+  },
+  "python_physical_aggregate_relative_gap_macos_arm": {
+    "pitch_rms": 0.001411871707577039,
+    "pitch_peak": 0.006555032651853096,
+    "pitch_speed_rms": 0.0017396953658495983,
+    "axial_force_rms": 0.00058890170228897,
+    "axial_force_peak": 0.0006273081789405406,
+    "requested_torque_rms": 0.0005552155338609463,
+    "pto_work_J": 0.0009461625466779879
+  },
+  "aggregate_limit": 0.005,
+  "python_physical_pointwise_pass": false,
+  "python_physical_aggregate_pass": false
 }

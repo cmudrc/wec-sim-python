@@ -141,10 +141,12 @@ reference. Against the checked AMD compatible source, the Apple source differs
 by up to `0.006697` rad pitch and `0.472857` N m request, beyond the
 original pointwise limits. The independent physical Python run against its
 own Apple source still misses all five limits, including `0.005875` rad
-pitch and `0.542261` N m request. The
+pitch and `0.542261` N m request. Its pitch-peak aggregate gap is `0.6555%`,
+over the original `0.5%` aggregate limit. The
 [`macOS source comparison`](macos_arm_source_comparison.json) records the
-full pointwise and 40 s controller probes. The two sources' commands agree
-within `8.2e-14` N m at NMPC activation, then separate by `0.145978` N m
+full pointwise, aggregate, and 40 s controller probes. The two sources'
+commands agree within `8.2e-14` N m at NMPC activation, then separate by
+`0.145978` N m
 at 39.55 s; Python QP replays on each source's logged inputs reproduce that
 separation to within `5.8e-8` N m. This supports feedback amplification of
 small platform numerical differences, while the startup AR fit also has a

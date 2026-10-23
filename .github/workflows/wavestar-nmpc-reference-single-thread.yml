@@ -144,11 +144,11 @@ jobs:
 
   checked-qp-replay:
     if: ${{ inputs.qp_only }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 45
     env:
-      MATLAB_DISABLE_CBWR: '1'
-      MKL_CBWR: COMPATIBLE
+      MATLAB_DISABLE_CBWR: ${{ inputs.runner == 'ubuntu-latest' && '1' || '' }}
+      MKL_CBWR: ${{ inputs.runner == 'ubuntu-latest' && 'COMPATIBLE' || '' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/checkout@v7
@@ -181,19 +181,30 @@ jobs:
             maxNumCompThreads(1);
             assert(maxNumCompThreads == 1);
             blasInfo=evalc('version -blas');
+            fid=fopen('checked-qp-runtime.txt','w');
+            assert(fid ~= -1);
+            fprintf(fid,'version=%s\nthreads=%d\nblas=%s\n',version,maxNumCompThreads,strtrim(blasInfo));
+            fclose(fid);
+            if strcmp(getenv('RUNNER_OS'),'Linux');
             assert(contains(upper(blasInfo),'COMPATIBLE'));
+            end;
             addpath('tests/matlab');
             wavestar_nmpc_checked_qp_replay('checked-qp-input.mat',
             'applications/WECCCOMP/WECCCOMP_Nonlinear_Model_Predictive',
             'checked-qp-replay.mat')
       - name: Compare complete MATLAB and Python QP plans
         run: |
+          source_difference_option=()
+          if [[ "$RUNNER_OS" != Linux ]]; then
+            source_difference_option=(--allow-source-difference)
+          fi
           python tools/wavestar_nmpc_checked_qp_replay.py compare \
             --controller tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/controller_0p25ms_compatible_amd7763.npz \
             --matrices tests/fixtures/matlab/wavestar_nmpc_full_step/direct_controller_inputs.npz \
             --controller-sha256 06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3 \
             --matrices-sha256 3ff8f4ba8654ef66bf9058a9fe717cfa6c60868300d19e64a089fcb06781dbf0 \
             --matlab-result checked-qp-replay.mat \
+            "${source_difference_option[@]}" \
             --output checked-qp-report.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -203,3 +214,4 @@ jobs:
             checked-qp-input.mat
             checked-qp-replay.mat
             checked-qp-report.json
+            checked-qp-runtime.txt
