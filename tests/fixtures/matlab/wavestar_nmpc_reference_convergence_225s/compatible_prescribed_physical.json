@@ -1,0 +1,40 @@
+{
+  "source_trace_sha256": "48c02a9396fd166d809abd8ce4cdd136934f9d819c6a7b9c73f01703907353b6",
+  "hydro_sha256": "b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1",
+  "platform": "macOS-26.5.1-arm64-arm-64bit",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "physical_plant_step_s": 0.00025,
+  "end_time_s": 225.0,
+  "prescribed_source_torque_with_one_sample_delay": true,
+  "pointwise": {
+    "pitch_rad": {
+      "max_abs": 6.248591803743875e-05,
+      "first_limit_crossing_s": null
+    },
+    "pitch_speed_rad_s": {
+      "max_abs": 0.0003683457274614721,
+      "first_limit_crossing_s": null
+    },
+    "stroke_m": {
+      "max_abs": 1.2471607483253815e-05,
+      "first_limit_crossing_s": null
+    },
+    "axial_force_N": {
+      "max_abs": 0.0009621687813279323,
+      "first_limit_crossing_s": null
+    }
+  },
+  "pointwise_limits": {
+    "pitch_rad": 0.0005,
+    "pitch_speed_rad_s": 0.005,
+    "stroke_m": 0.0001,
+    "axial_force_N": 1.0
+  },
+  "pointwise_pass": true,
+  "source_work_J": -141.90350562060638,
+  "python_work_J": -141.87049965044196,
+  "relative_work_gap": 0.00023259446635990363,
+  "work_relative_limit": 0.005,
+  "work_pass": true
+}

@@ -1009,6 +1009,20 @@ the `0.5%` aggregate limit. A repeatable same-CPU MATLAB export therefore
 still cannot be promoted as the required portable autonomous physical gate;
 issue #623 remains open.
 
+To separate this autonomous gap from the plant, a
+[225 s prescribed-request component audit](tests/fixtures/matlab/wavestar_nmpc_reference_convergence_225s/compatible_prescribed_physical.json)
+ran the public physical mass-matrix plant on the same compatible-BLAS source
+requests at 0.25 ms, with the split-step model's one-sample actuator delay.
+On macOS ARM64, pitch differs by at most `0.0000625` rad, pitch speed by
+`0.000368` rad/s, PTO stroke by `0.0000125` m, and axial force by `0.000962`
+N over all 225 s. They pass the existing `0.0005` rad, `0.005` rad/s,
+`0.0001` m, and `1` N limits. PTO work differs by `0.0233%`. The
+[reproducible Python audit](tools/wavestar_nmpc_prescribed_reference_audit.py)
+now runs this component gate on Linux x86 and Apple silicon CI. This shows
+that the physical plant can track the repeated source when given the same
+delayed requests; the independently computed NMPC feedback still fails the
+full-duration pointwise gate.
+
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,
 or an **open** result with the specific missing evidence and next experiment.

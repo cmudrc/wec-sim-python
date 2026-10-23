@@ -101,6 +101,18 @@ pitch-peak aggregate gap is `0.6762%` versus `0.5%`. This source can be used
 to diagnose the Python discrepancy on that CPU, but it is not an accepted
 portable physical parity baseline.
 
+The [prescribed-request physical component audit](compatible_prescribed_physical.json)
+holds the same source's torque requests with the source's one-sample actuator
+delay and independently advances the physical Python plant for 225 s. On
+macOS ARM64 at the matching 0.25 ms plant step, the maximum pitch, pitch-speed,
+PTO-stroke, and axial-force gaps are `0.0000625` rad, `0.000368` rad/s,
+`0.0000125` m, and `0.000962` N. All four pass their original pointwise
+limits; PTO work differs by `0.0233%`. The
+[`wavestar_nmpc_prescribed_reference_audit.py`](../../../../tools/wavestar_nmpc_prescribed_reference_audit.py)
+tool reproduces the check, and the ordinary Python parity workflow runs this
+component gate on Linux x86 and Apple silicon. It deliberately feeds the
+saved source request, so it does not satisfy the autonomous feedback gate.
+
 SHA-256:
 
 - `source_1ms_repeat.npz`: `42f3264022177833634731711086cc90a1a39eb313ccdc05110123eb9c3035f6`
