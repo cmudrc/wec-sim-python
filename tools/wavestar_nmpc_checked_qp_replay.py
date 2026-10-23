@@ -121,6 +121,8 @@ def main():
         frozen_prior.step(arrays["states"][:, index],
                           arrays["forecasts"][:, index], float(instant))
         frozen_prior_plans[index] = frozen_prior._nominal
+    one_step_first_gap = frozen_prior_plans[:, 0] - commands
+    peak_one_step = int(np.argmax(np.abs(one_step_first_gap)))
     result = {
         "samples": len(time),
         "python_platform": platform.platform(),
@@ -141,6 +143,14 @@ def main():
         "full_plan_one_step_from_matlab_prior_max_abs_Nm": float(
             np.max(np.abs(frozen_prior_plans - plans))
         ),
+        "largest_one_step_request_gap": {
+            "time_s": float(time[peak_one_step]),
+            "matlab_Nm": float(commands[peak_one_step]),
+            "python_Nm": float(frozen_prior_plans[peak_one_step, 0]),
+            "matlab_distance_to_torque_limit_Nm": float(
+                controller.torque_limit - abs(commands[peak_one_step])
+            ),
+        },
     }
     args.output.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))

@@ -1052,6 +1052,9 @@ identical states, forecasts, matrices, and prior plan. The checked plans and
 [replay tool](tools/wavestar_nmpc_checked_qp_replay.py) preserve this
 diagnosis entirely in the Python repository; they do not replace the missing
 autonomous physical gate.
+The largest isolated one-step difference is at a torque bound: MATLAB's
+default interior-point `quadprog` returns `-11.999999823863` N m at 97.25 s,
+while Python's L-BFGS-B returns exactly `-12` N m.
 
 For each of the 63 inputs, record an independent full-duration published
 **gate**, a **qualified** result with a measured source or solver limitation,

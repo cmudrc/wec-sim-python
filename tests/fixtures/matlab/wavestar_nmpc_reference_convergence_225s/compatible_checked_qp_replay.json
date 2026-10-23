@@ -31,5 +31,11 @@
     "rms_Nm": 6.55161289225966e-09,
     "max_15_to_20s_Nm": 3.151687133495784e-08
   },
-  "full_plan_one_step_from_matlab_prior_max_abs_Nm": 1.761370818087471e-07
+  "full_plan_one_step_from_matlab_prior_max_abs_Nm": 1.761370818087471e-07,
+  "largest_one_step_request_gap": {
+    "time_s": 97.25,
+    "matlab_Nm": -11.999999823862918,
+    "python_Nm": -12.0,
+    "matlab_distance_to_torque_limit_Nm": 1.761370818087471e-07
+  }
 }

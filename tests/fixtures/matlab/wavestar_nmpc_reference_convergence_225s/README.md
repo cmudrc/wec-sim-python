@@ -151,6 +151,12 @@ QP from the *preceding MATLAB plan*, the next request and complete plan
 instead differ by at most `1.76e-7` N m on the recorded macOS ARM run.
 The large fixed-input replay gap therefore accumulates in the persistent
 nominal-plan recursion; it is not a comparably large one-step QP discrepancy.
+The largest isolated one-step difference occurs at 97.25 s: MATLAB returns
+`-11.999999823863` N m while Python returns the exact `-12` N m lower bound.
+The MATLAB source uses `quadprog` with its documented default
+[`interior-point-convex` algorithm](https://www.mathworks.com/help/optim/ug/quadprog.html),
+whereas Python uses L-BFGS-B. This bound slack explains that sample's
+`1.76e-7` N m gap; it does not establish a full-loop correction.
 This result identifies the remaining Python controller numerical defect more
 precisely, but the autonomous full-duration physical gate still fails.
 
