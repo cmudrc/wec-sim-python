@@ -12,6 +12,7 @@ import pytest
 from scipy.integrate import trapezoid
 
 from test_ellipsoid_ode45_convergence import PYTHON_LIMITS, _python
+from wecsim.hydrodynamics.bodyClass import BodyClass
 from wecsim.hydrodynamics.nonlinearHydro import HeaveMeshHydro
 
 
@@ -92,19 +93,67 @@ def test_full_duration_copied_source_force_timing_diagnostic(case):
         gravity=9.81, depth=70, period=6, height=4, ramp_time=50,
         mass=None, drag_coefficient=1, drag_area=np.pi * 25,
     )
+    bem = BodyClass(str(SOURCE_INPUT / "hydroData/ellipsoid.h5"))
+    bem.bodyNumber = bem.bodyTotal = 1
+    bem.readH5file()
+    bem.mass = mesh.mass
+    bem.inertia = [1.375264e6, 1.375264e6, 1.341721e6]
+    bem.hydroStiffness = np.zeros((6, 6))
+    bem.viscDrag = {"Drag": np.zeros((6, 6)), "cd": np.zeros(6),
+                    "characteristicArea": np.zeros(6)}
+    bem.linearDamping = np.zeros((6, 6))
+    omega = 2 * np.pi / 6
+    cic = case == "RegularCIC"
+    convolution_time = np.arange(1201) * .05 if cic else np.array([0.])
+    bem.hydroForcePre(
+        omega, [0], len(convolution_time), convolution_time, [], .05,
+        1025, 9.81, "regularCIC" if cic else "regular",
+        np.zeros((2, 2)), 1, 1, 0, 0, 0,
+    )
+    re = np.asarray(bem.hydroForce["fExt"]["re"])[2]
+    im = np.asarray(bem.hydroForce["fExt"]["im"])[2]
+    ramp = np.array([mesh.ramp(t) for t in times])
+    linear_excitation = 2 * ramp * (
+        re * np.cos(omega * times) - im * np.sin(omega * times)
+    )
+    incident_elevation = mesh.amplitude * ramp * np.cos(omega * times)
     for mode, record in records.items():
-        mesh_force = np.array([
-            mesh.forces(t, z + 2, v)[0]
+        mesh_forces = np.array([
+            mesh.forces(t, z + 2, v)
             for t, z, v in zip(record["time"], record["heave"],
                                record["speed"], strict=True)
         ])
         applied = -record["restoring"]
-        previous_error = _peak_gap(applied[1:], mesh_force[:-1])
-        current_error = _peak_gap(applied[1:], mesh_force[1:])
+        previous_error = _peak_gap(applied[1:], mesh_forces[:-1, 0])
+        current_error = _peak_gap(applied[1:], mesh_forces[1:, 0])
         if mode == "baseline":
             assert previous_error < 1e-6 and current_error > 500
         else:
             assert current_error < 1e-6 and previous_error > 500
+
+        # The logged excitation and wave use the current output state even
+        # in the baseline with 0.05 s sampled nonlinear blocks. This rules
+        # out a one-output-sample lag in the saved signals, but says nothing
+        # about force evaluation at ode45 minor steps between saved samples.
+        assert _peak_gap(record["wave"], incident_elevation) < 1e-10
+        assert _peak_gap(record["wave"][1:], incident_elevation[:-1]) > .05
+        current_excitation = linear_excitation + mesh_forces[:, 1]
+        assert _peak_gap(record["excitation"], current_excitation) < 1e-5
+        if mode == "continuous_nonlinear":
+            previous = np.maximum(np.arange(len(times)) - 1, 0)
+            previous_pose_fk = np.array([
+                mesh.forces(t, record["heave"][i] + 2,
+                            record["speed"][i])[1]
+                for t, i in zip(times, previous, strict=True)
+            ])
+            assert _peak_gap(
+                record["excitation"][1:],
+                (linear_excitation + previous_pose_fk)[1:],
+            ) > 10_000
+            assert _peak_gap(
+                record["excitation"][1:],
+                (linear_excitation + mesh_forces[previous, 1])[1:],
+            ) > 10_000
 
     # Python advances its own dynamics using the archived source-generated
     # HDF5/STL and published wave/PTO input; no source motion or force is fed in.
