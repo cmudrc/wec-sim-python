@@ -12,11 +12,13 @@
 The four case badges partition 63 published input identities by model family.
 A gated case has full-duration independent Python motion or fixed-body force
 paired to MATLAB using either the unchanged published input or an explicitly
-adopted, repository-owned corrected validation baseline. **58/63** currently
-meet that standard. RM3 is **20/21** and OSWEC is **13/13**. Corrected
+adopted, repository-owned corrected validation baseline. **59/63** currently
+meet that standard. RM3 is **21/21** and OSWEC is **13/13**. Corrected
 baselines cover RM3 End Stops at a copied-model `ode45` `MaxStep=0.025` s,
-both RM3 PTO Extension free decays at copied-input `simu.dt=0.00078125` s,
-OSWEC nonlinear visualization at copied-input `simu.dt=0.0125` s,
+RM3 MoorDyn visualization at copied-input `simu.dt=0.0003125` s with a fixed
+phase seed, both RM3 PTO Extension free decays at copied-input
+`simu.dt=0.00078125` s, OSWEC nonlinear visualization at copied-input
+`simu.dt=0.0125` s,
 OSWEC passive yaw with a zero-degree coefficient hold threshold, and
 OSWEC irregular variable yaw with continuous heading interpolation. The
 unchanged published settings for those cases remain step-sensitive or
