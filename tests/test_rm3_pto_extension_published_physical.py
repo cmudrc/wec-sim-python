@@ -77,15 +77,15 @@ def test_published_physical_fixture_matches_pinned_source():
         apps = Path(FRESH_APPLICATIONS)
         for name in ("float", "spar"):
             input_file = apps / "RM3_PTO_Extension" / name / "wecSimInputFile.m"
-            if input_file.is_file():
-                contents = input_file.read_text()
-                for setting in (
-                    "simu.endTime = 30;", "simu.solver = 'ode4';",
-                    "simu.dt = 0.1;", "waves = waveClass('noWaveCIC');",
-                    "pto(1).stiffness = 0;", "pto(1).damping = 0;",
-                    "pto(1).extension.PositionTargetValue = 5;",
-                ):
-                    assert setting in contents, (name, setting)
+            assert input_file.is_file(), input_file
+            contents = input_file.read_text()
+            for setting in (
+                "simu.endTime = 30;", "simu.solver = 'ode4';",
+                "simu.dt = 0.1;", "waves = waveClass('noWaveCIC');",
+                "pto(1).stiffness = 0;", "pto(1).damping = 0;",
+                "pto(1).extension.PositionTargetValue = 5;",
+            ):
+                assert setting in contents, (name, setting)
     with h5py.File(HYDRO) as source, h5py.File(
         ROOT / "examples/data/rm3_end_stops.h5"
     ) as bundled:
