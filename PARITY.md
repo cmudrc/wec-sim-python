@@ -3538,7 +3538,7 @@ step changes:
 The physical implicit path changes much less than MATLAB on the final step
 halving but does not meet the existing refined-source limits. The opt-in
 delayed-mass path remains the closer numerical comparison. Neither result
-closes the published 0.1 s gap, so both cases remain qualified.
+closes the published 0.1 s gap. At that stage, neither case was promoted.
 
 A [fresh published-step force export](tests/fixtures/matlab/rm3_pto_extension_published_forces.md)
 from local R2025b Update 7 reproduces the archived 0.1 s float and spar body
@@ -3551,7 +3551,8 @@ the source's mass-shift and 100 ns delayed added-mass force from saved
 accelerations within `0.0144` N and `0.000009` N, against peaks of `13.885`
 and `2.178` MN. These are prescribed-source-state force checks, so they
 isolate the accepted-step force laws but do not establish independent motion
-parity at the published step. The two cases and RM3 badge remain qualified.
+parity at the published step. That force-law check did not promote either case
+or change the RM3 badge.
 
 Local MATLAB R2025b Update 7, with the same pinned core and Applications
 commits, independently reproduced the archived 0.0125 s float/spar histories
@@ -3620,8 +3621,8 @@ the finest MATLAB trajectory, without extrapolation, Python's float gaps are
 `0.0510` mm/s. The float's direct heave gap is nearly the same as MATLAB's
 own final step change. These two additional refinements strengthen the
 physical free-decay comparison, but do not prove asymptotic convergence or
-match the published `0.1` s source trajectory. Both published cases remain
-qualified and badges are unchanged.
+match the published `0.1` s source trajectory. At that stage, both cases
+remained qualified and the badges were unchanged.
 
 Following that diagnostic, we adopt [separate repository-owned corrected
 validation baselines](tests/fixtures/matlab/rm3_pto_extension_corrected/README.md)
