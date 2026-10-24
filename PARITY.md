@@ -1270,9 +1270,10 @@ configuration. The 0.000625-to-0.0003125 s MATLAB source refinement changes
 active body position by at most 0.225 mm, 0.01 s fairlead tension by 61.0 N, and
 line nodes by 0.683 mm. A public physical Python run with native MoorDyn
 advances from the pinned HDF5 and phase data without saved MATLAB body or
-line states. Over all 80 s, float and spar surge differ by at most 0.827 and
-0.762 mm, PTO force by 177.1 N, connection pitch moment by 945.9 N m,
-and fairlead tension by 271.3 N at all 8,001 original 0.01 s samples.
+line states. At all 801 original 0.1 s body frames, float and spar surge
+differ by at most 0.827 and 0.762 mm, PTO force by 177.1 N, and connection
+pitch moment by 945.9 N m. Fairlead tension differs by at most 271.3 N
+across all 8,001 original 0.01 s samples.
 The original body, PTO, connection, fairlead, and four signed-work gates all
 pass; the largest work difference is 0.00720%. Python writes all 801 scene
 frames from its own body poses and native line histories. Wave samples and
