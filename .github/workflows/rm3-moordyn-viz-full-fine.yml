@@ -7,6 +7,9 @@ on:
       - 'tests/matlab/rm3_moordyn_viz_full_fine.m'
       - 'tests/matlab/rm3_moordyn_viz_corrected_baseline.m'
       - 'tests/test_rm3_moordyn_viz_full_fine.py'
+      - 'tests/test_rm3_moordyn_viz_corrected.py'
+      - 'tools/compact_rm3_moordyn_viz_corrected.py'
+      - 'tests/fixtures/matlab/rm3_moordyn_viz_corrected/**'
       - 'wecsim/api.py'
       - 'wecsim/dynamics/caseDynamics.py'
       - 'wecsim/dynamics/moorDyn.py'
@@ -67,6 +70,17 @@ jobs:
         env:
           WEC_SIM_APPLICATIONS_DIR: applications
           WEC_SIM_MATLAB_RM3_VIZ_FULL_FINE_DIR: matlab-rm3-moordyn-viz-full-fine
+          WEC_SIM_MOORDYN_LIBRARY: matlab-ref/source/functions/moorDyn/libmoordyn.so
+      - name: Compact fresh source histories and actual ParaView scene
+        run: >-
+          python tools/compact_rm3_moordyn_viz_corrected.py
+          --full-fine-dir matlab-rm3-moordyn-viz-full-fine
+          --corrected-dir matlab-rm3-moordyn-viz-corrected
+          --output "$RUNNER_TEMP/rm3-moordyn-viz-fresh.npz"
+      - run: python -m pytest -q tests/test_rm3_moordyn_viz_corrected.py
+        env:
+          WEC_SIM_APPLICATIONS_DIR: applications
+          WEC_SIM_MATLAB_RM3_VIZ_COMPACT: ${{ runner.temp }}/rm3-moordyn-viz-fresh.npz
           WEC_SIM_MOORDYN_LIBRARY: matlab-ref/source/functions/moorDyn/libmoordyn.so
       - uses: actions/upload-artifact@v4
         if: always()
