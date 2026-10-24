@@ -1,7 +1,8 @@
 """Full-duration independent motion against a source-step-screened ode45 input.
 
 The unchanged 0.05 s published cases retain their separate diagnostic gates.
-This test concerns copied, derived source inputs at 0.005/0.0025/0.00125 s.
+This test concerns copied, derived source inputs at 0.005, 0.0025, 0.00125,
+and 0.000625 s.
 """
 
 import os
@@ -12,6 +13,7 @@ import pytest
 from scipy.integrate import trapezoid
 
 from wecsim import RegularCICWave, RegularWave, WEC, WorldPoint
+from wecsim.hydrodynamics.nonlinearHydro import HeaveMeshHydro
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,7 +40,7 @@ SOURCE_STABILITY_LIMITS = {
 }
 PYTHON_STEP_LIMITS = (.0001, .0001, 100, 100)
 STEPS = {"step005": .005, "step0025": .0025,
-         "step00125": .00125}
+         "step00125": .00125, "step000625": .000625}
 # Columns: time, heave, speed, PTO stroke, stroke speed, PTO force,
 # absorbed power, wave, restoring, excitation, acceleration.
 CHANNELS = ((1, "heave position"), (2, "heave speed"),
@@ -105,7 +107,7 @@ def _python_channels(result):
 def test_pinned_source_step_screen_and_full_duration_independent_motion():
     assert CASE in PYTHON_LIMITS
     source = _read_source(CASE)
-    five, two_half, one_quarter = (
+    five, two_half, one_quarter, finest = (
         source[label] for label in STEPS
     )
     key = "regular_cic" if CASE == "RegularCIC" else "regular"
@@ -123,17 +125,43 @@ def test_pinned_source_step_screen_and_full_duration_independent_motion():
            "source 0.005/0.0025 s wave identity")
     _check(two_half[:, 7], one_quarter[::2, 7], 1e-10,
            "source 0.0025/0.00125 s wave identity")
+    _check(one_quarter[:, 7], finest[::2, 7], 1e-10,
+           "source 0.00125/0.000625 s wave identity")
     for (column, channel), stability in zip(
         CHANNELS, SOURCE_STABILITY_LIMITS[CASE], strict=True
     ):
-        previous = _error(five[:, column], two_half[::2, column])
-        final = _check(two_half[:, column], one_quarter[::2, column],
+        first = _error(five[:, column], two_half[::2, column])
+        previous = _error(two_half[:, column], one_quarter[::2, column])
+        final = _check(one_quarter[:, column], finest[::2, column],
                        stability, f"source final-step {channel}")
+        assert previous < .7 * first, (
+            f"source {channel} did not contract: {first:.8g} -> {previous:.8g}"
+        )
         assert final < .7 * previous, (
             f"source {channel} did not contract: {previous:.8g} -> {final:.8g}"
         )
 
     app = Path(APPLICATIONS) / "Nonlinear_Hydro"
+    mesh = HeaveMeshHydro.from_stl(
+        app / "geometry/elipsoid.stl", center_z=-2, rho=1025,
+        gravity=9.81, depth=70, period=6, height=4, ramp_time=50,
+        mass=None, drag_coefficient=1, drag_area=np.pi * 25,
+    )
+    samples = np.linspace(1, len(finest) - 1, 1001, dtype=int)
+    previous = np.array([
+        mesh.forces(finest[i - 1, 0], finest[i - 1, 1] + 2,
+                    finest[i - 1, 2])[0]
+        for i in samples
+    ])
+    current = np.array([
+        mesh.forces(finest[i, 0], finest[i, 1] + 2,
+                    finest[i, 2])[0]
+        for i in samples
+    ])
+    _check(previous, -finest[samples, 8], 1e-6,
+           "finest source preceding-state restoring law")
+    assert _error(current, -finest[samples, 8]) > 500
+
     python_two_half = _python(CASE, .0025, app)
     python_one_quarter = _python(CASE, .00125, app)
     _check(python_two_half.time, python_one_quarter.time[::2], 1e-9,
@@ -143,20 +171,20 @@ def test_pinned_source_step_screen_and_full_duration_independent_motion():
         _python_channels(python_one_quarter), PYTHON_STEP_LIMITS, strict=True
     ):
         _check(coarse, fine[::2], limit, f"Python final-step {name}")
-    _check(python_one_quarter.time, one_quarter[:, 0], 1e-9,
+    _check(python_one_quarter.time, finest[::2, 0], 1e-9,
            "Python/source time")
-    _check(python_one_quarter.wave_elevation, one_quarter[:, 7], 1e-10,
+    _check(python_one_quarter.wave_elevation, finest[::2, 7], 1e-10,
            "Python/source wave")
     for (column, name), actual, limit in zip(
         CHANNELS, _python_channels(python_one_quarter),
         PYTHON_LIMITS[CASE], strict=True
     ):
-        _check(actual, one_quarter[:, column], limit,
+        _check(actual, finest[::2, column], limit,
                f"independent physical {name}")
     _check(python_one_quarter.ptos["PTO1"].stroke,
-           one_quarter[:, 3], PYTHON_LIMITS[CASE][0],
+           finest[::2, 3], PYTHON_LIMITS[CASE][0],
            "independent physical PTO stroke")
-    source_work = float(trapezoid(one_quarter[:, 6], one_quarter[:, 0]))
+    source_work = float(trapezoid(finest[:, 6], finest[:, 0]))
     python_work = float(trapezoid(
         python_one_quarter.ptos["PTO1"].absorbed_power,
         python_one_quarter.time,

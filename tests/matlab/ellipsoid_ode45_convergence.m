@@ -15,8 +15,8 @@ caseDir = fullfile(repoRoot, 'applications', 'Nonlinear_Hydro', ...
     'ode45', waveType);
 outDir = fullfile(repoRoot, 'matlab-ellipsoid-ode45-convergence', waveType);
 mkdir(outDir);
-steps = [0.005, 0.0025, 0.00125];
-labels = {'step005', 'step0025', 'step00125'};
+steps = [0.005, 0.0025, 0.00125, 0.000625];
+labels = {'step005', 'step0025', 'step00125', 'step000625'};
 
 for iStep = 1:numel(steps)
     step = steps(iStep);
@@ -35,7 +35,7 @@ for iStep = 1:numel(steps)
         ~contains(contents, 'simu.cicDt'), ...
         'The pinned ellipsoid ode45 sample settings changed');
     contents = strrep(contents, 'simu.dt = 0.05;', ...
-        sprintf('simu.dt = %.5f;', step));
+        sprintf('simu.dt = %.6f;', step));
     fid = fopen(inputFile, 'w');
     assert(fid > 0);
     cleanup = onCleanup(@() fclose(fid));
