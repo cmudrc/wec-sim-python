@@ -13,6 +13,7 @@ from typing import Sequence
 
 import numpy as np
 from randomgen import ThreeFry
+from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import CubicSpline, RegularGridInterpolator
 from scipy.io import loadmat
 
@@ -339,10 +340,7 @@ def _equal_energy_components(
         d_omega = np.full(count, (omega_max - omega_min) / (count - 1))
         spectral_amplitude = spectrum_hz / np.pi
     else:
-        df = frequency[1] - frequency[0]
-        integrated = np.empty(len(frequency))
-        integrated[0] = 0.0
-        integrated[1:] = np.cumsum((spectrum_hz[:-1] + spectrum_hz[1:]) * df / 2)
+        integrated = cumulative_trapezoid(spectrum_hz, frequency, initial=0)
         energy_per_bin = integrated[-1] / (count + 1)
         boundaries = np.zeros(count + 2, dtype=int)
         for k in range(1, count + 2):
