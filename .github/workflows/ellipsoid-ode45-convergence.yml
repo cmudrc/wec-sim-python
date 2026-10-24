@@ -43,7 +43,16 @@ jobs:
           products: Simulink Simscape Simscape_Multibody
       - uses: matlab-actions/run-command@v3
         with:
-          command: addpath('tests/matlab'); ellipsoid_ode45_convergence('${{ matrix.wave }}')
+          command: addpath('tests/matlab'); ellipsoid_ode45_convergence('${{ matrix.wave }}', 'step005')
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); ellipsoid_ode45_convergence('${{ matrix.wave }}', 'step0025')
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); ellipsoid_ode45_convergence('${{ matrix.wave }}', 'step00125')
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); ellipsoid_ode45_convergence('${{ matrix.wave }}', 'step000625', 0.005)
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
