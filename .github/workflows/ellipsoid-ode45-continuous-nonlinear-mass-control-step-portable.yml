@@ -1,0 +1,33 @@
+name: Ellipsoid ode45 no-delay MaxStep portable diagnostic
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ellipsoid-ode45-continuous-nonlinear-mass-control-step-portable.yml'
+      - '.github/workflows/ellipsoid-ode45-continuous-nonlinear-mass-control-step.yml'
+      - 'tests/test_ellipsoid_ode45_continuous_nonlinear_mass_control_step.py'
+      - 'tests/test_ellipsoid_ode45_continuous_nonlinear_mass_control.py'
+      - 'tests/test_ellipsoid_ode45_convergence.py'
+      - 'tests/matlab/ellipsoid_ode45_continuous_nonlinear_mass_control.m'
+      - 'tests/fixtures/matlab/ellipsoid_ode45_continuous_nonlinear_mass_control_step/**'
+      - 'tests/fixtures/matlab/ellipsoid_ode45_continuous_nonlinear_mass_control/**'
+      - 'tests/fixtures/matlab/ellipsoid_ode45_restoring_step/**'
+      - 'tests/fixtures/matlab/ellipsoid_ode45_restoring_timing/**'
+      - 'tests/fixtures/matlab/ellipsoid_ode45_convergence/**'
+      - 'tools/pack_ellipsoid_ode45_continuous_nonlinear_mass_control_step.py'
+      - 'wecsim/hydrodynamics/nonlinearHydro.py'
+      - 'wecsim/dynamics/caseDynamics.py'
+      - 'pyproject.toml'
+  workflow_dispatch:
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e ".[test]"
+      - run: python -m pytest -q -s tests/test_ellipsoid_ode45_continuous_nonlinear_mass_control_step.py
