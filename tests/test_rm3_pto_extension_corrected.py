@@ -65,7 +65,15 @@ def _check_generated_hydro():
         for body in ("body1", "body2"):
             for suffix in active:
                 key = f"{body}/{suffix}"
-                np.testing.assert_array_equal(bundled[key], generated[key])
+                if suffix.endswith("impulse_response_fun/K"):
+                    # Re-running BEMIO changes a few floating-point FFT
+                    # round-off bits (observed max 8.19e-12), while the
+                    # physical radiation kernel remains the same.
+                    np.testing.assert_allclose(
+                        bundled[key], generated[key], rtol=0, atol=1e-10,
+                    )
+                else:
+                    np.testing.assert_array_equal(bundled[key], generated[key])
 
 
 @pytest.mark.parametrize("name,column,source_limit,python_limit", CASES)
