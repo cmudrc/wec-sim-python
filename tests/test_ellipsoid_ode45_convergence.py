@@ -125,6 +125,15 @@ def _validate_full_gate(source, case, app):
         np.testing.assert_allclose(history[:, 0],
                                    np.arange(len(history)) * output_step,
                                    rtol=0, atol=1e-9)
+        # This heave-only PTO shares the body's vertical velocity. Checking
+        # it explicitly rejects an export from an inactive local axis, whose
+        # zero force/power could otherwise satisfy the damping identities.
+        _check(history[:, 4], history[:, 2], 1e-9,
+               f"{label} active PTO/body vertical speed")
+        _check(history[:, 5], -1_200_000 * history[:, 4], 1e-6,
+               f"{label} source PTO damping law")
+        _check(history[:, 6], -history[:, 5] * history[:, 4], 1e-6,
+               f"{label} source absorbed-power law")
     five, two_half, one_quarter, finest = (
         source[label] for label in STEPS
     )

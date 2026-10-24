@@ -27,6 +27,10 @@ changes are screened on the same 0.005 s grid, with their original numerical
 limits unchanged. Signed work is integrated on the full available grid for
 the first three arms and on the 0.005 s grid for the finest; the test checks
 the full/common integration difference in each earlier arm.
+For every arm, the archive and portable gate also check PTO vertical speed
+against body heave speed and verify `Fz = -1,200,000 vz` and `P = -Fz vz`
+within 1e-9 m/s, 1e-6 N, and 1e-6 W, respectively. These identities reject
+the previously encountered inactive local-axis export.
 
 The [controlled output-grid A/B](https://github.com/cmudrc/wec-sim-python/actions/runs/40104326372)
 found exact common-grid trajectory and PTO equality when `dtOut` changed from

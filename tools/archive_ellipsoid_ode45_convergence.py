@@ -75,6 +75,11 @@ def _read_case(artifacts, case):
         np.testing.assert_allclose(history[:, 0],
                                    np.arange(len(history)) * output_step,
                                    rtol=0, atol=1e-9)
+        # The PTO is constrained to vertical heave. This identity guards
+        # against accidentally archiving the inactive local PTO axis.
+        assert _maximum(history[:, 4], history[:, 2]) < 1e-9
+        assert _maximum(history[:, 5], -1_200_000 * history[:, 4]) < 1e-6
+        assert _maximum(history[:, 6], -history[:, 5] * history[:, 4]) < 1e-6
         histories[label] = history
         settings_records[label] = settings
     return base, histories, settings_records
