@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 import numpy as np
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import CubicSpline, make_interp_spline
 
 from wecsim.environment.irregularWave import IrregularComponents
 
@@ -56,14 +56,10 @@ class PassiveYawExcitation:
             real = CubicSpline(frequency, real, axis=2)(omega) * rho * g
             imaginary = CubicSpline(frequency, imaginary, axis=2)(omega) * rho * g
         else:
-            real = np.array([
-                [np.interp(omega, frequency, row) for row in dof]
-                for dof in real
-            ]) * rho * g
-            imaginary = np.array([
-                [np.interp(omega, frequency, row) for row in dof]
-                for dof in imaginary
-            ]) * rho * g
+            real = make_interp_spline(frequency, real, k=1, axis=2)(omega) * rho * g
+            imaginary = make_interp_spline(
+                frequency, imaginary, k=1, axis=2,
+            )(omega) * rho * g
         return cls(headings, real, imaginary, incident_direction,
                    omega, amplitude, ramp_time)
 
