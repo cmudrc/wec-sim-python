@@ -124,6 +124,18 @@ def test_copied_model_maxstep_continuation(case):
     print(f"{case} later source changes: {source_changes}; "
           f"signed-work fractions: {work_changes}")
 
+    # The later continuation has its own observed result. Checking it here
+    # keeps that result reproducible without reclassifying the failed screen.
+    for field, limit in zip(CHANNELS, SOURCE_LIMITS[case], strict=True):
+        assert all(later < .7 * earlier for earlier, later in zip(
+            source_changes[field], source_changes[field][1:]
+        ))
+        assert source_changes[field][-1] < limit
+    assert all(later < .7 * earlier for earlier, later in zip(
+        work_changes, work_changes[1:]
+    ))
+    assert work_changes[-1] < .001
+
     # Independent Python dynamics use only the archived source HDF5/STL and
     # configured wave/PTO. The last arm is a post-screen physical diagnostic.
     python = _python(case, .05, SOURCE_INPUT)
