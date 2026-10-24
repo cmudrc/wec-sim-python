@@ -105,9 +105,9 @@ fprintf(['MASS_CORRECTION case=%s mode=%s factor=%.17g ' ...
 sim(simu.simMechanicsFile, [], simset('SrcWorkspace', 'parent'));
 run('stopWecSim');
 record = output.bodies(1);
-% postProcessWecSim replaces the reported added-mass force with the physical
-% unsplit value. Its storage field retains the force actually sent through
-% the delayed Simulink input, which must vanish in active heave here.
+% postProcessWecSim recomputes the reported added-mass force. Its storage
+% field retains the force actually sent through the delayed Simulink input,
+% which must vanish in active heave here.
 appliedValues = [record.time(:), ...
     body(1).hydroForce.hf1.storage.output_forceAddedMass];
 bodyValues = [record.time(:), record.position, record.velocity, ...

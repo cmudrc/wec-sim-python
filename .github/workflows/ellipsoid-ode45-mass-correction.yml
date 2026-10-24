@@ -6,6 +6,8 @@ on:
       - '.github/workflows/ellipsoid-ode45-mass-correction.yml'
       - 'tests/matlab/ellipsoid_ode45_mass_correction.m'
       - 'tests/test_ellipsoid_ode45_mass_correction.py'
+      - 'tests/fixtures/matlab/ellipsoid_ode45_mass_correction/**'
+      - 'tools/pack_ellipsoid_ode45_mass_correction.py'
   workflow_dispatch:
 
 jobs:
@@ -49,6 +51,13 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -e ".[test]"
       - run: python -m pytest -q tests/test_ellipsoid_ode45_delay_prefix.py
+      - name: Repack and compare the archived source traces
+        run: >-
+          python tools/pack_ellipsoid_ode45_mass_correction.py
+          "${{ matrix.wave }}"
+          "matlab-ellipsoid-ode45-mass-correction/${{ matrix.wave }}"
+          "matlab-ellipsoid-ode45-mass-correction/${{ matrix.wave }}/packed.npz"
+          --expect "tests/fixtures/matlab/ellipsoid_ode45_mass_correction/${{ matrix.wave == 'Regular' && 'regular.npz' || 'regular_cic.npz' }}"
       - name: Check derived mass identity and independent 150 s motion
         run: python -m pytest -q -s tests/test_ellipsoid_ode45_mass_correction.py
         env:
