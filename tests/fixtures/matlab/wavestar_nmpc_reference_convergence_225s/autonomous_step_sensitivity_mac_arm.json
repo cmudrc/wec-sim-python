@@ -1,0 +1,121 @@
+{
+  "purpose": "negative full-duration autonomous pointwise diagnostic",
+  "duration_s": 225.0,
+  "controller_step_s": 0.05,
+  "python_feedback_inputs": "pinned HDF5, wave phases, and own physical states only",
+  "original_pointwise_limits": {
+    "pitch_rad": 0.0005,
+    "pitch_speed_rad_s": 0.005,
+    "stroke_m": 0.0001,
+    "axial_force_N": 1.0,
+    "requested_torque_Nm": 0.1
+  },
+  "pinned_sha256": {
+    "source_0p125ms_macos_arm_m1.npz": "ee791a11bb3c199e510dcc33e9f1b718313a34473694258ce5f75fd44ae55df0",
+    "source_0p0625ms_macos_arm_m1.npz": "b3fe52fe66256a218c924c1c039f60c4b3d9d2192f36b1d9d4efe56831fac26b",
+    "wavestar.h5": "b2541ff01c319987d9157d1be9fbc9ec39a7660d0572d8e316c428b8aa3359d1"
+  },
+  "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "matlab_0p125ms_vs_0p0625ms": {
+    "pointwise": {
+      "pitch_rad": {
+        "max_abs": 0.010800047009331015,
+        "first_limit_crossing_s": 17.95
+      },
+      "pitch_speed_rad_s": {
+        "max_abs": 0.057609864539682004,
+        "first_limit_crossing_s": 21.5
+      },
+      "stroke_m": {
+        "max_abs": 0.0021581679653852014,
+        "first_limit_crossing_s": 17.95
+      },
+      "axial_force_N": {
+        "max_abs": 3.4746706199945097,
+        "first_limit_crossing_s": 26.700000000000003
+      },
+      "requested_torque_Nm": {
+        "max_abs": 0.7210627885203973,
+        "first_limit_crossing_s": 21.6
+      }
+    },
+    "within_original_pointwise_limits": false
+  },
+  "python_1ms_vs_0p5ms": {
+    "pointwise": {
+      "pitch_rad": {
+        "max_abs": 0.005126777656919185,
+        "first_limit_crossing_s": 43.5
+      },
+      "pitch_speed_rad_s": {
+        "max_abs": 0.02414629731403123,
+        "first_limit_crossing_s": 43.800000000000004
+      },
+      "stroke_m": {
+        "max_abs": 0.0010220081477542164,
+        "first_limit_crossing_s": 43.5
+      },
+      "axial_force_N": {
+        "max_abs": 2.014343434375106,
+        "first_limit_crossing_s": 44.7
+      },
+      "requested_torque_Nm": {
+        "max_abs": 0.41434360671301085,
+        "first_limit_crossing_s": 41.85
+      }
+    },
+    "within_original_pointwise_limits": false
+  },
+  "python_1ms_vs_matlab_0p125ms": {
+    "pointwise": {
+      "pitch_rad": {
+        "max_abs": 0.007225585232541097,
+        "first_limit_crossing_s": 17.95
+      },
+      "pitch_speed_rad_s": {
+        "max_abs": 0.049707098319223625,
+        "first_limit_crossing_s": 18.1
+      },
+      "stroke_m": {
+        "max_abs": 0.001443955853264338,
+        "first_limit_crossing_s": 17.95
+      },
+      "axial_force_N": {
+        "max_abs": 3.055945666091551,
+        "first_limit_crossing_s": 26.650000000000002
+      },
+      "requested_torque_Nm": {
+        "max_abs": 0.6205056457635307,
+        "first_limit_crossing_s": 17.35
+      }
+    },
+    "within_original_pointwise_limits": false
+  },
+  "python_0p5ms_vs_matlab_0p125ms": {
+    "pointwise": {
+      "pitch_rad": {
+        "max_abs": 0.006288137147178071,
+        "first_limit_crossing_s": 17.95
+      },
+      "pitch_speed_rad_s": {
+        "max_abs": 0.046827784730315083,
+        "first_limit_crossing_s": 18.1
+      },
+      "stroke_m": {
+        "max_abs": 0.0012549441223213484,
+        "first_limit_crossing_s": 17.95
+      },
+      "axial_force_N": {
+        "max_abs": 2.62931595366868,
+        "first_limit_crossing_s": 26.650000000000002
+      },
+      "requested_torque_Nm": {
+        "max_abs": 0.5360698159169655,
+        "first_limit_crossing_s": 17.35
+      }
+    },
+    "within_original_pointwise_limits": false
+  }
+}

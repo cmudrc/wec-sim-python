@@ -319,6 +319,49 @@ whereas Python uses L-BFGS-B. This bound slack explains that sample's
 This result identifies the remaining Python controller numerical defect more
 precisely, but the autonomous full-duration physical gate still fails.
 
+## Full-duration stability blocker, 2026-10-24
+
+The checked [225 s source and Python step diagnostic](autonomous_step_sensitivity_mac_arm.json)
+recomputes both source self-change and independent physical Python step
+sensitivity against the **unchanged** `0.0005` rad pitch, `0.005` rad/s pitch
+speed, `0.0001` m stroke, `1` N axial-force, and `0.1` N m request limits.
+The two pinned Apple silicon MATLAB traces at 0.125 and 0.0625 ms have
+identical 500-bin wave components. They differ by `0.010800` rad pitch and
+`0.721063` N m request, first crossing the pitch limit at 17.95 s. The
+Python physical runs at 1 and 0.5 ms each use only the pinned HDF5, wave
+phases, and their own controller/plant states in feedback. They differ by
+`0.005127` rad pitch, `0.024146` rad/s pitch speed, `1.022` mm stroke,
+`2.014` N axial force, and `0.414344` N m request; pitch first crosses its
+limit at 43.5 s. Both step comparisons fail all five original pointwise
+limits. The run used macOS ARM64, NumPy 2.5.4, and SciPy 1.18.1. Reproduce
+it with `python tools/wavestar_nmpc_autonomous_step_sensitivity.py --output
+/tmp/wavestar-step-sensitivity.json` from the Python repository after
+installing its dependencies. The established 225 s aggregate and strict
+expected-failure gates are unchanged.
+
+The checked [fixed-input QP optimality diagnostic](qp_optimality_mac_arm.json)
+uses the same logged state, forecast, and preceding MATLAB plan at 17.5,
+30, 97.25, and 202.25 s. The Hessian minimum eigenvalues are `0.886–0.899`
+and condition numbers are `1.33–1.41`. Python's bound violations are zero;
+at the three non-bound examples, its projected KKT residual is at most
+`7.1e-9` and its first request is within `3.1e-9` N m of the direct source
+QP. At 97.25 s, MATLAB's interior-point result is `1.76e-7` N m above the
+lower torque bound while Python returns that bound exactly. Resetting the
+preceding horizon plan at 30 s changes the first request from `5.92177` to
+`0.681924` N m on the same state and forecast: it changes the actual RTI
+linearization and QP, so it cannot be treated as a tighter solve of the
+published controller. Reproduce this bounded diagnostic with `python
+tools/wavestar_nmpc_qp_optimality.py --output /tmp/wavestar-qp.json`.
+
+The remaining correction must establish a 225 s MATLAB controller/plant
+reference whose own numerical step and supported-platform variation satisfy
+the original pointwise limits, then demonstrate independent physical Python
+motion, request, force, and work against that reference on supported runners.
+The checked QP residuals do not support an ill-conditioned one-step QP as the
+sole cause. No such correction or passing autonomous gate has been
+established; issue [#623](https://github.com/cmudrc/wec-sim-python/issues/623)
+and the qualified case status remain open.
+
 SHA-256:
 
 - `source_1ms_repeat.npz`: `42f3264022177833634731711086cc90a1a39eb313ccdc05110123eb9c3035f6`
