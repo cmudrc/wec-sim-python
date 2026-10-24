@@ -9,17 +9,27 @@ from tools.wavestar_nmpc_autonomous_step_sensitivity import (
 from tools.wavestar_nmpc_qp_optimality import audit as qp_audit
 
 
+class PublishedClosedLoopStepGap(AssertionError):
+    """The checked source pair exceeds an unchanged pointwise limit."""
+
+
 @pytest.mark.xfail(
     strict=True,
     reason="published RTI closed loop changes beyond the original pointwise gate",
+    raises=PublishedClosedLoopStepGap,
 )
 def test_pinned_matlab_source_step_stability_under_original_limits():
     half = _load_source("source_0p125ms_macos_arm_m1.npz")
     quarter = _load_source("source_0p0625ms_macos_arm_m1.npz")
     np.testing.assert_array_equal(half["components"], quarter["components"])
     comparison = _compare(half, quarter)
-    for label, limit in LIMITS.items():
-        assert comparison["pointwise"][label]["max_abs"] < limit, label
+    failed = {
+        label: comparison["pointwise"][label]["max_abs"]
+        for label, limit in LIMITS.items()
+        if comparison["pointwise"][label]["max_abs"] >= limit
+    }
+    if failed:
+        raise PublishedClosedLoopStepGap(str(failed))
 
 
 def test_pinned_qp_is_well_conditioned_but_plan_policy_changes_objective():
