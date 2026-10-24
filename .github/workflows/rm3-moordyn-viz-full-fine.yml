@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/rm3-moordyn-viz-full-fine.yml'
       - 'tests/matlab/rm3_moordyn_viz_full_fine.m'
+      - 'tests/matlab/rm3_moordyn_viz_corrected_baseline.m'
       - 'tests/test_rm3_moordyn_viz_full_fine.py'
       - 'wecsim/api.py'
       - 'wecsim/dynamics/caseDynamics.py'
@@ -55,6 +56,9 @@ jobs:
       - uses: matlab-actions/run-command@v3
         with:
           command: addpath('tests/matlab'); rm3_moordyn_viz_full_fine
+      - uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); rm3_moordyn_viz_corrected_baseline
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -70,4 +74,5 @@ jobs:
           name: rm3-moordyn-viz-full-fine
           path: |
             matlab-rm3-moordyn-viz-full-fine/
+            matlab-rm3-moordyn-viz-corrected/
             applications/_Common_Input_Files/RM3/hydroData/rm3.h5
