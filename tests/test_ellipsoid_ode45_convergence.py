@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from scipy.integrate import trapezoid
 
 from wecsim import RegularCICWave, RegularWave, WEC, WorldPoint
 
@@ -155,8 +156,8 @@ def test_pinned_source_step_screen_and_full_duration_independent_motion():
     _check(python_one_quarter.ptos["PTO1"].stroke,
            one_quarter[:, 3], PYTHON_LIMITS[CASE][0],
            "independent physical PTO stroke")
-    source_work = float(np.trapezoid(one_quarter[:, 6], one_quarter[:, 0]))
-    python_work = float(np.trapezoid(
+    source_work = float(trapezoid(one_quarter[:, 6], one_quarter[:, 0]))
+    python_work = float(trapezoid(
         python_one_quarter.ptos["PTO1"].absorbed_power,
         python_one_quarter.time,
     ))
