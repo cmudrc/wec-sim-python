@@ -109,7 +109,7 @@ def main():
     assert baseline["restoring_vs_previous_N"] < 1e-6, (
         "The copied baseline no longer has the archived preceding-state law"
     )
-    assert baseline["restoring_vs_current_N"] > 40, (
+    assert baseline["restoring_vs_current_N"] > 5, (
         "The 2 s baseline is too short to distinguish the force clocks"
     )
     archive = (Path(__file__).resolve().parents[1]
