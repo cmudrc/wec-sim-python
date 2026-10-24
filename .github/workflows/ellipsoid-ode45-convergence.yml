@@ -6,6 +6,7 @@ on:
       - '.github/workflows/ellipsoid-ode45-convergence.yml'
       - 'tests/matlab/ellipsoid_ode45_convergence.m'
       - 'tests/test_ellipsoid_ode45_convergence.py'
+      - 'tests/test_ellipsoid_ode45_convergence_portable.py'
       - 'tests/fixtures/matlab/ellipsoid_ode45_convergence/**'
       - 'wecsim/hydrodynamics/nonlinearHydro.py'
       - 'wecsim/dynamics/caseDynamics.py'

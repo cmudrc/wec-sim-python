@@ -1,6 +1,7 @@
 function ellipsoid_ode45_output_grid_ab(waveType)
 % Compare two copies of the pinned ode45 input with identical physics clocks.
-% Only ToWorkspace output sampling changes from 0.00125 to 0.005 s.
+% Output sampling changes from 0.00125 to 0.005 s; the simulation class
+% also derives Paraview output timing from dtOut.
 waveType = string(waveType);
 assert(any(waveType == ["Regular", "RegularCIC"]));
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
