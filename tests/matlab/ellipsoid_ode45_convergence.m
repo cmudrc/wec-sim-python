@@ -1,4 +1,4 @@
-function ellipsoid_ode45_convergence(waveType)
+function ellipsoid_ode45_convergence(waveType, selectedLabel)
 % Screen the pinned ellipsoid ode45 application at successively finer clocks.
 % Work only in copied application folders; never edit the pinned source input.
 waveType = string(waveType);
@@ -17,6 +17,14 @@ outDir = fullfile(repoRoot, 'matlab-ellipsoid-ode45-convergence', waveType);
 mkdir(outDir);
 steps = [0.005, 0.0025, 0.00125, 0.000625];
 labels = {'step005', 'step0025', 'step00125', 'step000625'};
+if nargin >= 2
+    % Run a single step in a fresh MATLAB process to isolate memory use.
+    selectedLabel = string(selectedLabel);
+    selection = strcmp(labels, selectedLabel);
+    assert(nnz(selection) == 1, 'Choose a supported source step');
+    steps = steps(selection);
+    labels = labels(selection);
+end
 
 for iStep = 1:numel(steps)
     step = steps(iStep);
