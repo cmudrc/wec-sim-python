@@ -112,6 +112,17 @@ def main():
     assert baseline["restoring_vs_current_N"] > 5, (
         "The 2 s baseline is too short to distinguish the force clocks"
     )
+    for mode in args.modes:
+        if mode == "baseline":
+            continue
+        assert result[mode]["restoring_vs_current_N"] < 1e-6, (
+            "The edited restoring force no longer follows the current state",
+            mode,
+        )
+        assert result[mode]["restoring_vs_previous_N"] > 5, (
+            "The edited arm is too short to distinguish the force clocks",
+            mode,
+        )
     archive = (Path(__file__).resolve().parents[1]
                / "tests/fixtures/matlab/ellipsoid_ode45_nonlinear_clock"
                / "source_maxstep_common_grid.npz")
