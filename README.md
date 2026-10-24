@@ -16,13 +16,15 @@ adopted, repository-owned corrected validation baseline. **59/63** currently
 meet that standard. RM3 is **21/21** and OSWEC is **13/13**. Corrected
 baselines cover RM3 End Stops at a copied-model `ode45` `MaxStep=0.025` s,
 RM3 MoorDyn visualization at copied-input `simu.dt=0.0003125` s with a fixed
-phase seed, both RM3 PTO Extension free decays at copied-input
-`simu.dt=0.00078125` s, OSWEC nonlinear visualization at copied-input
-`simu.dt=0.0125` s,
+phase seed, OSWEC nonlinear visualization at copied-input `simu.dt=0.0125` s,
 OSWEC passive yaw with a zero-degree coefficient hold threshold, and
 OSWEC irregular variable yaw with continuous heading interpolation. The
-unchanged published settings for those cases remain step-sensitive or
-unpaired by the physical Python default.
+unchanged published settings for those five cases remain step-sensitive or
+unpaired by the physical Python default. Both RM3 PTO Extension free decays
+now pass independent physical gates against their unchanged published 0.1 s
+inputs under inherited limits. Their separate corrected `simu.dt=0.00078125` s
+baselines remain archived because the published MATLAB trajectories are
+step-sensitive; the original-input passes do not establish source convergence.
 The other published cases include OWC, WaveBot, WaveStar, Morison, and
 nonlinear hydrodynamics; see the parity ledger for the full breakdown. The
 MATLAB badge counts 42 selected source workflow jobs, not additional cases.
