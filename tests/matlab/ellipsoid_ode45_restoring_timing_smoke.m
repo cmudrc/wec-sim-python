@@ -114,17 +114,27 @@ set_param(model, 'SimulationCommand', 'update');
 compiledPeriod = zeros(1, numel(blocks));
 for iBlock = 1:numel(blocks)
     sample = get_param(blocks{iBlock}, 'CompiledSampleTime');
-    if iscell(sample)
-        assert(numel(sample) == 1, 'Nonlinear block unexpectedly multirate');
-        sample = sample{1};
+    fprintf('COMPILED_SAMPLE_TIMES case=%s mode=%s block=%d\n', ...
+        waveCase, mode, iBlock);
+    disp(sample);
+    if ~iscell(sample)
+        sample = {sample};
     end
-    assert(isnumeric(sample) && numel(sample) == 2 && ...
-        abs(sample(2)) < 1e-12, ...
-        'Nonlinear block has an unexpected compiled sample time');
-    compiledPeriod(iBlock) = sample(1);
+    rates = zeros(1, numel(sample));
+    for iRate = 1:numel(sample)
+        pair = sample{iRate};
+        if ischar(pair) || isstring(pair)
+            pair = str2num(char(pair)); %#ok<ST2NM> compiled Simulink value
+        end
+        assert(isnumeric(pair) && numel(pair) == 2 && ...
+            abs(pair(2)) < 1e-12, ...
+            'Nonlinear block has an unparseable compiled sample time');
+        rates(iRate) = pair(1);
+    end
+    assert(any(abs(rates - expectedPeriod(iBlock)) < 1e-12), ...
+        'Expected nonlinear sample period is absent from compiled rates');
+    compiledPeriod(iBlock) = expectedPeriod(iBlock);
 end
-assert(all(abs(compiledPeriod - expectedPeriod) < 1e-12), ...
-    'The intended nonlinear sample times did not compile');
 assert(abs(str2double(get_param(model, 'MaxStep')) - .05) < 1e-12 && ...
     abs(str2double(get_param(delayBlock, 'DelayTime')) - 1e-7) < 1e-16 && ...
     abs(str2double(get_param(model, 'StopTime')) - stopTime) < 1e-12, ...
