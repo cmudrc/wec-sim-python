@@ -77,8 +77,9 @@ saves its MATLAB outputs as an artifact.
 | RM3 radiation force options: constant, convolution, FIR, and state-space | Pinned MATLAB Applications `Radiation_Force_Options`, BEMIO-generated RM3 HDF5, 12 s regular waves | All four published 500 s settings are checked against the Python floating-joint solver. The FIR path uses sampled kernel taps with a held radiation force during each RK4 step. Across all four cases, the largest differences are 30.7 mm surge, 2.11 mm heave, 0.00144 rad pitch, 3.25 mm PTO stroke, 1.55 mm/s PTO speed, 1.86 kN PTO force, and 1.57 kW PTO power. Full-run and three interval PTO-work gates add a 1% bound for each mode; locally the largest interval relative differences are 0.546% constant, 0.027% convolution, 0.012% FIR, and 0.432% state-space. Direct FIR radiation-force differences remain under their paired gates. MATLAB FIR differs from MATLAB convolution by up to 345 mm surge, so the methods are not interchangeable for this case. The opt-in `radiation_method="state_space"` advances its 72 active fitted states with the independent RM3 body motion and passes the same full-duration gates; its force law on prescribed source motion is checked separately below. The fitted model has negative low-frequency damping, so this is numerical source parity, not physical passivity evidence. |
 | RM3 state-space radiation force on prescribed motion | Pinned MATLAB Applications `Radiation_Force_Options` state-space setting and [focused R2025b gate](https://github.com/cmudrc/wec-sim-python/actions/runs/37935700135) | `wecsim.hydrodynamics.radiation.replay_rm3_fitted_radiation` advances the HDF5 A/B/C channel fits from zero state using the saved six-component velocity histories, scales C by water density, and sets D to zero as the pinned MATLAB block does. Over 5,001 samples on both bodies, every radiation-force channel differs by less than `0.026%` of its source peak; the gate allows `0.03%` with a `0.0009` N floor for nearly stationary channels. This is a prescribed-motion force replay, not an independently coupled trajectory or evidence that the fitted model is passive. The default convolution solver is unchanged. |
 
-| RM3 PTO extension float and spar free decays | Pinned MATLAB Applications `RM3_PTO_Extension` inputs and BEMIO-generated RM3 HDF5; [three-step R2025b audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38130573831) and [passing fourth-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38324343546) | The no-wave floating-joint solver initializes the float at +5 m or the spar at −5 m, reproducing each published case's +5 m PTO stroke. At the published 0.1 s step, maximum 30 s active-heave differences are 47.1 mm for float and 6.84 mm for spar, with speed differences of 86.0 and 1.87 mm/s. Changing only MATLAB `simu.dt` from 0.05 to 0.025 to 0.0125 s changes the source float heave by 15.81 then 8.53 mm and spar heave by 3.82 then 1.96 mm; the last changes are 54.0% and 51.2% of the previous ones. The corresponding float-speed changes are 77.96 then 39.14 mm/s, and spar-speed changes are 2.443 then 1.222 mm/s. At matched 0.025/0.0125 s steps, independent Python float-heave errors fall from 11.37 to 5.69 mm and spar-heave errors from 1.72 to 0.861 mm; speed errors fall from 21.40 to 10.69 mm/s and from 0.467 to 0.233 mm/s. The 0.0125 s gate allows 9/1.5 mm heave and 17/0.4 mm/s speed for float/spar and requires each error to fall below 75% of its 0.025 s value. PTO stroke and speed have the same errors as active heave and speed within numerical precision; PTO force and power are zero in Python and below `3.5e-8` in MATLAB output. Both CI cases pass full 30 s source self-change and independent Python motion/PTO gates. The passive body remains stationary within numerical precision. This is refined-step numerical evidence, not a passing gate for either published 0.1 s case, proof of asymptotic convergence, or a general no-wave joint solver. |
-| RM3 PTO extension `ode4` fixed-step isolation | Pinned full 30 s float and spar applications, local R2025b runs of each untouched 0.1 s input and a derived arm changing only Simulink `FixedStep` to 0.0125 s after initialization; all WEC-Sim force/output clocks stay at 0.1 s | The unchanged copied source reproduces the archived published traces within `1e-7` in logged units. Against the archived `simu.dt=0.0125` source, fixed-step refinement alone removes 99.379%/99.323% of the float heave/speed squared gap and 99.9998%/99.9998% of the spar gap at all 301 common samples. Float maximum heave/speed residuals fall from 64.68 mm/192.54 mm/s to 6.65 mm/11.60 mm/s; spar residuals fall from 13.08 mm/6.19 mm/s to 0.030 mm/0.0041 mm/s. An independent public physical Python solve is 4.54 mm/12.17 mm/s from the fixed-step-only float and 1.98 mm/0.335 mm/s from the spar, versus 64.61 mm/204.53 mm/s and 15.06 mm/6.52 mm/s from unchanged published MATLAB. [Ordinary-CI and fresh-source gates](tests/test_rm3_pto_extension_fixedstep_only.py) check both bodies, PTO stroke and zero force/power, clock identity, source self-change, and independently advanced motion. This isolates the leading source numerical mechanism but does not establish convergence or parity for either untouched published 0.1 s trajectory; both remain qualified. |
+| RM3 PTO extension float and spar free decays | Pinned MATLAB Applications `RM3_PTO_Extension` inputs and BEMIO-generated RM3 HDF5; [three-step R2025b audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38130573831) and [passing fourth-step audit](https://github.com/cmudrc/wec-sim-python/actions/runs/38324343546) | The source-compatible delayed-mass floating-joint diagnostic initializes the float at +5 m or the spar at −5 m, reproducing each published no-wave case's +5 m PTO stroke. At the published 0.1 s step, maximum 30 s active-heave differences are 47.1 mm for float and 6.84 mm for spar, with speed differences of 86.0 and 1.87 mm/s. Changing only MATLAB `simu.dt` from 0.05 to 0.025 to 0.0125 s changes the source float heave by 15.81 then 8.53 mm and spar heave by 3.82 then 1.96 mm; the last changes are 54.0% and 51.2% of the previous ones. The corresponding float-speed changes are 77.96 then 39.14 mm/s, and spar-speed changes are 2.443 then 1.222 mm/s. At matched 0.025/0.0125 s steps, independent Python float-heave errors fall from 11.37 to 5.69 mm and spar-heave errors from 1.72 to 0.861 mm; speed errors fall from 21.40 to 10.69 mm/s and from 0.467 to 0.233 mm/s. The 0.0125 s gate allows 9/1.5 mm heave and 17/0.4 mm/s speed for float/spar and requires each error to fall below 75% of its 0.025 s value. PTO stroke and speed have the same errors as active heave and speed within numerical precision; PTO force and power are zero in Python and below `3.5e-8` in MATLAB output. Both CI cases pass full 30 s source self-change and independent Python motion/PTO gates. The passive body remains stationary within numerical precision. At that stage this refined-step evidence did not itself provide a published 0.1 s physical gate or prove asymptotic convergence or a general no-wave joint solver. The separate unchanged-input gate below now passes inherited limits. |
+| RM3 PTO extension `ode4` fixed-step isolation | Pinned full 30 s float and spar applications, local R2025b runs of each untouched 0.1 s input and a derived arm changing only Simulink `FixedStep` to 0.0125 s after initialization; all WEC-Sim force/output clocks stay at 0.1 s | The unchanged copied source reproduces the archived published traces within `1e-7` in logged units. Against the archived `simu.dt=0.0125` source, fixed-step refinement alone removes 99.379%/99.323% of the float heave/speed squared gap and 99.9998%/99.9998% of the spar gap at all 301 common samples. Float maximum heave/speed residuals fall from 64.68 mm/192.54 mm/s to 6.65 mm/11.60 mm/s; spar residuals fall from 13.08 mm/6.19 mm/s to 0.030 mm/0.0041 mm/s. An independent public physical Python solve at 0.0125 s is 4.54 mm/12.17 mm/s from the fixed-step-only float and 1.98 mm/0.335 mm/s from the spar, versus 64.61 mm/204.53 mm/s and 15.06 mm/6.52 mm/s from unchanged published MATLAB. The separate original-input gate below uses Python at the published 0.1 s step. [Ordinary-CI and fresh-source gates](tests/test_rm3_pto_extension_fixedstep_only.py) check both bodies, PTO stroke and zero force/power, clock identity, source self-change, and independently advanced motion. This isolates the leading source numerical mechanism but does not establish source convergence or pointwise reproduction of either untouched published 0.1 s trajectory. At that stage both remained qualified; a separate physical gate below now passes inherited limits. |
+| RM3 PTO extension unchanged-input physical gate | [Exact published 0.1 s float and spar source fixture](tests/fixtures/matlab/rm3_pto_extension_published_physical/README.md), pinned BEMIO HDF5, and [portable gate](tests/test_rm3_pto_extension_published_physical.py) | Independent public implicit-added-mass Python runs use the original no-wave input, 5 m extension, and 30 s duration without saved MATLAB states or forces. All 301 samples of both bodies' six position and velocity axes, PTO stroke/speed, and zero force/power pass the inherited case limits. Active float heave/stroke and speed gaps are 85.849 mm and 202.600 mm/s versus 90 mm and 210 mm/s limits; spar gaps are 14.877 mm and 6.522 mm/s versus 18 mm and 8 mm/s. The source-`ode4` route is a negative control and does not supply the qualifying motion. These are narrow formal passes under inherited limits, not pointwise reproduction or proof of source convergence; the separate corrected fine-step baselines remain archived. |
 | RM3 Multiple Condition Runs Option 1 physical sweep | Pinned MATLAB Applications RM3 input, expanded to eight scalar height × period × PTO-damping combinations | The Python `regularCIC` floating-joint solver agrees across all eight 400 s conditions within 75.1 mm surge, 0.387 mm heave, 0.000183 rad pitch, 0.413 mm PTO stroke, 0.231 mm/s PTO speed, 0.479 kN PTO force, and 0.487 kW PTO power. These scalar runs validate each physical condition; all three MCR drivers are separately checked below. |
 | RM3 Multiple Condition Runs Options 1–3 orchestration | Pinned MATLAB Applications arrays, Option 2 Excel grid, Option 3 MAT file, and three actual MATLAB R2025b `wecSimMCR` runs | The Python loaders produce the same ordered eight-case table for all three published inputs. Each driver has a separate paired gate for every body's 4,001 position and velocity samples, every PTO stroke, speed, force, and power trace, the eight mean powers, and two 2×2 power matrices with period rows and height columns. Python mean absorbed powers differ from MATLAB by at most 0.155 kW or 0.059% across eight conditions in the MAT driver. The Option 2 Excel and Option 3 MAT driver outputs agree numerically exactly; Option 1 array and Option 3 MAT body positions differ by at most `1.9e-12` m. MATLAB's PTO power sign is opposite Python's positive absorbed-power convention. Phase-seed sweeps, multiple PTOs, and other postprocessing are not yet paired. |
 | Public RM3 floating-joint configuration | Pinned MATLAB MCR Option 1 array condition 1 and published MooringMatrix application; fresh paired [MCR](https://github.com/cmudrc/wec-sim-python/actions/runs/37787926107) and [mooring](https://github.com/cmudrc/wec-sim-python/actions/runs/37787936962) runs | `WEC.floating_joint` routes a Python-configured two-body device through the already paired pitched-slider solver and returns named body, four-coordinate, and PTO histories. In the 400 s MCR case, maximum differences are 35.1 mm surge, 0.228 mm heave, `3.46e-6` rad pitch, 0.243 mm PTO stroke, 163 N PTO force, and 118 W absorbed power; explicit gates cover positions, speeds, stroke, force, and power at all 4,001 samples. A second public configuration reproduces the 400 s imported-elevation MooringMatrix run, including its initial spar offset and joint surge spring, under the existing 40,001-sample body/PTO/mooring gates. Both fresh MATLAB jobs pass. The builder's implicit added-mass default remains physical; source-compatible delayed feedback is explicit for the MCR comparison. This layout does not represent arbitrary Simscape joints or off-axis PTO endpoints. |
@@ -842,12 +843,13 @@ This is a source inventory, not a claim that every case runs in Python.
 The four README case badges partition that inventory by model family: RM3
 21/21, OSWEC 13/13, Sphere 12/12, and other published cases 13/17 have
 full-duration gates against the unchanged published input or an explicitly
-adopted repository-owned corrected baseline. The seven corrected-baseline
-entries are RM3 End Stops, RM3 MoorDyn visualization, both RM3 PTO Extension
-free decays, OSWEC nonlinear visualization, PassiveYawRegression, and irregular
-Variable_Hydro/Passive_Yaw. Their unchanged published coarse-step or
-discrete-heading trajectories remain unpaired by the physical Python
-default. A named system
+adopted repository-owned corrected baseline. The five corrected-only entries
+are RM3 End Stops, RM3 MoorDyn visualization, OSWEC nonlinear visualization,
+PassiveYawRegression, and irregular Variable_Hydro/Passive_Yaw. Their unchanged
+published coarse-step or discrete-heading trajectories remain unpaired by the
+physical Python default. Both RM3 PTO Extension free decays also retain
+archived corrected fine-step baselines, but now pass unchanged published-input
+physical gates under the inherited limits. A named system
 gets its own badge when it has more than
 five inventoried cases; smaller systems stay in the disjoint remainder.
 
@@ -857,22 +859,24 @@ The long-term goal remains evidence-backed functional parity. The current
 investigation phase records the work that can be established with independent
 evidence while source numerical limitations keep some published badges below
 100%.
-The current ledger classifies all 63 inputs: 50 have independent motion gates
-against unchanged published inputs, seven have adopted corrected-baseline
+The current ledger classifies all 63 inputs: 52 have independent motion gates
+against unchanged published inputs, five have adopted corrected-baseline
 motion gates, two stationary cases have full-duration force gates, and four are
 qualified. WaveStar NMPC has a macOS ARM numerical gate but
 remains open for portable physical parity. The core RM3, OSWEC, and Sphere
 accepted-baseline motion count is 46/46; unchanged published-input motion is
-39/46. A qualified result documents a measured
-limit; it does not add to the passing badge fraction. Case investigation is
+41/46. Across the complete inventory, nine inputs still lack a qualifying
+unchanged published-input motion or fixed-body force gate. A qualified result
+documents a measured limit; it does not add to the passing badge fraction.
+Case investigation is
 reasonably closed when every remaining gap has a specific experiment or
 external blocker. Only then does the next phase prioritize behavior-focused
 line-and-branch coverage toward 90%.
 Badge fractions count full unchanged published-input gates and full gates for
 explicitly adopted repository-owned corrections. First use
-local R2025b to resolve distinct, bounded questions in the seven
+local R2025b to resolve distinct, bounded questions in the five
 step-sensitive unchanged RM3 and OSWEC published configurations; Sphere is
-already 12/12. All seven of those cases have separate corrected-baseline
+already 12/12. All five of those cases have separate corrected-baseline
 gates, while their unchanged published trajectories remain unpaired.
 Prioritize an untested physical or solver mechanism, and make passing full-duration
 comparisons durable in ordinary CI when source artifacts permit. Then address
@@ -1238,13 +1242,17 @@ inputs.
 A case earns its badge gate when an independent Python run covers the
 published input and duration, or an explicitly adopted repository-owned
 corrected baseline, and passes predeclared MATLAB motion or fixed-body force
-limits. A step-sensitive published trajectory stays qualified even when a
-corrected baseline earns the badge; reproducing the source numerical path,
-source poses, or prescribed events alone is insufficient. The RM3 unchanged
-published trajectories that remain step-sensitive are
-`End_Stops`, `RM3_MoorDyn_Viz`, and both `RM3_PTO_Extension` free decays.
-All four have separate adopted corrected baselines, while their unchanged
-published-step trajectories remain unpaired.
+limits. The PTO Extension limits were inherited from the original case test
+before this physical-path audit; they were not set prospectively before all
+earlier source errors were observed.
+A step-sensitive published trajectory stays qualified when its independent
+physical gate fails, even if a corrected baseline earns the badge;
+reproducing the source numerical path, source poses, or prescribed events alone
+is insufficient. The RM3 unchanged published trajectories that remain
+unpaired by physical Python are `End_Stops` and `RM3_MoorDyn_Viz`. Both have
+separate adopted corrected baselines. The two `RM3_PTO_Extension` free decays
+now pass their inherited original-input physical gates, despite marked source
+step sensitivity, and retain the corrected baselines as separate evidence.
 The OSWEC inputs still lacking unchanged published-motion parity
 are `PassiveYawRegression`, the irregular mode of `Variable_Hydro/Passive_Yaw`,
 and `OSWEC_NonLinear_Viz`. Their measured blockers are recorded below. All three
@@ -1442,8 +1450,8 @@ every output or the generality of the Python API:
 
 | Motion evidence | Cases | Meaning |
 | --- | ---: | --- |
-| `independent_motion` | 50 | A full-duration Python motion run using the published case inputs has an explicit MATLAB gate. Source wave phases or external stochastic input may be replayed; source body trajectories and forces are not advanced as inputs. The detailed rows above record output and physical-model limits. |
-| `corrected_independent_motion` | 7 | A documented repository-owned correction to a copied pinned source case is adopted as the validation baseline. Full-duration independent Python motion and PTO gates pass against that baseline; the unchanged published setting still has a documented gap. These are RM3 End Stops, MoorDyn visualization, and both PTO Extension free decays, OSWEC nonlinear visualization, PassiveYawRegression, and irregular Variable_Hydro/Passive_Yaw. |
+| `independent_motion` | 52 | A full-duration Python motion run using the published case inputs has an explicit MATLAB gate. Source wave phases or external stochastic input may be replayed; source body trajectories and forces are not advanced as inputs. The detailed rows above record output and physical-model limits. The two RM3 PTO Extension cases pass inherited original-input limits, while their source trajectories remain step-sensitive. |
+| `corrected_independent_motion` | 5 | A documented repository-owned correction to a copied pinned source case is adopted as the validation baseline. Full-duration independent Python motion and PTO gates pass against that baseline; the unchanged published setting still has a documented gap. These are RM3 End Stops and MoorDyn visualization, OSWEC nonlinear visualization, PassiveYawRegression, and irregular Variable_Hydro/Passive_Yaw. |
 | `stationary_force` | 2 | Published bodies are fixed; wave and force histories have paired gates. |
 | `qualified_motion` | 4 | A full-duration comparison needs a refined MATLAB step, source-specific force or solver route, or same-platform source baseline; some published-step physical motion remains unpaired despite related gates. |
 | `mixed_modes` | 0 | Some published settings could have independent motion gates and another material setting open; none currently use this category. |
@@ -3562,7 +3570,7 @@ step changes:
 The physical implicit path changes much less than MATLAB on the final step
 halving but does not meet the existing refined-source limits. The opt-in
 delayed-mass path remains the closer numerical comparison. Neither result
-closes the published 0.1 s gap. At that stage, neither case was promoted.
+closed the published 0.1 s gap at that stage, and neither case was promoted.
 
 A [fresh published-step force export](tests/fixtures/matlab/rm3_pto_extension_published_forces.md)
 from local R2025b Update 7 reproduces the archived 0.1 s float and spar body
@@ -3621,10 +3629,10 @@ differs from the latest extrapolation by at most `0.154` mm / `0.670` mm/s
 and `0.00605` mm / `0.106` mm/s for float and spar. The
 [portable source and physical diagnostic](tests/test_rm3_pto_extension_physical_step.py)
 preserves these trend checks in ordinary Python CI. The float still fails the
-unchanged `1` mm / `3` mm/s source-stability screen, so this does not establish
-a converged MATLAB reference or published-case parity.
-Both published 0.1 s cases remain qualified; at that stage, the RM3 validation
-badge remained 18/21.
+unchanged `1` mm / `3` mm/s source-stability screen, so this diagnostic did
+not establish a converged MATLAB reference or a published-input physical
+gate at that stage. Both published 0.1 s cases were qualified then, and the
+RM3 validation badge remained 18/21.
 
 A [further local R2025b source audit](tests/fixtures/matlab/rm3_pto_extension_00078125/README.md)
 halves the same 30 s float and spar no-wave cases to `0.0015625` and
@@ -3671,11 +3679,37 @@ gate. The direct raw-source check covers all 38,401 fine samples as
 additional evidence. Compact 301-sample source archives also
 pair both bodies' six axes and PTO over the original 0.1 s reporting grid in
 ordinary CI, while fresh R2025b runs check the full fine-grid histories and
-source HDF5. The unchanged published 0.1 s physical trajectories still miss
-their original gates; the opt-in source-ode4 numerical checks and published
-failure diagnostics remain separate. These two adopted corrected baselines
-count as `corrected_independent_motion` in the RM3 validation badge, which
-stood at 20/21 before the MoorDyn visualization baseline was adopted.
+source HDF5. At the time of adoption, the unchanged published 0.1 s physical
+trajectories had no passing full-channel gate; the opt-in source-ode4 numerical
+checks and published failure diagnostics remained separate. These two adopted
+corrected baselines counted as `corrected_independent_motion` when the RM3
+validation badge stood at 20/21 before the MoorDyn visualization baseline
+was adopted. The later unchanged-input physical gate below now supplies the
+counted evidence; the corrected fixtures remain available separately.
+
+The [unchanged-input physical fixture](tests/fixtures/matlab/rm3_pto_extension_published_physical/README.md)
+archives the complete 301-sample float and spar body/PTO records and exact
+source-generated RM3 HDF5 from the pinned [published source run](https://github.com/cmudrc/wec-sim-python/actions/runs/38282150325).
+Its [portable test](tests/test_rm3_pto_extension_published_physical.py)
+independently advances the public physical implicit-mass runner from the
+original no-wave inputs, 5 m PTO extension, and 0.1 s step over 30 s. Every
+position and velocity axis of both bodies, PTO stroke and speed, and zero
+force and power pass the inherited original limits at all 301 times. Float
+heave/stroke and speed gaps are 85.849 mm and 202.600 mm/s against 90 mm and
+210 mm/s limits; spar gaps are 14.877 mm and 6.522 mm/s against 18 mm and
+8 mm/s limits. The tightest relative margin is 7.400 mm/s, or 3.52% of its float-speed
+limit. The qualifying physical run receives no MATLAB body histories, forces,
+or solver steps. An opt-in source-`ode4` trajectory serves only as a negative
+control; its near-exact numerical reproduction cannot satisfy that physical
+control. A [pinned source workflow](.github/workflows/rm3-pto-extension-published-physical.yml)
+regenerates both unchanged inputs and checks the archived source records and
+active HDF5 datasets. These are formal passes under inherited limits, which predate this
+physical-path audit but were not chosen blind to all earlier errors. The
+published source remains step-sensitive, and the margins are narrow: these
+passes do not establish pointwise reproduction or source convergence. The
+fine-step corrected references remain valid supporting evidence; the two
+case-ledger rows now count as unchanged-input `independent_motion` instead of
+corrected-only gates, without changing the RM3 or overall accepted badge.
 
 The `MATLAB reference model baselines` workflow runs the two canonical core
 examples, all five Sphere free-decay cases, RM3 body-to-body Cases 1–4,
@@ -4026,8 +4060,9 @@ heave gaps to exceed 40/5 mm and speed gaps to exceed 80/1.5 mm/s for
 float/spar. Separately, it bounds both extrapolated heave gaps below
 0.4/0.02 mm and their post-startup speed gaps below 0.4/0.003 mm/s.
 This cancellation is consistent with a shared fine-step
-trajectory after startup, but is not a published-step gate or proof of
-asymptotic convergence; both published 0.1 s cases remain qualified.
+trajectory after startup, but is not by itself a published-step gate or proof
+of asymptotic convergence. At that stage both published 0.1 s cases remained
+qualified; their later inherited-limit physical gate is documented above.
 
 Further dynamics targets include other published OSWEC and Sphere
 configurations. The Sphere free-decay cases already have direct Python motion
