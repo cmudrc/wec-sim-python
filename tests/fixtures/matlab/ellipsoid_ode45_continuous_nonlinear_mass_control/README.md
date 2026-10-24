@@ -42,6 +42,8 @@ The [portable Python test](../../../test_ellipsoid_ode45_continuous_nonlinear_ma
 
 Removing the active delayed heave feedback **worsens every inherited motion, PTO, and work gap**. Both controls still fail the established 3/3.5 mm heave, 4/4.5 mm/s speed, 5/6 kN PTO-force, 4/5 kW power, and 0.1% work limits. This rules out the active delayed feedback as a sufficient explanation for the remaining continuous-nonlinear residual. It does not establish the underlying cause or promote either published input to physical parity.
 
+The [portable PR workflow](../../../../.github/workflows/ellipsoid-ode45-continuous-nonlinear-mass-control-portable.yml) runs this diagnostic without MATLAB. A separate [post-screen source workflow](../../../../.github/workflows/ellipsoid-ode45-continuous-nonlinear-mass-control-step.yml) requests only copied-model `MaxStep` values of 0.0125 and 0.00625 s for both waves, while leaving the published 0.05 s clocks and continuous force blocks in place. It exports to a distinct directory and artifact per case and step; those future runs are separate from the 0.05 s fixtures here.
+
 `regular.npz` and `regular_cic.npz` retain time, active and inactive motion, source force terms, actually applied heave added force, PTO channels, wave, nine checked settings, and the twelve-value mass identity. Their SHA-256 hashes are `69018348739432556f08ad9e91bb32d855175b7b89e304174b8d9082309a98c7` and `364ef737b81a9ba3d2fd3b72ca82b0f3a95f68f42aa4aa16629ec6d6e0cfb435`. Regenerate and verify them with:
 
 ```sh

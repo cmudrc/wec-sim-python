@@ -1,6 +1,15 @@
 % Heave-only no-active-delay control for the 150 s continuous-nonlinear arm.
-% Invoke as a script with waveCase = 'Regular' or 'RegularCIC'.
+% Invoke as a script with waveCase = 'Regular' or 'RegularCIC' and optional
+% maxStep (0.05 by default; 0.0125 and 0.00625 for post-screen diagnosis).
 assert(any(strcmp(waveCase, {'Regular', 'RegularCIC'})));
+if ~exist('maxStep', 'var')
+    maxStep = .05;
+end
+assert(isnumeric(maxStep) && isscalar(maxStep) && isfinite(maxStep) && ...
+    any(abs(maxStep - [.05, .0125, .00625]) < 1e-12), ...
+    'MaxStep must be a supported copied-model value');
+refineStep = abs(maxStep - .05) >= 1e-12;
+stepTag = strrep(num2str(maxStep, '%.5g'), '.', 'p');
 repoRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 sourceDir = fullfile(repoRoot, 'matlab-ref', 'source');
 appDir = fullfile(repoRoot, 'applications', 'Nonlinear_Hydro');
@@ -43,8 +52,11 @@ assert(contains(original, 'simu.solver=''ode45'';') && ...
     ~contains(original, 'simu.cicDt') && ...
     ~contains(original, 'body(1).adjMassFactor'), ...
     'The pinned published input has changed');
-caseDir = fullfile(fileparts(originalDir), ...
-    [waveCase '_continuous_nonlinear_mass_control']);
+caseName = [waveCase '_continuous_nonlinear_mass_control'];
+if refineStep
+    caseName = [caseName '_maxstep_' stepTag];
+end
+caseDir = fullfile(fileparts(originalDir), caseName);
 assert(~isfolder(caseDir), 'Disposable mass-control case already exists');
 mkdir(caseDir);
 copyfile(fullfile(originalDir, 'ellipsoid.slx'), ...
@@ -92,7 +104,7 @@ assert(abs(force.adjustedMass - (force.mass + originalMass(3,3))) < 1e-7, ...
 inactive = [1 2 4 5 6];
 massRecord = [factor, sum(diag(originalMass(1:3,1:3))), ...
     originalMass(3,3), force.mass, force.adjustedMass, ...
-    force.fAddedMass(3,3), .05, force.fAddedMass(3,inactive)];
+    force.fAddedMass(3,3), maxStep, force.fAddedMass(3,inactive)];
 
 % Apply exactly the three continuous nonlinear evaluations in the
 % published-clock timing arm, in a disposable copy of the application model.
@@ -122,6 +134,9 @@ for iBlock = 1:numel(blocks)
     set_param(blocks{iBlock}, 'SystemSampleTime', '0');
     assert(strcmp(get_param(blocks{iBlock}, 'SystemSampleTime'), '0'));
 end
+if refineStep
+    set_param(model, 'MaxStep', num2str(maxStep, '%.17g'));
+end
 set_param(model, 'SimulationCommand', 'update');
 compiledPeriod = zeros(1, numel(blocks));
 for iBlock = 1:numel(blocks)
@@ -146,7 +161,7 @@ for iBlock = 1:numel(blocks)
         'Continuous nonlinear sample period is absent from compiled rates');
     compiledPeriod(iBlock) = rates(find(abs(rates) < 1e-12, 1));
 end
-assert(abs(str2double(get_param(model, 'MaxStep')) - .05) < 1e-12 && ...
+assert(abs(str2double(get_param(model, 'MaxStep')) - maxStep) < 1e-12 && ...
     abs(str2double(get_param(delayBlock, 'DelayTime')) - 1e-7) < 1e-16 && ...
     abs(str2double(get_param(model, 'StopTime')) - 150) < 1e-12, ...
     'The published solver, feedback delay, or duration changed');
@@ -158,7 +173,7 @@ fprintf(['CONTINUOUS_NONLINEAR_MASS_CONTROL case=%s factor=%.17g ' ...
     simu.cicDt, str2double(get_param(model, 'MaxStep')));
 
 sim(simu.simMechanicsFile, [], simset('SrcWorkspace', 'parent'));
-assert(abs(str2double(get_param(model, 'MaxStep')) - .05) < 1e-12 && ...
+assert(abs(str2double(get_param(model, 'MaxStep')) - maxStep) < 1e-12 && ...
     abs(str2double(get_param(model, 'StopTime')) - 150) < 1e-12, ...
     'Simulink changed the published model settings');
 run('stopWecSim');
@@ -195,8 +210,14 @@ assert(isequal(size(bodyValues), [3001, 55]) && ...
     max(abs(crossHeaveForce)) < 1e-6 && ...
     max(abs(appliedValues(:, 4))) < 1e-6, ...
     'Incomplete control or nonzero inactive/added heave feedback');
-outDir = fullfile(repoRoot, ...
-    'matlab-ellipsoid-ode45-continuous-nonlinear-mass-control', waveCase);
+if refineStep
+    outDir = fullfile(repoRoot, ...
+        'matlab-ellipsoid-ode45-continuous-nonlinear-mass-control-step', ...
+        waveCase, ['maxstep_' stepTag]);
+else
+    outDir = fullfile(repoRoot, ...
+        'matlab-ellipsoid-ode45-continuous-nonlinear-mass-control', waveCase);
+end
 if ~isfolder(outDir)
     mkdir(outDir);
 end
