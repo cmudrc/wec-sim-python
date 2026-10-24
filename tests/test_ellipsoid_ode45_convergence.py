@@ -39,6 +39,9 @@ SOURCE_STABILITY_LIMITS = {
     "RegularCIC": (.0011, .0015, 2000, 1600),
 }
 PYTHON_STEP_LIMITS = (.0001, .0001, 100, 100)
+# The source signed-work sequence must settle independently before its finest
+# member can serve as the derived reference for the Python 0.1% work gate.
+SOURCE_WORK_STEP_LIMIT = .001
 STEPS = {"step005": .005, "step0025": .0025,
          "step00125": .00125, "step000625": .000625}
 # Columns: time, heave, speed, PTO stroke, stroke speed, PTO force,
@@ -104,13 +107,19 @@ def _python_channels(result):
             pto.force, pto.absorbed_power)
 
 
-def test_pinned_source_step_screen_and_full_duration_independent_motion():
-    assert CASE in PYTHON_LIMITS
-    source = _read_source(CASE)
+def _validate_full_gate(source, case, app):
+    assert case in PYTHON_LIMITS
+    for label, step in STEPS.items():
+        history = source[label]
+        assert history.shape == (round(150 / step) + 1, 11)
+        assert np.isfinite(history).all()
+        np.testing.assert_allclose(history[:, 0],
+                                   np.arange(len(history)) * step,
+                                   rtol=0, atol=1e-9)
     five, two_half, one_quarter, finest = (
         source[label] for label in STEPS
     )
-    key = "regular_cic" if CASE == "RegularCIC" else "regular"
+    key = "regular_cic" if case == "RegularCIC" else "regular"
     with np.load(ARCHIVED_005, allow_pickle=False) as archived:
         for column, suffix, limit in ((0, "time", 1e-10),
                                       (1, "heave", 1e-7),
@@ -128,7 +137,7 @@ def test_pinned_source_step_screen_and_full_duration_independent_motion():
     _check(one_quarter[:, 7], finest[::2, 7], 1e-10,
            "source 0.00125/0.000625 s wave identity")
     for (column, channel), stability in zip(
-        CHANNELS, SOURCE_STABILITY_LIMITS[CASE], strict=True
+        CHANNELS, SOURCE_STABILITY_LIMITS[case], strict=True
     ):
         first = _error(five[:, column], two_half[::2, column])
         previous = _error(two_half[:, column], one_quarter[::2, column])
@@ -141,7 +150,17 @@ def test_pinned_source_step_screen_and_full_duration_independent_motion():
             f"source {channel} did not contract: {previous:.8g} -> {final:.8g}"
         )
 
-    app = Path(APPLICATIONS) / "Nonlinear_Hydro"
+    source_works = [float(trapezoid(history[:, 6], history[:, 0]))
+                    for history in (five, two_half, one_quarter, finest)]
+    assert all(np.isfinite(work) and work > 1e3 for work in source_works)
+    work_changes = [abs(later - earlier) / later
+                    for earlier, later in zip(source_works, source_works[1:])]
+    print("source signed PTO work (J):", source_works)
+    print("source signed PTO work relative step changes:", work_changes)
+    assert work_changes[-1] < SOURCE_WORK_STEP_LIMIT
+    assert work_changes[1] < .7 * work_changes[0]
+    assert work_changes[2] < .7 * work_changes[1]
+
     mesh = HeaveMeshHydro.from_stl(
         app / "geometry/elipsoid.stl", center_z=-2, rho=1025,
         gravity=9.81, depth=70, period=6, height=4, ramp_time=50,
@@ -162,8 +181,8 @@ def test_pinned_source_step_screen_and_full_duration_independent_motion():
            "finest source preceding-state restoring law")
     assert _error(current, -finest[samples, 8]) > 500
 
-    python_two_half = _python(CASE, .0025, app)
-    python_one_quarter = _python(CASE, .00125, app)
+    python_two_half = _python(case, .0025, app)
+    python_one_quarter = _python(case, .00125, app)
     _check(python_two_half.time, python_one_quarter.time[::2], 1e-9,
            "Python common times")
     for (_, name), coarse, fine, limit in zip(
@@ -177,14 +196,14 @@ def test_pinned_source_step_screen_and_full_duration_independent_motion():
            "Python/source wave")
     for (column, name), actual, limit in zip(
         CHANNELS, _python_channels(python_one_quarter),
-        PYTHON_LIMITS[CASE], strict=True
+        PYTHON_LIMITS[case], strict=True
     ):
         _check(actual, finest[::2, column], limit,
                f"independent physical {name}")
     _check(python_one_quarter.ptos["PTO1"].stroke,
-           finest[::2, 3], PYTHON_LIMITS[CASE][0],
+           finest[::2, 3], PYTHON_LIMITS[case][0],
            "independent physical PTO stroke")
-    source_work = float(trapezoid(finest[:, 6], finest[:, 0]))
+    source_work = source_works[-1]
     python_work = float(trapezoid(
         python_one_quarter.ptos["PTO1"].absorbed_power,
         python_one_quarter.time,
@@ -193,3 +212,9 @@ def test_pinned_source_step_screen_and_full_duration_independent_motion():
     work_error = abs(python_work / source_work - 1)
     print(f"independent signed PTO work: {work_error:.6%} (gate 0.1%)")
     assert work_error < .001
+
+
+def test_pinned_source_step_screen_and_full_duration_independent_motion():
+    assert CASE in PYTHON_LIMITS
+    _validate_full_gate(_read_source(CASE), CASE,
+                        Path(APPLICATIONS) / "Nonlinear_Hydro")

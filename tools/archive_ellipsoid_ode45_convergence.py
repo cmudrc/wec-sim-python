@@ -13,6 +13,7 @@ import shutil
 
 import h5py
 import numpy as np
+from scipy.integrate import trapezoid
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +26,7 @@ STABILITY_LIMITS = {
     "RegularCIC": (.0011, .0015, 2000, 1600),
 }
 CHANNELS = (1, 2, 5, 6)
+WORK_STEP_LIMIT = .001
 
 
 def _sha(path):
@@ -101,6 +103,16 @@ def main():
                 print(case, column, "source changes", first, previous, final)
                 assert (final < limit and previous < .7 * first
                         and final < .7 * previous)
+            works = [float(trapezoid(history[:, 6], history[:, 0]))
+                     for history in (five, half, quarter, finest)]
+            assert all(np.isfinite(work) and work > 1e3 for work in works)
+            work_changes = [abs(later - earlier) / later
+                            for earlier, later in zip(works, works[1:])]
+            print(case, "source signed PTO work (J)", works)
+            print(case, "source signed PTO work relative changes", work_changes)
+            assert (work_changes[-1] < WORK_STEP_LIMIT
+                    and work_changes[1] < .7 * work_changes[0]
+                    and work_changes[2] < .7 * work_changes[1])
             for label, history in histories.items():
                 records[f"{key}_{label}"] = history
             inputs[case] = {
@@ -124,12 +136,14 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     destination = args.output / "source.npz"
     np.savez_compressed(destination, **records)
+    (args.output / "hydroData").mkdir(exist_ok=True)
+    (args.output / "geometry").mkdir(exist_ok=True)
     shutil.copyfile(inputs["Regular"]["hydro"],
-                    args.output / "ellipsoid.h5")
+                    args.output / "hydroData/ellipsoid.h5")
     shutil.copyfile(inputs["Regular"]["geometry"],
-                    args.output / "elipsoid.stl")
-    for file in (destination, args.output / "ellipsoid.h5",
-                 args.output / "elipsoid.stl"):
+                    args.output / "geometry/elipsoid.stl")
+    for file in (destination, args.output / "hydroData/ellipsoid.h5",
+                 args.output / "geometry/elipsoid.stl"):
         print(file, _sha(file), file.stat().st_size)
 
 
