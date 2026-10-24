@@ -3570,7 +3570,7 @@ step changes:
 The physical implicit path changes much less than MATLAB on the final step
 halving but does not meet the existing refined-source limits. The opt-in
 delayed-mass path remains the closer numerical comparison. Neither result
-closes the published 0.1 s gap. At that stage, neither case was promoted.
+closed the published 0.1 s gap at that stage, and neither case was promoted.
 
 A [fresh published-step force export](tests/fixtures/matlab/rm3_pto_extension_published_forces.md)
 from local R2025b Update 7 reproduces the archived 0.1 s float and spar body
@@ -3629,10 +3629,10 @@ differs from the latest extrapolation by at most `0.154` mm / `0.670` mm/s
 and `0.00605` mm / `0.106` mm/s for float and spar. The
 [portable source and physical diagnostic](tests/test_rm3_pto_extension_physical_step.py)
 preserves these trend checks in ordinary Python CI. The float still fails the
-unchanged `1` mm / `3` mm/s source-stability screen, so this does not establish
-a converged MATLAB reference or published-case parity.
-Both published 0.1 s cases remain qualified; at that stage, the RM3 validation
-badge remained 18/21.
+unchanged `1` mm / `3` mm/s source-stability screen, so this diagnostic did
+not establish a converged MATLAB reference or a published-input physical
+gate at that stage. Both published 0.1 s cases were qualified then, and the
+RM3 validation badge remained 18/21.
 
 A [further local R2025b source audit](tests/fixtures/matlab/rm3_pto_extension_00078125/README.md)
 halves the same 30 s float and spar no-wave cases to `0.0015625` and
