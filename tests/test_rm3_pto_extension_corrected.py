@@ -13,15 +13,18 @@ from wecsim import NoWave, WEC
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/matlab"
 CORRECTED = FIXTURES / "rm3_pto_extension_corrected/source.npz"
+BODY_AXES = FIXTURES / "rm3_pto_extension_corrected/body_axes.npz"
 PRIOR = FIXTURES / "rm3_pto_extension_00078125/source.npz"
 HYDRO = ROOT / "examples/data/rm3_end_stops.h5"
 FRESH = os.environ.get("WEC_SIM_RM3_PTO_CORRECTED_DIR")
 FRESH_HYDRO = os.environ.get("WEC_SIM_RM3_PTO_H5")
 SELECTED = os.environ.get("WEC_SIM_RM3_PTO_CASE")
 
-# These full-duration heave/speed limits were declared for the source-step
-# audit before its 0.0015625 and 0.00078125 s MATLAB runs. The same limits
-# gate the direct physical Python/source motion and PTO stroke/speed here.
+# The source_limit values were predeclared for MATLAB source self-change
+# before the final two source runs. This corrected-baseline adoption also
+# uses them as direct physical Python/source acceptance limits; that latter
+# use is a new criterion, not a predeclared physical gate. The separate,
+# tighter python_limit values are the existing Python-to-extrapolate gate.
 CASES = (
     ("float", 1, (.001, .003), (.0002, .001)),
     ("spar", 3, (.0003, .0002), (.00002, .0002)),
@@ -76,6 +79,31 @@ def _check_generated_hydro():
                     np.testing.assert_array_equal(bundled[key], generated[key])
 
 
+def _check_body_axes(case, body_name, body, source, source_trace,
+                     source_limit, stride, label):
+    assert source.shape == (len(source_trace), 13)
+    np.testing.assert_allclose(source[:, 0], source_trace[:, 0],
+                               rtol=0, atol=1e-9)
+    heave_column = 1 if body_name == "float" else 3
+    np.testing.assert_allclose(source[:, 3], source_trace[:, heave_column],
+                               rtol=0, atol=1e-9)
+    np.testing.assert_allclose(source[:, 9], source_trace[:, heave_column + 1],
+                               rtol=0, atol=1e-9)
+    for axis in range(6):
+        if axis == 2:
+            limits = source_limit if body_name == case else (1e-8, 1e-8)
+        elif axis == 0:
+            limits = (3e-5, 1e-5)
+        elif axis == 4:
+            limits = (1e-6, 1e-6)
+        else:
+            limits = (1e-9, 1e-9)
+        _max_gap(body.position[::stride, axis], source[:, 1 + axis],
+                 limits[0], f"{case} {body_name} {label} axis {axis} position")
+        _max_gap(body.velocity[::stride, axis], source[:, 7 + axis],
+                 limits[1], f"{case} {body_name} {label} axis {axis} speed")
+
+
 @pytest.mark.parametrize("name,column,source_limit,python_limit", CASES)
 def test_corrected_full_duration_source_and_independent_motion(
     name, column, source_limit, python_limit,
@@ -86,7 +114,8 @@ def test_corrected_full_duration_source_and_independent_motion(
           np.load(FIXTURES / "rm3_pto_extension_003125.npz",
                   allow_pickle=False) as prior,
           np.load(PRIOR, allow_pickle=False) as local,
-          np.load(CORRECTED, allow_pickle=False) as adopted):
+          np.load(CORRECTED, allow_pickle=False) as adopted,
+          np.load(BODY_AXES, allow_pickle=False) as body_axes):
         c = old[f"{name}_0p00625"]
         d = prior[f"{name}_0p003125"]
         e = _source(name, "0p0015625", local[f"{name}_0p0015625"])
@@ -95,7 +124,10 @@ def test_corrected_full_duration_source_and_independent_motion(
         assert reference.shape == (301, 9)
         # The adopted baseline retains every published 0.1 s reporting
         # sample from the exact fine-step source, without interpolation.
-        np.testing.assert_allclose(reference, f[::128], rtol=0, atol=1e-12)
+        np.testing.assert_allclose(
+            reference, local[f"{name}_0p00078125"][::128],
+            rtol=0, atol=1e-12,
+        )
         for dt, values in ((.00625, c), (.003125, d),
                            (.0015625, e), (.00078125, f)):
             assert values.shape == (round(30 / dt) + 1, 9)
@@ -157,37 +189,26 @@ def test_corrected_full_duration_source_and_independent_motion(
                  f"{name} inactive body heave")
         _max_gap(inactive.velocity[:, 2], f[:, inactive_column + 1], 1e-8,
                  f"{name} inactive body heave speed")
-        # The compact archive records active heave and PTO. A fresh MATLAB
-        # run also checks all body axes source-relative, since small coupled
-        # surge is physical and cannot be compared with absolute zero.
+        # Six-axis comparison is portable at all 301 adopted reporting
+        # samples. Fresh MATLAB additionally checks every fine-grid sample;
+        # small coupled surge is compared source-relative, not to zero.
         for body_name in ("float", "spar"):
             body = result.bodies[body_name]
             assert np.isfinite(body.position).all()
             assert np.isfinite(body.velocity).all()
+            _check_body_axes(
+                name, body_name, body, body_axes[f"{name}_{body_name}"],
+                reference, source_limit, 128, "adopted",
+            )
             if FRESH:
                 source_body = np.loadtxt(
                     Path(FRESH) / name / f"0p00078125_{body_name}_body.csv",
                     delimiter=",", ndmin=2,
                 )
-                assert source_body.shape == (len(f), 13)
-                np.testing.assert_allclose(source_body[:, 0], f[:, 0],
-                                           rtol=0, atol=1e-9)
-                for axis in range(6):
-                    if axis == 2:
-                        limits = (source_limit if body_name == name
-                                  else (1e-8, 1e-8))
-                    elif axis == 0:
-                        limits = (3e-5, 1e-5)
-                    elif axis == 4:
-                        limits = (1e-6, 1e-6)
-                    else:
-                        limits = (1e-9, 1e-9)
-                    _max_gap(body.position[:, axis], source_body[:, 1 + axis],
-                             limits[0],
-                             f"{name} {body_name} source axis {axis} position")
-                    _max_gap(body.velocity[:, axis], source_body[:, 7 + axis],
-                             limits[1],
-                             f"{name} {body_name} source axis {axis} speed")
+                _check_body_axes(
+                    name, body_name, body, source_body, f,
+                    source_limit, 1, "fresh",
+                )
 
         pto = result.ptos["relative_heave"]
         _max_gap(pto.stroke, f[:, 5], source_limit[0], f"{name} PTO stroke")

@@ -2,6 +2,7 @@ name: RM3 PTO Extension corrected baseline
 
 on:
   push:
+    branches: [master]
     paths:
       - '.github/workflows/rm3-pto-extension-corrected.yml'
       - 'tests/matlab/rm3_pto_extension_corrected.m'
