@@ -1,0 +1,114 @@
+{
+  "purpose": "fixed-input RTI QP optimality and plan-policy diagnostic",
+  "pinned_sha256": {
+    "controller_0p25ms_compatible_amd7763.npz": "06d55c1972b6e9130fbeeea52d29cc6691fddfb7408c687c950ce9522c2498e3",
+    "checked_qp_replay_compatible_amd7763.mat": "cbc5a2acfe651f3570db0405d040ee3d40791b07f30ac4b3d282ae289ec5af7d",
+    "direct_controller_inputs.npz": "3ff8f4ba8654ef66bf9058a9fe717cfa6c60868300d19e64a089fcb06781dbf0"
+  },
+  "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "active_bound_tolerance_Nm": 1e-09,
+  "samples": [
+    {
+      "time_s": 17.5,
+      "prior_plan": "source",
+      "hessian_min_eigenvalue": 0.8875814894975004,
+      "hessian_condition_number": 1.412452927392197,
+      "python_first_request_Nm": 2.2383394523585394,
+      "matlab_first_request_Nm": 2.238339450716518,
+      "python_solution": {
+        "qp_objective": -0.1341191825630914,
+        "max_projected_kkt_residual": 4.086149217596979e-09,
+        "max_bound_violation_Nm": 0.0,
+        "free_variables_at_1e-9_Nm_tolerance": 40
+      },
+      "matlab_plan_in_same_qp": {
+        "qp_objective": -0.13411918256309152,
+        "max_projected_kkt_residual": 2.48131191635248e-09,
+        "max_bound_violation_Nm": 0.0,
+        "free_variables_at_1e-9_Nm_tolerance": 40
+      }
+    },
+    {
+      "time_s": 30.0,
+      "prior_plan": "source",
+      "hessian_min_eigenvalue": 0.8939600873488631,
+      "hessian_condition_number": 1.3719119443603895,
+      "python_first_request_Nm": 5.921774300548368,
+      "matlab_first_request_Nm": 5.921774297497542,
+      "python_solution": {
+        "qp_objective": -0.5208669352970017,
+        "max_projected_kkt_residual": 7.089540218774282e-09,
+        "max_bound_violation_Nm": 0.0,
+        "free_variables_at_1e-9_Nm_tolerance": 40
+      },
+      "matlab_plan_in_same_qp": {
+        "qp_objective": -0.5208669352970017,
+        "max_projected_kkt_residual": 1.0465008359883399e-08,
+        "max_bound_violation_Nm": 0.0,
+        "free_variables_at_1e-9_Nm_tolerance": 40
+      }
+    },
+    {
+      "time_s": 97.25,
+      "prior_plan": "source",
+      "hessian_min_eigenvalue": 0.8859142039982983,
+      "hessian_condition_number": 1.3761506359866307,
+      "python_first_request_Nm": -12.0,
+      "matlab_first_request_Nm": -11.999999823862918,
+      "python_solution": {
+        "qp_objective": -0.6008552906995042,
+        "max_projected_kkt_residual": 1.9168391179880118e-09,
+        "max_bound_violation_Nm": 0.0,
+        "free_variables_at_1e-9_Nm_tolerance": 39
+      },
+      "matlab_plan_in_same_qp": {
+        "qp_objective": -0.6008552823088922,
+        "max_projected_kkt_residual": 0.0476369098919201,
+        "max_bound_violation_Nm": 0.0,
+        "free_variables_at_1e-9_Nm_tolerance": 40
+      }
+    },
+    {
+      "time_s": 202.25,
+      "prior_plan": "source",
+      "hessian_min_eigenvalue": 0.8988196216308708,
+      "hessian_condition_number": 1.3308009988604879,
+      "python_first_request_Nm": 2.792998566072698,
+      "matlab_first_request_Nm": 2.7929985652597757,
+      "python_solution": {
+        "qp_objective": -0.26546019648751623,
+        "max_projected_kkt_residual": 3.980322182961515e-09,
+        "max_bound_violation_Nm": 0.0,
+        "free_variables_at_1e-9_Nm_tolerance": 40
+      },
+      "matlab_plan_in_same_qp": {
+        "qp_objective": -0.2654601964875163,
+        "max_projected_kkt_residual": 3.848165786024538e-09,
+        "max_bound_violation_Nm": 0.0,
+        "free_variables_at_1e-9_Nm_tolerance": 40
+      }
+    },
+    {
+      "time_s": 30.0,
+      "prior_plan": "zero",
+      "hessian_min_eigenvalue": 0.9003463162491234,
+      "hessian_condition_number": 1.4030200946517661,
+      "python_first_request_Nm": 0.681924023796555,
+      "matlab_first_request_Nm": 5.921774297497542,
+      "python_solution": {
+        "qp_objective": -2.7823668671492157,
+        "max_projected_kkt_residual": 4.230424566209479e-09,
+        "max_bound_violation_Nm": 0.0,
+        "free_variables_at_1e-9_Nm_tolerance": 40
+      },
+      "matlab_plan_in_same_qp": {
+        "qp_objective": 112.27721456196204,
+        "max_projected_kkt_residual": 5.23770035051823,
+        "max_bound_violation_Nm": 0.0,
+        "free_variables_at_1e-9_Nm_tolerance": 40
+      }
+    }
+  ]
+}
