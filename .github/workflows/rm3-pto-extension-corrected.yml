@@ -1,0 +1,72 @@
+name: RM3 PTO Extension corrected baseline
+
+on:
+  push:
+    paths:
+      - '.github/workflows/rm3-pto-extension-corrected.yml'
+      - 'tests/matlab/rm3_pto_extension_corrected.m'
+      - 'tests/test_rm3_pto_extension_corrected.py'
+      - 'tests/fixtures/matlab/rm3_pto_extension_corrected/**'
+      - 'tests/fixtures/matlab/rm3_pto_extension_00078125/source.npz'
+  pull_request:
+    paths:
+      - '.github/workflows/rm3-pto-extension-corrected.yml'
+      - 'tests/matlab/rm3_pto_extension_corrected.m'
+      - 'tests/test_rm3_pto_extension_corrected.py'
+      - 'tests/fixtures/matlab/rm3_pto_extension_corrected/**'
+      - 'tests/fixtures/matlab/rm3_pto_extension_00078125/source.npz'
+  workflow_dispatch:
+
+jobs:
+  corrected:
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [float, spar]
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    name: ${{ matrix.case }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim
+          ref: 0753b2e47f2457c078751dcfe5d251d1767b80ab
+          path: matlab-ref
+          filter: blob:none
+          sparse-checkout: source
+      - uses: actions/checkout@v7
+        with:
+          repository: WEC-Sim/WEC-Sim_Applications
+          ref: d53d4d4c9eda2581f04204f5d394a6ef84bb099e
+          path: applications
+          filter: blob:none
+          lfs: true
+          sparse-checkout: |
+            _Common_Input_Files/RM3
+            RM3_PTO_Extension
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          products: Simulink Simscape Simscape_Multibody
+      - name: Regenerate both corrected source steps from disposable copies
+        uses: matlab-actions/run-command@v3
+        with:
+          command: addpath('tests/matlab'); rm3_pto_extension_corrected('${{ matrix.case }}')
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e ".[test]"
+      - name: Check source repeat, HDF5, and autonomous physical trajectory
+        run: python -m pytest -q -s tests/test_rm3_pto_extension_corrected.py
+        env:
+          WEC_SIM_RM3_PTO_CORRECTED_DIR: matlab-rm3-pto-corrected
+          WEC_SIM_RM3_PTO_H5: applications/_Common_Input_Files/RM3/hydroData/rm3.h5
+          WEC_SIM_RM3_PTO_CASE: ${{ matrix.case }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rm3-pto-corrected-${{ matrix.case }}
+          path: |
+            matlab-rm3-pto-corrected/${{ matrix.case }}/
+            applications/_Common_Input_Files/RM3/hydroData/rm3.h5
