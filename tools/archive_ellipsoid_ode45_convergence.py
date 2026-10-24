@@ -27,6 +27,10 @@ STABILITY_LIMITS = {
 }
 CHANNELS = (1, 2, 5, 6)
 WORK_STEP_LIMIT = .001
+IRF_DATASETS = {
+    "body1/hydro_coeffs/excitation/impulse_response_fun/f",
+    "body1/hydro_coeffs/radiation_damping/impulse_response_fun/K",
+}
 
 
 def _sha(path):
@@ -127,9 +131,14 @@ def main():
     assert regular_hydro.keys() == cic_hydro.keys()
     for name, values in regular_hydro.items():
         other = cic_hydro[name]
-        if np.issubdtype(np.asarray(values).dtype, np.number):
-            np.testing.assert_allclose(values, other, rtol=0, atol=0,
-                                       equal_nan=True, err_msg=name)
+        if name in IRF_DATASETS:
+            # Independent bemio runs differ only at roundoff in the two
+            # computed impulse-response arrays (observed <2.1e-12 absolute
+            # in the prior pinned R2025b artifacts). Keep all other BEM
+            # datasets byte-for-byte equal in value.
+            np.testing.assert_allclose(values, other, rtol=1e-12,
+                                       atol=1e-11, equal_nan=True,
+                                       err_msg=name)
         else:
             np.testing.assert_array_equal(values, other, err_msg=name)
 
