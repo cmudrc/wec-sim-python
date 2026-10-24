@@ -1,0 +1,30 @@
+name: Ellipsoid ode45 continuous nonlinear MaxStep portable diagnostic
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ellipsoid-ode45-restoring-step-portable.yml'
+      - 'tests/test_ellipsoid_ode45_restoring_step_portable.py'
+      - 'tests/test_ellipsoid_ode45_convergence.py'
+      - 'tools/check_ellipsoid_ode45_restoring_step.py'
+      - 'tools/pack_ellipsoid_ode45_restoring_step.py'
+      - 'tools/pack_ellipsoid_ode45_restoring_timing.py'
+      - 'tests/fixtures/matlab/ellipsoid_ode45_restoring_step/**'
+      - 'tests/fixtures/matlab/ellipsoid_ode45_restoring_timing/**'
+      - 'tests/fixtures/matlab/ellipsoid_ode45_convergence/**'
+      - 'wecsim/hydrodynamics/nonlinearHydro.py'
+      - 'wecsim/dynamics/caseDynamics.py'
+      - 'pyproject.toml'
+  workflow_dispatch:
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e ".[test]"
+      - run: python -m pytest -q -s tests/test_ellipsoid_ode45_restoring_step_portable.py

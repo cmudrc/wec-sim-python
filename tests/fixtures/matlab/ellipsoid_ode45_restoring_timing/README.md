@@ -64,8 +64,9 @@ are 3 mm heave/PTO stroke, 4 mm/s speed, 5 kN force, and 4 kW power;
 RegularCIC's are 3.5 mm, 4.5 mm/s, 6 kN, and 5 kW. Each also misses the
 unchanged 0.1% signed-work limit. The portable test treats the measured
 improvement as a regression screen, not as a prospectively declared passing
-threshold. The edited arms have no established source-step stability screen;
-they cannot replace the separate derived fine-step reference. The unchanged
+threshold. The subsequent [predeclared source-step screen](../ellipsoid_ode45_restoring_step/README.md)
+failed at MaxStep 0.0125 s for both waves. Later finer steps are diagnostic;
+they do not replace the separate derived fine-step reference. The unchanged
 published-input gate stays red and both case rows remain `qualified_motion`.
 
 `regular.npz` is 504,271 bytes (SHA-256
