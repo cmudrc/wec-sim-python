@@ -1,5 +1,6 @@
 % Isolate the nonlinear restoring calculation's sample time in the pinned
-% ellipsoid ode45 model. Invoke with waveCase, mode, and optional duration.
+% ellipsoid ode45 model. Invoke with waveCase, mode, optional duration, and
+% optional maxStep (0.05 by default; 0.025 or 0.0125 for the step screen).
 % mode: baseline, continuous_restoring, or continuous_nonlinear.
 % duration: smoke (2 s, default) or full (150 s).
 assert(any(strcmp(waveCase, {'Regular', 'RegularCIC'})));
@@ -9,6 +10,18 @@ if ~exist('duration', 'var')
     duration = 'smoke';
 end
 assert(any(strcmp(duration, {'smoke', 'full'})));
+if ~exist('maxStep', 'var')
+    maxStep = .05;
+end
+assert(isnumeric(maxStep) && isscalar(maxStep) && isfinite(maxStep) && ...
+    any(abs(maxStep - [.05, .025, .0125]) < 1e-12), ...
+    'MaxStep must be one of the predeclared source-step screen values');
+if abs(maxStep - .05) >= 1e-12
+    assert(strcmp(mode, 'continuous_nonlinear') && ...
+        strcmp(duration, 'full'), ...
+        'The source-step screen is only the 150 s continuous nonlinear arm');
+end
+stepTag = strrep(num2str(maxStep, '%.4g'), '.', 'p');
 stopTime = 2;
 if strcmp(duration, 'full')
     stopTime = 150;
@@ -35,8 +48,11 @@ assert(contains(original, 'simu.solver=''ode45'';') && ...
     ~contains(original, 'simu.cicDt') && ...
     ~contains(original, 'body(1).adjMassFactor'), ...
     'The pinned published input has changed');
-caseDir = fullfile(fileparts(originalDir), ...
-    [waveCase '_restoring_timing_' mode '_' duration]);
+caseName = [waveCase '_restoring_timing_' mode '_' duration];
+if abs(maxStep - .05) >= 1e-12
+    caseName = [caseName '_maxstep_' stepTag];
+end
+caseDir = fullfile(fileparts(originalDir), caseName);
 assert(~isfolder(caseDir), 'Disposable timing case already exists');
 mkdir(caseDir);
 copyfile(fullfile(originalDir, 'ellipsoid.slx'), ...
@@ -59,8 +75,8 @@ assert(abs(str2double(get_param(model, 'MaxStep')) - .05) < 1e-12);
 delayBlock = [model '/Rigid Body/Hydrodynamic Body/Transport Delay'];
 assert(abs(str2double(get_param(delayBlock, 'DelayTime')) - 1e-7) < 1e-16);
 
-% All arms detach the same copied library link; their only numerical model
-% difference is the explicit sample time on selected nonlinear blocks.
+% All arms detach the same copied library link. The source-step screen
+% changes only copied-model MaxStep beyond the continuous nonlinear arm.
 bodyLink = [model '/Rigid Body'];
 if ~strcmp(get_param(bodyLink, 'LinkStatus'), 'none')
     set_param(bodyLink, 'LinkStatus', 'none');
@@ -109,6 +125,9 @@ for iBlock = 1:numel(blocks)
     end
 end
 
+if abs(maxStep - .05) >= 1e-12
+    set_param(model, 'MaxStep', num2str(maxStep, '%.17g'));
+end
 set_param(model, 'StopTime', num2str(stopTime));
 set_param(model, 'SimulationCommand', 'update');
 compiledPeriod = zeros(1, numel(blocks));
@@ -135,7 +154,7 @@ for iBlock = 1:numel(blocks)
         'Expected nonlinear sample period is absent from compiled rates');
     compiledPeriod(iBlock) = expectedPeriod(iBlock);
 end
-assert(abs(str2double(get_param(model, 'MaxStep')) - .05) < 1e-12 && ...
+assert(abs(str2double(get_param(model, 'MaxStep')) - maxStep) < 1e-12 && ...
     abs(str2double(get_param(delayBlock, 'DelayTime')) - 1e-7) < 1e-16 && ...
     abs(str2double(get_param(model, 'StopTime')) - stopTime) < 1e-12, ...
     'The model solver, feedback delay, or duration changed');
@@ -146,7 +165,17 @@ fprintf(['RESTORING_TIMING case=%s mode=%s duration=%s dt=%.9g ' ...
     simu.cicDt, str2double(get_param(model, 'MaxStep')), compiledPeriod);
 
 sim(simu.simMechanicsFile, [], simset('SrcWorkspace', 'parent'));
-outDir = fullfile(repoRoot, 'matlab-ellipsoid-ode45-restoring-timing', waveCase);
+assert(abs(str2double(get_param(model, 'MaxStep')) - maxStep) < 1e-12 && ...
+    abs(str2double(get_param(model, 'StopTime')) - stopTime) < 1e-12, ...
+    'Simulink changed the prescribed source-step screen settings');
+if abs(maxStep - .05) < 1e-12
+    outDir = fullfile(repoRoot, ...
+        'matlab-ellipsoid-ode45-restoring-timing', waveCase);
+else
+    outDir = fullfile(repoRoot, ...
+        'matlab-ellipsoid-ode45-restoring-timing-step', waveCase, ...
+        ['maxstep_' stepTag]);
+end
 if ~isfolder(outDir)
     mkdir(outDir);
 end
