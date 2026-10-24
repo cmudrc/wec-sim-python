@@ -840,11 +840,11 @@ file paths, plus 17 other or dynamic cases. Generate the CSV with
 `python tools/build_reference_case_inventory.py CORE_CHECKOUT APPLICATIONS_CHECKOUT`.
 This is a source inventory, not a claim that every case runs in Python.
 The four README case badges partition that inventory by model family: RM3
-20/21, OSWEC 13/13, Sphere 12/12, and other published cases 13/17 have
+21/21, OSWEC 13/13, Sphere 12/12, and other published cases 13/17 have
 full-duration gates against the unchanged published input or an explicitly
-adopted repository-owned corrected baseline. The six corrected-baseline
-entries are RM3 End Stops, both RM3 PTO Extension free decays, OSWEC
-nonlinear visualization, PassiveYawRegression, and irregular
+adopted repository-owned corrected baseline. The seven corrected-baseline
+entries are RM3 End Stops, RM3 MoorDyn visualization, both RM3 PTO Extension
+free decays, OSWEC nonlinear visualization, PassiveYawRegression, and irregular
 Variable_Hydro/Passive_Yaw. Their unchanged published coarse-step or
 discrete-heading trajectories remain unpaired by the physical Python
 default. A named system
@@ -858,11 +858,11 @@ investigation phase records the work that can be established with independent
 evidence while source numerical limitations keep some published badges below
 100%.
 The current ledger classifies all 63 inputs: 50 have independent motion gates
-against unchanged published inputs, six have adopted corrected-baseline
-motion gates, two stationary cases have full-duration force gates, and five are
+against unchanged published inputs, seven have adopted corrected-baseline
+motion gates, two stationary cases have full-duration force gates, and four are
 qualified. WaveStar NMPC has a macOS ARM numerical gate but
 remains open for portable physical parity. The core RM3, OSWEC, and Sphere
-accepted-baseline motion count is 45/46; unchanged published-input motion is
+accepted-baseline motion count is 46/46; unchanged published-input motion is
 39/46. A qualified result documents a measured
 limit; it does not add to the passing badge fraction. Case investigation is
 reasonably closed when every remaining gap has a specific experiment or
@@ -872,10 +872,9 @@ Badge fractions count full unchanged published-input gates and full gates for
 explicitly adopted repository-owned corrections. First use
 local R2025b to resolve distinct, bounded questions in the seven
 step-sensitive unchanged RM3 and OSWEC published configurations; Sphere is
-already 12/12. Six of those seven cases have separate corrected-baseline
-gates, while RM3 MoorDyn visualization remains the one accepted-baseline
-gap. Prioritize an
-untested physical or solver mechanism, and make passing full-duration
+already 12/12. All seven of those cases have separate corrected-baseline
+gates, while their unchanged published trajectories remain unpaired.
+Prioritize an untested physical or solver mechanism, and make passing full-duration
 comparisons durable in ordinary CI when source artifacts permit. Then address
 the four remaining noncore inputs:
 `Nonlinear_Hydro/ode45/Regular`, `Nonlinear_Hydro/ode45/RegularCIC`,
@@ -1211,16 +1210,19 @@ regresses the existing 1 ms aggregate gate. Neither a finer common step nor
 that physical correction closes the autonomous gate. WaveStar NMPC stays
 qualified, and issue #623 remains open.
 
-For each of the 63 inputs, record an independent full-duration published
-**gate**, a **qualified** result with a measured source or solver limitation,
-or an **open** result with the specific missing evidence and next experiment.
+For each of the 63 inputs, record an independent full-duration **gate**
+against the unchanged published input or an explicitly adopted corrected
+validation baseline, a **qualified** result with a measured source or solver
+limitation, or an **open** result with the specific missing evidence and next
+experiment.
 A diagnosed source-step or heading-event sensitivity remains qualified even
 when an opt-in solver reproduces the published numerical path. Once a
 distinct experiment establishes that limitation, record the measured result
 and move on unless it exposes a tractable Python defect. Do not repeat an
 unchanged negative-gap run or tune the physical Python default to a coarse
 MATLAB artifact. A badge need not read 100% for the feasible investigation
-to be closed; its fraction counts only published gates.
+to be closed; its fraction counts unchanged published and adopted corrected
+baseline gates.
 
 After the case investigations, raise meaningful combined Python line-and-branch
 coverage toward 90%, concentrating on public configuration, actual dynamics,
@@ -1241,8 +1243,8 @@ corrected baseline earns the badge; reproducing the source numerical path,
 source poses, or prescribed events alone is insufficient. The RM3 unchanged
 published trajectories that remain step-sensitive are
 `End_Stops`, `RM3_MoorDyn_Viz`, and both `RM3_PTO_Extension` free decays.
-End Stops and the two PTO Extension cases have separate adopted corrected
-baselines; MoorDyn visualization remains the accepted-baseline badge gap.
+All four have separate adopted corrected baselines, while their unchanged
+published-step trajectories remain unpaired.
 The OSWEC inputs still lacking unchanged published-motion parity
 are `PassiveYawRegression`, the irregular mode of `Variable_Hydro/Passive_Yaw`,
 and `OSWEC_NonLinear_Viz`. Their measured blockers are recorded below. All three
@@ -1256,19 +1258,41 @@ surge, and its finer comparison meets the full-duration active-motion gates.
 An always-on test independently rebuilds the published 80 s incident sea
 from the archived MATLAB phases and bundled RM3 HDF5 within `2e-14` m.
 The published 801-frame scene and saved-pose native line response also pass
-their separate gates. This is enough to close the current *diagnosis*, while
-the published-motion case remains qualified: its unchanged original-step
-limits still fail. Do not rerun the same source audit or alter the physical
-default to reproduce that coarse-step trajectory. Move to the next distinct
-blocker after recording the measured limit; do not keep a case investigation
-open solely to improve its badge count.
+their separate gates. This closed the original-step *diagnosis*: its unchanged
+motion limits still fail. The coarse-step gap did not justify changing the
+physical Python default to reproduce that trajectory.
+
+We now adopt a [separate corrected RM3 MoorDyn visualization baseline](tests/fixtures/matlab/rm3_moordyn_viz_corrected/README.md)
+from a disposable copy of the pinned 80 s application. It changes
+`simu.dt` from 0.01 to 0.0003125 s and fixes `waves.phaseSeed=1`, while
+retaining the 0.1 s body and ParaView frame grids and the original mooring
+configuration. The 0.000625-to-0.0003125 s MATLAB source refinement changes
+active body position by at most 0.225 mm, 0.01 s fairlead tension by 61.0 N, and
+line nodes by 0.683 mm. A public physical Python run with native MoorDyn
+advances from the pinned HDF5 and phase data without saved MATLAB body or
+line states. At all 801 original 0.1 s body frames, float and spar surge
+differ by at most 0.827 and 0.762 mm, PTO force by 177.1 N, and connection
+pitch moment by 945.9 N m. Fairlead tension differs by at most 271.3 N
+across all 8,001 original 0.01 s samples.
+The original body, PTO, connection, fairlead, and four signed-work gates all
+pass; the largest work difference is 0.00720%. Python writes all 801 scene
+frames from its own body poses and native line histories. Wave samples and
+extrema match at VTP precision, body centroid and bounds differ by at most
+0.84 mm, and full line positions and segment tensions by at most 1.98 mm
+and 574 N. This own-state scene gate uses geometry summaries for bodies;
+the separate source-pose gate above compares complete body facets. Fresh
+[R2025b source regeneration](https://github.com/cmudrc/wec-sim-python/actions/runs/40049296662)
+and ordinary Python CI check the corrected fixture. This baseline earns the
+RM3 badge; the unchanged published 0.01 s coupled trajectory and its strict
+expected failure remain separate.
 
 The fresh OSWEC selected-heading 140 s physical-default audit and separate
 full-duration opt-in numerical gate passed; both are recorded below, while
-the irregular published case remains qualified. For each other
-qualified RM3 or OSWEC input, seek a distinct physical or solver mechanism
-that could support an independent published-input gate. If the existing
-evidence instead isolates a source numerical artifact, record the limit and
+the irregular unchanged published trajectory remains unpaired. For other
+unchanged published RM3 or OSWEC trajectories, seek a distinct physical or
+solver mechanism that could support an independent published-input gate. If
+the existing evidence instead isolates a source numerical artifact, record
+the limit and
 stop repeating that comparison. The last test-driven coverage rise to 83%
 shared the production PM/JONSWAP component parser with the fixed-hinge path
 and gated its public
@@ -1419,9 +1443,9 @@ every output or the generality of the Python API:
 | Motion evidence | Cases | Meaning |
 | --- | ---: | --- |
 | `independent_motion` | 50 | A full-duration Python motion run using the published case inputs has an explicit MATLAB gate. Source wave phases or external stochastic input may be replayed; source body trajectories and forces are not advanced as inputs. The detailed rows above record output and physical-model limits. |
-| `corrected_independent_motion` | 6 | A documented repository-owned correction to a copied pinned source case is adopted as the validation baseline. Full-duration independent Python motion and PTO gates pass against that baseline; the unchanged published setting still has a documented gap. These are RM3 End Stops and both PTO Extension free decays, OSWEC nonlinear visualization, PassiveYawRegression, and irregular Variable_Hydro/Passive_Yaw. |
+| `corrected_independent_motion` | 7 | A documented repository-owned correction to a copied pinned source case is adopted as the validation baseline. Full-duration independent Python motion and PTO gates pass against that baseline; the unchanged published setting still has a documented gap. These are RM3 End Stops, MoorDyn visualization, and both PTO Extension free decays, OSWEC nonlinear visualization, PassiveYawRegression, and irregular Variable_Hydro/Passive_Yaw. |
 | `stationary_force` | 2 | Published bodies are fixed; wave and force histories have paired gates. |
-| `qualified_motion` | 5 | A full-duration comparison needs a refined MATLAB step, source-specific force or solver route, or same-platform source baseline; some published-step physical motion remains unpaired despite related gates. |
+| `qualified_motion` | 4 | A full-duration comparison needs a refined MATLAB step, source-specific force or solver route, or same-platform source baseline; some published-step physical motion remains unpaired despite related gates. |
 | `mixed_modes` | 0 | Some published settings could have independent motion gates and another material setting open; none currently use this category. |
 | `open_motion` | 0 | No inventoried input lacks a full-duration independent Python comparison; qualified inputs still have unresolved physical or published-step limits. |
 
@@ -3650,7 +3674,8 @@ ordinary CI, while fresh R2025b runs check the full fine-grid histories and
 source HDF5. The unchanged published 0.1 s physical trajectories still miss
 their original gates; the opt-in source-ode4 numerical checks and published
 failure diagnostics remain separate. These two adopted corrected baselines
-count as `corrected_independent_motion` in the RM3 validation badge at 20/21.
+count as `corrected_independent_motion` in the RM3 validation badge, which
+stood at 20/21 before the MoorDyn visualization baseline was adopted.
 
 The `MATLAB reference model baselines` workflow runs the two canonical core
 examples, all five Sphere free-decay cases, RM3 body-to-body Cases 1–4,
