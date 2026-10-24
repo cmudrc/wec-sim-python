@@ -48,6 +48,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e ".[test]"
+      - run: python -m pytest -q tests/test_ellipsoid_ode45_delay_prefix.py
       - name: Check derived mass identity and independent 150 s motion
         run: python -m pytest -q -s tests/test_ellipsoid_ode45_mass_correction.py
         env:

@@ -34,7 +34,7 @@ PHYSICAL_LIMITS = {
 def _read(folder, mode):
     shapes = {"body": (3001, 55), "pto": (3001, 25),
               "applied_added": (3001, 7),
-              "wave": (3001, 2), "mass": (1, 7)}
+              "wave": (3001, 2), "mass": (1, 12)}
     result = {}
     for name, shape in shapes.items():
         value = np.loadtxt(folder / f"{mode}_{name}.csv",
@@ -45,11 +45,19 @@ def _read(folder, mode):
     for name in ("body", "pto", "wave", "applied_added"):
         np.testing.assert_allclose(result[name][:, 0], time,
                                    rtol=0, atol=1e-10)
-    factor, trace, a33, rigid, adjusted, residual, step = result["mass"][0]
+    factor, trace, a33, rigid, adjusted, residual, step = result["mass"][0, :7]
     np.testing.assert_allclose(factor, a33 / trace, rtol=0, atol=1e-13)
     np.testing.assert_allclose(adjusted, rigid + a33, rtol=0, atol=1e-7)
     assert abs(residual) < 1e-7
     assert abs(step - (.05 if mode == "published_clock" else .005)) < 1e-12
+    inactive_speed = result["body"][:, [7, 8, 10, 11, 12]]
+    inactive_acceleration = result["body"][:, [49, 50, 52, 53, 54]]
+    # The scalar mass shift only eliminates the active heave feedback.
+    # Bound its remaining row-3 cross terms using the actual inactive DOFs.
+    assert np.max(np.abs(inactive_speed)) < 1e-5
+    assert np.max(np.abs(inactive_acceleration)) < 1e-5
+    row_cross_force = inactive_acceleration @ result["mass"][0, 7:]
+    assert np.max(np.abs(row_cross_force)) < 1e-5
     assert np.max(np.abs(result["applied_added"][:, 3])) < 1e-5
     return result
 
@@ -114,6 +122,10 @@ def test_derived_heave_mass_shift_and_original_clock_gap(wave_case):
         "corrected_mass_factor": published["mass"][0, 0],
         "corrected_published_to_refined_heave_m": _error(
             published["body"][:, 3], refined["body"][:, 3]),
+        "corrected_published_to_refined_speed_mps": _error(
+            published["body"][:, 9], refined["body"][:, 9]),
+        "corrected_published_to_refined_pto_force_n": _error(
+            published["pto"][:, 15], refined["pto"][:, 15]),
         "unchanged_published_to_refined_heave_m": _error(
             unchanged_heave, fine_heave),
         "corrected_published_vs_unchanged_heave_m": _error(
@@ -128,8 +140,20 @@ def test_derived_heave_mass_shift_and_original_clock_gap(wave_case):
         "python_vs_corrected_refined_speed_mps": physical_gaps[1],
         "python_vs_corrected_refined_pto_force_n": physical_gaps[2],
         "python_vs_corrected_refined_power_w": physical_gaps[3],
+        "python_vs_corrected_published_heave_m": _error(
+            position, published["body"][:, 3]),
+        "python_vs_corrected_published_speed_mps": _error(
+            speed, published["body"][:, 9]),
+        "python_vs_corrected_published_pto_force_n": _error(
+            pto_force, published["pto"][:, 15]),
+        "python_vs_corrected_published_power_w": _error(
+            power, -published["pto"][:, 15] * published["pto"][:, 9]),
         "corrected_nonheave_speed_max_mps": max(
             float(np.max(np.abs(record["body"][:, [7, 8, 10, 11, 12]])))
+            for record in (published, refined)
+        ),
+        "corrected_nonheave_acceleration_max": max(
+            float(np.max(np.abs(record["body"][:, [49, 50, 52, 53, 54]])))
             for record in (published, refined)
         ),
     }
