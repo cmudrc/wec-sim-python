@@ -13,7 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         wave: [Regular, RegularCIC]
-        max_step: ['0.025', '0.0125']
+        # The two finer values continue diagnosis after the predeclared screen.
+        max_step: ['0.025', '0.0125', '0.00625', '0.003125']
     runs-on: ubuntu-latest
     timeout-minutes: 150
     name: ${{ matrix.wave }} MaxStep ${{ matrix.max_step }}

@@ -1,6 +1,7 @@
 % Isolate the nonlinear restoring calculation's sample time in the pinned
 % ellipsoid ode45 model. Invoke with waveCase, mode, optional duration, and
-% optional maxStep (0.05 by default; 0.025 or 0.0125 for the step screen).
+% optional maxStep (0.05 by default; 0.025 and 0.0125 for the predeclared
+% screen; 0.00625 and 0.003125 for post-screen diagnosis).
 % mode: baseline, continuous_restoring, or continuous_nonlinear.
 % duration: smoke (2 s, default) or full (150 s).
 assert(any(strcmp(waveCase, {'Regular', 'RegularCIC'})));
@@ -14,8 +15,8 @@ if ~exist('maxStep', 'var')
     maxStep = .05;
 end
 assert(isnumeric(maxStep) && isscalar(maxStep) && isfinite(maxStep) && ...
-    any(abs(maxStep - [.05, .025, .0125]) < 1e-12), ...
-    'MaxStep must be one of the predeclared source-step screen values');
+    any(abs(maxStep - [.05, .025, .0125, .00625, .003125]) < 1e-12), ...
+    'MaxStep must be a supported copied-model value');
 if abs(maxStep - .05) >= 1e-12
     assert(strcmp(mode, 'continuous_nonlinear') && ...
         strcmp(duration, 'full'), ...
