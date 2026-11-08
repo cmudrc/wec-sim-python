@@ -1,5 +1,9 @@
 # wec-sim-python
 
+<p align="center">
+  <img src="docs/branding/wec-sim-python-horizontal-readme.svg" alt="WEC-SIM Python logo: a snake in a hardhat beside a buoy" width="600">
+</p>
+
 [![RM3 case parity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Frm3-cases.json)](PARITY.md#reference-model-and-case-inventory)
 [![OSWEC case parity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Foswec-cases.json)](PARITY.md#reference-model-and-case-inventory)
 [![Sphere case parity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcmudrc%2Fwec-sim-python%2Fmaster%2Fdocs%2Fsphere-cases.json)](PARITY.md#reference-model-and-case-inventory)
